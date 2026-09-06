@@ -1,0 +1,72 @@
+# Benchmark harness
+
+## Data
+
+`bench/data/` is git-ignored. Download olmOCR-bench (about 2 GB) with:
+
+```bash
+.venv/Scripts/python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='allenai/olmOCR-bench', repo_type='dataset', local_dir='bench/data/olmocr-bench', allow_patterns=['bench_data/*.jsonl','bench_data/pdfs/**'])"
+```
+
+## Running TrueDoc on the benchmark
+
+```bash
+# everything (1,403 pages), then score with the official code
+.venv/Scripts/python -m truedoc.cli bench --workers 12
+
+# one category, scored against its own test file only (fast iteration)
+.venv/Scripts/python -m truedoc.cli bench --categories tables --jsonl table_tests.jsonl
+```
+
+Outputs are written where the official scorer expects them:
+`bench/data/olmocr-bench/bench_data/<candidate>/<category>/<name>_pg1_repeat1.md`.
+Each run also leaves `bench/runs/<candidate>-<timestamp>/` with `summary.json`,
+the raw scorer output and `failed_tests.jsonl` (the tests we failed, for
+failure analysis).
+
+## Tips
+
+- `--candidate <name>` writes to a separate output folder, so a new full conversion can run while an older candidate is still being scored.
+- `--workers 6` with the layout model and OCR is about the limit on a 16-core machine; more workers just thrash. A full conversion takes 60-100 minutes; scoring takes about 40 minutes (formula rendering dominates).
+- `python bench/quick_check.py` is the 10-minute regression guard on 13 fixed pages; run it before a full run. `python bench/math_check.py --first 12 --show-fails` scores formulas on a few maths pages and prints why each failure failed.
+
+## Helper tools (`bench/tools/`)
+
+Small scripts used in the improvement loop. Each finds the repository from its own location, so they run from anywhere; run the Python ones with the project's virtual-environment Python.
+
+- `launch_run.sh <N> <candidate> [sample2 minimum]`: validates the code on disk (unit tests; the quick gate at 96 of 128 or more; the two maths samples at 44 and 56 or more), launches a full benchmark conversion for `<candidate>` with six workers, waits for it, then scores it and its held-out slice. Progress goes to `bench/out/launch/launch<N>_status.txt`, whose last line reads "run N scored" when everything is done (about two hours). Runs chain with `until grep -q "run N scored" bench/out/launch/launchN_status.txt; do sleep 60; done; bash bench/tools/launch_run.sh N+1 truedocM`. Never edit `truedoc/` between the status file's "validating" and "launched" lines. Run N's candidate has been named `truedoc<N-2>` since run 3.
+- `page_check.py <run_dir> <page stems...>`: converts the named benchmark pages with the current code and prints, per page, how many checks pass now against how many passed in `<run_dir>`, with a GAIN or LOSS line for every check that changed. This is how a rule is verified before a full run: check it on the pages it was written for and on a few it was not. `--controls '<latex substring>' N` adds N maths pages whose passing checks contain the substring.
+- `run_diff.py <old_run_dir> <new_run_dir> [N]`: gains and losses between two runs by category, with the first N losses named, to trace a regression to its page.
+- `pair_probe.py <page stem> '<latex>' ...`: runs one page's formula checks against candidate LaTeX strings, to learn what the checker treats as equal (delimiter sizes never matter; `\tfrac` and `\frac` differ; `\notin` and `\not\in` differ).
+- `glyph_sheet.py <out.png> <font substrings...> [--all]`: a contact sheet of the glyphs a maths font family uses across the maths pages, for filling the symbol tables in `truedoc/math/symbols.py` by eye.
+- `scan_ctrl.py [--fix] <files...>` and `log_update.py <file> <old.txt> <new.txt>`: keep the documentation's backslashes intact. A shell heredoc turns `\f`, `\t`, `\b`, `\a`, `\r`, `\v` and `\n` inside LaTeX into control characters; edit the docs with a tool that writes bytes verbatim (or with `log_update.py`, which reads the old and new passages from files) and run `scan_ctrl.py docs/*.md` before committing.
+
+## Scoring only (outputs already exist)
+
+```bash
+.venv/Scripts/python bench/score_olmocr.py --dir bench/data/olmocr-bench/bench_data --candidate truedoc
+```
+
+`bench/score_olmocr.py` is a thin wrapper that makes the official scorer work on
+Windows paths; it does not change any scoring rule. The official test code is
+also copied into `bench/olmocr_ref/` for reading (Apache-2.0, AI2).
+
+## Held-out pages (decision D016)
+
+About one page in five (261 of 1,403, chosen by a stable hash of the file name and listed in `bench/holdout.txt`) is never looked at when a rule is tuned. `python bench/holdout_score.py <run_dir>` reports a run's score on those pages and on the rest separately, using the run's `failed_tests.jsonl`. The two numbers should move together; when the tuned-on score rises and the held-out score does not, a change was fitted to particular pages rather than to a real pattern.
+
+## Maths spot-checks
+
+Two fixed samples, run after any formula change (each takes 5-10 minutes on the loaded machine):
+
+```bash
+python bench/math_check.py --first 12
+```
+
+expected 44/52 (as of run 13), and the second sample of twelve pages chosen from run-11 failures:
+
+```bash
+python bench/math_check.py 2503.03873_pg5 2503.03879_pg4 2503.03899_pg9 2503.03903_pg9 2503.03905_pg7 2503.03909_pg14 2503.03948_pg3 2503.03949_pg1 2503.03952_pg5 2503.03994_pg108 2503.04024_pg4 2503.04026_pg2
+```
+
+expected 57/64 (as of run 31's launch, 4 Sept 18:26; 56 from run 28 to run 30, so 56 stays the floor for the launcher gate; 57 for a while on 4 Sept morning, 56 after round 10, 54 at run 13). The first sample expects 46/52 since run 32's launch (45 from run 28, 44 before). Add `--show-fails` to see the failing checks.

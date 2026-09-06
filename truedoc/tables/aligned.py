@@ -1,0 +1,621 @@
+"""Unruled ("whitespace") table extraction from text-layer geometry.
+
+Most tables in real documents have no ruling lines: the cells are just text
+aligned in columns. This module finds vertical runs of lines whose segments
+line up in columns, works out the column boundaries from the whitespace
+channels that run through the whole region, and assigns each text segment to
+a cell. Characters come straight from the text layer, so cell content is
+exact; only the structure is inferred.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+
+from truedoc.model import BBox, Block, BlockKind, Line, Page, Table, TableCell
+
+_NUMERIC = re.compile(
+    r"^[\(\[]?[-+−–<>≤≥↑↓~≈]?\s*[\d.,]+\s*(?:[±+\-−]\s*[\d.,]+)?\s*%?[\)\]]?[*†‡a-z]{0,2}$|^[-–—]$|^n/?a$|^n\.?s\.?$|^\d+[\d.,]*\s*[×x]\s*10[-−]?\d*$",
+    re.IGNORECASE,
+)
+
+
+@dataclass
+class _Row:
+    segments: list[Line]
+    y0: float
+    y1: float
+
+    @property
+    def cy(self) -> float:
+        return (self.y0 + self.y1) / 2.0
+
+
+@dataclass
+class _Candidate:
+    rows: list[_Row]
+    bbox: BBox
+    columns: list[tuple[float, float]] = field(default_factory=list)
+
+
+def find_aligned_tables(page: Page, lines: list[Line], body_size: float) -> tuple[list[Block], list[Line]]:
+    """Return (table blocks, lines not consumed by any table)."""
+    size = body_size or 10.0
+    all_lines = list(lines)
+    # Running headers and footers never belong to a table.
+    top_zone = 0.09 * page.height
+    bottom_zone = page.height - 0.09 * page.height
+    lines = [l for l in lines if not l.rotated and not (l.bbox.y1 <= top_zone or l.bbox.y0 >= bottom_zone)]
+    rows = _cluster_rows(lines, size)
+    candidates = _find_runs(rows, size)
+    tables: list[Block] = []
+    consumed: set[int] = set()
+    for cand in candidates:
+        for sub in _split_side_by_side(cand, size):
+            table = _build_table(sub, size)
+            if table is None:
+                continue
+            tables.append(Block(kind=BlockKind.TABLE, bbox=table.bbox, table=table, provenance="textlayer-aligned", confidence=0.7))
+            for r in sub.rows:
+                for seg in r.segments:
+                    consumed.add(id(seg))
+    remaining = [l for l in all_lines if id(l) not in consumed]
+    return tables, remaining
+
+
+def table_from_lines(lines: list[Line], size: float, trusted: bool = False) -> Table | None:
+    """Build a table from the lines inside a known table region (e.g. from a layout model).
+
+    `trusted` means the region came from a confident detector: the prose
+    rejections (meant for paragraphs mistaken for word grids) are skipped, so a
+    table of long wrapped cells survives.
+    """
+    lines = [l for l in lines if not l.rotated]
+    if len(lines) < 3:
+        return None
+    rows = _cluster_rows(lines, size or 10.0)
+    if len(rows) < 2:
+        return None
+    bbox = BBox.union_all(seg.bbox for r in rows for seg in r.segments)
+    cand = _Candidate(rows=rows, bbox=bbox)
+    return _build_table(cand, size or 10.0, strict=False, trusted=trusted)
+
+
+def _cluster_rows(lines: list[Line], size: float) -> list[_Row]:
+    rows: list[_Row] = []
+    for line in sorted(lines, key=lambda l: (l.bbox.cy, l.bbox.x0)):
+        tol = 0.45 * max(size, line.size or size)
+        if rows and abs(line.bbox.cy - rows[-1].cy) <= tol:
+            r = rows[-1]
+            r.segments.append(line)
+            r.y0 = min(r.y0, line.bbox.y0)
+            r.y1 = max(r.y1, line.bbox.y1)
+        else:
+            rows.append(_Row(segments=[line], y0=line.bbox.y0, y1=line.bbox.y1))
+    for r in rows:
+        r.segments.sort(key=lambda l: l.bbox.x0)
+    return rows
+
+
+def _is_multicell(row: _Row, size: float) -> bool:
+    if len(row.segments) < 2:
+        return False
+    # At least one real gap between segments.
+    for a, b in zip(row.segments, row.segments[1:]):
+        if b.bbox.x0 - a.bbox.x1 >= 0.8 * size:
+            return True
+    return False
+
+
+def _find_runs(rows: list[_Row], size: float) -> list[_Candidate]:
+    """Group vertically adjacent rows into candidate table regions."""
+    candidates: list[_Candidate] = []
+    run: list[_Row] = []
+    singles_in_a_row = 0
+
+    def close():
+        nonlocal run, singles_in_a_row
+        # Trim single-segment rows at both ends.
+        while run and not _is_multicell(run[0], size):
+            run.pop(0)
+        while run and not _is_multicell(run[-1], size):
+            run.pop()
+        multi = sum(1 for r in run if _is_multicell(r, size))
+        if len(run) >= 3 and multi >= max(3, int(0.6 * len(run))):
+            bbox = BBox.union_all(seg.bbox for r in run for seg in r.segments)
+            candidates.append(_Candidate(rows=list(run), bbox=bbox))
+        elif len(run) == 2 and multi == 2 and all(len(r.segments) >= 3 for r in run):
+            bbox = BBox.union_all(seg.bbox for r in run for seg in r.segments)
+            candidates.append(_Candidate(rows=list(run), bbox=bbox))
+        run = []
+        singles_in_a_row = 0
+
+    for row in rows:
+        if not run:
+            if _is_multicell(row, size):
+                run.append(row)
+            continue
+        gap = row.y0 - run[-1].y1
+        if gap > 1.8 * size:
+            close()
+            if _is_multicell(row, size):
+                run.append(row)
+            continue
+        if _is_multicell(row, size):
+            run.append(row)
+            singles_in_a_row = 0
+        else:
+            singles_in_a_row += 1
+            if singles_in_a_row > 1:
+                close()
+            else:
+                run.append(row)
+    close()
+    return candidates
+
+
+def _channels(rows: list[_Row], x0: float, x1: float, size: float) -> list[tuple[float, float]]:
+    """Whitespace channels running vertically through (nearly) all rows."""
+    width = int(x1 - x0) + 2
+    if width <= 0:
+        return []
+    cover = [0] * width
+    for r in rows:
+        marked = set()
+        for seg in r.segments:
+            a = max(0, int(seg.bbox.x0 - x0))
+            b = min(width - 1, int(seg.bbox.x1 - x0))
+            for i in range(a, b + 1):
+                marked.add(i)
+        for i in marked:
+            cover[i] += 1
+    n = len(rows)
+    limit = max(1, int(0.2 * n)) if n >= 5 else 0
+    channels: list[tuple[float, float]] = []
+    i = 0
+    while i < width:
+        if cover[i] <= limit:
+            j = i
+            while j + 1 < width and cover[j + 1] <= limit:
+                j += 1
+            if i > 0 and j < width - 1 and (j - i + 1) >= 0.6 * size:
+                channels.append((x0 + i, x0 + j + 1))
+            i = j + 1
+        else:
+            i += 1
+    return channels
+
+
+def _split_side_by_side(cand: _Candidate, size: float) -> list[_Candidate]:
+    """Split a region into separate tables where a much wider whitespace channel divides it."""
+    channels = _channels(cand.rows, cand.bbox.x0, cand.bbox.x1, size)
+    if len(channels) < 3:
+        return [cand]
+    widths = sorted(c[1] - c[0] for c in channels)
+    median = widths[len(widths) // 2]
+    wide = [c for c in channels if (c[1] - c[0]) > max(2.5 * median, 2.0 * size)]
+    if not wide:
+        return [cand]
+    cuts = sorted((c[0] + c[1]) / 2.0 for c in wide)
+    parts: list[_Candidate] = []
+    bounds = [cand.bbox.x0] + cuts + [cand.bbox.x1]
+    for lo, hi in zip(bounds, bounds[1:]):
+        rows: list[_Row] = []
+        for r in cand.rows:
+            segs = [s for s in r.segments if lo <= s.bbox.cx < hi]
+            if segs:
+                rows.append(_Row(segments=segs, y0=min(s.bbox.y0 for s in segs), y1=max(s.bbox.y1 for s in segs)))
+        if not rows:
+            continue
+        sub_channels = _channels(rows, lo, hi, size)
+        if len(sub_channels) < 1:
+            # Fewer than two columns on this side: not a table by itself.
+            continue
+        bbox = BBox.union_all(s.bbox for r in rows for s in r.segments)
+        parts.append(_Candidate(rows=rows, bbox=bbox))
+    return parts if len(parts) >= 2 else [cand]
+
+
+def _structural_rows(rows: list[_Row]) -> list[_Row]:
+    """Rows that define the column grid: those with (nearly) the most segments.
+
+    Grouped header rows ("Mean ± SD" spanning three data columns) have fewer,
+    wider segments and would erase the channels between the data columns.
+    """
+    counts = sorted(len(r.segments) for r in rows)
+    if not counts:
+        return rows
+    top = counts[-1]
+    # The typical count of the busiest third of rows.
+    busy = counts[max(0, len(counts) - max(3, len(counts) // 3)):]
+    typical = busy[len(busy) // 2]
+    keep = [r for r in rows if len(r.segments) >= max(2, int(0.8 * typical))]
+    return keep if len(keep) >= 2 else rows
+
+
+def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[float]]:
+    """Split segments at narrow word gaps that line up across most rows.
+
+    "9  SPS/09" is one segment when the gap is under two ems, yet a gap at the
+    same x in most rows is a column boundary. A gap of at least 0.8 em counts
+    as a vote; a position supported by half the multi-word rows, with no word
+    straddling it, splits every segment that crosses it.
+    """
+    votes: list[float] = []
+    rows_with_words = 0
+    for r in rows:
+        words = sorted((w for seg in r.segments for w in seg.words), key=lambda w: w.bbox.x0)
+        if len(words) < 2:
+            continue
+        rows_with_words += 1
+        for a, b in zip(words, words[1:]):
+            gap = b.bbox.x0 - a.bbox.x1
+            if gap >= 0.4 * size:
+                votes.append((a.bbox.x1 + b.bbox.x0) / 2.0)
+    if rows_with_words < 3 or not votes:
+        return rows, []
+    votes.sort()
+    cuts: list[float] = []
+    cluster: list[float] = []
+    need = max(3, 0.6 * rows_with_words)
+    all_words = [w for r in rows for seg in r.segments for w in seg.words]
+    for v in votes:
+        if cluster and v - cluster[0] > 6.0:
+            if len(cluster) >= need:
+                cuts.append(sum(cluster) / len(cluster))
+            cluster = []
+        cluster.append(v)
+    if cluster and len(cluster) >= need:
+        cuts.append(sum(cluster) / len(cluster))
+    cuts = [c for c in cuts if not any(w.bbox.x0 < c - 1 and w.bbox.x1 > c + 1 for w in all_words)]
+    if not cuts:
+        return rows, []
+    out: list[_Row] = []
+    for r in rows:
+        segs: list[Line] = []
+        for seg in r.segments:
+            crossing = [c for c in cuts if seg.bbox.x0 < c < seg.bbox.x1]
+            if not crossing:
+                segs.append(seg)
+                continue
+            groups: list[list] = [[]]
+            bounds = sorted(crossing)
+            for w in sorted(seg.words, key=lambda w: w.bbox.x0):
+                while len(groups) - 1 < len(bounds) and w.bbox.cx > bounds[len(groups) - 1]:
+                    groups.append([])
+                groups[-1].append(w)
+            for g in groups:
+                if g:
+                    segs.append(Line(words=g, bbox=BBox.union_all(w.bbox for w in g)))
+        segs.sort(key=lambda l: l.bbox.x0)
+        out.append(_Row(segments=segs, y0=r.y0, y1=r.y1))
+    return out, cuts
+
+
+def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bool = False) -> Table | None:
+    refined, cuts = _refine_segments(cand.rows, size)
+    cand = _Candidate(rows=refined, bbox=cand.bbox)
+    channels = _channels(_structural_rows(cand.rows), cand.bbox.x0, cand.bbox.x1, size)
+    # Voted cuts are column boundaries even when the gap is narrower than a channel.
+    for c in cuts:
+        if not any(a - 2 <= c <= b + 2 for a, b in channels):
+            channels.append((c - 0.5, c + 0.5))
+    channels.sort()
+    if not channels:
+        return None
+    bounds = [cand.bbox.x0 - 1.0] + [(c[0] + c[1]) / 2.0 for c in channels] + [cand.bbox.x1 + 1.0]
+    columns = list(zip(bounds, bounds[1:]))
+    n_cols = len(columns)
+    if n_cols < 2:
+        return None
+
+    grid_rows: list[list[str]] = []
+    for r in cand.rows:
+        cells = [""] * n_cols
+        for seg in r.segments:
+            ci = _column_of(seg.bbox, columns)
+            cells[ci] = (cells[ci] + " " + seg.text).strip() if cells[ci] else seg.text
+        grid_rows.append(cells)
+
+    grid_rows, grid_geom = _merge_wrapped_rows(grid_rows, cand.rows, size)
+    kept_columns = [c for c in range(n_cols) if any(row[c] for row in grid_rows)]
+    grid_rows = _drop_empty_columns(grid_rows)
+    n_cols = len(grid_rows[0]) if grid_rows else 0
+    if n_cols < 2:
+        return None
+    col_bounds = [columns[c] for c in kept_columns] if len(kept_columns) == n_cols else [(cand.bbox.x0, cand.bbox.x1)] * n_cols
+    n_header = _header_row_count(grid_rows)
+    spans: dict[tuple[int, int], int] = {}
+    row_geom = list(grid_geom)
+    if n_header >= 2 and len(kept_columns) == n_cols:
+        n_header0 = n_header
+        grid_rows, n_header, spans, kept_rows = _header_structure(grid_rows, grid_geom, n_header, col_bounds, size)
+        row_geom = [grid_geom[r] for r in kept_rows if r < len(grid_geom)] + list(grid_geom[n_header0:])
+        if len(row_geom) != len(grid_rows):
+            row_geom = []
+    elif n_header >= 2:
+        before = len(grid_rows)
+        grid_rows = _merge_header_rows(grid_rows)
+        n_header = 1
+        if len(grid_rows) != before:
+            row_geom = []
+
+    # Validation: tables are made of short cells, prose is not.
+    non_empty = [c for row in grid_rows for c in row if c]
+    if not non_empty:
+        return None
+    short = sum(1 for c in non_empty if len(c.split()) <= 4)
+    numeric = sum(1 for c in non_empty if _NUMERIC.match(c.strip()))
+    if not trusted:
+        # Character-weighted view: columns of body text flanked by margin line
+        # numbers look "half numeric" cell-wise but are overwhelmingly prose.
+        total_chars = sum(len(c) for c in non_empty) or 1
+        long_chars = sum(len(c) for c in non_empty if len(c.split()) > 6)
+        if long_chars > 0.5 * total_chars:
+            return None
+        # Justified prose split at wide word gaps: many words per row, nothing numeric.
+        words_per_row = sum(len(c.split()) for c in non_empty) / max(1, len(grid_rows))
+        if numeric < 0.1 * len(non_empty) and words_per_row >= 6:
+            return None
+    if strict:
+        if short < 0.6 * len(non_empty) and numeric < 0.3 * len(non_empty):
+            return None
+        if n_cols == 2 and numeric < 0.25 * len(non_empty) and short < 0.85 * len(non_empty):
+            return None
+    filled_rows = sum(1 for row in grid_rows if sum(1 for c in row if c) >= 2)
+    if filled_rows < 2:
+        return None
+
+    cells: list[TableCell] = []
+    covered = {(r, c + k) for (r, c), span in spans.items() for k in range(1, span)}
+    for ri, row in enumerate(grid_rows):
+        for ci, text in enumerate(row):
+            if (ri, ci) in covered:
+                continue
+            span = spans.get((ri, ci), 1)
+            x0, x1 = col_bounds[ci][0], col_bounds[min(n_cols - 1, ci + span - 1)][1]
+            if ri < len(row_geom):
+                y0, y1 = row_geom[ri].y0 - 0.3 * size, row_geom[ri].y1 + 0.3 * size
+            else:
+                y0, y1 = cand.bbox.y0, cand.bbox.y1
+            cells.append(TableCell(text=text, row=ri, col=ci, colspan=span, is_header=(ri < max(1, n_header)), bbox=BBox(x0, y0, x1, y1)))
+    # Stacked headings (a group heading over its sub-headings) need HTML: markdown
+    # tables have one heading row and no spanning cells.
+    merged = n_header >= 2 or any(span > 1 for span in spans.values())
+    return Table(n_rows=len(grid_rows), n_cols=n_cols, cells=cells, bbox=cand.bbox, has_merged=merged, provenance="textlayer-aligned")
+
+
+# A qualifier line under a heading: "(percent)", "[kg]", "%", "$", "mm", "ppm".
+_UNIT = re.compile(r"^(\(.*\)|\[.*\]|%|\$|[a-z%$/]{1,3})$")
+
+
+def _header_row_count(grid: list[list[str]]) -> int:
+    """How many leading rows are column headings.
+
+    The first body row is the first with numbers in it and a label in the
+    first column (when the table labels its rows), or a group label such as
+    "Topsoil" that stands alone in the first column.
+    """
+    if len(grid) < 2:
+        return 1
+    first_col_used = any(row[0] for row in grid[1:])
+    first_data = None
+
+    def numeric_cells(row):
+        return [c for c in row if c and _NUMERIC.match(c.strip()) and not re.fullmatch(r"\(\d{1,2}\)", c.strip())]
+
+    for i, row in enumerate(grid[:8]):
+        filled = [c for c in row if c]
+        if not filled:
+            continue
+        if any(len(c.split()) > 6 for c in filled):
+            first_data = i
+            break
+        numeric = numeric_cells(row)
+        if len(numeric) >= max(1, 0.4 * len(filled)):
+            # A numeric row with an empty label cell may still be a heading line
+            # ("2011" under "Aug 21,"), but only when what follows is not data:
+            # a run of numeric rows is the body, whatever the label column says.
+            nxt = next((r for r in grid[i + 1:] if any(r)), None)
+            next_is_data = nxt is None or len(numeric_cells(nxt)) >= max(1, 0.4 * sum(1 for c in nxt if c))
+            if row[0] or not first_col_used or i >= 4 or next_is_data:
+                first_data = i
+                break
+    if first_data is None:
+        return 1
+    # A label alone in the first column right above the data is a group label of
+    # the body ("Topsoil" over its rows), not part of the heading.
+    while first_data >= 2:
+        prev = grid[first_data - 1]
+        if prev[0] and sum(1 for c in prev if c) == 1:
+            first_data -= 1
+        else:
+            break
+    return max(1, first_data)
+
+
+def _header_structure(grid, geom, n_header, col_bounds, size):
+    """Recover the shape of a stacked heading: which heading cells span several
+    columns (a group heading centred over its sub-headings) and which lines are
+    fragments of one heading ("Aug 21," over "2011"). Unit rows such as
+    "(percent)" stay their own heading row.
+
+    Returns (grid, n_header, spans) with spans mapping (row, col) to a colspan.
+    """
+    n_cols = len(col_bounds)
+    header = [list(r) for r in grid[:n_header]]
+    spans: dict[tuple[int, int], int] = {}
+
+    def reach(segs, k):
+        lo, hi = col_bounds[k]
+        best = max((min(s.bbox.x1, hi) - max(s.bbox.x0, lo)) for s in segs)
+        return best / max(1.0, hi - lo)
+
+    def below(r, k):
+        return any(header[r2][k] for r2 in range(r + 1, n_header))
+
+    # Spanning cells, from the geometry of the heading text: a heading whose ink
+    # reaches into neighbouring columns that are empty on its own row, and that
+    # have sub-headings underneath, covers those columns.
+    for r in range(n_header):
+        row = header[r]
+        segs = geom[r].segments if r < len(geom) else []
+        extents: list[tuple[int, int, int]] = []
+        for c in range(n_cols):
+            if not row[c]:
+                continue
+            lo, hi = col_bounds[c]
+            mine = [s for s in segs if s.text.strip() and s.text.strip() in row[c] and min(s.bbox.x1, hi) - max(s.bbox.x0, lo) > 0]
+            if not mine:
+                continue
+            start = c
+            while start - 1 >= 0 and not row[start - 1] and reach(mine, start - 1) > 0.15 and below(r, start - 1):
+                start -= 1
+            end = c
+            while end + 1 < n_cols and not row[end + 1] and reach(mine, end + 1) > 0.15 and below(r, end + 1):
+                end += 1
+            extents.append((c, start, end))
+        for c, start, end in extents:
+            if start != c:
+                row[start], row[c] = row[c], ""
+        # A heading already covering several columns covers its whole group: it
+        # runs on over empty columns with sub-headings until the next heading.
+        starts = sorted(s for _, s, _ in extents)
+        for c, start, end in extents:
+            if end > start:
+                nxt = min((s for s in starts if s > start), default=n_cols)
+                while end + 1 < nxt and not row[end + 1] and below(r, end + 1):
+                    end += 1
+            if end > start:
+                spans[(r, start)] = end - start + 1
+
+    def span_of(r, c):
+        return spans.get((r, c), 1)
+
+    # Fragments: a heading cell continues the cell above it in the same column
+    # when both cover the same columns and nothing else sits between them. Unit
+    # rows ("(percent)") stay their own heading row.
+    for c in range(n_cols):
+        above = None
+        for r in range(n_header):
+            text = header[r][c]
+            if not text:
+                continue
+            unit = bool(_UNIT.match(text.strip()))
+            if above is not None and not unit and span_of(r, c) == span_of(above, c):
+                gap = geom[r].y0 - geom[above].y1 if r < len(geom) and above < len(geom) else 0.0
+                if gap <= 0.8 * size * (r - above):
+                    header[above][c] = (header[above][c] + " " + text).strip()
+                    header[r][c] = ""
+                    spans.pop((r, c), None)
+                    continue
+            above = None if unit else r
+    # A corner label on its own line ("Item" under a row of dates) belongs with
+    # the heading row above it when that row has no label of its own.
+    for r in range(1, n_header):
+        if header[r][0] and sum(1 for x in header[r] if x) == 1 and not _UNIT.match(header[r][0].strip()):
+            k = r
+            while k - 1 >= 0 and not header[k - 1][0]:
+                k -= 1
+            if k != r:
+                header[k][0], header[r][0] = header[r][0], ""
+    # Drop heading rows emptied by the merges, keeping the spans aligned.
+    kept = [r for r in range(n_header) if any(header[r])]
+    remap = {r: i for i, r in enumerate(kept)}
+    spans = {(remap[r], c): s for (r, c), s in spans.items() if r in remap}
+    header = [header[r] for r in kept]
+    return header + grid[n_header:], len(header), spans, kept
+
+
+def _drop_empty_columns(grid: list[list[str]]) -> list[list[str]]:
+    """Remove columns that hold no text at all (spurious whitespace channels)."""
+    if not grid:
+        return grid
+    n = len(grid[0])
+    keep = [c for c in range(n) if any(row[c] for row in grid)]
+    if len(keep) == n:
+        return grid
+    return [[row[c] for c in keep] for row in grid]
+
+
+def _merge_header_rows(grid: list[list[str]]) -> list[list[str]]:
+    """Join a two- or three-line column header into one header row.
+
+    Academic tables often stack the header ("(5)" over "Female"); readers treat
+    the stack as one heading, so the cells are joined column by column.
+    """
+    if len(grid) < 3:
+        return grid
+    first_data = None
+    for i, row in enumerate(grid):
+        filled = [c for c in row if c]
+        # Column labels such as "(1)" are headings, not data.
+        numeric = [c for c in filled if _NUMERIC.match(c.strip()) and not re.fullmatch(r"\(\d{1,2}\)", c.strip())]
+        if filled and len(numeric) >= max(1, 0.4 * len(filled)):
+            first_data = i
+            break
+    if first_data is None or first_data < 2 or first_data > 4:
+        return grid
+    header_rows = grid[:first_data]
+    # Only merge when the stacked rows look like headings (short cells), not data.
+    if any(len(c.split()) > 6 for row in header_rows for c in row if c):
+        return grid
+    merged = [" ".join(row[c] for row in header_rows if row[c]).strip() for c in range(len(grid[0]))]
+    return [merged] + grid[first_data:]
+
+
+def _column_of(b: BBox, columns: list[tuple[float, float]]) -> int:
+    best, best_ov = 0, -1.0
+    for i, (lo, hi) in enumerate(columns):
+        ov = min(b.x1, hi) - max(b.x0, lo)
+        if ov > best_ov:
+            best, best_ov = i, ov
+    return best
+
+
+_CONNECTORS = {"and", "or", "of", "the", "a", "an", "to", "for", "in", "on", "with", "by", "&", "at", "from", "as", "per", "not"}
+
+
+def _continues(prev_text: str, text: str) -> bool:
+    """Does `text` read as the continuation of the wrapped cell `prev_text`?"""
+    p, t = prev_text.strip(), text.strip()
+    if not p or not t:
+        return False
+    if t[:1].islower() or t[:1] in "([":
+        return True
+    if p[-1] in ",;:-–&/":
+        return True
+    return p.split()[-1].lower() in _CONNECTORS
+
+
+def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) -> tuple[list[list[str]], list[_Row]]:
+    """Fold continuation lines of a wrapped cell into the row above.
+
+    Returns the grid and the row geometry that goes with it (merged rows span
+    the lines they were folded from)."""
+    if not grid:
+        return grid, list(rows)
+    out: list[list[str]] = [grid[0]]
+    out_rows: list[_Row] = [rows[0]]
+    for cells, row in zip(grid[1:], rows[1:]):
+        prev = out[-1]
+        prev_row = out_rows[-1]
+        filled = [i for i, c in enumerate(cells) if c]
+        gap = row.y0 - prev_row.y1
+        tight = bool(filled) and gap <= 0.6 * size and all(prev[i] for i in filled) and not any(_NUMERIC.match(cells[i].strip()) for i in filled)
+        is_continuation = tight and (
+            (cells[0] == "" and all(cells[i][:1].islower() or len(cells[i].split()) > 2 for i in filled))
+            # Every column wraps ("US Citizens and" / "Permanent Residents" over
+            # "Please visit the" / "program website"): each filled cell must read
+            # as the continuation of the cell above it.
+            or all(_continues(prev[i], cells[i]) for i in filled)
+        )
+        if is_continuation:
+            for i in filled:
+                prev[i] = (prev[i] + " " + cells[i]).strip()
+            out_rows[-1] = _Row(segments=prev_row.segments + row.segments, y0=prev_row.y0, y1=row.y1)
+        else:
+            out.append(cells)
+            out_rows.append(row)
+    return out, out_rows

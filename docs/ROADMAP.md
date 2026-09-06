@@ -1,0 +1,50 @@
+# Roadmap
+
+Milestones are ordered; each one is measured before the next starts. "Score" means the olmOCR-bench overall score unless stated (see `docs/BENCHMARKS.md`).
+
+| # | Milestone | What it delivers | Done when |
+|---|---|---|---|
+| M0 | Foundations | Repo, docs, benchmark data on disk, the official scorer running locally | Scorer runs end to end on a trial output folder |
+| M1 | Honest baseline | Text-layer-only converter (no models): reading order, paragraphs, headings, simple tables | Full benchmark run; score recorded in BENCHMARKS.md |
+| M2 | Structure engine | Layout detection (columns, tables, figures, headers and footers), header and footer removal, heading levels, list detection, hyphenation repair | Beats Marker on multi-column, headers and footers, long-tiny-text, base |
+| M3 | Tables | Cell-accurate tables from text layer + ruling lines + a structure model; merged cells as HTML | Beats MinerU 2.5 on the tables section |
+| M4 | Formulas | LaTeX for display and inline maths (text-layer aware, model-assisted) | Competitive on the arxiv-math section |
+| M5 | Scanned pages | OCR path for pages without a usable text layer (open-source OCR or a small vision model, GPU rental if needed), with the same structure engine on top | Competitive on the old-scans sections |
+| M6 | Verification layer | Cross-check every model output against raw evidence; confidence score in front matter; nothing invented | Zero invented sentences on a hand-audited sample |
+| M7 | Beat them all | Overall score above every published tool on both public benchmarks | Recorded run, reproducible from this repo |
+| M7b | Marks that carry meaning | Ticks, crosses, bullets drawn as shapes, tiny images or symbol-font glyphs read into the text | Icon-based tables in the owner's insurance library convert with their meaning intact |
+| M8 | Product polish | CLI, batch mode writing an OKF bundle (`index.md`, `log.md`, `okf_version`), cost controls, docs for new users | A stranger can install and convert a folder of PDFs in 10 minutes |
+
+Milestones M2 to M6 loop: build, measure, look at failures, fix, repeat.
+
+## Status of the milestones (updated 2026-09-06, after run 37)
+
+| # | State | Evidence |
+|---|---|---|
+| M0 | done | Official scorer runs locally; 128 unit tests; quick regression check on 13 pages (`bench/quick_check.py`); the loop's helper tools in `bench/tools/` |
+| M1 | done | First full run 48.6 (about 43 once a scorer artefact is removed) |
+| M2 | in progress | Layout model fused; headers and footers 68.6 -> 96.3 (beats Marker's 86.6); multi-column 68.4 -> 72.7 (Marker 80.0), tiny text 79.6 (Marker 85.7), base 94.5 (Marker 99.3) not yet |
+| M3 | in progress | Tables 32.7 -> 70.3 (MinerU 2.5 publishes 84.9); 112 "no table found" checks on 24 pages, the rest wrong structure; tables that are pictures wait for the vision stage |
+| M4 | in progress | Formula rebuild from glyphs: 0 -> 86.8 on the section (run 37), above every published figure for that section in `docs/BENCHMARKS.md`; about 830 checks still fail, at diminishing returns per rule |
+| M5 | partial | Classical OCR for typewritten and printed scans, gated by a language-likeness test (confident non-English reads accepted since run 36); pages lying sideways, handwriting and old maths scans still empty; the vision stage (`truedoc/vision/`) is built and off by default, and one GPU experiment on 3 Sept scored 67.8 overall against 62.2 at the time |
+| M6 | partial | Provenance on every block; OCR gate and empty-output rule; hidden text kept out of the body and listed in the front matter (D011); model-read text marked `[^inferred]` (D015); a document-level confidence figure exists, no per-block one yet |
+| M7 | not started | Overall 65.6 against the best published 83.1; needs the vision stage in regular use and the remaining table and multi-column work |
+| M7b | partial | Ticks and crosses drawn as shapes, tiny images or symbol-font glyphs are read into the text (`truedoc/marks.py`, D013); icons whose meaning needs a legend wait for the vision stage or more examples from the owner |
+| M8 | not started | |
+## Product shape agreed with the owner (3 September 2026)
+
+Two axes: where TrueDoc runs, and where a model runs.
+
+| | TrueDoc on our website | TrueDoc from the repo, on the user's machine |
+| --- | --- | --- |
+| Mechanical reading (text layer, layout, CPU OCR) | free tier | free, any laptop |
+| Vision stage and "inferred" marks | paid, metered; we call the model endpoint | they point it at their own GPU, a rented endpoint, or our service |
+
+- **M9 - Vision stage (agreed).** One switch, "read unreadable pages with a model", off by default. Behind it one interface ("send this image and this question, get text back") with two providers: an open model (olmOCR 2 today; Chandra worth trying) on a GPU endpoint for transcription, and a frontier model API for understanding. The open model reads pages TrueDoc left empty; the frontier model is for "inferred" work. The endpoint address is the only setting; the rented instance is one such endpoint during development. Licences to check before a paid service: olmOCR 2 (Apache 2.0 [recalled]), Chandra (openrail, conditions).
+- **M10 - "Inferred, and say so" (agreed).** A model reads what the mechanical pass could not (icons, charts, unreadable regions, handwriting, unmapped fonts, formulas the rebuild cannot assemble); the result is written with a visible mark and listed in the front matter. The mark: a footnote tag such as `covered under contents[^inferred]` with one definition per document, and a page note for a whole page read by a model. Agreed by the owner on 3 September (evening) and built the same evening for pages, icons in table cells and figures, behind the `--vision-endpoint` switch (served model or `anthropic`), tested against stand-in models; the first real run awaits a served model or an API key. Off by default; paid tier on the website.
+- **M11 - Library test bed and held-out slice (agreed).** The owner's insurance library is the independent check for every new rule (never scored); a fifth of the benchmark pages is held out and never tuned on, reported separately. Disagreement mining: run the model over pages that have a text layer, diff against TrueDoc, cluster the differences into candidate rules; fit thresholds on model-labelled pages with a held-out set.
+- **M12 - Website (later).** Upload, queue, download around the converter; accounts, payment, storage and a retention policy; the owner sets up providers, domains and keys. Repo licence to decide (permissive vs one that restricts competing hosted services).
+
+- **M13 - Text inside pictures on digital pages (found 4 Sept).** Two multi-column benchmark pages keep real text (a sidebar box, a reference column) as an image on an otherwise digital page; a third draws a whole table as vector paths. The mechanical route is to OCR picture regions that look like text (many short horizontal ink runs) and keep the result as a text block marked `ocr-region`, with the same confidence and word-likeness gates as whole-page OCR; `_table_from_picture` in `layout/fuse.py` already does this for pictures the layout model calls tables. The vision stage covers the same pages when it is on. Built 4 Sept (03:00) as `pipeline._ocr_text_pictures` behind `--ocr-pictures` (off by default): gated on confidence 0.8, word-likeness 0.6, at least twelve words and three lines, pictures at least an inch on a side, no text of the page's own inside the box; what was read is listed under `truedoc.ocr_regions`. Left off: the sidebar picture turned out to be a map whose only text is its caption, which the page already carries (the "missing" sidebar sentences belonged to another page of the same document, matched by a hash prefix), so the engine read it correctly and the feature had nothing to add there; the one genuine case seen (an engineering drawing with its table as vector paths) has no picture to crop. It earns its place when a real text-bearing picture turns up in the library.
+
+- **M14 - A bounded look at Marker and MinerU (owner asked 4 Sept).** Per-section comparison against run 23 shows where their lead is mechanical and where it is a vision model: Marker (code Apache 2.0, Surya weights under a modified OpenRAIL-M with a revenue cap) reconstructs digital tables from the text layer on CPU as we do and scores 72.9 to our 69.5 on tables, decides per page whether the embedded text is usable (our garbled-Korean-page case), and orders blocks with a learned model (80.0 to our 70.8 on multi-column); everything else in its lead (formulas 83.8, old scans, baseline) comes from its vision models. MinerU 2.5.4 (AGPL at that version; 3.x moved to a custom Apache-based licence) gets its table score (84.9) from a 1.2B decoupled vision-language model, which is a candidate served model for our paid tier alongside olmOCR 2 and Chandra. Plan: one day reading, ideas not code: Marker table heuristics and its bad-text-layer test; MinerU VLM as a provider option. No dependency on either codebase.

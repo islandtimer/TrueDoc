@@ -1,0 +1,379 @@
+"""Small pictorial marks that carry meaning.
+
+A benefits table says which cover a line applies to with a tick under "Your
+home" and a cross under "Your contents"; a checklist puts a filled circle in
+front of each done item. Those marks are drawn as vector paths or tiny images,
+not as text, so a text-only reading loses them. This module finds such marks,
+works out what each one is by rendering it and comparing the ink with a few
+templates (and its colour), and hands back a character a reader understands:
+✓, ✗, ●, ○, ■, □. Marks it cannot read are still reported, as "unknown", so
+the caller can keep a placeholder rather than drop them silently.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+
+import pymupdf
+
+from truedoc.model import BBox, Page
+
+MARK_TEXT = {"tick": "✓", "cross": "✗", "dot": "●", "circle": "○", "square": "■", "box": "□", "unknown": "[icon]"}
+
+_GRID = 32          # template resolution (cells per side)
+_MIN_PT = 3.0       # smallest mark side, in points
+_MAX_PT = 30.0      # largest mark side, in points
+
+
+@dataclass
+class Mark:
+    bbox: BBox
+    kind: str          # tick, cross, dot, circle, square, box, unknown
+    score: float
+    colour: str = ""   # green, red, other
+
+    @property
+    def text(self) -> str:
+        return MARK_TEXT.get(self.kind, MARK_TEXT["unknown"])
+
+
+def find_marks(pdf_page: "pymupdf.Page", page: Page, M=None) -> list[Mark]:
+    """Marks on the page, in no particular order."""
+    marks: list[Mark] = []
+    for box in _candidates(pdf_page, page, M):
+        mark = classify_mark(pdf_page, box, M)
+        if mark is not None:
+            marks.append(mark)
+    return marks
+
+
+# ---------------------------------------------------------------- candidates
+
+def _rect(r, M) -> BBox:
+    rect = pymupdf.Rect(r)
+    if M is not None:
+        rect = rect * M
+    rect.normalize()
+    return BBox(float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1))
+
+
+def _small(b: BBox) -> bool:
+    if b.width < _MIN_PT or b.height < _MIN_PT or b.width > _MAX_PT or b.height > _MAX_PT:
+        return False
+    aspect = b.width / max(b.height, 0.1)
+    return 0.4 <= aspect <= 2.5
+
+
+def _candidates(pdf_page: "pymupdf.Page", page: Page, M) -> list[BBox]:
+    boxes: list[BBox] = []
+    try:
+        for p in pdf_page.get_drawings():
+            rect = p.get("rect")
+            if rect is None:
+                continue
+            b = _rect(rect, M)
+            # A stroke or fill so faint it is white on white is not a mark.
+            if p.get("fill") is None and p.get("color") is None:
+                continue
+            if _small(b):
+                boxes.append(b)
+    except Exception:
+        pass
+    try:
+        for info in pdf_page.get_image_info():
+            b = _rect(info["bbox"], M)
+            if _small(b):
+                boxes.append(b)
+    except Exception:
+        pass
+    if not boxes:
+        return []
+    # A ring drawn around a tick is a second path with a nested box: merge
+    # overlapping or nested candidates into one.
+    boxes.sort(key=lambda b: (b.y0, b.x0))
+    merged: list[BBox] = []
+    for b in boxes:
+        for i, m in enumerate(merged):
+            if b.x0 < m.x1 + 1 and b.x1 > m.x0 - 1 and b.y0 < m.y1 + 1 and b.y1 > m.y0 - 1:
+                merged[i] = m.union(b)
+                break
+        else:
+            merged.append(b)
+    # Marks stand apart from text: a glyph box overlapping the candidate rules it out
+    # (an underline or a box around a word is a drawing, not a mark).
+    out: list[BBox] = []
+    for b in merged:
+        if not _small(b):
+            continue
+        if any(c.bbox.overlap_fraction(b) > 0.3 for c in page.chars if not c.text.isspace() and c.bbox.y1 > b.y0 and c.bbox.y0 < b.y1):
+            continue
+        out.append(b)
+    return out
+
+
+# ------------------------------------------------------------- classification
+
+def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None) -> Mark | None:
+    """Render the box and say what is drawn in it."""
+    mask, colour = _ink(pdf_page, box, M)
+    if mask is None:
+        return None
+    n = len(mask)
+    filled = sum(sum(row) for row in mask)
+    if filled < 0.02 * n * n:
+        return None
+    ring = _has_ring(mask)
+    if ring:
+        core = _erase_ring(mask)
+        core_filled = sum(sum(row) for row in core)
+        if core_filled < 0.03 * n * n:
+            return Mark(bbox=box, kind="circle", score=0.9, colour=colour)
+        mask = core
+    kind, score = _best_template(mask)
+    if kind is None:
+        return Mark(bbox=box, kind="unknown", score=0.0, colour=colour)
+    return Mark(bbox=box, kind=kind, score=score, colour=colour)
+
+
+def _ink(pdf_page, box: BBox, M):
+    """A square boolean grid of "ink" pixels inside the box, and the ink colour."""
+    rect = pymupdf.Rect(box.x0, box.y0, box.x1, box.y1)
+    if M is not None:
+        rect = rect * ~pymupdf.Matrix(M)
+        rect.normalize()
+    pad = 0.08 * max(rect.width, rect.height)
+    rect = pymupdf.Rect(rect.x0 - pad, rect.y0 - pad, rect.x1 + pad, rect.y1 + pad)
+    zoom = _GRID / max(rect.width, rect.height, 1.0)
+    try:
+        pix = pdf_page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), clip=rect, alpha=False, colorspace=pymupdf.csRGB)
+    except Exception:
+        return None, ""
+    w, h, s = pix.width, pix.height, pix.samples
+    if w < 4 or h < 4:
+        return None, ""
+    px = [[(s[(y * w + x) * 3], s[(y * w + x) * 3 + 1], s[(y * w + x) * 3 + 2]) for x in range(w)] for y in range(h)]
+    border = [px[0][x] for x in range(w)] + [px[h - 1][x] for x in range(w)] + [px[y][0] for y in range(h)] + [px[y][w - 1] for y in range(h)]
+    bg = tuple(sorted(c[i] for c in border)[len(border) // 2] for i in range(3))
+    ink_px = []
+    n = _GRID
+    mask = [[0] * n for _ in range(n)]
+    for y in range(h):
+        for x in range(w):
+            r, g, b = px[y][x]
+            if abs(r - bg[0]) + abs(g - bg[1]) + abs(b - bg[2]) > 120:
+                gy = min(n - 1, int(y * n / h))
+                gx = min(n - 1, int(x * n / w))
+                mask[gy][gx] = 1
+                ink_px.append((r, g, b))
+    if not ink_px:
+        return mask, ""
+    r = sum(p[0] for p in ink_px) / len(ink_px)
+    g = sum(p[1] for p in ink_px) / len(ink_px)
+    b = sum(p[2] for p in ink_px) / len(ink_px)
+    if g > r + 40 and g > b + 20:
+        colour = "green"
+    elif r > g + 50 and r > b + 50:
+        colour = "red"
+    else:
+        colour = "other"
+    return mask, colour
+
+
+def _has_ring(mask) -> bool:
+    n = len(mask)
+    cx = cy = (n - 1) / 2.0
+    R = n / 2.0
+    bins = [0] * 24
+    for y in range(n):
+        for x in range(n):
+            if not mask[y][x]:
+                continue
+            d = math.hypot(x - cx, y - cy)
+            if 0.76 * R <= d <= 1.02 * R:
+                a = math.atan2(y - cy, x - cx)
+                bins[int((a + math.pi) / (2 * math.pi) * 24) % 24] = 1
+    return sum(bins) >= 18
+
+
+def _erase_ring(mask):
+    n = len(mask)
+    cx = cy = (n - 1) / 2.0
+    R = n / 2.0
+    out = [[0] * n for _ in range(n)]
+    for y in range(n):
+        for x in range(n):
+            if mask[y][x] and math.hypot(x - cx, y - cy) < 0.64 * R:
+                out[y][x] = 1
+    return out
+
+
+def _tight(mask):
+    """Re-sample the ink to fill the grid, so templates compare shapes, not sizes."""
+    n = len(mask)
+    ys = [y for y in range(n) if any(mask[y])]
+    xs = [x for x in range(n) if any(mask[y][x] for y in range(n))]
+    if not ys or not xs:
+        return mask
+    y0, y1, x0, x1 = ys[0], ys[-1], xs[0], xs[-1]
+    h, w = y1 - y0 + 1, x1 - x0 + 1
+    side = max(h, w)
+    # Keep the aspect ratio: centre the ink in a square before scaling.
+    oy = (side - h) // 2
+    ox = (side - w) // 2
+    out = [[0] * n for _ in range(n)]
+    for y in range(n):
+        for x in range(n):
+            sy = y0 + int(y * side / n) - oy
+            sx = x0 + int(x * side / n) - ox
+            if y0 <= sy <= y1 and x0 <= sx <= x1 and mask[sy][sx]:
+                out[y][x] = 1
+    return out
+
+
+def _template(kind: str):
+    n = _GRID
+    t = [[0] * n for _ in range(n)]
+
+    def seg(ax, ay, bx, by, thick):
+        for y in range(n):
+            for x in range(n):
+                px, py = (x + 0.5) / n, (y + 0.5) / n
+                vx, vy = bx - ax, by - ay
+                L2 = vx * vx + vy * vy or 1e-9
+                u = max(0.0, min(1.0, ((px - ax) * vx + (py - ay) * vy) / L2))
+                d = math.hypot(px - (ax + u * vx), py - (ay + u * vy))
+                if d <= thick:
+                    t[y][x] = 1
+
+    if kind == "tick":
+        seg(0.05, 0.55, 0.38, 0.92, 0.10)
+        seg(0.38, 0.92, 0.97, 0.08, 0.10)
+    elif kind == "cross":
+        seg(0.08, 0.08, 0.92, 0.92, 0.10)
+        seg(0.08, 0.92, 0.92, 0.08, 0.10)
+    elif kind == "dot":
+        for y in range(n):
+            for x in range(n):
+                if math.hypot((x + 0.5) / n - 0.5, (y + 0.5) / n - 0.5) <= 0.48:
+                    t[y][x] = 1
+    elif kind == "square":
+        for y in range(n):
+            for x in range(n):
+                if 0.06 <= (x + 0.5) / n <= 0.94 and 0.06 <= (y + 0.5) / n <= 0.94:
+                    t[y][x] = 1
+    elif kind == "box":
+        for y in range(n):
+            for x in range(n):
+                px, py = (x + 0.5) / n, (y + 0.5) / n
+                inside = 0.06 <= px <= 0.94 and 0.06 <= py <= 0.94
+                inner = 0.22 <= px <= 0.78 and 0.22 <= py <= 0.78
+                if inside and not inner:
+                    t[y][x] = 1
+    return t
+
+
+_TEMPLATES = {k: _template(k) for k in ("tick", "cross", "dot", "square", "box")}
+
+
+def _features(mask) -> dict:
+    """Where the ink lies: quarter shares, the share within a band along the
+    two diagonals, the share near the axes, and the fill."""
+    n = len(mask)
+    total = sum(sum(r) for r in mask) or 1
+    cx = cy = (n - 1) / 2.0
+    w = n / 6.0
+    q = {"ul": 0, "ur": 0, "ll": 0, "lr": 0}
+    diag = axis = 0
+    for y in range(n):
+        for x in range(n):
+            if not mask[y][x]:
+                continue
+            q[("u" if y < n // 2 else "l") + ("l" if x < n // 2 else "r")] += 1
+            if abs(x - y) <= w or abs(x + y - (n - 1)) <= w:
+                diag += 1
+            a = abs(math.degrees(math.atan2(y - cy, x - cx))) % 90.0
+            if a < 22.5 or a > 67.5:
+                axis += 1
+    return {
+        "total": total,
+        "fill": total / float(n * n),
+        "ul": q["ul"] / total, "ur": q["ur"] / total, "ll": q["ll"] / total, "lr": q["lr"] / total,
+        "diag": diag / total,
+        "axis": axis / total,
+    }
+
+
+def _drop_specks(mask, min_share: float = 0.06):
+    """Remove small islands of ink (what is left of a ring after erasing it)."""
+    n = len(mask)
+    seen = [[False] * n for _ in range(n)]
+    total = sum(sum(r) for r in mask) or 1
+    out = [[0] * n for _ in range(n)]
+    for y0 in range(n):
+        for x0 in range(n):
+            if not mask[y0][x0] or seen[y0][x0]:
+                continue
+            stack, blob = [(y0, x0)], []
+            seen[y0][x0] = True
+            while stack:
+                y, x = stack.pop()
+                blob.append((y, x))
+                for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)):
+                    yy, xx = y + dy, x + dx
+                    if 0 <= yy < n and 0 <= xx < n and mask[yy][xx] and not seen[yy][xx]:
+                        seen[yy][xx] = True
+                        stack.append((yy, xx))
+            if len(blob) >= min_share * total:
+                for y, x in blob:
+                    out[y][x] = 1
+    return out
+
+
+def _best_template(mask):
+    """Say what shape the ink is.
+
+    Ticks and crosses are told by where their ink lies (a tick leaves the
+    upper-left quarter empty and runs from lower-left to upper-right; a cross
+    fills all four quarters along the diagonals), which holds for any stroke
+    weight or font. Discs, squares and boxes are matched against templates
+    with checks that a glyph in a ring ("$") cannot pass.
+    """
+    mask = _tight(_drop_specks(mask))
+    n = len(mask)
+    f = _features(mask)
+    total = f["total"]
+    fill = f["fill"]
+    ul, ur, ll, lr = f["ul"], f["ur"], f["ll"], f["lr"]
+    thin = fill < 0.5
+    # A tick: (almost) nothing upper-left, the long arm upper-right, the short
+    # arm lower-left. What is left of a ring adds a little ink everywhere.
+    if thin and ul < 0.12 and ur >= 0.25 and ll >= 0.12 and lr <= 0.35 and ll + ur >= 0.6:
+        return "tick", round(1.0 - ul - max(0.0, lr - 0.1), 2)
+    # A cross: ink in all four quarters, lying along the two diagonals (a disc
+    # has about half its ink there, a fat cross nearly all of it).
+    if min(ul, ur, ll, lr) >= 0.12 and f["diag"] >= 0.75 and fill < 0.8:
+        return "cross", round(f["diag"], 2)
+    scores = {}
+    for kind, t in _TEMPLATES.items():
+        if kind in ("tick", "cross"):
+            continue
+        inter = union = 0
+        for y in range(n):
+            for x in range(n):
+                a, b = mask[y][x], t[y][x]
+                inter += a & b
+                union += a | b
+        scores[kind] = inter / union if union else 0.0
+    band = sum(mask[y][x] for y in range(n) for x in range(n) if min(x, y, n - 1 - x, n - 1 - y) < n // 4)
+    for kind, score in sorted(scores.items(), key=lambda kv: -kv[1]):
+        if score < 0.30:
+            break
+        if kind == "dot" and (fill < 0.55 or f["diag"] > 0.72):
+            continue                            # a glyph in a ring ("$"), or a fat cross
+        if kind == "square" and fill < 0.65:
+            continue
+        if kind == "box" and band < 0.85 * total:
+            continue                            # ink inside the frame: a pictogram
+        return kind, score
+    return None, max(scores.values(), default=0.0)

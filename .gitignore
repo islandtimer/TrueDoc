@@ -1,0 +1,34 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Benchmark datasets and model weights (downloaded, not committed)
+bench/data/
+models/
+*.onnx
+*.safetensors
+*.bin
+
+# Benchmark outputs
+bench/runs/
+bench/out/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets
+.env
+
+# GPU step working files (benchmark PDFs copied for shipping, model outputs)
+bench/gpu/pdfs/
+bench/gpu/out/

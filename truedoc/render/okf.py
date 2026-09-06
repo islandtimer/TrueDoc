@@ -1,0 +1,370 @@
+"""Render a Document to OKF markdown (YAML front matter + markdown body)."""
+
+from __future__ import annotations
+
+import datetime as _dt
+import re
+from dataclasses import dataclass
+
+import yaml
+
+from truedoc import __version__
+from truedoc.model import Block, BlockKind, Document, Line, Table
+
+_FUNCTION_WORDS = {"the", "of", "and", "or", "to", "in", "on", "a", "an", "by", "for", "at", "as", "is", "it"}
+
+# D015: text a model read from pixels or inferred carries a footnote tag; the
+# definition is written once, at the end of the body, only when something is tagged.
+INFERRED_TAG = "[^inferred]"
+INFERRED_DEFINITION = (
+    "[^inferred]: Marked text was read from the page image or inferred by a model, "
+    "not taken from the document's own text. See truedoc.inferred in the front matter."
+)
+
+
+@dataclass
+class RenderOptions:
+    frontmatter: bool = True
+    page_markers: bool = False
+    drop_headers_footers: bool = True
+
+
+def join_lines(lines: list[Line], texts: list[str] | None = None) -> str:
+    """Join physical lines into a paragraph, repairing end-of-line hyphenation."""
+    out = ""
+    for idx, line in enumerate(lines):
+        text = (texts[idx] if texts is not None and idx < len(texts) else line.text).strip()
+        if not text:
+            continue
+        if not out:
+            out = text
+            continue
+        # An inline formula broken across a line break: "$a =$" / "$b + c$" is one formula.
+        if out.endswith("$") and not out.endswith("$$") and text.startswith("$") and not text.startswith("$$") and len(out) >= 2 and out[-2] != "$":
+            out = out[:-1] + " " + text[1:]
+            continue
+        if out.endswith("-") and len(out) >= 2 and not out.endswith(" -"):
+            prev_word = out.rsplit(" ", 1)[-1][:-1]
+            next_word = text.split(" ", 1)[0]
+            if text[0].islower() and "-" not in prev_word and next_word.lower().strip(".,;:") not in _FUNCTION_WORDS:
+                out = out[:-1] + text
+                continue
+            if text[0].islower() and "-" not in prev_word:
+                out = out[:-1] + text
+                continue
+            out = out + text
+            continue
+        # A word broken over the line break with no hyphen at all (an OCR'd text
+        # layer that lost it: "typi" / "cally" on a multi-column page): join the
+        # fragments when neither is a word and together they make one.
+        if _broken_word(out.rsplit(" ", 1)[-1], text.split(" ", 1)[0]):
+            out = out + text
+            continue
+        out = out + " " + text
+    return out
+
+
+def _broken_word(a: str, b: str) -> bool:
+    a = a.lstrip("([\"'")
+    b_core = b.rstrip(".,;:!?)]\"'")
+    if not (a.isalpha() and a.islower() and b_core.isalpha() and b_core.islower()
+            and len(a) >= 2 and len(b_core) >= 2 and len(a) + len(b_core) >= 6):
+        return False
+    from truedoc.extract.textlayer import _dictionary
+
+    vocab = _dictionary()
+    if not vocab:
+        return False
+    return (a + b_core) in vocab and a not in vocab and b_core not in vocab
+
+
+def render_table(table: Table) -> str:
+    grid = table.grid()
+    if table.has_merged:
+        return _render_html_table(table, grid)
+    rows: list[list[str]] = []
+    for r in range(table.n_rows):
+        row = []
+        for c in range(table.n_cols):
+            cell = grid[r][c]
+            row.append(_md_cell(cell.text if cell else ""))
+        rows.append(row)
+    if not rows:
+        return ""
+    lines = ["| " + " | ".join(rows[0]) + " |", "|" + "|".join([" --- "] * table.n_cols) + "|"]
+    for row in rows[1:]:
+        lines.append("| " + " | ".join(row) + " |")
+    return "\n".join(lines)
+
+
+def _md_cell(text: str) -> str:
+    return text.replace("|", "\\|").replace("\n", " ").strip()
+
+
+def _render_html_table(table: Table, grid) -> str:
+    out = ["<table>"]
+    emitted: set[int] = set()
+    for r in range(table.n_rows):
+        out.append("<tr>")
+        for c in range(table.n_cols):
+            cell = grid[r][c]
+            if cell is None:
+                out.append("<td></td>")
+                continue
+            if id(cell) in emitted:
+                continue
+            emitted.add(id(cell))
+            attrs = ""
+            if cell.rowspan > 1:
+                attrs += f' rowspan="{cell.rowspan}"'
+            if cell.colspan > 1:
+                attrs += f' colspan="{cell.colspan}"'
+            tag = "th" if cell.is_header else "td"
+            out.append(f"<{tag}{attrs}>{_html_escape(cell.text)}</{tag}>")
+        out.append("</tr>")
+    out.append("</table>")
+    return "\n".join(out)
+
+
+def _html_escape(s: str) -> str:
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def render_block(block: Block) -> str:
+    k = block.kind
+    if k == BlockKind.TABLE and block.table is not None:
+        return render_table(block.table)
+    if k == BlockKind.FIGURE and not block.lines and block.text_override is None:
+        # A figure has no text of its own; it renders as an image placeholder, with a
+        # model's description as alt text when the vision stage supplied one (D015).
+        desc = block.meta.get("inferred_text")
+        if desc:
+            return "![%s](figure)%s" % (_alt_text(desc), INFERRED_TAG)
+        return "![](figure)"
+    if block.text_override is not None:
+        text = block.text_override.strip()
+    elif block.meta.get("preserve_lines"):
+        # An algorithm listing: one statement per line, hard line breaks kept.
+        texts = block.meta.get("line_texts") or [l.text for l in block.lines]
+        text = "  \n".join(t.strip() for t in texts if t.strip())
+    else:
+        text = join_lines(block.lines, block.meta.get("line_texts"))
+    if not text:
+        return ""
+    if k == BlockKind.HEADING or k == BlockKind.TITLE:
+        level = max(1, min(6, block.level or 2))
+        return "#" * level + " " + re.sub(r"\s+", " ", text)
+    if k == BlockKind.LIST_ITEM:
+        return _render_list_item(text)
+    if k == BlockKind.FIGURE:
+        desc = block.meta.get("inferred_text")
+        if desc:
+            # D015: a model's description of the figure is its alt text, tagged as inferred.
+            return "![%s](figure)%s" % (_alt_text(desc), INFERRED_TAG)
+        return "![](figure)"
+    if k == BlockKind.FORMULA:
+        return text
+    if k == BlockKind.FOOTNOTE:
+        if block.meta.get("footnotes"):
+            return "\n\n".join("[^%s]: %s" % (key, note) for key, note in block.meta["footnotes"])
+        return text
+    return text
+
+
+def _alt_text(text: str) -> str:
+    """Alt text may not hold brackets or line breaks."""
+    return re.sub(r"\s+", " ", text).replace("[", "(").replace("]", ")").strip()
+
+
+def _render_list_item(text: str) -> str:
+    m = re.match(r"^\s*([\u2022\u25e6\u25aa\u25cf\u2023\u2043\u25a0\u25a1\u00b7\-\u2013\u2014\*])\s*(.*)$", text, re.S)
+    if m:
+        return "- " + m.group(2).strip()
+    m = re.match(r"^\s*\(?(\d{1,3})[.)]\s*(.*)$", text, re.S)
+    if m:
+        return f"{m.group(1)}. " + m.group(2).strip()
+    # Letter and roman-numeral markers ("(a)", "iv.") are kept verbatim: they carry meaning.
+    return text.strip()
+
+
+_DANGLING_END = r"(?:=|\+|-|<|>|\\leq|\\geq|\\le|\\ge|\\neq|\\to|\\rightarrow|\\times|\\cdot|\\pm|\\approx|\\sim|\\subset|\\in)"
+_PLAIN_TERM = r"(?:[0-9]+(?:\.[0-9]+)?%?|[-+=<>/*×·]|\([0-9,\s]+\))"
+_DANGLING_FORMULA = re.compile(r"(" + _DANGLING_END + r")\$[ \n]+(" + _PLAIN_TERM + r"(?:[ \n]+" + _PLAIN_TERM + r")*)(?=[.,;:]?(?:\s|$))")
+_SPLIT_FORMULA = re.compile(r"(" + _DANGLING_END + r")\$[ \n]+\$(?!\$)")
+
+
+def _join_dangling_formulas(body: str) -> str:
+    """Pull the arithmetic that follows a line break back into its formula.
+
+    A formula broken across two lines ends the first with a relation or an
+    operator ("maj(σ) =") and continues on the next with plain numbers ("2 + 1
+    + 1 + 1 = 5"), which the line-by-line detector leaves as prose because
+    numbers alone are not maths. A formula that ends in a dangling relation
+    or operator has no such reading: the numbers belong to it.
+    """
+    def repl(m: re.Match) -> str:
+        arithmetic = m.group(2).replace(" ", "").replace("\n", "").replace("×", r"\times ").replace("·", r"\cdot ")
+        return m.group(1) + arithmetic + "$"
+    body = _DANGLING_FORMULA.sub(repl, body)
+    # Two inline formulas split by a line break, the first ending in a dangling
+    # relation ("$\sigma(x)=$" then "$[\sigma(x_1),...]^T$"), are one formula.
+    body = _SPLIT_FORMULA.sub(r"\1 ", body)
+    return body
+
+
+def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
+    opts = opts or RenderOptions()
+    parts: list[str] = []
+    prev_block: Block | None = None     # the last text block rendered, for paragraph joins
+    prev_index = -1                     # its index in `parts`
+    figures_since = True                # only figure placeholders rendered since it
+    for page in doc.pages:
+        if opts.page_markers:
+            parts.append(f"<!-- page: {page.number} -->")
+            figures_since = False
+        if page.meta.get("vision_model"):
+            # D015: a page read by a model says so where the reader will see it.
+            parts.append(f"> This page was read from its image by a model ({page.meta['vision_model']}); the PDF holds no text for it.{INFERRED_TAG}")
+            prev_block = None
+        for block in page.ordered_blocks():
+            if opts.drop_headers_footers and block.kind in (BlockKind.HEADER, BlockKind.FOOTER, BlockKind.PAGE_NUMBER):
+                continue
+            text = render_block(block)
+            if not text:
+                continue
+            # Join a paragraph continued across a column or page break. A figure
+            # sitting at the foot of the column does not break the paragraph: its
+            # placeholder stays where it was, after the joined paragraph.
+            if (
+                prev_block is not None
+                and figures_since
+                and 0 <= prev_index < len(parts)
+                and block.kind == BlockKind.TEXT
+                and prev_block.kind == BlockKind.TEXT
+                and _continues(parts[prev_index], text)
+                and (prev_block.meta.get("page") != page.number or _column_break(prev_block, block))
+            ):
+                parts[prev_index] = _join_paragraphs(parts[prev_index], text)
+            else:
+                parts.append(text)
+                if block.kind == BlockKind.FIGURE:
+                    block.meta["page"] = page.number
+                    continue  # a figure neither starts nor ends a paragraph
+                prev_index = len(parts) - 1
+                figures_since = True
+            block.meta["page"] = page.number
+            prev_block = block
+    if any(p and INFERRED_TAG in p for p in parts):
+        parts.append(INFERRED_DEFINITION)
+    body = "\n\n".join(p for p in parts if p is not None).rstrip()
+    # Raw glyph codes of maths-extension fonts (control and private-use characters)
+    # that no formula claimed must not leak into the text.
+    body = _RAW_GLYPH_CODES.sub("", body)
+    # The ellipsis character is written as three dots: that is how readers type
+    # it when they search or quote, and the meaning is the same.
+    body = body.replace("…", "...")
+    body = _join_dangling_formulas(body)
+    # A page with nothing readable yields an empty file, not a lone newline:
+    # fuzzy matchers treat a one-character document as matching anything.
+    if not body:
+        return ""
+    if opts.frontmatter:
+        return render_frontmatter(doc, body) + "\n\n" + body + "\n"
+    return body + "\n"
+
+
+_RAW_GLYPH_CODES = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-]")
+
+
+def _column_break(prev: Block, nxt: Block) -> bool:
+    """True when `nxt` starts a new column or page region rather than following `prev` vertically."""
+    if nxt.bbox.y0 >= prev.bbox.y1 - 2.0 and nxt.bbox.x_overlap(prev.bbox) > 0:
+        return False  # directly below: a new paragraph, not a continuation
+    return nxt.bbox.y0 < prev.bbox.y0 + 2.0 and nxt.bbox.x0 > prev.bbox.x0 + 0.5 * prev.bbox.width
+
+
+def _continues(prev: str, nxt: str) -> bool:
+    if not prev or not nxt:
+        return False
+    if prev.startswith("#") or prev.startswith("|") or prev.startswith("<table"):
+        return False
+    last = prev.rstrip()[-1]
+    return last not in ".!?:\"')]" and (nxt[0].islower() or last == "-")
+
+
+def _join_paragraphs(prev: str, nxt: str) -> str:
+    if prev.endswith("-") and nxt[0].islower():
+        return prev[:-1] + nxt
+    return prev + " " + nxt
+
+
+def _description_from(body: str) -> str | None:
+    """A one-sentence summary for previews (OKF's `description`): the first sentence
+    of the first real paragraph. Short lead-ins ("certifica que:") are skipped when a
+    fuller paragraph follows."""
+    fallback: str | None = None
+    for para in body.split("\n\n"):
+        p = para.strip()
+        if not p or p.startswith(("#", "|", "!", "$$", "- ", "* ", "<!--")):
+            continue
+        p = re.sub(r"\s+", " ", p)
+        m = re.match(r"(.+?[.!?])(\s|$)", p)
+        sentence = m.group(1) if m else p
+        if len(sentence) > 200:
+            sentence = sentence[:197].rstrip() + "..."
+        if len(sentence.split()) >= 6 and not sentence.endswith(":"):
+            return sentence
+        fallback = fallback or sentence
+    return fallback
+
+
+def _title_from(body: str) -> str | None:
+    """The first heading of the body, when the PDF carries no title of its own."""
+    for line in body.split("\n"):
+        if line.startswith("#"):
+            title = line.lstrip("#").strip()
+            if title:
+                return title[:200]
+    return None
+
+
+def render_frontmatter(doc: Document, body: str = "") -> str:
+    """YAML front matter following the Open Knowledge Format (OKF) v0.2.
+
+    OKF requires `type`; recommends `title`, `description`, `resource`, `tags`;
+    records production under `generated` and provenance under `sources`; a
+    conversion nobody has reviewed is `status: draft`. TrueDoc's own details
+    (checksum, page count, confidence, OCR pages, hidden text, warnings) live
+    under the `truedoc` key, which the format allows as an extension.
+    """
+    now = _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat()
+    resource = doc.metadata.get("resource") or doc.metadata.get("file_name", "")
+    source = {"resource": resource, "title": doc.metadata.get("file_name", "")}
+    if doc.metadata.get("last_modified"):
+        source["last_modified"] = doc.metadata["last_modified"]
+    truedoc = {
+        "version": __version__,
+        "sha256": doc.sha256,
+        "pages": len(doc.pages),
+        "confidence": doc.metadata.get("confidence", None),
+        "language": doc.metadata.get("language") or None,
+        "pages_with_ocr": doc.metadata.get("pages_with_ocr", []),
+        "ocr_regions": doc.metadata.get("ocr_regions") or None,
+        "pages_with_model": doc.metadata.get("pages_with_model") or None,
+        "inferred": doc.metadata.get("inferred") or None,
+        "hidden_text": doc.metadata.get("hidden_text") or None,
+        "warnings": list(doc.warnings),
+    }
+    fm = {
+        "type": doc.metadata.get("type") or "Document",
+        "title": doc.metadata.get("title") or _title_from(body),
+        "description": _description_from(body),
+        "resource": resource,
+        "tags": doc.metadata.get("tags") or None,
+        "generated": {"by": f"truedoc/{__version__}", "at": now},
+        "status": "draft",
+        "sources": [source],
+        "truedoc": {k: v for k, v in truedoc.items() if v is not None},
+    }
+    fm = {k: v for k, v in fm.items() if v is not None}
+    return "---\n" + yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).rstrip() + "\n---"
