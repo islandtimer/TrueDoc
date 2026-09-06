@@ -27,6 +27,7 @@ OKF allows any extra keys, so everything specific to TrueDoc sits under one key,
 | `confidence` | 0..1, TrueDoc's own estimate of meaning fidelity |
 | `language` | best-effort, when known |
 | `pages_with_ocr` | page numbers whose text came from image OCR (no usable text layer) |
+| `turned_pages` | pages that lay on their side (a landscape scan of a portrait page, a table printed sideways) and were turned upright before reading: `page` and `turn` in degrees clockwise; omitted when there are none |
 | `hidden_text` | text a reader cannot see, kept out of the body (page, reason, text); omitted when there is none |
 | `warnings` | human-readable notes about anything uncertain |
 

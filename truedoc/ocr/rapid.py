@@ -89,12 +89,27 @@ def _get_engine():
 
 def ocr_page(pdf_page: "pymupdf.Page") -> tuple[list[Line], float]:
     """Run OCR on a page. Returns (lines in PDF points, mean confidence)."""
+    lines, conf, _ = ocr_page_turn(pdf_page, want_turn=False)
+    return lines, conf
+
+
+def ocr_page_turn(pdf_page: "pymupdf.Page", want_turn: bool = True) -> tuple[list[Line], float, int]:
+    """Run OCR on a page. Returns (lines in PDF points, mean confidence, turn).
+
+    `turn` is 0 when the page reads upright, else the rotation in degrees (90 or
+    270, PyMuPDF's clockwise-positive convention) that would make it upright: a
+    landscape scan of a portrait page, or a wide table printed sideways on a
+    portrait page. The caller turns the page and reads it again (see
+    `_sideways_turn`); a sideways read is not worth keeping, because every line
+    of it would be filed as a rotated stamp.
+    """
     rect = pdf_page.rect
     long_side = max(rect.width, rect.height)
     scale = min(300.0 / 72.0, _MAX_SIDE / max(1.0, long_side))
     pix = pdf_page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), colorspace=pymupdf.csRGB, alpha=False)
     img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, 3)
-    result, _ = _get_engine()(img)
+    engine = _get_engine()
+    result, _ = engine(img)
     lines: list[Line] = []
     scores: list[float] = []
     for item in result or []:
@@ -112,7 +127,60 @@ def ocr_page(pdf_page: "pymupdf.Page") -> tuple[list[Line], float]:
         lines.append(Line(words=words, bbox=bbox, rotated=bbox.height > 2.5 * bbox.width and len(text) > 3))
         scores.append(score)
     conf = sum(scores) / len(scores) if scores else 0.0
-    return lines, conf
+    turn = _sideways_turn(engine, img, result) if want_turn and lines and conf >= _TURN_MIN_CONFIDENCE else 0
+    return lines, conf, turn
+
+
+_TURN_MIN_CONFIDENCE = 0.6   # the sideways read must be a read, not noise, before a page is turned
+_TURN_MIN_LINES = 3
+_TURN_SHARE = 0.6            # share of the read characters that must sit in tall boxes
+
+
+def _box_sides(box) -> tuple[float, float]:
+    """Width and height of a detector quadrilateral, measured the way the engine does."""
+    pts = np.asarray(box, dtype=np.float32)
+    w = max(np.linalg.norm(pts[0] - pts[1]), np.linalg.norm(pts[2] - pts[3]))
+    h = max(np.linalg.norm(pts[0] - pts[3]), np.linalg.norm(pts[1] - pts[2]))
+    return float(w), float(h)
+
+
+def _sideways_turn(engine, img: np.ndarray, result) -> int:
+    """0 when a page reads upright; else the turn (90 or 270 degrees, clockwise
+    positive) that makes it upright.
+
+    On a page lying on its side most text boxes are taller than wide. Which way
+    the text runs comes from the engine's own angle classifier: before reading
+    a tall box the engine turns its crop a quarter turn anticlockwise, and the
+    classifier then says whether that crop is upright ("0") or upside down
+    ("180"). Upright means the text ran down the page, so the page turns
+    anticlockwise (270); upside down means the text ran up the page, so the
+    page turns clockwise (90). Verified on a landscape scan of a Spanish decree
+    (tables/0684e33b..., 6 Sept): 62 of 74 boxes read "0", and the 270 turn
+    reads the page in order, letterhead first.
+    """
+    tall = []
+    n_tall = n_all = 0
+    for box, text, score in result or []:
+        text = str(text).strip()
+        if len(text) < 3 or float(score) < _MIN_SCORE:
+            continue
+        w, h = _box_sides(box)
+        n_all += len(text)
+        if h >= 1.5 * w:   # the engine's own threshold for turning a crop
+            tall.append(np.asarray(box, dtype=np.float32))
+            n_tall += len(text)
+    if len(tall) < _TURN_MIN_LINES or n_tall < _TURN_SHARE * max(1, n_all):
+        return 0
+    try:
+        crops = engine.get_crop_img_list(img, tall)
+        _, labels, _ = engine.text_cls(crops)
+    except Exception:
+        return 0
+    up = sum(1 for label, score in labels if "180" in str(label) and float(score) > 0.9)
+    down = sum(1 for label, score in labels if "180" not in str(label) and float(score) > 0.9)
+    if up + down < _TURN_MIN_LINES:
+        return 0
+    return 90 if up > down else 270
 
 
 _NUMBERISH = re.compile(r"[-+±]?[\d.,]+%?|[\d.,]+[-–][\d.,]+|\d+(st|nd|rd|th)")
@@ -181,6 +249,14 @@ def _split_words(text: str, bbox: BBox, score: float) -> list[Word]:
 
 _MIN_PAGE_CONFIDENCE = 0.75
 _MIN_WORDLIKE = 0.5
+# The confidence a page must reach for the non-English and numeric rescues below.
+# 0.85 until 6 Sept; lowered to 0.80 on the evidence of an OCR census of the 182
+# image-only benchmark pages: in the 0.80-0.85 band 16 of 18 pages were already
+# accepted as English-word-like text and the two rejected ones score under 0.65 on
+# language-likeness, so they stay rejected; every handwriting page sits under 0.75.
+# The change admits a turned Spanish decree (0.84) and a scanned financial table
+# (0.82, numeric share 0.45), both real text.
+_RESCUE_MIN_CONFIDENCE = 0.8
 
 
 _WORDS: Optional[set] = None
@@ -250,15 +326,23 @@ def _looks_like_language(lines: list[Line]) -> float:
     return good / len(tokens)
 
 
-def apply_ocr(page: Page, pdf_page: "pymupdf.Page") -> bool:
+def apply_ocr(page: Page, pdf_page: "pymupdf.Page", allow_turn: bool = True) -> bool:
     """Replace the page's (missing) text evidence with OCR output. Returns True if text was found.
 
     Handwriting and very poor scans produce confident-looking noise from a
     classical OCR engine; a page is only accepted when the engine is confident
     and most tokens look like words. Otherwise the page is left empty rather
     than filled with invented text.
+
+    A page that lies on its side is not read here: `page.meta["ocr_turn"]` is
+    set to the turn that makes it upright and False is returned, so the caller
+    can turn the page (`pipeline._turn_page`) and call again with
+    `allow_turn=False`.
     """
-    lines, conf = ocr_page(pdf_page)
+    lines, conf, turn = ocr_page_turn(pdf_page, want_turn=allow_turn)
+    if turn:
+        page.meta["ocr_turn"] = turn
+        return False
     if not lines:
         return False
     wordlike = _looks_like_text(lines)
@@ -274,7 +358,7 @@ def apply_ocr(page: Page, pdf_page: "pymupdf.Page") -> bool:
     # word list says: 89 benchmark pages came out empty for this (5 Sept).
     language_like = _looks_like_language(lines)
     page.meta["ocr_languagelike"] = round(language_like, 2)
-    rescued = conf >= 0.85 and (numeric_share >= 0.3 or language_like >= 0.7)
+    rescued = conf >= _RESCUE_MIN_CONFIDENCE and (numeric_share >= 0.3 or language_like >= 0.7)
     if conf < _MIN_PAGE_CONFIDENCE or (wordlike < _MIN_WORDLIKE and not rescued):
         page.meta["ocr_rejected"] = True
         return False

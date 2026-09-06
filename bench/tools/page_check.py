@@ -70,7 +70,9 @@ def main():
         pdf = pdfs[0]
         subset = os.path.basename(os.path.dirname(pdf))
         out = os.path.join(OUT, "pf_%s.md" % s.replace("/", "_"))
-        r = subprocess.run([PY, "-m", "truedoc.cli", "convert", pdf, "--no-frontmatter", "-o", out],
+        # PAGE_CHECK_ARGS adds converter flags, e.g. PAGE_CHECK_ARGS=--ocr-pictures to try an option that is off by default.
+        extra = os.environ.get("PAGE_CHECK_ARGS", "").split()
+        r = subprocess.run([PY, "-m", "truedoc.cli", "convert", pdf, "--no-frontmatter", "-o", out] + extra,
                            cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace")
         if r.returncode != 0:
             print(s, "convert failed:", r.stderr[-300:])

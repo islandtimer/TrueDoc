@@ -88,9 +88,9 @@ class AnthropicVision:
         _, text = parse_response(answer)
         return text if text.strip() else None
 
-    def read_region(self, pdf_path: str, page_number: int, bbox: tuple[float, float, float, float], kind: str) -> str | None:
+    def read_region(self, pdf_path: str, page_number: int, bbox: tuple[float, float, float, float], kind: str, turn: int = 0) -> str | None:
         try:
-            image_b64 = render_region_png_base64(pdf_path, page_number, bbox, kind)
+            image_b64 = render_region_png_base64(pdf_path, page_number, bbox, kind, turn=turn)
         except Exception as exc:
             log.warning("vision: could not render a %s on page %s of %s: %s", kind, page_number, pdf_path, exc)
             return None

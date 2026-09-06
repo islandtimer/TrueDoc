@@ -10,13 +10,16 @@ exact; only the structure is inferred.
 
 from __future__ import annotations
 
+import collections
 import re
 from dataclasses import dataclass, field
 
 from truedoc.model import BBox, Block, BlockKind, Line, Page, Table, TableCell
 
 _NUMERIC = re.compile(
-    r"^[\(\[]?[-+−–<>≤≥↑↓~≈]?\s*[\d.,]+\s*(?:[±+\-−]\s*[\d.,]+)?\s*%?[\)\]]?[*†‡a-z]{0,2}$|^[-–—]$|^n/?a$|^n\.?s\.?$|^\d+[\d.,]*\s*[×x]\s*10[-−]?\d*$",
+    r"^[\(\[]?[-+−–<>≤≥↑↓~≈]?\s*[\d.,]+\s*(?:[±+\-−]\s*[\d.,]+)?\s*%?[\)\]]?[*†‡a-z]{0,2}$|^[-–—]$|^n/?a$|^n\.?s\.?$|^\d+[\d.,]*\s*[×x]\s*10[-−]?\d*$"
+    # a value with its error or count in parentheses: "−.25 (.23)", "7.90 (3.07)", "12 (4.5%)"
+    r"|^[-+−]?[\d.,]+\s*%?\s*\([-+−]?[\d.,]+\s*%?\)[*†‡a-z]{0,2}$",
     re.IGNORECASE,
 )
 
@@ -64,12 +67,14 @@ def find_aligned_tables(page: Page, lines: list[Line], body_size: float) -> tupl
     return tables, remaining
 
 
-def table_from_lines(lines: list[Line], size: float, trusted: bool = False) -> Table | None:
+def table_from_lines(lines: list[Line], size: float, trusted: bool = False, extent: BBox | None = None) -> Table | None:
     """Build a table from the lines inside a known table region (e.g. from a layout model).
 
     `trusted` means the region came from a confident detector: the prose
     rejections (meant for paragraphs mistaken for word grids) are skipped, so a
-    table of long wrapped cells survives.
+    table of long wrapped cells survives. `extent` is the region's own box: the
+    column channels are looked for across it, so a narrow last column is not
+    lost when the lines happen to stop short of the box's edge.
     """
     lines = [l for l in lines if not l.rotated]
     if len(lines) < 3:
@@ -78,6 +83,8 @@ def table_from_lines(lines: list[Line], size: float, trusted: bool = False) -> T
     if len(rows) < 2:
         return None
     bbox = BBox.union_all(seg.bbox for r in rows for seg in r.segments)
+    if extent is not None:
+        bbox = BBox(min(bbox.x0, extent.x0), bbox.y0, max(bbox.x1, extent.x1), bbox.y1)
     cand = _Candidate(rows=rows, bbox=bbox)
     return _build_table(cand, size or 10.0, strict=False, trusted=trusted)
 
@@ -108,18 +115,67 @@ def _is_multicell(row: _Row, size: float) -> bool:
     return False
 
 
+_CAPTION_LIKE = re.compile(r"^\s*(table|tab\.|fig\.?|figure|exhibit|chart|scheme|appendix|source|note)s?\b", re.I)
+
+
+def _run_width(run: list[_Row]) -> float:
+    multi = [r for r in run if len(r.segments) >= 2]
+    if not multi:
+        return 0.0
+    return max(s.bbox.x1 for r in multi for s in r.segments) - min(s.bbox.x0 for r in multi for s in r.segments)
+
+
+def _heading_fragment(row: _Row, run: list[_Row], size: float) -> bool:
+    """A lone narrow line just above a table's first multi-cell row: the upper
+    line of a stacked column heading ("Number of Agreement" over "(ranked 3 or
+    4)"), not a caption running across the table."""
+    if len(row.segments) != 1 or len(run) < 2:
+        return False
+    seg = row.segments[0]
+    text = seg.text.strip()
+    width = _run_width(run)
+    # A title over the table ("t Distribution" centred over three headings, "In
+    # relationship to others I feel:") sits over words of the first row; a
+    # heading fragment sits over an empty stretch of it.
+    below = [w for s in run[1].segments for w in s.words if w.bbox.x0 < seg.bbox.x1 and w.bbox.x1 > seg.bbox.x0]
+    return (width > 0 and seg.bbox.width < 0.5 * width and not _CAPTION_LIKE.match(text)
+            and not below and not text.endswith((":", ".", ";", "?", "!")) and len(text.split()) <= 6
+            and -0.6 * size <= run[1].y0 - row.y1 <= 1.5 * size)
+
+
+def _wrapped_label(row: _Row, run: list[_Row], size: float) -> bool:
+    """A lone lowercase line at the table's left edge just under its last row:
+    the second line of the last row's label ("Slaapkwaliteit tijdens" /
+    "consignatiediensten"), not a note under the table."""
+    if len(row.segments) != 1 or len(run) < 2:
+        return False
+    seg = row.segments[0]
+    width = _run_width(run)
+    multi = [r for r in run if len(r.segments) >= 2]
+    left = min(s.bbox.x0 for r in multi for s in r.segments) if multi else seg.bbox.x0
+    text = seg.text.strip()
+    return (width > 0 and seg.bbox.width < 0.5 * width and abs(seg.bbox.x0 - left) <= size
+            and text[:1].islower() and -0.6 * size <= row.y0 - run[-2].y1 <= 1.2 * size)
+
+
 def _find_runs(rows: list[_Row], size: float) -> list[_Candidate]:
     """Group vertically adjacent rows into candidate table regions."""
     candidates: list[_Candidate] = []
     run: list[_Row] = []
     singles_in_a_row = 0
+    pending: _Row | None = None   # the lone row just before a run: a heading fragment, perhaps
 
     def close():
         nonlocal run, singles_in_a_row
-        # Trim single-segment rows at both ends.
+        # Trim single-segment rows at both ends, except a heading fragment above
+        # the first multi-cell row and a wrapped label under the last.
         while run and not _is_multicell(run[0], size):
+            if _heading_fragment(run[0], run, size):
+                break
             run.pop(0)
         while run and not _is_multicell(run[-1], size):
+            if _wrapped_label(run[-1], run, size):
+                break
             run.pop()
         multi = sum(1 for r in run if _is_multicell(r, size))
         if len(run) >= 3 and multi >= max(3, int(0.6 * len(run))):
@@ -132,15 +188,16 @@ def _find_runs(rows: list[_Row], size: float) -> list[_Candidate]:
         singles_in_a_row = 0
 
     for row in rows:
+        if run and row.y0 - run[-1].y1 > 1.8 * size:
+            close()
         if not run:
             if _is_multicell(row, size):
+                if pending is not None and -0.6 * size <= row.y0 - pending.y1 <= 1.5 * size:
+                    run.append(pending)
                 run.append(row)
-            continue
-        gap = row.y0 - run[-1].y1
-        if gap > 1.8 * size:
-            close()
-            if _is_multicell(row, size):
-                run.append(row)
+                pending = None
+            else:
+                pending = row   # a lone row outside any run, remembered in case a table starts under it
             continue
         if _is_multicell(row, size):
             run.append(row)
@@ -149,6 +206,7 @@ def _find_runs(rows: list[_Row], size: float) -> list[_Candidate]:
             singles_in_a_row += 1
             if singles_in_a_row > 1:
                 close()
+                pending = row   # the lone row that ended this run may head the next table
             else:
                 run.append(row)
     close()
@@ -242,7 +300,11 @@ def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[fl
     as a vote; a position supported by half the multi-word rows, with no word
     straddling it, splits every segment that crosses it.
     """
-    votes: list[float] = []
+    # Each qualifying word gap votes with its whole range, and a cut is an x
+    # range that enough rows leave empty: the gap under a heading ("Gemiddelde
+    # | Sd") and the gaps between right-aligned numbers below it share only
+    # their overlap, whose midpoints can sit twelve points apart.
+    spans: list[tuple[float, float]] = []
     rows_with_words = 0
     for r in rows:
         words = sorted((w for seg in r.segments for w in seg.words), key=lambda w: w.bbox.x0)
@@ -252,22 +314,23 @@ def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[fl
         for a, b in zip(words, words[1:]):
             gap = b.bbox.x0 - a.bbox.x1
             if gap >= 0.4 * size:
-                votes.append((a.bbox.x1 + b.bbox.x0) / 2.0)
-    if rows_with_words < 3 or not votes:
+                spans.append((a.bbox.x1, b.bbox.x0))
+    if rows_with_words < 3 or not spans:
         return rows, []
-    votes.sort()
-    cuts: list[float] = []
-    cluster: list[float] = []
     need = max(3, 0.6 * rows_with_words)
     all_words = [w for r in rows for seg in r.segments for w in seg.words]
-    for v in votes:
-        if cluster and v - cluster[0] > 6.0:
-            if len(cluster) >= need:
-                cuts.append(sum(cluster) / len(cluster))
-            cluster = []
-        cluster.append(v)
-    if cluster and len(cluster) >= need:
-        cuts.append(sum(cluster) / len(cluster))
+    events = sorted([(x0, 1) for x0, _ in spans] + [(x1, -1) for _, x1 in spans], key=lambda e: (e[0], e[1]))
+    cuts: list[float] = []
+    depth = 0
+    start: float | None = None
+    for x, d in events:
+        depth += d
+        if depth >= need and start is None:
+            start = x
+        elif depth < need and start is not None:
+            if x - start >= 1.0:
+                cuts.append((start + x) / 2.0)
+            start = None
     cuts = [c for c in cuts if not any(w.bbox.x0 < c - 1 and w.bbox.x1 > c + 1 for w in all_words)]
     if not cuts:
         return rows, []
@@ -294,6 +357,10 @@ def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[fl
 
 
 def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bool = False) -> Table | None:
+    # Segments per row as the text layer gave them, before voted cuts re-slice them:
+    # prose sliced word by word ends with far more columns than segments.
+    seg_counts = sorted(len(r.segments) for r in cand.rows)
+    median_segments = seg_counts[len(seg_counts) // 2] if seg_counts else 1
     refined, cuts = _refine_segments(cand.rows, size)
     cand = _Candidate(rows=refined, bbox=cand.bbox)
     channels = _channels(_structural_rows(cand.rows), cand.bbox.x0, cand.bbox.x1, size)
@@ -354,9 +421,15 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         long_chars = sum(len(c) for c in non_empty if len(c.split()) > 6)
         if long_chars > 0.5 * total_chars:
             return None
-        # Justified prose split at wide word gaps: many words per row, nothing numeric.
-        words_per_row = sum(len(c.split()) for c in non_empty) / max(1, len(grid_rows))
-        if numeric < 0.1 * len(non_empty) and words_per_row >= 6:
+        # Justified prose split at wide word gaps: many words per row, nothing
+        # numeric, and the pieces themselves are phrases. A table of short labels
+        # ("Distribution Code | Distribution Licensees | Separate Annex 5") also
+        # carries six words a row, but under three a cell.
+        n_words = sum(len(c.split()) for c in non_empty)
+        words_per_row = n_words / max(1, len(grid_rows))
+        words_per_cell = n_words / max(1, len(non_empty))
+        sliced = n_cols > 1.5 * median_segments   # the cuts carved the text layer's segments into pieces
+        if numeric < 0.1 * len(non_empty) and words_per_row >= 6 and (words_per_cell >= 3 or sliced):
             return None
     if strict:
         if short < 0.6 * len(non_empty) and numeric < 0.3 * len(non_empty):
@@ -405,12 +478,14 @@ def _header_row_count(grid: list[list[str]]) -> int:
     def numeric_cells(row):
         return [c for c in row if c and _NUMERIC.match(c.strip()) and not re.fullmatch(r"\(\d{1,2}\)", c.strip())]
 
+    by_long_cell = False
     for i, row in enumerate(grid[:8]):
         filled = [c for c in row if c]
         if not filled:
             continue
         if any(len(c.split()) > 6 for c in filled):
             first_data = i
+            by_long_cell = True
             break
         numeric = numeric_cells(row)
         if len(numeric) >= max(1, 0.4 * len(filled)):
@@ -432,7 +507,21 @@ def _header_row_count(grid: list[list[str]]) -> int:
             first_data -= 1
         else:
             break
-    return max(1, first_data)
+    n = max(1, first_data)
+    # A table of short text has no numeric row to end its heading, so the first
+    # long cell ended it, rows later than the truth (a table of eye diseases was
+    # read as seven heading rows once its caption was no longer its first row).
+    # An empty corner cell over a labelled first row is a one-row heading.
+    if by_long_cell and n >= 2 and not grid[0][0] and grid[1][0]:
+        return 1
+    if n > 3:
+        if all(not row[0] for row in grid[:n]):
+            # Stacked column headings with the corner empty, one word a line on
+            # an OCR'd table ("SPECIAL" / "VOLUNTARY" / "FUND"): up to five.
+            return min(n, 5)
+        labelled = all(row[0] for row in grid[1:n] if any(row))
+        n = 1 if (not grid[0][0] and labelled) else 3
+    return n
 
 
 def _header_structure(grid, geom, n_header, col_bounds, size):
@@ -496,13 +585,17 @@ def _header_structure(grid, geom, n_header, col_bounds, size):
     # Fragments: a heading cell continues the cell above it in the same column
     # when both cover the same columns and nothing else sits between them. Unit
     # rows ("(percent)") stay their own heading row.
+    # A parenthesised line is a unit row for the whole table only when the same
+    # text repeats across columns ("(percent)" under every date); on its own it
+    # continues the heading above it ("Number of Agreement" / "(ranked 3 or 4)").
+    repeats = [collections.Counter(x.strip() for x in row if x) for row in header]
     for c in range(n_cols):
         above = None
         for r in range(n_header):
             text = header[r][c]
             if not text:
                 continue
-            unit = bool(_UNIT.match(text.strip()))
+            unit = bool(_UNIT.match(text.strip())) and (not text.strip().startswith("(") or repeats[r][text.strip()] >= 2)
             if above is not None and not unit and span_of(r, c) == span_of(above, c):
                 gap = geom[r].y0 - geom[above].y1 if r < len(geom) and above < len(geom) else 0.0
                 if gap <= 0.8 * size * (r - above):
@@ -596,13 +689,60 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
     the lines they were folded from)."""
     if not grid:
         return grid, list(rows)
+    grid = [list(cells) for cells in grid]
+    rows = list(rows)
     out: list[list[str]] = [grid[0]]
     out_rows: list[_Row] = [rows[0]]
-    for cells, row in zip(grid[1:], rows[1:]):
+    k = 1
+    while k < len(grid):
+        cells, row = grid[k], rows[k]
+        k += 1
         prev = out[-1]
         prev_row = out_rows[-1]
         filled = [i for i, c in enumerate(cells) if c]
         gap = row.y0 - prev_row.y1
+        # A corner label set centred beside a two-line heading ("Tagetes spp.
+        # Treatments" between "Plant / Fresh / Dry" and "height / weight") is a
+        # row of its own that overlaps both neighbours; it joins the one it
+        # overlaps more, provided that neighbour's first column is empty.
+        if filled == [0] and not prev[0] and k < len(grid) and not grid[k][0]:
+            height = max(row.y1 - row.y0, 1.0)
+            ov_prev = min(row.y1, prev_row.y1) - max(row.y0, prev_row.y0)
+            nxt_row = rows[k]
+            ov_next = min(row.y1, nxt_row.y1) - max(row.y0, nxt_row.y0)
+
+            def wordy(r):
+                # a heading line of words, not a line of numbers ("2011 2011 2010 Average"
+                # under "Aug 21, Aug 14," keeps its own row so the heading count sees it)
+                cs = [c for c in r if c]
+                return cs and sum(1 for c in cs if _NUMERIC.match(c.strip())) <= 0.2 * len(cs)
+
+            if ov_prev >= ov_next and ov_prev >= 0.3 * height and wordy(prev):
+                prev[0] = cells[0]
+                out_rows[-1] = _Row(segments=prev_row.segments + row.segments, y0=min(prev_row.y0, row.y0), y1=max(prev_row.y1, row.y1))
+                continue
+            if ov_next > ov_prev and ov_next >= 0.3 * height and wordy(grid[k]):
+                grid[k][0] = cells[0]
+                rows[k] = _Row(segments=row.segments + nxt_row.segments, y0=min(row.y0, nxt_row.y0), y1=max(row.y1, nxt_row.y1))
+                continue
+        # A two-line cell is set centred on its row, so its first line rises
+        # above the row's other cells and clusters as a row of its own, nearer
+        # the row above than below by box gap ("White to cream" over "powder",
+        # beside "Appearance"). It belongs to the row it overlaps, below.
+        if len(filled) == 1 and k < len(grid):
+            nxt, nxt_row = grid[k], rows[k]
+            overlap = min(row.y1, nxt_row.y1) - max(row.y0, nxt_row.y0)
+            height = max(row.y1 - row.y0, 1.0)
+            # Only a line standing clear of the row above (a visible gap) and half
+            # sunk into a real row below: a plain wrapped continuation touches the
+            # row it continues and folds upwards as before (a table of eye diseases
+            # lost its row labels to an earlier, looser version of this rule).
+            if (gap >= 0.15 * size and overlap >= 0.5 * height and overlap > gap
+                    and sum(1 for c in nxt if c) >= 2 and all(not nxt[i] for i in filled)):
+                for i in filled:
+                    nxt[i] = cells[i]
+                rows[k] = _Row(segments=row.segments + nxt_row.segments, y0=min(row.y0, nxt_row.y0), y1=max(row.y1, nxt_row.y1))
+                continue
         tight = bool(filled) and gap <= 0.6 * size and all(prev[i] for i in filled) and not any(_NUMERIC.match(cells[i].strip()) for i in filled)
         is_continuation = tight and (
             (cells[0] == "" and all(cells[i][:1].islower() or len(cells[i].split()) > 2 for i in filled))

@@ -242,7 +242,14 @@ def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
                 and block.kind == BlockKind.TEXT
                 and prev_block.kind == BlockKind.TEXT
                 and _continues(parts[prev_index], text)
-                and (prev_block.meta.get("page") != page.number or _column_break(prev_block, block))
+                and (
+                    prev_block.meta.get("page") != page.number
+                    or _column_break(prev_block, block)
+                    # A block that ends in a hyphenated word half and a block that
+                    # starts with the other half are one paragraph wherever they
+                    # sit ("nega-" / "tive effects" in a reference list).
+                    or (parts[prev_index].rstrip().endswith("-") and text[:1].islower())
+                )
             ):
                 parts[prev_index] = _join_paragraphs(parts[prev_index], text)
             else:
@@ -349,6 +356,7 @@ def render_frontmatter(doc: Document, body: str = "") -> str:
         "confidence": doc.metadata.get("confidence", None),
         "language": doc.metadata.get("language") or None,
         "pages_with_ocr": doc.metadata.get("pages_with_ocr", []),
+        "turned_pages": doc.metadata.get("turned_pages") or None,
         "ocr_regions": doc.metadata.get("ocr_regions") or None,
         "pages_with_model": doc.metadata.get("pages_with_model") or None,
         "inferred": doc.metadata.get("inferred") or None,

@@ -442,7 +442,7 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
                         # on a private-use code that the formula code maps back.
                         # (A blank with no drawn glyph behind it is a synthetic space.)
                         text = chr(0xE000 + ord(text))
-                    text = _symbol_font_mark(font, unfold_truncated_surrogate(text, font))
+                    text = _central_european(font, _symbol_font_mark(font, unfold_truncated_surrogate(text, font)))
                     ch = Char(
                         text=text,
                         bbox=cbox,
@@ -478,12 +478,21 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
     if visibility.distrusted:
         page.meta["visibility_distrusted"] = True
 
+    vertical_down = vertical_up = text_chars = 0
     for line_chars, direction in pending:
-        line_chars = [c for c in line_chars if not c.hidden]
+        line_chars = _compose_spacing_accents([c for c in line_chars if not c.hidden])
         if not line_chars:
             continue
+        n_visible = sum(1 for c in line_chars if not c.text.isspace())
+        text_chars += n_visible
         if abs(direction[0]) < 0.5:
-            # vertical or heavily rotated text: keep as one segment, mark it
+            # vertical or heavily rotated text: keep as one segment, mark it.
+            # The counts let the pipeline turn a page whose text mostly runs
+            # up or down (a scan lying on its side; `_sideways_text_turn`).
+            if direction[1] > 0:
+                vertical_down += n_visible
+            else:
+                vertical_up += n_visible
             words = _chars_to_words(line_chars, ocr_layer=visibility.ocr_layer)
             if words:
                 seg = Line(words=words, bbox=BBox.union_all(w.bbox for w in words), rotated=True)
@@ -492,6 +501,9 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
         words = _chars_to_words(line_chars, ocr_layer=visibility.ocr_layer)
         for seg in _split_line_segments(words):
             lines.append(seg)
+    page.meta["text_chars"] = text_chars
+    page.meta["vertical_chars_down"] = vertical_down
+    page.meta["vertical_chars_up"] = vertical_up
 
     gutters = _column_gutters(lines)
     page.drawings = _extract_drawings(pdf_page, M)
@@ -620,8 +632,8 @@ def _split_glued_words(line: Line) -> Line:
         i = 0
         for p in pieces:
             chars = w.chars[i:i + len(p)]
+            new_words.append(Word(text=p, bbox=BBox.union_all(c.bbox for c in chars), chars=chars, after_space=(w.after_space if i == 0 else False)))
             i += len(p)
-            new_words.append(Word(text=p, bbox=BBox.union_all(c.bbox for c in chars), chars=chars))
     if not changed:
         return line
     return Line(words=new_words, bbox=line.bbox, rotated=line.rotated)
@@ -636,7 +648,105 @@ _SYMBOL_MARKS = {
 }
 
 
+# Free-standing accent glyphs and the combining marks they stand for. The grave
+# accent is left out: in TeX fonts "`" is also the opening quotation mark.
+_SPACING_ACCENTS = {
+    "ˆ": "̂",   # circumflex
+    "˜": "̃",   # tilde
+    "´": "́",   # acute
+    "¨": "̈",   # diaeresis
+    "¸": "̧",   # cedilla
+    "˚": "̊",   # ring
+    "¯": "̄",   # macron
+    "ˇ": "̌",   # caron
+    "˘": "̆",   # breve
+    "˙": "̇",   # dot above
+    "˝": "̋",   # double acute
+}
+
+
+def _compose_spacing_accents(chars: list[Char]) -> list[Char]:
+    """Join a free-standing accent glyph to the letter it sits over.
+
+    Type 1 text fonts (TeX's accent command, some Adobe producers) draw an
+    accent as a glyph of its own next to the base letter in the stream, before
+    or after it: "Ram´on", "H¨older", "Geocieˆncias", "Evoluc¸a˜o" (296 such
+    names in run 37's output). When the accent's centre lies over a neighbouring
+    letter of the same font and the pair has a precomposed form, the letter
+    becomes that form and the accent glyph goes. Maths accents are untouched: a
+    hat over an italic x comes from a different font than the x, and x has no
+    precomposed hat anyway.
+    """
+    if not any(c.text in _SPACING_ACCENTS for c in chars):
+        return chars
+    out = list(chars)
+    i = 0
+    while i < len(out):
+        c = out[i]
+        comb = _SPACING_ACCENTS.get(c.text)
+        if comb is None:
+            i += 1
+            continue
+        cx = (c.bbox.x0 + c.bbox.x1) / 2
+        done = False
+        for j in (i - 1, i + 1):
+            if not (0 <= j < len(out)):
+                continue
+            b = out[j]
+            if len(b.text) != 1 or not b.text.isalpha() or b.font != c.font:
+                continue
+            tol = 0.15 * max(b.size, 1.0)
+            if not (b.bbox.x0 - tol <= cx <= b.bbox.x1 + tol):
+                continue
+            composed = unicodedata.normalize("NFC", b.text + comb)
+            if len(composed) != 1:
+                continue
+            b.text = composed
+            del out[i]
+            done = True
+            break
+        if not done:
+            i += 1
+    return out
+
+
+# Central European fonts of the 1990s ("Latin725PL", "SchadowPL", "...SCTCE") carry
+# the Mac CE encoding, but their PDFs declare Mac Roman, so every Polish letter
+# arrives as the Mac Roman character at the same byte: "powo∏uje" for "powołuje",
+# "nale˝y" for "należy", "ksi´g´" for "księgę". Byte for byte, Mac Roman to Mac CE.
+_MAC_CE_FROM_ROMAN = {
+    "à": "ą", "Ñ": "Ą", "ç": "ć", "å": "Ć", "´": "ę", "¢": "Ę", "∏": "ł", "π": "Ł",
+    "ƒ": "ń", "¡": "Ń", "Ê": "ś", "Â": "Ś", "ê": "ź", "è": "Ź", "˝": "ż", "¸": "Ż",
+}
+
+
+def _central_european(font: str, text: str) -> str:
+    """Undo the Mac Roman reading of a Mac CE font (fonts named ...PL or ...CE)."""
+    if text not in _MAC_CE_FROM_ROMAN:
+        return text
+    base = font.split("+", 1)[-1]
+    name = base.split("-", 1)[0] if "-" in base else base
+    if name.endswith(("PL", "CE")):
+        return _MAC_CE_FROM_ROMAN[text]
+    return text
+
+
+# The symbol fonts of 2000s journal PDFs set with Advent 3B2 carry their own
+# encoding, so their glyphs arrive as the Latin characters at the same codes:
+# "(n ¼ 562)" is "(n = 562)", "m tð Þ ¼ m0 þ" is "m(t) = m0 +", and the minus
+# sign sits on code 1, a control character that would otherwise be stripped and
+# turn a negative correlation positive. Read off every use across the benchmark
+# (6 Sept: 51 equals signs, 26 pairs of parentheses, 21 minus signs).
+_ADVENT_SYMBOLS = {
+    "AdvP4C4E74": {"¼": "=", "ð": "(", "Þ": ")", "þ": "+", "½": "[", "\x01": "−"},
+    "AdvP40271B": {"¼": "=", "ð": "(", "Þ": ")", "þ": "+", "½": "[", "\x01": "−", "2": "∈", "f": "{", "g": "}", "j": "|"},
+}
+
+
 def _symbol_font_mark(font: str, text: str) -> str:
+    table = _ADVENT_SYMBOLS.get(font.split("+", 1)[-1])
+    if table is not None and text in table:
+        return table[text]
     if len(text) != 1 or not (0xF000 <= ord(text) <= 0xF0FF):
         return text
     f = font.lower()
@@ -656,14 +766,16 @@ def _chars_to_words(chars: list[Char], ocr_layer: bool = False) -> list[Word]:
     """
     words: list[Word] = []
     current: list[Char] = []
+    after_space = False   # the word being built follows an explicit space character
 
     def flush():
-        nonlocal current
+        nonlocal current, after_space
         if current:
             text = "".join(c.text for c in current)
             if text.strip():
-                words.append(Word(text=text, bbox=BBox.union_all(c.bbox for c in current), chars=list(current)))
+                words.append(Word(text=text, bbox=BBox.union_all(c.bbox for c in current), chars=list(current), after_space=after_space))
         current = []
+        after_space = False
 
     # Letter-spaced text ("A n n u a l") has uniform gaps between every letter;
     # a gap only counts as a word break when it is also clearly larger than the
@@ -714,12 +826,20 @@ def _chars_to_words(chars: list[Char], ocr_layer: bool = False) -> list[Word]:
         # reading such spaces as negation slashes lost 16 checks on five pages.)
         if c.text.isspace():
             # MuPDF inserts a space wherever it sees a gap; at a kerning gap the
-            # "space" is spurious (Type 3 fonts mislead its width estimate).
+            # "space" is spurious (Type 3 fonts mislead its width estimate). Not
+            # on an OCR layer: its spaces are the engine's own word breaks, and
+            # its glyph boxes overlap at them ("Fractures extend" glued into one
+            # word on a scanned journal page lost thirteen checks).
             nxt = next((d for d in chars[i + 1:] if not d.text.isspace()), None)
-            if prev is not None and not prev.text.isspace() and nxt is not None and current:
-                if nxt.bbox.x0 - prev.bbox.x1 < 0.08 * max(prev.size, nxt.size, 1.0):
+            if not ocr_layer and prev is not None and not prev.text.isspace() and nxt is not None and current:
+                # A space after a comma, or after a full stop before a capital, is
+                # a real one however tight the setting ("However, state" at 0.07 em
+                # in Caslon); the kerning-gap doubt is about spaces inside words.
+                after_punct = prev.text in ",;:!?" or (prev.text == "." and nxt.text.isupper())
+                if not after_punct and nxt.bbox.x0 - prev.bbox.x1 < 0.08 * max(prev.size, nxt.size, 1.0):
                     continue
             flush()
+            after_space = True
             prev = c
             continue
         if prev is not None and current:
@@ -857,6 +977,13 @@ def _fuse_touching_words(line: Line) -> Line:
     for w in words[1:]:
         prev = out[-1]
         size = max(prev.size, w.size, 1.0)
+        # A word that follows an explicit space character in the text layer is a
+        # word of its own however close it sits: a tight sentence space after a
+        # full stop ("platform. These", 0.1 em in Caslon), or a drop cap whose
+        # box reaches the next word ("The" + "Chief").
+        if w.after_space:
+            out.append(w)
+            continue
         if w.bbox.x0 - prev.bbox.x1 < base + 0.1 * size and w.bbox.y_overlap(prev.bbox) > 0:
             out[-1] = Word(text=prev.text + w.text, bbox=prev.bbox.union(w.bbox), chars=prev.chars + w.chars)
         else:
@@ -1003,7 +1130,10 @@ def _reassemble_lines(lines: list[Line], gutters: list[tuple[float, float]] | No
                         and m.bbox.x0 - last.bbox.x1 <= limit and seg.bbox.x0 - m.bbox.x1 <= limit:
                     bridged = True
                     break
-        if (symbol or interleaved or (same_baseline and similar_size)) and not last.rotated and not across_gutter and (interleaved or bridged or -overhang * size <= gap <= limit):
+        # (Neither segment may be vertical text: a scanner's "Downloaded from ..."
+        # stamp running up the margin shares a baseline with some body line and
+        # used to be glued into it, only to be judged later as a header.)
+        if (symbol or interleaved or (same_baseline and similar_size)) and not last.rotated and not seg.rotated and not across_gutter and (interleaved or bridged or -overhang * size <= gap <= limit):
             out[-1] = Line(words=sorted(last.words + seg.words, key=lambda w: w.bbox.x0), bbox=last.bbox.union(seg.bbox))
         else:
             out.append(seg)
@@ -1450,6 +1580,13 @@ def _merge_uniform_rows(lines: list[Line], gutters: list[tuple[float, float]] | 
     ordered = sorted(lines, key=lambda l: (round(l.baseline, 1), l.bbox.x0))
     while i < len(ordered):
         j = i
+        if ordered[i].rotated:
+            # Vertical text (a scanner's "Downloaded from ..." stamp up the margin)
+            # has a baseline somewhere mid-page and must not start a row: it was
+            # being merged into the body line that shares that baseline.
+            out.append(ordered[i])
+            i += 1
+            continue
         size = max(ordered[i].size, 0.7 * ordered[i].bbox.height, 1.0)
         while j + 1 < len(ordered) and abs(ordered[j + 1].baseline - ordered[i].baseline) <= 0.3 * size and not ordered[j + 1].rotated:
             j += 1

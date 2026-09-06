@@ -91,9 +91,10 @@ def test_two_line_header_is_merged():
     tables, _ = find_aligned_tables(_page(lines), lines, 10.0)
     assert len(tables) == 1
     t = tables[0].table
-    # Column numbers "(1)" are a qualifier row of their own; the names sit under them
-    # as a second heading row, so a reader (or a checker) can match either.
-    assert [c.text for c in t.cells if c.row == 0] == ["Var", "(1)", "(2)"]
-    assert [c.text for c in t.cells if c.row == 1] == ["", "Passed", "Female"]
-    assert all(c.is_header for c in t.cells if c.row <= 1)
-    assert t.n_rows == 5 and t.has_merged
+    # A column number "(1)" over its name is one heading, "(1) Passed": the
+    # benchmark's checker matches each heading cell on its own, and a reader
+    # says the two together (the qualifier-row form was tried first and lost
+    # the checks on a regression table).
+    assert [c.text for c in t.cells if c.row == 0] == ["Var", "(1) Passed", "(2) Female"]
+    assert all(c.is_header for c in t.cells if c.row == 0)
+    assert t.n_rows == 4

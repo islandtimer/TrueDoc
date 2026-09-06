@@ -120,6 +120,7 @@ class Word:
     text: str
     bbox: BBox
     chars: list[Char] = field(default_factory=list)
+    after_space: bool = False   # the text layer put an explicit space before this word
 
     @property
     def size(self) -> float:

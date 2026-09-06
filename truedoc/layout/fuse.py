@@ -96,6 +96,35 @@ def _region_for(bbox: BBox, regions: list[Region], kinds=None, min_frac: float =
     return best if best_frac >= min_frac else None
 
 
+_CAPTION_START = re.compile(r"^\s*(table|tab\.|fig\.?|figure|exhibit|chart|scheme|appendix)\s*[A-Z]?\d", re.I)
+_FUNCTION_WORDS = {"of", "and", "the", "in", "for", "with", "between", "by", "to", "on", "from", "at", "a", "an", "as", "or"}
+
+
+def caption_like(line: Line, width: float) -> bool:
+    """A table's caption, or a sentence, and never its header row: it starts
+    like "Table 2." or reads as prose (eight words or more, two of them function
+    words) while running across most of the table's width rather than sitting
+    in one column. Twenty-six tables in run 39's output opened with such a
+    line as their header row, which pushed the real headings into the data."""
+    text = line.text.strip()
+    if _CAPTION_START.match(text):
+        return True
+    words = text.split()
+    if len(words) < 8 or line.bbox.width < 0.6 * max(width, 1.0):
+        return False
+    return sum(1 for w in words if w.lower().strip(".,;:()") in _FUNCTION_WORDS) >= 2
+
+
+def _strip_captions(inside: list, width: float) -> list:
+    """Drop caption-like lines from the top and bottom of a table region's lines."""
+    lines = sorted(inside, key=lambda l: l.bbox.cy)
+    while lines and caption_like(lines[0], width):
+        lines.pop(0)
+    while lines and caption_like(lines[-1], width):
+        lines.pop()
+    return lines
+
+
 def _header_lines_above(page: Page, box: BBox, table, inside: list, consumed: set) -> list:
     """Lines within two line heights above a table box whose words all sit on the
     table's columns (at least two columns hit): the header row the box missed."""
@@ -124,12 +153,49 @@ def _header_lines_above(page: Page, box: BBox, table, inside: list, consumed: se
             continue
         if l.size > 1.15 * table_size:
             continue  # a section heading above the table, not its header row
+        if caption_like(l, box.width):
+            continue  # "Table 2. ..." or a sentence spanning the columns
         cols = [column_of(w) for w in l.words]
         if any(c is None for c in cols):
             continue  # a word off the columns: a caption or a sentence, not a header row
         out.append(l)
         columns_hit.update(c for c in cols if c is not None)
-    return out if len(columns_hit) >= 2 else []
+    if len(columns_hit) >= 2:
+        return out
+    # One short line over a single column, right above the box, is the upper
+    # line of a stacked heading ("Number of Agreement" over "(ranked 3 or 4)")
+    # when the table's own first cell in that column reads as the lower half:
+    # a parenthesis, a lowercase word or nothing. Over a complete heading it is
+    # a title ("Verbal Responses") and stays out.
+    if len(out) == 1 and len(columns_hit) == 1:
+        l = out[0]
+        text = l.text.strip()
+        col = next(iter(columns_hit))
+        first = next((c.text.strip() for c in table.cells if c.row == 0 and c.col == col), "")
+        lower_half = first == "" or first[:1] == "(" or first[:1].islower()
+        if lower_half and box.y0 - l.bbox.y1 <= 1.2 * size and len(text.split()) <= 6 and text[:1] not in "-•*" and not text.endswith((".", ":", ";")):
+            return out
+    return []
+
+
+def _label_lines_below(page: Page, box: BBox, table, inside: list, consumed: set) -> list:
+    """A lone lowercase line at the table's left edge just under the box: the
+    second line of the last row's label ("Slaapkwaliteit tijdens" /
+    "consignatiediensten"), which the box's bottom edge cut off."""
+    size = page.body_font_size or 10.0
+    inside_ids = {id(l) for l in inside}
+    left = min((l.bbox.x0 for l in inside), default=box.x0)
+    out = []
+    for l in page.lines:
+        if id(l) in inside_ids or id(l) in consumed or l.rotated or not l.words:
+            continue
+        text = l.text.strip()
+        if not (-0.6 * size <= l.bbox.y0 - box.y1 <= 1.0 * size):
+            continue
+        if abs(l.bbox.x0 - left) > size or l.bbox.width > 0.5 * box.width or not text[:1].islower():
+            continue
+        out.append(l)
+    return out[:1]
 
 
 _NUMBERISH = re.compile(r"[-+±]?[\d.,]+%?|[\d.,]+[-–][\d.,]+|\d+(st|nd|rd|th)")
@@ -202,11 +268,19 @@ def apply_layout(page: Page, blocks: list[Block], regions: list[Region], pdf_pag
             blocks.extend(build_blocks(page, freed))
     blocks = [b for b in blocks if id(b) not in rebuilt]
 
+    dropped: set[int] = set()   # aligned fragments replaced by a box's whole table
+
+    def _is_fragment(b: Block, tr: Region) -> bool:
+        return b.bbox.overlap_fraction(tr.bbox) > 0.8 and b.bbox.area < 0.5 * tr.bbox.area
+
     for tr in table_regions:
-        existing = [b for b in blocks if b.kind == BlockKind.TABLE and b.bbox.overlap_fraction(tr.bbox) > 0.5]
+        existing = [b for b in blocks if b.kind == BlockKind.TABLE and b.bbox.overlap_fraction(tr.bbox) > 0.5 and not (tr.score >= 0.7 and _is_fragment(b, tr))]
         if existing:
             continue
         inside = [l for l in page.lines if tr.bbox.contains_point(l.bbox.cx, l.bbox.cy)]
+        # (A caption swallowed by the model's box is left as a row for now: taking it
+        # out changed nothing on the benchmark and once merged two columns whose
+        # channel the wide caption line had been holding open, 6 Sept.)
         trusted = tr.score >= 0.7
         if len(inside) < 3 and ocr and pdf_page is not None and page.quality.kind == "digital":
             # (any table box the model offers: the OCR gate supplies its own evidence)
@@ -218,6 +292,24 @@ def apply_layout(page: Page, blocks: list[Block], regions: list[Region], pdf_pag
         table = table_from_lines(inside, page.body_font_size, trusted=trusted)
         if table is None:
             continue
+        # A small aligned table inside this box (a fragment of it that the
+        # whitespace finder accepted on its own) gives way only to a bigger table
+        # built from the whole box; when the box yields nothing better the
+        # fragment stays (a course list vanished when it was dropped in advance).
+        fragments = [b for b in blocks if b.kind == BlockKind.TABLE and b.table is not None and tr.score >= 0.7 and _is_fragment(b, tr)]
+        # Several small tables inside one box are either sub-tables the box spans
+        # (applicants and participants, each with its caption) or pieces of one
+        # table broken at its wrapped rows (a table of eye diseases in three
+        # pieces). The box's own table tells them apart: pieces leave rows out,
+        # so the whole box holds clearly more rows than the pieces together.
+        if fragments:
+            total = sum(f.table.n_rows for f in fragments)
+            if len(fragments) == 1 and table.n_rows <= total:
+                continue
+            if len(fragments) >= 2 and table.n_rows < total + 2:
+                continue
+        for f in fragments:
+            dropped.add(id(f))
         # The model's box often starts under the header row. A line just above the
         # box whose words sit on the table's columns is the header; rebuild with it.
         header = _header_lines_above(page, tr.bbox, table, inside, consumed_lines)
@@ -225,11 +317,20 @@ def apply_layout(page: Page, blocks: list[Block], regions: list[Region], pdf_pag
             with_header = table_from_lines(header + inside, page.body_font_size, trusted=trusted)
             if with_header is not None and with_header.n_cols == table.n_cols and with_header.n_rows > table.n_rows:
                 table, inside = with_header, header + inside
+        # The box's bottom edge may cut a wrapped row label; its second line
+        # rejoins the table (and folds into the label above it).
+        tail = _label_lines_below(page, tr.bbox, table, inside, consumed_lines)
+        if tail:
+            with_tail = table_from_lines(inside + tail, page.body_font_size, trusted=trusted)
+            if with_tail is not None and with_tail.n_cols == table.n_cols and with_tail.n_rows >= table.n_rows:
+                table, inside = with_tail, inside + tail
         for l in inside:
             consumed_lines.add(id(l))
         new_tables.append(Block(kind=BlockKind.TABLE, bbox=table.bbox, table=table, provenance="layout-table", confidence=tr.score))
 
     for b in blocks:
+        if id(b) in dropped:
+            continue
         if b.kind == BlockKind.TABLE or not b.lines:
             out.append(b)
             continue

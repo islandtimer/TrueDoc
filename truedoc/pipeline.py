@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 import pymupdf
 
-from truedoc.classify.blocks import classify_blocks
+from truedoc.classify.blocks import _assign_heading_levels, classify_blocks
 from truedoc.extract.textlayer import extract_page
 from truedoc.layout.fuse import apply_layout
 from truedoc.model import BBox, Block, BlockKind, Document, Page
@@ -79,6 +79,11 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
     if opts.vision_endpoint:
         _read_unreadable_pages_with_model(doc, path, opts)
     doc.metadata["pages_with_ocr"] = [p.number for p in doc.pages if p.quality.kind == "ocr-truedoc"]
+    # Pages that lay on their side were turned upright before reading (`_turn_page`); say so.
+    turned = [{"page": p.number, "turn": p.meta["turned"]} for p in doc.pages if p.meta.get("turned")]
+    if turned:
+        doc.metadata["turned_pages"] = turned
+        doc.warnings.append(f"pages turned upright before reading: {[t['page'] for t in turned]}")
     regions = [dict(page=p.number, **r) for p in doc.pages for r in (p.meta.get("ocr_regions") or [])]
     if regions:
         doc.metadata["ocr_regions"] = regions[:200]
@@ -101,14 +106,51 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
     return doc
 
 
+def _turn_page(pdf_page: "pymupdf.Page", number: int, turn: int) -> Page:
+    """Turn a page that lies on its side (a landscape scan of a portrait page, a
+    wide table printed sideways) and extract it again.
+
+    The turn goes onto the in-memory page's rotation, so rendering, OCR, the
+    drawings, the layout model and the vision stage all see the page upright
+    and nothing downstream needs to know; the file itself is not changed.
+    """
+    pdf_page.set_rotation((int(pdf_page.rotation) + turn) % 360)
+    page = extract_page(pdf_page, number)
+    page.meta["turned"] = turn
+    return page
+
+
+def _sideways_text_turn(page: Page) -> int:
+    """0 for a page whose text layer reads upright; else the turn (90 or 270
+    degrees, clockwise positive) that would make it upright.
+
+    Counted in characters, so a rotated stamp in the margin never turns a page.
+    Text running down the page means the page was turned clockwise and needs
+    the anticlockwise turn back (270); text running up the page needs 90.
+    """
+    down = page.meta.get("vertical_chars_down", 0)
+    up = page.meta.get("vertical_chars_up", 0)
+    total = page.meta.get("text_chars", 0)
+    if down + up < 40 or down + up < 0.6 * max(1, total):
+        return 0
+    return 270 if down >= up else 90
+
+
 def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) -> Page:
     page = extract_page(pdf_page, number)
+    turn = _sideways_text_turn(page) if page.quality.usable else 0
+    if turn:
+        page = _turn_page(pdf_page, number, turn)
     if not page.quality.usable:
         if opts.ocr:
             try:
                 from truedoc.ocr.rapid import apply_ocr
 
                 apply_ocr(page, pdf_page)
+                turn = page.meta.pop("ocr_turn", 0)
+                if turn:
+                    page = _turn_page(pdf_page, number, turn)
+                    apply_ocr(page, pdf_page, allow_turn=False)
             except Exception as exc:  # OCR is optional: never fail a conversion because of it
                 import logging
 
@@ -140,6 +182,7 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
         page.meta["layout_regions"] = regions
         if regions:
             blocks = apply_layout(page, blocks, regions, pdf_page=pdf_page, ocr=opts.ocr)
+    blocks = _merge_label_headings(blocks, page.body_font_size)
 
     _margin_cleanup(page, blocks)
 
@@ -168,6 +211,50 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
     assign_reading_order(blocks, page.width, page.body_font_size)
     page.blocks = blocks
     return page
+
+
+_HEADING_LABEL = re.compile(r"^(?:[IVXLC]{1,6}\.?|\d{1,2}(?:\.\d{1,2}){0,3}\.?|[A-Z]\.)$")
+
+
+def _merge_label_headings(blocks: list[Block], body: float) -> list[Block]:
+    """A section number set apart from its title is one heading.
+
+    TeX and Word put about an em between "VI." and "CONCLUSIONS", wider than a
+    word space, so the two arrive as separate lines and then separate heading
+    blocks (55 times in run 37's output). The number block must be a heading
+    holding only a label (a roman or decimal number, a lettered "A."), and the
+    title a heading on the same baseline starting within 2.5 em of it.
+    """
+    labels = [b for b in blocks if b.kind == BlockKind.HEADING and len(b.lines) == 1 and _HEADING_LABEL.match(b.text.strip())]
+    if not labels:
+        return blocks
+    removed: set[int] = set()
+    for a in labels:
+        if id(a) in removed:
+            continue
+        size = max(a.size, 1.0)
+        best = None
+        for b in blocks:
+            if b is a or id(b) in removed or b.kind != BlockKind.HEADING or len(b.lines) > 2 or not b.lines:
+                continue
+            gap = b.bbox.x0 - a.bbox.x1
+            if not (-0.2 * size <= gap <= 2.5 * size):
+                continue
+            if a.bbox.y_overlap(b.bbox) < 0.5 * min(a.bbox.height, b.bbox.height):
+                continue
+            if best is None or gap < best[0]:
+                best = (gap, b)
+        if best is None:
+            continue
+        b = best[1]
+        a.lines = a.lines + b.lines
+        a.bbox = a.bbox.union(b.bbox)
+        removed.add(id(b))
+    if not removed:
+        return blocks
+    out = [b for b in blocks if id(b) not in removed]
+    _assign_heading_levels(out, body)
+    return out
 
 
 def _apply_math(page: Page, blocks: list[Block], regions) -> list[Block]:
@@ -679,6 +766,16 @@ _ICON_MAX_PT = 80.0        # an image inside a table cell up to this size is an 
 _MAX_REGIONS_PER_PAGE = 12  # a page of pictograms is not a page of forty model calls
 
 
+def _read_region(provider, path: str, page: Page, box: BBox, kind: str):
+    """Ask the vision provider about one region. A page that was turned upright
+    (`_turn_page`) sends its turn along, so the crop the model sees is upright too;
+    providers that predate the parameter are still called the old way."""
+    turn = page.meta.get("turned", 0)
+    if turn:
+        return provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), kind, turn=turn)
+    return provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), kind)
+
+
 def _read_regions_with_model(doc: Document, path: str, provider, inferred: list[dict]) -> None:
     """Icons and figures read by a model (D015, items 1 and 4).
 
@@ -717,7 +814,7 @@ def _read_regions_with_model(doc: Document, path: str, provider, inferred: list[
             if budget <= 0:
                 break
             budget -= 1
-            answer = provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), "icon")
+            answer = _read_region(provider, path, page, box, "icon")
             if not answer:
                 continue
             cell.text = answer + INFERRED_TAG
@@ -736,7 +833,7 @@ def _read_regions_with_model(doc: Document, path: str, provider, inferred: list[
             if budget <= 0:
                 break
             budget -= 1
-            answer = provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), "figure")
+            answer = _read_region(provider, path, page, box, "figure")
             if not answer:
                 continue
             b.meta["inferred_text"] = answer

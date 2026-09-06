@@ -41,16 +41,20 @@ def region_prompt(kind: str) -> str:
     return ICON_PROMPT if kind == "icon" else FIGURE_PROMPT
 
 
-def render_region_png_base64(pdf_path: str, page_number: int, bbox: tuple[float, float, float, float], kind: str) -> str:
+def render_region_png_base64(pdf_path: str, page_number: int, bbox: tuple[float, float, float, float], kind: str, turn: int = 0) -> str:
     """The region as a PNG (padded, longest side per `LONGEST_DIM`), base64-encoded.
 
     `bbox` is in the page's own coordinates as TrueDoc reports them (rotation
     already applied, the space of `page.rect`), which is also the space PyMuPDF's
-    `clip` expects.
+    `clip` expects. `turn` is the quarter turn the pipeline gave a page that lay
+    on its side (`pipeline._turn_page`); the file itself still holds the page
+    sideways, so the same turn is applied here before cropping.
     """
     doc = pymupdf.open(pdf_path)
     try:
         page = doc[page_number - 1]
+        if turn:
+            page.set_rotation((int(page.rotation) + int(turn)) % 360)
         x0, y0, x1, y1 = bbox
         pad = PADDING.get(kind, 0.1) * max(x1 - x0, y1 - y0, 1.0)
         clip = pymupdf.Rect(x0 - pad, y0 - pad, x1 + pad, y1 + pad) & page.rect

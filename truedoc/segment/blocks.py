@@ -64,6 +64,7 @@ def build_blocks(page: Page, lines: list[Line] | None = None) -> list[Block]:
     open_blocks: list[Block] = []
     top_zone = 0.09 * page.height
     bottom_zone = page.height - 0.09 * page.height
+    ocr_layer = page.quality.kind == "ocr"
 
     for line in lines:
         if not line.words:
@@ -78,9 +79,24 @@ def build_blocks(page: Page, lines: list[Line] | None = None) -> list[Block]:
             if blk.meta.get("closed"):
                 continue
             last = blk.lines[-1]
-            bsize = blk.size or size
+            # On a hidden OCR layer the boxes are far taller than the declared size,
+            # and comparing an inflated line size with the block's plain one refused
+            # every other line, so there the block is measured like the line. Not on
+            # digital text: a paragraph line carrying tall inline maths would then
+            # refuse its own next line, and the orphaned sentence gets swallowed by
+            # the display formula beside it (2503.07924, run 39).
+            bsize = max(blk.size or size, 0.7 * last.bbox.height) if ocr_layer else (blk.size or size)
             gap = line.bbox.y0 - last.bbox.y1
-            if gap < -0.6 * size:
+            # "Above" is judged by boxes on digital text (a text line under a tall
+            # display formula overlaps the formula's box and must not join it) and
+            # by baselines on a hidden OCR layer, whose boxes can be half again as
+            # tall as the line pitch, so the next line's box starts well above the
+            # last one's bottom (a patent scan: the short last line of a paragraph
+            # was skipped and the paragraph after it took its place, 6 Sept).
+            if ocr_layer:
+                if line.baseline <= last.baseline + 0.4 * size:
+                    continue  # not below the block's last line: not a continuation
+            elif gap < -0.6 * size:
                 continue  # line is above the block's last line: not a continuation
             if gap > 0.9 * max(size, bsize):
                 continue
@@ -88,9 +104,18 @@ def build_blocks(page: Page, lines: list[Line] | None = None) -> list[Block]:
             xo = line.bbox.x_overlap(blk.bbox)
             if xo <= 0.2 * min(line.bbox.width, blk.bbox.width):
                 continue
-            # Font size compatibility.
+            # Font size compatibility. On a hidden OCR layer neither the nominal
+            # size nor the box height is reliable alone (a dictionary page swings
+            # between 7 and 11 pt boxes on a 5 pt size from line to line), so a
+            # line is refused only when both disagree with the block's last line,
+            # as a journal's small copyright line under a footnote does.
             ratio = size / bsize if bsize else 1.0
-            if ratio < 0.8 or ratio > 1.25:
+            if ocr_layer:
+                sr = (line.size or size) / max(last.size or size, 0.1)
+                hr = line.bbox.height / max(last.bbox.height, 0.1)
+                if (sr < 0.75 or sr > 1.33) and (hr < 0.75 or hr > 1.33):
+                    continue
+            elif ratio < 0.8 or ratio > 1.25:
                 continue
             # A single line in a different typeface and size is a different thing
             # (a running header above a caption, a display heading above text).
