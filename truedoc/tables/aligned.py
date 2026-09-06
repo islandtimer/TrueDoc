@@ -296,9 +296,9 @@ def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[fl
     """Split segments at narrow word gaps that line up across most rows.
 
     "9  SPS/09" is one segment when the gap is under two ems, yet a gap at the
-    same x in most rows is a column boundary. A gap of at least 0.8 em counts
-    as a vote; a position supported by half the multi-word rows, with no word
-    straddling it, splits every segment that crosses it.
+    same x in most rows is a column boundary. A gap of at least 0.4 em counts
+    as a vote; an x range left empty by six in ten multi-word rows, with no
+    word straddling its right end, splits every segment that crosses it.
     """
     # Each qualifying word gap votes with its whole range, and a cut is an x
     # range that enough rows leave empty: the gap under a heading ("Gemiddelde
@@ -329,7 +329,12 @@ def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[fl
             start = x
         elif depth < need and start is not None:
             if x - start >= 1.0:
-                cuts.append((start + x) / 2.0)
+                # The cut sits at the range's right end, just before the words
+                # that close it, not at its midpoint: rows without a vote (a
+                # wrapped description line) fill the range from the left, and
+                # the midpoint of a wide range landed in one of their word
+                # spaces ("(approx." | "90-95%"), moving half a cell over.
+                cuts.append(x - 1.0)
             start = None
     cuts = [c for c in cuts if not any(w.bbox.x0 < c - 1 and w.bbox.x1 > c + 1 for w in all_words)]
     if not cuts:
