@@ -1,111 +1,281 @@
-headers_footers/08404c3b520de340f0b0ed583d2083324c5cbfda_page_10_processed
-headers_footers/0a8610e71123d3cf389a1e8652aa486b9f8dcfa2_page_1_processed
-headers_footers/0bdb95a688274d4700bb459e1d9e98e795bbbd05_page_25_processed
-headers_footers/0f727ae22d10919282c22063a6cade3e1fe0b3d2_page_1
-headers_footers/11253d83d886378909f8b24d24d8a90412099087_page_4
-headers_footers/1218c2e64afa8cbdcb4880220c7abb6540d38e51_page_3_processed
-headers_footers/13a5d2868ae9a6740bbec1122a6e247f646cb1a5_page_11_processed
-headers_footers/29cf8f78dcf746f0d24796dea279a36234362a28_page_30
-headers_footers/5d5fda4b4605502351b87808760b66dc70bd40fa_page_16
-headers_footers/7b3ad57e2874674ad6f4aa71c9be495e65dcf449_page_2
-headers_footers/7f757df3765dcaae45710b624bb76553ded10b50_page_4
-headers_footers/8063d40c50199f37405b48fbc93af2386abe6d09_page_1
-headers_footers/afba776380fbae80e0399e5b7f5f2ac1523ee487_page_1
-headers_footers/b329b8083ee2abe62999617011b888e980924905_page_3
-headers_footers/b4c3c4ac3d6f7b52a993cec7ca8b3ad43cecabad_page_3
-headers_footers/c0d59815ea7ffafa34fb1ba2bc0d2ec6a976f6dd_page_1
-headers_footers/c655ed75d1f645f3ddc601f992a7d99c845a5e6f_page_8
-headers_footers/d660c61fbcb505d9f6e8ae38f435bed6822bd23b_page_12
-headers_footers/d8b9c4cd0ba9b036e09168c8dccccd1d43315ef4_page_1
-headers_footers/f43191d17ea26f7058d5f9e5c6b3b4cc35bfaef2_page_63
-multi_column/00d8a44d3066bbc4bd8df149d0dafb96f423_page_3_pg1
-multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_12_pg1
-multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_14_pg1
-multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_16_pg1
-multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_17_pg1
-multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_3_pg1
-old_scans/12
-old_scans/13
-old_scans/14
-old_scans/19
-old_scans/1
-old_scans/20
-old_scans/21
-old_scans/22
-old_scans/26
-old_scans/27
-old_scans/29
-old_scans/30
-old_scans/32
-old_scans/33
-old_scans/34
-old_scans/35
-old_scans/37
-old_scans/38
-old_scans/39
-old_scans/3
-old_scans/40
-old_scans/41
-old_scans/42
-old_scans/43
-old_scans/44
-old_scans/45
-old_scans/46
-old_scans/47
-old_scans/48
-old_scans/49
-old_scans/4
-old_scans/50
-old_scans/51
-old_scans/52
-old_scans/53
-old_scans/54
-old_scans/55
-old_scans/56
-old_scans/57
-old_scans/5
-old_scans/76
-old_scans/77
-old_scans/78
-old_scans/79
-old_scans/7
-old_scans/80
-old_scans/81
-old_scans/82
-old_scans/83
-old_scans/84
-old_scans/85
-old_scans/86
-old_scans/87
-old_scans/89
-old_scans/8
-old_scans/90
-old_scans/91
-old_scans/92
-old_scans/93
-old_scans/96
-old_scans/97
-old_scans/98
-old_scans/99
-old_scans_math/1_pg10
-old_scans_math/1_pg125
-old_scans_math/1_pg131
-old_scans_math/1_pg19
-old_scans_math/1_pg40
-old_scans_math/1_pg61
-old_scans_math/1_pg63
-old_scans_math/1_pg72
-old_scans_math/3_pg204
-old_scans_math/5_pg174
-tables/0486cc2ec11e21b6a8280ca71073ca28ea3f_pg1
-tables/0684e33bd901b116725b6a0e0d21398f7315_pg4_pg1
-tables/30c92c35171cd45479bd3083dbf574b31c9a_pg44
-tables/371cfed48826fdffb18d9e1d5a9010ab0ccf_pg10_pg1
-tables/3d780cdcc987c65fdc7e1628c6a32af33d5d_pg22_pg1
-tables/426df27cf990a3426b9e0731ad346f28184f_pg9
-tables/4db371aebdbbfa28531a816f9bf26ed0a028_pg52_pg1
-tables/8097792c7266cdd2875e30cdf31ddcde348b_pg1
-tables/9e6a5b213e4fd5906842ebe6b0c5538e9e7b_pg12
-tables/d896f9ae5405c8d6b147ae9c9c20a0abb6c4_pg4_pg1
-tables/fbeb6edcf6ad16adbd2a27b54da0c1771389_pg1
-tables/fcb362aa304b7b0bedec37f6c74f8ce3751a_pg2
+headers_footers/008086eec0621732163bc07b8aca9fe02e6954af_page_2_processed	ocr
+headers_footers/060c2cf840811e4f998ff25f6dae1ab7309fb8b4_page_9_processed	ocr
+headers_footers/077c9c1f4595af86a2efb0f5b4209350fea8a9b6_page_2_processed	suspect
+headers_footers/08404c3b520de340f0b0ed583d2083324c5cbfda_page_10_processed	none
+headers_footers/11253d83d886378909f8b24d24d8a90412099087_page_4	none
+headers_footers/1218c2e64afa8cbdcb4880220c7abb6540d38e51_page_3_processed	ocr
+headers_footers/12cf936d94737c51bca20ddc7b2a500267b94c9b_page_9	suspect
+headers_footers/12e836a20227be4b63f7dcdebb2498e9d189d4da_page_5_processed	suspect
+headers_footers/13352c55af54b88818a6381e4523a3d0a2b70e0d_page_15_processed	ocr
+headers_footers/148c79ae1507bf2a6ee7c11c91559ac6aa2f0556_page_9_processed	none
+headers_footers/189286dda42dcb3619192d715273a2a5d8ff213f_page_29	ocr
+headers_footers/1f47c4d1c3d15fbad76b1e6337639a45a3192e00_page_1	suspect
+headers_footers/275579590090bf114f27e3f7ce3939cece9a7b25_page_1	none
+headers_footers/2b0abd9d5f0a599e7a70ae1180fc2eeafe5653bc_page_4	none
+headers_footers/30bf26b6243e63ec6a2e0531e01a079ba86a026a_page_38	none
+headers_footers/385c01ed177acfac97735d31b168e8f795cac3e3_page_9	none
+headers_footers/3e59698077f4a2e70afc371359842898894baf06_page_11	none
+headers_footers/3f4659b0291c5acbd144111c14668eab984b5ae4_page_1	ocr
+headers_footers/3f9326384e1b58fdacd27b7a7056dbf550c243ad_page_1	suspect
+headers_footers/451431d13066daad9f4ba592952451dd07f542d9_page_1	ocr
+headers_footers/4b91e05fb0fe865391f0f25c41a83c9c5fd37c08_page_1	suspect
+headers_footers/5b419ca6365ed67292e9c4f5a46d733efce69b75_page_1	none
+headers_footers/62989d7ee556e5ef4919dd5b3f925535c5f9f108_page_12	suspect
+headers_footers/70b11ae28cefcbcdb69d51840f5f6c127821a0aa_page_5	suspect
+headers_footers/74094decfc2f4504fb7e14a3969e2abe71d5eaf9_page_3	suspect
+headers_footers/7b3ad57e2874674ad6f4aa71c9be495e65dcf449_page_2	none
+headers_footers/8063d40c50199f37405b48fbc93af2386abe6d09_page_1	none
+headers_footers/8dcbce41908541abaf65e574b852b0e89445f75f_page_13	none
+headers_footers/957b896300cbee7e2535a6513f84f09c78a982fe_page_8	none
+headers_footers/a09e03201840ca874de0bb5da518259659196e1c_page_6	suspect
+headers_footers/ad08db17adb365b1e5c3954776a45f57f61c24e2_page_7	none
+headers_footers/b329b8083ee2abe62999617011b888e980924905_page_3	suspect
+headers_footers/b742cbc3a052ad06d7a8ae633d5cce5651f7eb76_page_42	suspect
+headers_footers/c655ed75d1f645f3ddc601f992a7d99c845a5e6f_page_8	none
+headers_footers/c863e36ed1e5fd97f3330d84a7a25ca034fe20dc_page_1	ocr
+headers_footers/d660c61fbcb505d9f6e8ae38f435bed6822bd23b_page_12	ocr
+headers_footers/d8b9c4cd0ba9b036e09168c8dccccd1d43315ef4_page_1	none
+headers_footers/e7f89d27e9cc33c4e86d92c27cc578a95a323b24_page_1	ocr
+headers_footers/f9f5429bf57bd9040fb42fb73dd3cdb1941d90e5_page_5	ocr
+long_tiny_text/10a_pg1	none
+long_tiny_text/10b_pg1	none
+long_tiny_text/10c_pg1	none
+long_tiny_text/11_pg145_pg1	ocr
+long_tiny_text/11_pg146_pg1	ocr
+long_tiny_text/11_pg161_pg1	ocr
+long_tiny_text/11_pg186_pg1	ocr
+long_tiny_text/11_pg252_pg1	ocr
+long_tiny_text/11_pg36_pg1	ocr
+long_tiny_text/11_pg375_pg1	ocr
+long_tiny_text/11_pg377_pg1	ocr
+long_tiny_text/11_pg418_pg1	ocr
+long_tiny_text/11_pg421_pg1	ocr
+long_tiny_text/11_pg57_pg1	ocr
+long_tiny_text/13_pg162_pg1	ocr
+long_tiny_text/13_pg165_pg1	ocr
+long_tiny_text/13_pg32_pg1	ocr
+long_tiny_text/13_pg475_pg1	ocr
+long_tiny_text/13_pg501_pg1	ocr
+long_tiny_text/13_pg531_pg1	ocr
+long_tiny_text/13_pg556_pg1	ocr
+long_tiny_text/13_pg566_pg1	ocr
+long_tiny_text/13_pg639_pg1	ocr
+long_tiny_text/13_pg67_pg1	ocr
+long_tiny_text/13_pg811_pg1	ocr
+long_tiny_text/13_pg857_pg1	ocr
+long_tiny_text/14a_pg1	none
+long_tiny_text/14b_pg1	none
+long_tiny_text/14c_pg1	none
+long_tiny_text/14d_pg1	none
+long_tiny_text/14e_pg1	none
+long_tiny_text/15a_pg1	none
+long_tiny_text/15b_pg1	none
+long_tiny_text/15c_pg1	none
+long_tiny_text/15d_pg1	none
+long_tiny_text/15e_pg1	none
+long_tiny_text/16a_pg1	none
+long_tiny_text/16b_pg1	none
+long_tiny_text/16c_pg1	none
+long_tiny_text/17_pg17_pg1	none
+long_tiny_text/17_pg24_pg1	none
+long_tiny_text/17_pg2_pg1	none
+long_tiny_text/17_pg33_pg1	none
+long_tiny_text/17_pg34_pg1	none
+long_tiny_text/17_pg4_pg1	none
+long_tiny_text/17_pg86_pg1	none
+multi_column/0097571b436308f563a5808d45d0232255a2_page_4_pg1	ocr
+multi_column/0097571b436308f563a5808d45d0232255a2_page_6_pg1	ocr
+multi_column/0097571b436308f563a5808d45d0232255a2_page_7_pg1	suspect
+multi_column/00d8a44d3066bbc4bd8df149d0dafb96f423_page_1_pg1	none
+multi_column/00d8a44d3066bbc4bd8df149d0dafb96f423_page_3_pg1	none
+multi_column/01119fb525785eb7153ee600241ff1e01959_page_2_pg1	ocr
+multi_column/0208fbb5d6b646f972f4702428ad2cede5c5_page_1_pg1	ocr
+multi_column/0208fbb5d6b646f972f4702428ad2cede5c5_page_2_pg1	ocr
+multi_column/0208fbb5d6b646f972f4702428ad2cede5c5_page_3_pg1	ocr
+multi_column/0208fbb5d6b646f972f4702428ad2cede5c5_page_6_pg1	ocr
+multi_column/0208fbb5d6b646f972f4702428ad2cede5c5_page_8_pg1	ocr
+multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_12_pg1	none
+multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_14_pg1	none
+multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_16_pg1	none
+multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_17_pg1	none
+multi_column/02a3e23da54b82c414d272051b0b5d8f44d8_page_3_pg1	none
+multi_column/02e31046996b59b4997b8413f09ae163ade5_page_10_pg1	ocr
+multi_column/02e31046996b59b4997b8413f09ae163ade5_page_2_pg1	ocr
+multi_column/02e31046996b59b4997b8413f09ae163ade5_page_5_pg1	ocr
+multi_column/0353b31c0381513a685be1878f8fad7d01d6_page_5_pg1	none
+multi_column/04e88521bffcae275b79ed2c89e24c1f8855_page_1_pg1	ocr
+multi_column/04e88521bffcae275b79ed2c89e24c1f8855_page_2_pg1	ocr
+multi_column/05a0e5bc2881eb1d246b2e41906bf8b24de2_page_3_pg1	suspect
+multi_column/06125479b00df48e91fe2fb616292d14116d_page_4_pg1	none
+multi_column/065d792cf3923fc76a17183cfd13480cd51d_page_1_pg1	ocr
+multi_column/065d792cf3923fc76a17183cfd13480cd51d_page_8_pg1	ocr
+multi_column/065d792cf3923fc76a17183cfd13480cd51d_page_9_pg1	ocr
+multi_column/069577d83be73a2373200ada5599eb824c95_page_2_pg1	ocr
+multi_column/07c14b471fd33c56b988cc7a58dae211d16f_page_13_pg1	ocr
+multi_column/07c14b471fd33c56b988cc7a58dae211d16f_page_14_pg1	ocr
+multi_column/07c14b471fd33c56b988cc7a58dae211d16f_page_9_pg1	ocr
+multi_column/081875a1035e34dee439b9a2a3a55e319405_page_17_pg1	suspect
+multi_column/0b2e551bbc33b030f810311118e2088d7ae3_page_12_pg1	ocr
+multi_column/0b2e551bbc33b030f810311118e2088d7ae3_page_9_pg1	ocr
+multi_column/0cf93d937e0f519965d4ff67daec8dd5dea1_page_5_pg1	ocr
+multi_column/0d7f2cbc54e1b8e58b42a867c3f7620bcd29_page_6_pg1	none
+multi_column/0d7f2cbc54e1b8e58b42a867c3f7620bcd29_page_8_pg1	none
+multi_column/0d7f2cbc54e1b8e58b42a867c3f7620bcd29_page_9_pg1	suspect
+old_scans/1	none
+old_scans/10	none
+old_scans/11	none
+old_scans/12	none
+old_scans/13	none
+old_scans/14	none
+old_scans/15	none
+old_scans/16	none
+old_scans/17	none
+old_scans/18	none
+old_scans/19	none
+old_scans/2	none
+old_scans/20	none
+old_scans/21	none
+old_scans/22	none
+old_scans/23	none
+old_scans/24	none
+old_scans/25	none
+old_scans/26	none
+old_scans/27	none
+old_scans/28	none
+old_scans/29	none
+old_scans/3	none
+old_scans/30	none
+old_scans/31	none
+old_scans/32	none
+old_scans/33	none
+old_scans/34	none
+old_scans/35	none
+old_scans/36	none
+old_scans/37	none
+old_scans/38	none
+old_scans/39	none
+old_scans/4	none
+old_scans/40	none
+old_scans/41	none
+old_scans/42	none
+old_scans/43	none
+old_scans/44	none
+old_scans/45	none
+old_scans/46	none
+old_scans/47	none
+old_scans/48	none
+old_scans/49	none
+old_scans/5	none
+old_scans/50	none
+old_scans/51	none
+old_scans/52	none
+old_scans/53	none
+old_scans/54	none
+old_scans/55	none
+old_scans/56	none
+old_scans/57	none
+old_scans/58	none
+old_scans/59	none
+old_scans/6	none
+old_scans/60	none
+old_scans/61	none
+old_scans/62	none
+old_scans/63	none
+old_scans/64	none
+old_scans/65	none
+old_scans/67	none
+old_scans/68	none
+old_scans/69	none
+old_scans/7	none
+old_scans/70	none
+old_scans/71	none
+old_scans/72	none
+old_scans/73	none
+old_scans/74	none
+old_scans/75	none
+old_scans/76	none
+old_scans/77	none
+old_scans/78	none
+old_scans/79	none
+old_scans/8	none
+old_scans/80	none
+old_scans/81	none
+old_scans/82	none
+old_scans/83	none
+old_scans/84	none
+old_scans/85	none
+old_scans/86	none
+old_scans/87	none
+old_scans/88	none
+old_scans/89	none
+old_scans/9	none
+old_scans/90	none
+old_scans/91	none
+old_scans/92	none
+old_scans/93	none
+old_scans/94	none
+old_scans/95	none
+old_scans/96	none
+old_scans/97	none
+old_scans/98	none
+old_scans/99	none
+old_scans_math/1_pg10	none
+old_scans_math/1_pg113	none
+old_scans_math/1_pg125	none
+old_scans_math/1_pg131	none
+old_scans_math/1_pg19	none
+old_scans_math/1_pg40	none
+old_scans_math/1_pg61	none
+old_scans_math/1_pg63	none
+old_scans_math/1_pg72	none
+old_scans_math/2_pg189	ocr
+old_scans_math/2_pg238	ocr
+old_scans_math/2_pg349	ocr
+old_scans_math/2_pg39	ocr
+old_scans_math/2_pg65	ocr
+old_scans_math/3_pg101	none
+old_scans_math/3_pg148	none
+old_scans_math/3_pg199	none
+old_scans_math/3_pg204	none
+old_scans_math/3_pg251	none
+old_scans_math/3_pg270	none
+old_scans_math/3_pg39	none
+old_scans_math/3_pg634	none
+old_scans_math/3_pg94	none
+old_scans_math/4_pg186	ocr
+old_scans_math/4_pg281	ocr
+old_scans_math/4_pg355	ocr
+old_scans_math/4_pg380	ocr
+old_scans_math/4_pg396	ocr
+old_scans_math/4_pg433	ocr
+old_scans_math/4_pg451	ocr
+old_scans_math/4_pg48	suspect
+old_scans_math/4_pg512	suspect
+old_scans_math/4_pg98	ocr
+old_scans_math/5_pg174	none
+old_scans_math/5_pg281	none
+old_scans_math/5_pg558	none
+tables/008d1dbe3c5a5fd2bac6e4f29acc45e711aa_pg8_pg1	suspect
+tables/0091c5b23fe54b3a7cbe5b0b8c26057b7d70_pg3_pg1	ocr
+tables/0486cc2ec11e21b6a8280ca71073ca28ea3f_pg1	none
+tables/0684e33bd901b116725b6a0e0d21398f7315_pg4_pg1	none
+tables/11e12a3ddca3b1743f6ec1c22a52cdbf9ffe_pg8_pg1	none
+tables/26076dc369efd78b3087643cc7153509bd18_pg3_pg1	ocr
+tables/2d0e0586cd437f8741b3e8280d2f5e43fcbc_pg373	ocr
+tables/2e5fbee1a02ad5dde299c81b1c11c16ad8c9_pg5	none
+tables/30c92c35171cd45479bd3083dbf574b31c9a_pg44	none
+tables/35a3f1c2f69f57fe3ca6da3ef2a1a2f59812_pg53	none
+tables/426df27cf990a3426b9e0731ad346f28184f_pg9	none
+tables/533600ba1ea641b726c0942b913f18529719_pg20_pg1	none
+tables/5fd60eb18fec22bca5781bf1df90d601f0c6_pg15_pg1	suspect
+tables/6130975d8b7c4f5bf39f0afa041776f8e07f_pg11	ocr
+tables/77895f72f448c6110497d01cdc5bbc18a143_pg1	none
+tables/7b9b73157809310ba970693297b7b998ee1c_pg19	ocr
+tables/8097792c7266cdd2875e30cdf31ddcde348b_pg1	none
+tables/863c470240a40ad162e052484aaf68601f9a_pg4_pg1	suspect
+tables/9e6a5b213e4fd5906842ebe6b0c5538e9e7b_pg12	none
+tables/d896f9ae5405c8d6b147ae9c9c20a0abb6c4_pg4_pg1	none
+tables/df96e707adf064658b570d4cf4b6f98b4890_pg6_pg1	none
+tables/f1774abde9c6d1cae0f05bb2c6992e9cca85_pg4	suspect
+tables/f2ad0cd06b93fce98f2f354699cfc7b0a8df_pg1_pg1	ocr
+tables/fcb362aa304b7b0bedec37f6c74f8ce3751a_pg2	none

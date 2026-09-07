@@ -61,6 +61,9 @@ are mapped from their font codes. Why: the meaning of such a table lives in the 
 ## D014 - An optional vision stage joins the product (2026-09-03, owner's decision)
 Off by default; one switch; one provider interface with an open model on a GPU endpoint (transcription of pages with no usable text) and a frontier model API (understanding). Evidence: run 9 plus olmOCR 2 on the 94 empty pages scored 67.8 against 62.2. The text layer stays the ground truth; a model only reads pages TrueDoc cannot.
 
+Evidence, 7 September: run 54 (67.4) scores 72.2 with olmOCR 2's readings saved on 3 September dropped onto its 78 blank pages (held-out 65.0 to 66.6), and 72.6 when the model also replaces the 28 typed pages our own OCR reads at 0.80-0.85 confidence. The second number asks whether 'a model only reads pages TrueDoc cannot' should become 'a model reads every page without a text layer'; the owner's decision is pending, with the GPU hour for the proper run (the switch on inside the converter).
+Evidence, 7 September, 21:36 (GPU session 2, 85 cents): with olmOCR 2 reading all 281 pages that have no digital text layer, run 54's output scores 82.7 (CI 81.8-83.7; held-out 79.4) against 67.4 without and 72.2 with the model on blank pages only; the hidden OCR layers alone are worth 4.6 points, the pages with no layer 9.7, the suspect layers 1.0. Rule change: D019 below.
+
 ## D015 - Model output is marked as inferred, in the body and the front matter (2026-09-03, owner's decision)
 Anything a model read from pixels or inferred (an icon's meaning, a chart, a scanned page) is visibly marked for a human reader and listed in the front matter for audit. Marker design (footnote tag `[^inferred]`, page note for whole pages) to be reviewed by the owner before building. Applies to every escalation, not only icons. **Confirmed by the owner on 3 September (evening):** the proposal in `docs/OKF_SPEC.md` stands as written, with one tag for every model source and the model named in the definition and the front matter, not in the tag.
 
@@ -78,6 +81,10 @@ key (`[^1-p12]`) so keys stay unique. Markers inside formulas are not linked (a 
 ## D018 - The no-model target is 70, the ceiling 72.5, and the census pool is the stopping rule (2026-09-07, owner's decision)
 
 The lateral round's census (`bench/tools/ceiling_census.py`) found that a perfect classical run, winning every failing check whose text already exists in evidence we hold, would score about 72.5 on olmOCR-bench; the other 27.5 points sit behind pixels that only a better reader of images can turn into letters. The owner set the no-model target at 70 (by the end of the week of 7 September) and treats 72.5 as the wall to measure against, not the goal. The stopping rule for classical work: run the census after each benchmark run; when the mechanical pool stops shrinking while runs keep landing, the classical path is done and the remaining points belong to the model tiers (D014). The three-wave plan is in `docs/LATERAL_ROUND_1.md`.
+
+## D019 - A model reads every page without a digital text layer (2026-09-07, owner's decision)
+
+A hidden OCR layer is another reader's guess at the words, not the document's text: it cannot carry a formula, and it loses to a vision model on every page class measured (session 2 of 7 September: hidden-layer pages +4.6 points, pages with no layer +9.7, suspect layers +1.0; all together 82.7 against 67.4, held-out 79.4 against 65.0). Rule (agreed by the owner at 21:50 the same evening): when the vision stage is on, every page whose text layer is not digital (kinds none, ocr, suspect) is read by the model; the layer's text is kept only as the fallback when no model is available (D010 narrows to that case) and as a witness for the invented-text check (D008). Digital pages never go to the model. Model pages are marked inferred as D015 says, and the header and furniture rules run over the model's text. The top tools behave this way already (olmOCR: image only; Marker: the embedded text per page, hidden layers stripped only with a flag).
 
 ## Open: PyMuPDF's licence against D007 (found 2026-09-07, owner's decision pending)
 

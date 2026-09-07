@@ -32,3 +32,4 @@ Thumbs.db
 # GPU step working files (benchmark PDFs copied for shipping, model outputs)
 bench/gpu/pdfs/
 bench/gpu/out/
+bench/gpu/out2/

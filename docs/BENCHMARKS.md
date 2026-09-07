@@ -12,7 +12,7 @@ Both benchmarks are downloaded into `bench/data/` (git-ignored) and scored with 
 
 ### olmOCR-bench (overall, higher is better)
 
-Source: `allenai/olmocr` README, fetched 2026-09-02. Sections: ArXiv maths, old-scan maths, tables, old scans, headers and footers, multi-column, long tiny text, base.
+Source: `allenai/olmocr` README, fetched 2026-09-02. Sections: ArXiv maths, old-scan maths, tables, old scans, headers and footers, multi-column, long tiny text, base. Chandra's code is Apache-2.0 but its model weights carry a modified OpenRAIL-M licence (research, personal use, startups under $2M; not competitively with Datalab's API), checked 7 September: a competitor to measure, not a component to adopt.
 
 | Tool | ArXiv | OldScanMath | Tables | OldScans | Hdr/Ftr | MultiCol | TinyText | Base | **Overall** |
 |---|---|---|---|---|---|---|---|---|---|
@@ -55,7 +55,9 @@ OvisOCR2's per-metric numbers come from its technical report (arXiv 2607.13639) 
 
 ## TrueDoc's scores
 
-| Date | Version | Overall | ArXiv | OldScanMath | Tables | OldScans | Hdr/Ftr | MultiCol | TinyText | Base | Notes |
+The eight section columns run arXiv, old-scan maths, tables, old scans, baseline, multi-column, tiny text, headers and footers, the order this table has used since run 1. Note that the published table above orders its last four columns differently (headers, multi-column, tiny text, base). Until 7 September this table's header row had the baseline and headers labels swapped; the numbers were always in the order stated here.
+
+| Date | Version | Overall | ArXiv | OldScanMath | Tables | OldScans | Base | MultiCol | TinyText | Hdr/Ftr | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-02 | M1 text-layer baseline | **48.6** (CI 47.6-49.6) | 0.0 | 0.0 | 32.7 | 58.7 | 68.6 | 67.4 | 74.9 | 86.2 | No models at all: text layer + geometry heuristics + ruled tables. **The old-scans number is an artefact**: scanned pages produced a file containing only a newline, and the scorer's fuzzy matcher scores a one-character document as a perfect match for any phrase. Truly empty files would have scored about 13 there (only the "absent" checks pass). Fixed on 2026-09-03: empty pages now produce empty files. |
 
@@ -115,7 +117,12 @@ OvisOCR2's per-metric numbers come from its technical report (arXiv 2607.13639) 
 | 2026-09-07 | Run 50: + braces kept in scanned formula strings, tables in the head strip, lowercase label rows, checklist grids, a roster's wrapped title, TeX Gyre faces as text, boxed grids of names rebuilt, and two numeric-block guards since reverted (code as of 7 Sept 14:45) | **67.1** (CI 66.3-68.0) | 87.0 | 4.1 | 79.2 | 21.5 | 94.7 | 73.6 | 81.2 | 95.7 | Level with run 49 overall, best held-out at the time (64.9); 20 won, 16 lost: seven header checks on two document-control pages to the numeric guards (reverted), two order checks on a references page, five table cells on four pages, two formulas on newtx pages (traced) |
 | 2026-09-07 | Run 51: run 50 minus the numeric guards and the strip-alone table rule, plus the dots bridge, wrapped cell lines, tariff tiers, the comma-and-hyphen exemption, the grid-rebuild gate and the aligned strip heading (code as of 7 Sept 15:59) | **67.2** (CI 66.4-68.1) | 87.0 | 4.1 | 79.5 | 21.5 | 94.7 | 73.9 | 81.2 | 95.9 | Best at the time; 10 won, 1 lost (one table cell, traced) |
 | 2026-09-07 | Run 52: run 51 plus the document-control stamp rule and the relaxed strip-heading alignment (code as of 7 Sept 17:01) | **67.3** (CI 66.4-68.2) | 87.0 | 4.1 | 79.5 | 21.5 | 94.7 | 73.9 | 81.2 | 96.6 | Best at the time; 5 won (the stamp's page), none lost |
-| 2026-09-07 | Run 53: run 52 plus the headerless-box heading adoption and the head-strip chain (code as of 7 Sept 18:13) | **67.3** (CI 66.5-68.2) | 87.0 | 4.1 | 79.6 | 21.5 | 94.7 | 73.9 | 81.2 | 96.6 | **Best so far** (level with run 52 to one decimal, one table check more); 1 won, none lost |
+| 2026-09-07 | Run 53: run 52 plus the headerless-box heading adoption and the head-strip chain (code as of 7 Sept 18:13) | **67.3** (CI 66.5-68.2) | 87.0 | 4.1 | 79.6 | 21.5 | 94.7 | 73.9 | 81.2 | 96.6 | Best at the time (level with run 52 to one decimal, one table check more); 1 won, none lost |
+| 2026-09-07 | Run 54: run 53 plus the key-table rule (a two-column table of enumerated leads beside short names, the botanical key) (code as of 7 Sept 19:05) | **67.4** (CI 66.6-68.3) | 87.0 | 4.1 | 80.0 | 21.5 | 94.7 | 73.9 | 81.2 | 96.6 | **Best so far.** Tables +0.4 (4 checks, the botanical key, exactly as page-checked); every other section identical to the check; 4 won, none lost. Held-out 65.0, tuned-on 63.3. |
+| 2026-09-07 | Run 54 + vision on blank pages (experiment, not a TrueDoc run): olmOCR 2's readings saved on 3 September dropped onto the 78 pages run 54 left blank, every other page untouched (`bench/gpu/merge.py`, candidate `truedoc53_vlm`) | **72.2** (CI 71.2-73.2) | 87.0 | 23.1 | 80.9 | 34.8 | 99.9 | 74.1 | 81.2 | 96.4 | What the vision tier is worth today on the pages TrueDoc cannot read: +4.8 (242 checks won, 2 lost: running heads the model transcribed on a French title page and a Bengali one). Old scans +13.3, old-scan maths +19.0, tables +9 checks, baseline +73 (a blank page fails its baseline check). Held-out 66.6 (run 54: 65.0), tuned-on 68.6. |
+| 2026-09-07 | Run 54 + vision on every page the model read (experiment): as above, and the model also replaces the 28 typed pages our own OCR has accepted since 3 September at 0.80-0.85 confidence (candidate `truedoc53_vlmall`) | **72.6** (CI 71.5-73.5) | 87.0 | 23.1 | 82.9 | 34.8 | 99.9 | 75.1 | 81.2 | 96.4 | The model over our weak OCR on 28 typed pages: +0.4 more (33 checks won, 4 lost); tables +20 checks, multi-column +9. Held-out unchanged at 66.6 (those 28 pages are all tuned-on), tuned-on 69.1. |
+| 2026-09-07 | GPU session 2 (experiment, not a TrueDoc run): olmOCR 2 read all 281 pages without a digital text layer on the owner's rented RTX 4090 (21 minutes of model time, 85 cents in all) and its readings replace run 54's pages for those 281 (candidate `truedoc53_v2all`) | **82.7** (CI 81.8-83.7) | 87.0 | 80.8 | 83.6 | 46.6 | 99.8 | 80.1 | 87.8 | 96.3 | The hybrid: TrueDoc's exact text on the 1,122 digital pages, the model's reading on the 281 others. 725 checks won, 53 lost (headers 5: running heads the model transcribes; tiny text 17: presence checks whose reference carries the hidden layer's own OCR errors, 'nnder British rule', so the model's correct word fails; multi-column 6, old scans 11, old-scan maths 4, tables 10). Held-out 79.4, tuned-on 80.5. Above olmOCR's own 82.4, level with Chandra's 83.1 inside the interval. |
+| 2026-09-07 | The same readings by page class (experiments): no layer at all only (`truedoc53_v2none`, 183 pages) 77.1; hidden OCR layer only (`truedoc53_v2ocr`, 76 pages) 72.0; suspect layer only (`truedoc53_v2suspect`, 22 pages) 68.4; blank pages only, the current rule, with the new readings (`truedoc53_v2blank`, 77 pages) 72.2 | see notes | - | - | - | - | - | - | - | - | The three classes add up (9.7 + 4.6 + 1.0 = 15.3 on 67.4) and every class pays; the hidden layers alone are worth 4.6 points (old-scan maths 4.1 to 34.1, tiny text 81.2 to 83.7, multi-column 73.9 to 77.4). Held-out: none 74.9, hidden OCR 69.8, suspect 64.7, blank 66.6. |
 
 Section-only runs since the baseline (same scorer, one section at a time; the overall column is not comparable):
 
@@ -188,3 +195,7 @@ One page in five is held out and never tuned on (`bench/holdout.txt`, `bench/hol
 | Run 51 | 65.0 | 63.1 | both up; best held-out. |
 | Run 52 | 65.0 | 63.2 | held-out level, tuned-on up. |
 | Run 53 | 65.0 | 63.2 | level. |
+| Run 54 | 65.0 | 63.3 | held-out level, tuned-on up a touch with the key table. |
+| Run 54 + vision on blank pages | 66.6 | 68.6 | both halves up: the model's gain on blank pages is general, not fitted. |
+| Run 54 + vision on all 110 model-read pages | 66.6 | 69.1 | the 28 extra pages are all tuned-on pages. |
+| Run 54 + vision on all 281 non-digital pages (session 2) | 79.4 | 80.5 | both halves up by about 14; held-out old-scan maths 71.2 on 66 checks against 82.4 tuned-on, tiny text 93.0 against 87.2, the rest within two points. |

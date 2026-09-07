@@ -4,7 +4,7 @@ _Status: proposal, not started. Nothing has been spent._
 
 ## Why
 
-About 250 of the 1,403 benchmark pages have no usable text layer (old scans, old maths textbooks, some tiny-text and table pages). Classical OCR reads typewritten pages but not handwriting, and it cannot produce formulas from a scan. The two old-scans sections are a quarter of the overall score, and every tool at the top of the leaderboard uses a document vision model for them. The same is true for real users: scanned contracts, letters and old reports.
+281 of the 1,403 benchmark pages have no digital text layer (measured 7 September: 183 with no layer at all, 76 with a hidden OCR layer, 22 suspect; old scans 98, old-scan maths 36, tiny text 46, headers 39, multi-column 38, tables 24): old scans, old maths textbooks, some tiny-text and table pages. Classical OCR reads typewritten pages but not handwriting, and it cannot produce formulas from a scan. The two old-scans sections are a quarter of the overall score, and every tool at the top of the leaderboard uses a document vision model for them. The same is true for real users: scanned contracts, letters and old reports.
 
 ## What would run
 
@@ -53,6 +53,33 @@ The 111 benchmark pages run 9 left empty were read by olmOCR 2 (7B, FP8) on a re
 Merged into run 9 by `bench/gpu/merge.py` (TrueDoc's page wherever it has text, the model's page only where TrueDoc left the page empty): **67.8 against 62.2**. Old scans 20.7 to 34.0, old-scan maths 4.1 to 23.1, tables 65.7 to 70.0, multi-column 70.7 to 72.6; the per-page baseline checks 93.4 to 99.9 because an empty page fails its baseline check.
 
 What this says: TrueDoc's own OCR (a small CPU model) is the weak point on old scans, and a vision model on a GPU reads them far better. The candidate product shape is unchanged: text layer first (exact characters), CPU OCR as the fallback, and an *optional* vision stage for pages that have no usable text, run on a GPU when the owner enables it. Whether to make that stage part of the product is the owner's call (cost, GPU dependency).
+
+## Result of the second measurement (7 September 2026)
+
+No GPU was rented: the readings from 3 September were dropped onto the pages run 54 (67.4) leaves blank, with `bench/gpu/merge.py`, and scored with the official scorer.
+
+| Candidate | Pages from the model | Overall | Old scans | Old-scan maths | Tables | Held-out |
+|---|---|---|---|---|---|---|
+| Run 54 | 0 | 67.4 | 21.5 | 4.1 | 80.0 | 65.0 |
+| `truedoc53_vlm`: model on the 78 blank pages | 78 | **72.2** | 34.8 | 23.1 | 80.9 | 66.6 |
+| `truedoc53_vlmall`: model on every page it read | 110 | **72.6** | 34.8 | 23.1 | 82.9 | 66.6 |
+
+The second row is the product rule as decided (a model only reads pages TrueDoc cannot). The third replaces our own OCR on 28 typed pages it reads at 0.80-0.85 confidence, and the model wins 33 checks to 4 there: on a page with no text layer the model is the better reader even where the classical engine is confident. Two losses in both rows are running heads the model transcribed; the header rules should run over the model's text too when the stage is built into the pipeline. The proper run, with `--vision-endpoint` on inside the converter, still needs a served model: one rental hour, or the on-demand endpoint below.
+
+## Result of the third measurement (7 September 2026, GPU session 2)
+
+The owner rented an RTX 4090 (24 GB) on vast.ai for 33 minutes: the machine fetched the 281 pages without a digital text layer from Hugging Face itself (`bench/gpu/fetch_pages.py`, 290 s), installed olmOCR (6 minutes), and read the pages in 21 minutes; 85 cents in all. Merged into run 54 by page class (`bench/gpu/merge_by_list.py`):
+
+| Pages given to the model | Overall | Old-scan maths | Old scans | Tiny text | Multi-column | Tables | Held-out |
+|---|---|---|---|---|---|---|---|
+| none (run 54) | 67.4 | 4.1 | 21.5 | 81.2 | 73.9 | 80.0 | 65.0 |
+| blank pages only, the current rule (77) | 72.2 | 23.8 | 34.8 | 81.2 | 74.1 | 80.6 | 66.6 |
+| no layer at all (183) | 77.1 | 43.2 | 46.6 | 85.3 | 76.0 | 82.2 | 74.9 |
+| hidden OCR layer only (76) | 72.0 | 34.1 | 21.5 | 83.7 | 77.4 | 81.0 | 69.8 |
+| suspect layer only (22) | 68.4 | 11.8 | 21.5 | 81.2 | 74.4 | 80.4 | 64.7 |
+| **all 281** | **82.7** | 80.8 | 46.6 | 87.8 | 80.1 | 83.6 | 79.4 |
+
+The hybrid beats the model alone (olmOCR's published 82.4) because the 1,122 digital pages keep their exact text (arXiv formulas 87.0 against the model's 83.0). Losses against run 54: 53 checks, mostly running heads the model transcribes and tiny-text references that carry the hidden layer's own OCR errors. Rule D019 in `docs/DECISIONS.md`, agreed by the owner.
 
 ## Design: the vision stage as a service (agreed 3 September 2026)
 
