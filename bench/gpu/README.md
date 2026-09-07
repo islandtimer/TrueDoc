@@ -29,6 +29,17 @@ RTX 4090 (48 GB) on vast.ai at US$0.335/hour, `PyTorch (Vast)` template. Upload 
 25 minutes, the model itself read 110 of 111 pages in about 12 minutes including a model reload per category (the script runs the pipeline
 once per category folder). One page failed inside the pipeline. Total instance time about 55 minutes.
 
+## Before uploading anything: test the link (lesson of 8 September 2026)
+
+A Japanese host advertised at 540 Mbps ran at half a megabyte a second to PyPI and had no working IPv6 route to the package host; its install sat for twenty minutes with two packages, and the arithmetic (three gigabytes of packages, eight and a half of model weights) said hours. Ten cents lost, then a North Carolina RTX 4090 did PyPI at 15 MB/s. So, first thing after connecting:
+
+    curl -4 -s -L -o /dev/null -w '%{http_code} %{speed_download} B/s
+' --max-time 8 https://files.pythonhosted.org/packages/py3/p/pip/pip-24.0-py3-none-any.whl
+    curl -4 -s -L -o /dev/null -w '%{http_code} %{speed_download} B/s
+' --max-time 8 https://download.pytorch.org/whl/cu128/torch-2.7.1%2Bcu128-cp312-cp312-manylinux_2_28_x86_64.whl
+
+Under a few megabytes a second, destroy the instance and rent another; prefer European or US hosts. The listing's bandwidth figure is no guide. If IPv6 is the trouble, `echo 'precedence ::ffff:0:0/96  100' >> /etc/gai.conf` makes the container prefer IPv4.
+
 ## What happened on 7 September 2026 (second run)
 
 RTX 4090 (24 GB) in Hungary at US$0.382/hour, `PyTorch (Vast)` template; 33 minutes of instance time, 85 cents. New pieces: `fetch_pages.py` (the rented machine fetches the listed pages from the public Hugging Face dataset itself: 281 pages in 290 s, no upload), `poll_remote.sh <port> <host>` (a poll loop for the Monitor tool; run the file, an inline script breaks on quoting), `merge_by_list.py <base> <model> <out> <kinds> [--score]` (merge by page class and score), and `pages.txt` now carries each page's text-layer kind after a tab, written from the kinds census (`select_pages.py` still writes the old one-column form). Start the remote job with `ssh -n` or detach its stdin, or the session hangs until the job ends. Results were placed as candidate `olmocr2b` (raw JSONL in `out2/`) so the 3 September candidate `olmocr2` stays. Result: 82.7 with the model on all 281 non-digital pages (`docs/GPU_PLAN.md`).

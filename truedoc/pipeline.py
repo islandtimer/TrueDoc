@@ -914,6 +914,7 @@ def _read_regions_with_model(doc: Document, path: str, provider, inferred: list[
     alone: the text says what the icon says.
     """
     from truedoc.render.okf import INFERRED_TAG
+    from truedoc.vision.regions import split_picture_answer
 
     for page in doc.pages:
         if page.meta.get("vision_model"):
@@ -966,12 +967,18 @@ def _read_regions_with_model(doc: Document, path: str, provider, inferred: list[
             # is a figure asked for a description.
             words_inside = sum(1 for w in page.words if box.contains_point(w.bbox.cx, w.bbox.cy))
             if words_inside == 0 and box.width * box.height >= _PICTURE_TEXT_MIN_AREA * page_area:
-                transcript = _read_region(provider, path, page, box, "picture-text")
+                transcript, description = split_picture_answer(_read_region(provider, path, page, box, "picture-text"))
                 if transcript:
                     b.text_override = transcript
                     b.meta["transcribed"] = True
                     b.meta["inferred_model"] = provider.name
                     inferred.append({"page": page.number, "kind": "picture-text", "text": transcript[:500], "model": provider.name, "bbox": [round(v, 1) for v in (box.x0, box.y0, box.x1, box.y1)]})
+                    continue
+                if description:
+                    # The model saw a picture without text and described it: that is alt text (D015).
+                    b.meta["inferred_text"] = description
+                    b.meta["inferred_model"] = provider.name
+                    inferred.append({"page": page.number, "kind": "figure", "text": description, "model": provider.name, "bbox": [round(v, 1) for v in (box.x0, box.y0, box.x1, box.y1)]})
                     continue
             answer = _read_region(provider, path, page, box, "figure")
             if not answer:

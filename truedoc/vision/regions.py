@@ -78,6 +78,34 @@ def render_region_png_base64(pdf_path: str, page_number: int, bbox: tuple[float,
         doc.close()
 
 
+_IMAGE_LINE = re.compile(r"^!\[(?P<alt>[^\]]*)\]\([^)]*\)\s*$")
+
+
+def split_picture_answer(text: str | None) -> tuple[str | None, str | None]:
+    """A model's answer for a picture, split into what it transcribed and what it only described.
+
+    olmOCR answers a picture without text with an image reference whose alt text is a description
+    ('![Scatter plot showing ...](...)'); inside a transcription it may also drop such a line for a
+    chart next to the text. Image lines are taken out: the first alt text is the description,
+    the remaining lines are the transcription (None when nothing readable is left)."""
+    if not text:
+        return None, None
+    kept: list[str] = []
+    description = None
+    for line in text.split("\n"):
+        m = _IMAGE_LINE.match(line.strip())
+        if m:
+            alt = m.group("alt").strip()
+            if alt and description is None:
+                description = alt
+            continue
+        kept.append(line)
+    body = "\n".join(kept).strip()
+    if len(re.findall(r"[^\W_]{2,}", body)) < 3:
+        body = ""
+    return (body or None), description
+
+
 def clean_answer(text: str | None, kind: str) -> str | None:
     """The model's answer as text fit for the document, or None when there is
     nothing to write (decoration, an empty or evasive answer)."""
