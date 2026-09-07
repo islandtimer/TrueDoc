@@ -32,3 +32,14 @@ once per category folder). One page failed inside the pipeline. Total instance t
 ## What happened on 7 September 2026 (second run)
 
 RTX 4090 (24 GB) in Hungary at US$0.382/hour, `PyTorch (Vast)` template; 33 minutes of instance time, 85 cents. New pieces: `fetch_pages.py` (the rented machine fetches the listed pages from the public Hugging Face dataset itself: 281 pages in 290 s, no upload), `poll_remote.sh <port> <host>` (a poll loop for the Monitor tool; run the file, an inline script breaks on quoting), `merge_by_list.py <base> <model> <out> <kinds> [--score]` (merge by page class and score), and `pages.txt` now carries each page's text-layer kind after a tab, written from the kinds census (`select_pages.py` still writes the old one-column form). Start the remote job with `ssh -n` or detach its stdin, or the session hangs until the job ends. Results were placed as candidate `olmocr2b` (raw JSONL in `out2/`) so the 3 September candidate `olmocr2` stays. Result: 82.7 with the model on all 281 non-digital pages (`docs/GPU_PLAN.md`).
+
+## Picture regions on digital pages (prepared 8 September 2026, for a third session)
+
+`select_regions.py [--min-area 0.10] [--failed <run>/failed_tests.jsonl] [--out bench/gpu/crops]` writes every picture of at least the given share of a digital page that holds none of the page's own words as a one-page PDF (`<category>/<stem>__r<i>.pdf`) with a `manifest.json` of page ids and bboxes. Run 55's failing pages at a 2% floor gave 92 crops on 60 pages (`crops_failing/`); all digital pages at a 10% floor gave 107 crops on 89 pages (`crops/`). Ship a crops folder like `pdfs/` and run `run_olmocr2.sh` over it; the readings come back keyed by crop name, which the manifest maps to page and bbox. Both folders are git-ignored.
+
+### Session 3, step by step
+
+1. `scp -r bench/gpu/crops_failing bench/gpu/crops root@<host>:~/gpu/` (43 MB and 34 MB; or fetch nothing: the crops are local files).
+2. On the machine: `bash run_olmocr2.sh ~/gpu/crops_failing ~/gpu/out_crops` (and the same for `crops`).
+3. Back here: `python bench/gpu/merge.py place --out bench/gpu/out3 --candidate olmocr2c`, then copy `bench/gpu/crops_failing/manifest.json` (and `crops/manifest.json`, concatenated) to `bench/data/olmocr-bench/bench_data/olmocr2c/manifest.json`.
+4. Run 58: `EXTRA="--vision-endpoint file:bench/data/olmocr-bench/bench_data/olmocr2b+bench/data/olmocr-bench/bench_data/olmocr2c" nohup bash bench/tools/launch_run.sh 58 truedoc57 56 > bench/out/launch/nohup58.log 2>&1 &` (no `--vision-pages-only`: the region questions must be on; icons and figure descriptions come back empty from disk, picture transcriptions come from the crops).

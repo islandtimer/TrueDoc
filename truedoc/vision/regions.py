@@ -29,16 +29,27 @@ FIGURE_PROMPT = (
     "If it carries no information (a logo, a decorative picture), answer exactly: decorative"
 )
 
+PICTURE_TEXT_PROMPT = (
+    "This image is a picture cut out of a document. It may hold text: a table, a form, a list, a screenshot, a scanned block. "
+    "Transcribe everything readable in it as markdown, in reading order and in the document's own language: tables as markdown "
+    "tables with a heading row, other text as plain paragraphs. Do not describe the picture and do not add anything that is not "
+    "written in it. If it holds no readable text (a photograph, a chart without labels, a logo), answer exactly: none"
+)
+
 # Longest side of the crop sent to the model, in pixels.
-LONGEST_DIM = {"icon": 384, "figure": 1024}
+LONGEST_DIM = {"icon": 384, "figure": 1024, "picture-text": 1288}
 # Padding around the region, as a fraction of its longer side: an icon needs
 # some context (the cell it sits in), a figure only its own edges.
-PADDING = {"icon": 0.6, "figure": 0.04}
-MAX_TOKENS = {"icon": 40, "figure": 400}
+PADDING = {"icon": 0.6, "figure": 0.04, "picture-text": 0.02}
+MAX_TOKENS = {"icon": 40, "figure": 400, "picture-text": 3000}
 
 
 def region_prompt(kind: str) -> str:
-    return ICON_PROMPT if kind == "icon" else FIGURE_PROMPT
+    if kind == "icon":
+        return ICON_PROMPT
+    if kind == "picture-text":
+        return PICTURE_TEXT_PROMPT
+    return FIGURE_PROMPT
 
 
 def render_region_png_base64(pdf_path: str, page_number: int, bbox: tuple[float, float, float, float], kind: str, turn: int = 0) -> str:
@@ -84,6 +95,10 @@ def clean_answer(text: str | None, kind: str) -> str | None:
     first = t.split("\n\n", 1)[0].strip()
     if re.match(r"^(decorative|decoration|none|n/a)\b", first, re.I):
         return None
+    if kind == "picture-text":
+        # A transcription keeps every line; it must hold some words to count as one.
+        words = re.findall(r"[^\W_]{2,}", t)
+        return t if len(words) >= 3 else None
     if kind == "icon":
         line = first.splitlines()[0].strip().rstrip(".:;,")
         line = re.sub(r"^(this|the)\s+(icon|symbol|image)\s+(means|shows|indicates|represents)\s*:?\s*", "", line, flags=re.I)

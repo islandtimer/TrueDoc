@@ -157,6 +157,12 @@ def render_block(block: Block) -> str:
     if k == BlockKind.LIST_ITEM:
         return _render_list_item(text)
     if k == BlockKind.FIGURE:
+        if block.meta.get("transcribed"):
+            # D015, D019: a picture that held text or a table, transcribed by a model: the
+            # placeholder stays, the transcription follows it, tagged as inferred.
+            tag_line = INFERRED_TAG if text.rstrip().endswith("|") else None
+            body = text if tag_line else text + INFERRED_TAG
+            return "![](figure)\n\n" + body + ("\n\n" + tag_line if tag_line else "")
         desc = block.meta.get("inferred_text")
         if desc:
             # D015: a model's description of the figure is its alt text, tagged as inferred.

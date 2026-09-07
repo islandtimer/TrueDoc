@@ -807,6 +807,12 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
         text = provider.read_page(path, page.number)
         if not text:
             continue
+        if _model_reading_is_partial(page, text):
+            # The model returned far less text than the page demonstrably holds (a table it gave
+            # up on, a dense page cut short): the page's own reading stays, and the file says so.
+            page.meta["vision_partial"] = {"model_words": _word_count(text), "own_words": _own_words(page)}
+            doc.warnings.append(f"page {page.number}: the model's reading was partial ({_word_count(text)} words against {_own_words(page)} in the page's own text); the page's own text kept")
+            continue
         witness = page.lines or page.meta.get("witness_lines") or []
         top, bottom = strip_lines(witness, page.height)
         if (not top or not bottom) and opts.ocr:
@@ -840,7 +846,50 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
         _read_regions_with_model(doc, path, provider, inferred)
 
 
+_PARTIAL_MIN_OWN_WORDS = 100    # the page's own reading must be substantial before it can outweigh the model's
+_PARTIAL_RATIO = 2.0            # and hold this many times the model's words
+_WORD_CHARS = re.compile(r"[^\W_]{2,}", re.UNICODE)
+
+
+def _word_count(text: str) -> int:
+    """Words of two letters or digits or more, the same way on both sides: a markdown table's
+    pipes and rules are not words."""
+    return len(_WORD_CHARS.findall(text))
+_PARTIAL_MAX_GARBAGE = 0.1      # a suspect layer counts only when its text is clean
+
+
+def _own_words(page: Page) -> int:
+    """Words the page's own blocks carry (lines and table cells): the reading a reader would get."""
+    parts = [l.text for b in page.blocks for l in (b.lines or [])]
+    parts += [c.text for b in page.blocks if b.table is not None for c in b.table.cells]
+    return _word_count(" ".join(parts))
+
+
+def _model_reading_is_partial(page: Page, text: str) -> bool:
+    """True when the model's reading is far shorter than the page's own text (D008 on model pages).
+
+    The page's own reading is the hidden OCR layer or our engine's accepted reading; a rejected
+    reading (a blank page) never counts, and a suspect layer counts only when its text is clean.
+    Measured on run 55's 281 model pages (7 September): at a ratio of 2 three pages qualify, among
+    them a table the model reduced to 59 words from 228, and keeping the page's own text there
+    recovers four checks and gives back none; at 1.5 a dictionary page the model cut to 906 words
+    from 1,660 joins them (+4/-1), and run 56 showed the raw layer count firing the rule wrongly on
+    six more pages (-10), so the count is taken from the blocks and the ratio kept at 2."""
+    # The page's own reading is what its blocks carry, not the raw layer: a hidden layer often
+    # holds every word twice or words the body drops, and run 56 (8 September) lost ten checks
+    # on six pages where the raw count was double the rendered one.
+    own = _own_words(page)
+    if own < _PARTIAL_MIN_OWN_WORDS or not page.lines:
+        return False
+    if page.quality.kind == "suspect" and page.quality.garbage_fraction > _PARTIAL_MAX_GARBAGE:
+        return False
+    if page.quality.kind not in ("ocr", "ocr-truedoc", "suspect"):
+        return False
+    return own >= _PARTIAL_RATIO * max(1, _word_count(text))
+
+
 _ICON_MAX_PT = 80.0        # an image inside a table cell up to this size is an icon
+_PICTURE_TEXT_MIN_AREA = 0.02   # a picture at least this share of the page may hold a table or text of its own
 _MAX_REGIONS_PER_PAGE = 12  # a page of pictograms is not a page of forty model calls
 
 
@@ -911,6 +960,19 @@ def _read_regions_with_model(doc: Document, path: str, provider, inferred: list[
             if budget <= 0:
                 break
             budget -= 1
+            # 3. A picture that holds none of the page's own words may hold text of its own (a
+            # table pasted as a screenshot, a scanned block): the model transcribes it, and the
+            # transcription becomes the figure's content (D019 applied to a region). Only then
+            # is a figure asked for a description.
+            words_inside = sum(1 for w in page.words if box.contains_point(w.bbox.cx, w.bbox.cy))
+            if words_inside == 0 and box.width * box.height >= _PICTURE_TEXT_MIN_AREA * page_area:
+                transcript = _read_region(provider, path, page, box, "picture-text")
+                if transcript:
+                    b.text_override = transcript
+                    b.meta["transcribed"] = True
+                    b.meta["inferred_model"] = provider.name
+                    inferred.append({"page": page.number, "kind": "picture-text", "text": transcript[:500], "model": provider.name, "bbox": [round(v, 1) for v in (box.x0, box.y0, box.x1, box.y1)]})
+                    continue
             answer = _read_region(provider, path, page, box, "figure")
             if not answer:
                 continue

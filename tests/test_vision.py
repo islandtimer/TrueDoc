@@ -21,14 +21,15 @@ ANSWER = "---\nprimary_language: en\nis_rotation_valid: True\nrotation_correctio
 class _Fake(BaseHTTPRequestHandler):
     calls: list[dict] = []
     answer: str = ANSWER
+    picture_answer: str = "none"   # what a picture holds when asked to transcribe it
 
     def do_POST(self):  # noqa: N802
         length = int(self.headers.get("Content-Length", "0"))
         body = json.loads(self.rfile.read(length) or b"{}")
         prompt = " ".join(p.get("text", "") for m in body.get("messages", []) for p in m.get("content", []) if isinstance(p, dict))
-        kind = "icon" if "icon or symbol" in prompt else ("figure" if "figure taken from a document" in prompt else "page")
+        kind = "icon" if "icon or symbol" in prompt else ("figure" if "figure taken from a document" in prompt else ("picture-text" if "picture cut out of a document" in prompt else "page"))
         _Fake.calls.append({"path": self.path, "model": body.get("model"), "has_image": "image_url" in json.dumps(body), "kind": kind})
-        answer = {"icon": "Covered", "figure": "A bar chart of premiums by year, rising from 100 to 140.", "page": _Fake.answer}[kind]
+        answer = {"icon": "Covered", "figure": "A bar chart of premiums by year, rising from 100 to 140.", "picture-text": _Fake.picture_answer, "page": _Fake.answer}[kind]
         payload = json.dumps({"choices": [{"message": {"content": answer}}]}).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -158,7 +159,7 @@ def test_figure_is_described_and_tagged(tmp_path):
     assert "![A bar chart of premiums by year, rising from 100 to 140.](figure)[^inferred]" in body, body
     assert "[^inferred]: Marked text" in body
     assert "Premiums have risen every year" in body
-    assert [c["kind"] for c in _Fake.calls] == ["figure"]
+    assert [c["kind"] for c in _Fake.calls] == ["picture-text", "figure"]   # a picture with no words inside is first asked whether it holds text (D019)
     entry = fm["truedoc"]["inferred"][0]
     assert entry["kind"] == "figure" and entry["page"] == 1 and entry["model"] == "olmocr-test" and entry["text"].startswith("A bar chart")
 
@@ -275,3 +276,31 @@ def test_clean_answer_rules():
     assert clean_answer("one two three four five six seven eight nine", "icon") is None
     assert clean_answer("---\nis_diagram: True\n---\nA line chart of claims per month.", "figure") == "A line chart of claims per month."
     assert clean_answer("Decorative picture of a house.", "figure") is None
+
+
+def test_picture_holding_a_table_is_transcribed_as_the_figure_content(tmp_path):
+    # D019 on a region: a pay-advice screenshot pasted into a help page holds a table the page's
+    # own text does not; the model transcribes the picture and the transcription follows the
+    # placeholder with the inferred tag, while the page's own words stay exact.
+    doc = pymupdf.open()
+    page = doc.new_page(width=400, height=600)
+    page.insert_text((40, 60), "To begin, subtract the balances shown below from your pay advice figures here.", fontsize=11)
+    pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 60, 30), 0)
+    pix.clear_with(180)
+    page.insert_image(pymupdf.Rect(40, 100, 360, 260), pixmap=pix)   # a picture, a fifth of the page, no words inside
+    path = tmp_path / "advice.pdf"
+    doc.save(str(path))
+    doc.close()
+    server, url = _serve()
+    _Fake.calls.clear()
+    _Fake.picture_answer = "| YEAR-TO-DATE | PAID TIME OFF | SICK LEAVE |\n|---|---|---|\n| Start Balance | 0.0 | 0.0 |\n| + Earned | 1,393.5 | 949.9 |"
+    try:
+        md = convert(str(path), ConvertOptions(layout=False, ocr=False, vision_endpoint=url))
+    finally:
+        _Fake.picture_answer = "none"
+        server.shutdown()
+    assert "subtract the balances" in md
+    assert "| + Earned | 1,393.5 | 949.9 |" in md and "![](figure)" in md and "[^inferred]" in md
+    assert [c["kind"] for c in _Fake.calls] == ["picture-text"]
+    fm, _ = _split(md)
+    assert fm["truedoc"]["inferred"][0]["kind"] == "picture-text"
