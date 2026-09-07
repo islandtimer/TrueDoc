@@ -81,6 +81,8 @@ The owner rented an RTX 4090 (24 GB) on vast.ai for 33 minutes: the machine fetc
 
 The hybrid beats the model alone (olmOCR's published 82.4) because the 1,122 digital pages keep their exact text (arXiv formulas 87.0 against the model's 83.0). Losses against run 54: 53 checks, mostly running heads the model transcribes and tiny-text references that carry the hidden layer's own OCR errors. Rule D019 in `docs/DECISIONS.md`, agreed by the owner.
 
+**Run 55 (7 September, 23:27), the same readings replayed through the converter itself** (`--vision-endpoint file:<folder>`, D019's page selection, the running-head witness, the reader's note): **82.9** (CI 82.0-83.8), held-out 79.7. The stage is now part of the product path; what is left is a served model end to end and the invented-text check.
+
 ## Design: the vision stage as a service (agreed 3 September 2026)
 
 The converter gets one setting, the model endpoint address, and one switch per conversion. Providers behind one interface: (1) an open model served on an on-demand GPU endpoint (billed per second, nothing to start or stop), used for pages with no usable text; (2) a frontier model API, used for "inferred" work where understanding matters. A non-technical user sees only the switch; renting an instance by hand stays a development convenience. Pages sent to a frontier vendor must be disclosed to the user.

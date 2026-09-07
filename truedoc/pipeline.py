@@ -781,10 +781,14 @@ def _insert_before_line(cell, page: Page, m) -> str:
 
 
 def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOptions) -> None:
-    """The vision stage (D014): pages with no usable text of their own are read
-    from their image by a served model, and everything it returns is marked as
-    inferred (D015): the page's text is one block with a note, the page number
-    goes into `pages_with_model`, and the front matter lists the inference."""
+    """The vision stage (D014, D019): every page without a digital text layer is
+    read from its image by the model (a hidden OCR layer, or our own engine's
+    reading, is another machine's guess at the words, not the document's text),
+    and everything it returns is marked as inferred (D015): the page's text is one
+    block with a note, the page number goes into `pages_with_model`, and the front
+    matter lists the inference. The page's own lines witness the running heads and
+    feet the model transcribed (`truedoc.vision.witness`); dropped lines are kept
+    in the page's `vision_dropped`."""
     from truedoc.vision import make_provider
 
     try:
@@ -794,13 +798,38 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
         return
     inferred: list[dict] = doc.metadata.setdefault("inferred", [])
     pages_with_model: list[int] = doc.metadata.setdefault("pages_with_model", [])
+    from truedoc.vision.witness import strip_lines, strip_lines_from_ocr, strip_running_heads
+
     for page in doc.pages:
         has_text = any(b.kind not in (BlockKind.FIGURE,) and (b.lines or b.table is not None or b.text_override) for b in page.blocks)
-        if has_text:
+        if page.quality.kind == "digital" and has_text:
             continue
         text = provider.read_page(path, page.number)
         if not text:
             continue
+        witness = page.lines or page.meta.get("witness_lines") or []
+        top, bottom = strip_lines(witness, page.height)
+        if (not top or not bottom) and opts.ocr:
+            # A layer that covers only part of the page (a download stamp at the foot of a bare
+            # scan) leaves a strip without a witness: our engine reads that strip.
+            try:
+                pdf = pymupdf.open(path)
+                try:
+                    pdf_page = pdf[page.number - 1]
+                    if page.meta.get("turned"):
+                        pdf_page.set_rotation((pdf_page.rotation + page.meta["turned"]) % 360)
+                    t2, b2 = strip_lines_from_ocr(pdf_page, page.width, page.height, not top, not bottom)
+                    top, bottom = top or t2, bottom or b2
+                finally:
+                    pdf.close()
+            except Exception as exc:  # the witness is optional: never fail a conversion for it
+                doc.warnings.append(f"strip witness failed on page {page.number}: {exc}")
+        text, dropped = strip_running_heads(text, top, bottom)
+        if dropped:
+            page.meta["vision_dropped"] = dropped
+        if not text:
+            continue
+        page.meta["vision_replaced"] = page.quality.kind
         page.blocks = [Block(kind=BlockKind.TEXT, bbox=BBox(0.0, 0.0, page.width, page.height), text_override=text, provenance=f"vision:{provider.name}")]
         page.blocks[0].order = 0
         page.meta["vision_model"] = provider.name

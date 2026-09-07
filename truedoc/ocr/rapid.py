@@ -387,6 +387,8 @@ def apply_ocr(page: Page, pdf_page: "pymupdf.Page", allow_turn: bool = True) -> 
     rescued = rescued or (numeric_share >= _NUMERIC_RESCUE_SHARE and len(lines) >= _NUMERIC_RESCUE_MIN_LINES)
     if conf < _MIN_PAGE_CONFIDENCE or (wordlike < _MIN_WORDLIKE and not rescued):
         page.meta["ocr_rejected"] = True
+        # The rejected lines still witness the page's running heads for the vision stage (D019).
+        page.meta["witness_lines"] = [(l.text, l.bbox.y0, l.bbox.y1) for l in lines[:400]]
         return False
     page.lines = lines
     page.words = [w for l in lines for w in l.words]

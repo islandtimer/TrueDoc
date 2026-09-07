@@ -20,7 +20,9 @@ serving a vision model as vLLM does (olmOCR 2 for pages; any Qwen-VL-style
 model answers region questions), chosen by giving its URL; and
 `AnthropicVision`, the frontier-model "deep read", chosen with the endpoint
 name `anthropic` (or `anthropic:<model>`) and the `ANTHROPIC_API_KEY`
-environment variable, which the owner sets.
+environment variable, which the owner sets. A third, `FileReadings`, replays a
+model's saved page readings from a folder (`file:<folder>`), so a run made once
+on a rented GPU can go through the whole pipeline again without a served model.
 """
 
 from __future__ import annotations
@@ -49,6 +51,10 @@ def make_provider(endpoint: str, model: str = "olmocr") -> VisionProvider:
         _, _, named = spec.partition(":")
         chosen = named.strip() or (model if model and model != "olmocr" else DEFAULT_MODEL)
         return AnthropicVision(model=chosen)
+    if spec.lower().startswith("file:"):
+        from truedoc.vision.file_readings import FileReadings
+
+        return FileReadings(spec[5:].strip(), model=model)
     from truedoc.vision.olmocr_endpoint import OlmocrEndpoint
 
     return OlmocrEndpoint(spec, model=model)

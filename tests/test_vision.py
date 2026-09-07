@@ -47,12 +47,15 @@ def _serve():
     return server, f"http://127.0.0.1:{server.server_port}"
 
 
-def _pdf(tmp_path, with_text: bool):
+def _pdf(tmp_path, with_text: bool, image: bool = True, running_head: str | None = None):
     doc = pymupdf.open()
     page = doc.new_page(width=400, height=300)
-    pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 40, 30), 0)
-    pix.clear_with(200)
-    page.insert_image(page.rect, pixmap=pix)  # a scan: an image and nothing else
+    if image:
+        pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 40, 30), 0)
+        pix.clear_with(200)
+        page.insert_image(page.rect, pixmap=pix)  # a scan: an image, with or without a text layer over it
+    if running_head:
+        page.insert_text((40, 20), running_head, fontsize=9)   # inside the head strip (12% of 300 pt)
     if with_text:
         page.insert_text((40, 60), "Ordinary text that the PDF carries itself, enough to be usable on its own here.", fontsize=11)
     path = tmp_path / ("text.pdf" if with_text else "scan.pdf")
@@ -83,16 +86,36 @@ def test_unreadable_page_is_read_by_the_model_and_marked(tmp_path):
     assert _Fake.calls[0]["model"] == "olmocr-test"
 
 
-def test_page_with_its_own_text_is_never_sent(tmp_path):
+def test_digital_page_is_never_sent(tmp_path):
+    # The author's own text is exact; no model re-reads it (D014, D019).
     server, url = _serve()
     _Fake.calls.clear()
     try:
-        md = convert(_pdf(tmp_path, with_text=True), ConvertOptions(layout=False, ocr=False, vision_endpoint=url))
+        md = convert(_pdf(tmp_path, with_text=True, image=False), ConvertOptions(layout=False, ocr=False, vision_endpoint=url))
     finally:
         server.shutdown()
     assert "Ordinary text that the PDF carries" in md
     assert "Hello from the model" not in md and "[^inferred]" not in md
     assert _Fake.calls == []
+
+
+def test_text_over_a_scan_is_read_by_the_model_and_its_running_head_witnessed(tmp_path):
+    # D019: text drawn over a full-page image is a hidden OCR layer, another machine's guess,
+    # so the model reads the page; the layer's own line in the head strip witnesses the running
+    # head the model transcribed, which is dropped and recorded.
+    server, url = _serve()
+    _Fake.calls.clear()
+    _Fake.answer = ANSWER.replace("Hello from the model", "JOURNAL OF EXAMPLES 1921\n\nHello from the model", 1)
+    try:
+        md = convert(_pdf(tmp_path, with_text=True, running_head="JOURNAL OF EXAMPLES 1921"), ConvertOptions(layout=False, ocr=False, vision_endpoint=url))
+    finally:
+        _Fake.answer = ANSWER
+        server.shutdown()
+    assert len(_Fake.calls) == 1
+    assert "Hello from the model" in md and "[^inferred]" in md
+    assert "Ordinary text that the PDF carries" not in md
+    assert "JOURNAL OF EXAMPLES 1921" not in md
+    assert "OCR layer" in md
 
 
 def test_endpoint_failure_leaves_the_page_empty_with_a_warning(tmp_path):

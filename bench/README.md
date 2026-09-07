@@ -75,3 +75,11 @@ expected 57/64 (as of run 31's launch, 4 Sept 18:26; 56 from run 28 to run 30, s
 ## The stopping rule for classical work
 
 `python bench/tools/ceiling_census.py` (from the lateral round, 7 September) sorts every failing text and table check of the latest run into buckets: our output empty; text in the raw layer but not in our output; text in our output but the check still fails; text in neither; no text layer. The first three are the mechanical pool. Run it after each benchmark run; when the pool stops shrinking while runs keep landing, the classical path is done (decision D018). `bench/tools/lateral_census_concept_fan.py` prints the near-miss pairs for the tiny-text and multi-column sections, the harness for the two-witness test.
+
+## Runs with the vision switch on
+
+`bench/tools/launch_run.sh` passes the `EXTRA` environment variable to the bench command, so a run with the vision stage reads like this (run 55, 7 September 2026):
+
+    EXTRA="--vision-endpoint file:bench/data/olmocr-bench/bench_data/olmocr2b --vision-pages-only" nohup bash bench/tools/launch_run.sh 55 truedoc54 56 > bench/out/launch/nohup55.log 2>&1 &
+
+`file:<folder>` replays a model's saved readings (`truedoc/vision/file_readings.py`); a served model takes `http://host:port` instead. `bench/tools/watch_run.sh <N>` prints the run's status lines as they appear and exits when the run is scored, which is what the Monitor tool runs.

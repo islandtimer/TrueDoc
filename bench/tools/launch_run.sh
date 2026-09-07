@@ -3,6 +3,8 @@
 # conversion to finish, then score it and its held-out slice.
 #
 # usage: bash bench/tools/launch_run.sh <run number> <candidate name> [<sample2 minimum, default 56>]
+# Extra arguments for the bench command come from the EXTRA environment variable, e.g.
+#   EXTRA="--vision-endpoint file:bench/data/olmocr-bench/bench_data/olmocr2b --vision-pages-only"
 #
 # Writes launch<N>_status.txt, pytest<N>.log, run<N>.log and score<N>.log into bench/out/launch/
 # (git-ignored). The status file's last line reads "run N scored" when everything is done.
@@ -26,7 +28,7 @@ echo "$(date +%H:%M) pytest rc=$rc gate=$gate sample1=$s1 sample2=$s2 (need rc=0
 if [ "$rc" != "0" ] || [ "${gate:-0}" -lt 96 ] || [ "${s1:-0}" -lt 44 ] || [ "${s2:-0}" -lt "$S2_MIN" ]; then
   echo "STOP: validation failed, run $N not launched" >> "$ST"; exit 1
 fi
-nohup "$PY" -m truedoc.cli bench --candidate "$CAND" --workers 6 --no-score > "$S/run${N}.log" 2>&1 &
+nohup "$PY" -m truedoc.cli bench --candidate "$CAND" --workers 6 --no-score $EXTRA > "$S/run${N}.log" 2>&1 &
 echo "$(date +%H:%M) run $N ($CAND) launched" >> "$ST"
 sleep 120
 until ls "$REPO"/bench/runs/${CAND}-*/conversion.json >/dev/null 2>&1; do sleep 60; done

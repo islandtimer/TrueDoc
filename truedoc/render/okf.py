@@ -223,8 +223,10 @@ def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
             parts.append(f"<!-- page: {page.number} -->")
             figures_since = False
         if page.meta.get("vision_model"):
-            # D015: a page read by a model says so where the reader will see it.
-            parts.append(f"> This page was read from its image by a model ({page.meta['vision_model']}); the PDF holds no text for it.{INFERRED_TAG}")
+            # D015: a page read by a model says so where the reader will see it. D019: a hidden
+            # OCR layer is not the author's text, so such a page is read by the model too.
+            why = "the PDF's own text layer is an OCR layer, not the author's text" if page.meta.get("vision_replaced") in ("ocr", "suspect") else "the PDF holds no text for it"
+            parts.append(f"> This page was read from its image by a model ({page.meta['vision_model']}); {why}.{INFERRED_TAG}")
             prev_block = None
         for block in page.ordered_blocks():
             if opts.drop_headers_footers and block.kind in (BlockKind.HEADER, BlockKind.FOOTER, BlockKind.PAGE_NUMBER):
