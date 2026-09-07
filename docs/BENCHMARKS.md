@@ -108,7 +108,9 @@ OvisOCR2's per-metric numbers come from its technical report (arXiv 2607.13639) 
 | 2026-09-06 | Run 43: the minus sign of AdvP symbol fonts, a value with its error in parentheses counted as numeric (code as of 20:50) | **66.3** (CI 65.4-67.2) | 86.8 | 4.1 | 75.0 | 20.5 | 94.6 | 73.6 | 79.6 | 96.3 | Level with run 42: tables +2 checks, nothing lost. Held-out 63.1. |
 | 2026-09-06 | Run 44: a corner label centred beside a two-line heading joins the row it overlaps more; several small tables in one box give way only when the box's table has two rows more than they hold together (code as of 21:42) | **66.3** (CI 65.4-67.2) | 86.8 | 4.1 | 75.0 | 20.5 | 94.6 | 73.6 | 79.6 | 96.3 | Level with run 43: tables 2 won (the Tagetes trial) and 2 lost (one date-headed table). Held-out 63.1. |
 | 2026-09-06 | Run 45: heading fragments above and wrapped labels below a table kept, parenthesised heading lines joined unless they repeat across columns, column numbers joined to their names, the Advent symbol fonts (code as of 22:57) | **66.4** (CI 65.4-67.2) | 86.8 | 4.1 | 75.1 | 20.5 | 94.6 | 73.6 | 79.6 | 96.4 | **New best by a tenth.** Headers +1, tables 6 won and 5 lost on two pages (being traced). Held-out 63.1. |
-| 2026-09-07 | Run 46: column cuts voted by gap range (code as of 6 Sept 23:50) | **66.4** (CI 65.5-67.4) | 86.8 | 4.1 | 75.6 | 20.5 | 94.6 | 73.6 | 79.6 | 96.4 | **Best so far** (66.4 again, but tables +5 net: 7 won, 2 lost on one page). Held-out 63.3 and tuned-on 62.3, both the best yet. The code after it (commit 2696d2a) adds the heading-fragment guard, for run 47. |
+| 2026-09-07 | Run 46: column cuts voted by gap range (code as of 6 Sept 23:50) | **66.4** (CI 65.5-67.4) | 86.8 | 4.1 | 75.6 | 20.5 | 94.6 | 73.6 | 79.6 | 96.4 | Best at the time (66.4 again, but tables +5 net: 7 won, 2 lost on one page). Held-out 63.3 and tuned-on 62.3, both the best yet. The code after it (commit 2696d2a) adds the heading-fragment guard, for run 47. |
+| 2026-09-07 | Run 47: + heading-fragment guard, voted cuts placed where the next column starts (code as of 7 Sept 06:34) | **66.5** (CI 65.6-67.4) | 86.8 | 4.1 | 76.2 | 20.5 | 94.6 | 73.6 | 79.6 | 96.3 | Best at the time (tables +6 net: 12 won, 6 lost; the six losses traced to the cut position and repaired for run 48) |
+| 2026-09-07 | Run 48: + cut position refined (a segment across the range vetoes the cut), scanned tables of numbers kept, leader dots and dash rules out of cells, headings read in order (code as of 7 Sept 08:02) | **66.7** (CI 65.8-67.5) | 86.8 | 4.1 | 77.8 | 20.5 | 94.7 | 73.6 | 79.6 | 96.3 | **Best so far** (tables +16 net: 17 won, none lost) |
 
 Section-only runs since the baseline (same scorer, one section at a time; the overall column is not comparable):
 
@@ -174,3 +176,5 @@ One page in five is held out and never tuned on (`bench/holdout.txt`, `bench/hol
 | Run 44 | 63.1 | 62.2 | level. |
 | Run 45 | 63.1 | 62.2 | level. |
 | Run 46 | 63.3 | 62.3 | both up: the range-voted cuts carry to pages never tuned on. |
+| Run 47 | 63.7 | 62.3 | the held-out fifth's best yet; the gains are table pages never tuned on. |
+| Run 48 | 63.9 | 62.5 | both up again; no check lost anywhere. |

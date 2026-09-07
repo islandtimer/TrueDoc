@@ -19,6 +19,7 @@ from truedoc.render.okf import RenderOptions, render_document
 from truedoc.segment.blocks import build_blocks
 from truedoc.segment.order import assign_reading_order
 from truedoc.tables.aligned import find_aligned_tables
+from truedoc.tables.cells import clean_cell_text
 from truedoc.tables.ruled import find_ruled_tables
 
 
@@ -580,6 +581,9 @@ def _replace_keys(text: str, rename: dict[str, str]) -> str:
     return text
 
 
+_SENTENCE_END = re.compile(r"[.!?][\"')\]]?(?:\s+[A-Z]|\s*$)")
+
+
 def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
     """Running heads and feet that survive the layout model's labels.
 
@@ -602,6 +606,11 @@ def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
         above = [o.bbox.y1 for o in text_blocks if o is not b and o.bbox.y1 <= b.bbox.y0 + 1.0 and o.bbox.x_overlap(b.bbox) > 0]
         return b.bbox.y0 - max(above) if above else 1e9
 
+    def gap_below(b: Block) -> float:
+        """Vertical white space between a block and the nearest text below it."""
+        below = [o.bbox.y0 for o in text_blocks if o is not b and o.bbox.y0 >= b.bbox.y1 - 1.0 and o.bbox.x_overlap(b.bbox) > 0]
+        return min(below) - b.bbox.y1 if below else 1e9
+
     for b in blocks:
         size = b.size or body
         if b.kind == BlockKind.HEADING and words(b) <= 8 and size <= 1.4 * body and len(b.lines) <= 2:
@@ -612,10 +621,26 @@ def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
             elif b.bbox.y0 >= 0.92 * H and gap_above(b) >= 1.0 * size:
                 b.kind = BlockKind.FOOTER
                 b.provenance = "margin-heading"
+        # A few short lines of body-sized text at the very top of the page, set
+        # apart from the text below by white space, are a running head: a
+        # catalogue's "Programs of Graduate Study ... 1", a journal's "2
+        # Advances in Materials Science", a statute's "Part 2 / Division 1"
+        # lines. A title is larger; a paragraph runs on without the gap.
+        elif (b.kind == BlockKind.TEXT and len(b.lines) <= 3 and all(len(l.text.split()) <= 10 for l in b.lines)
+              and size <= 1.2 * body and b.bbox.y0 <= 0.08 * H and gap_below(b) >= 1.0 * size
+              # The tail of a paragraph carried over to the top of a column
+              # ("each condition was averaged across all three subjects.") starts
+              # in lowercase or holds a sentence end; a running head does neither.
+              and not b.text[:1].islower() and not _SENTENCE_END.search(b.text)):
+            b.kind = BlockKind.HEADER
+            b.provenance = "top-strip"
+            headers.append(b)
         # A short line in the bottom strip is a running foot only when white space
         # sets it apart from the body: the last line of a letter that runs to the
-        # foot of the page ("good luck attend you.") is body text.
-        elif b.kind == BlockKind.TEXT and len(b.lines) <= 2 and words(b) <= 8 and b.bbox.y0 >= 0.93 * H and gap_above(b) >= 1.0 * size:
+        # foot of the page ("good luck attend you.") is body text. A single line
+        # may run longer ("PLOS ONE | DOI:... September 23, 2015 1 / 9").
+        elif (b.kind == BlockKind.TEXT and len(b.lines) <= 2 and (words(b) <= 8 or (len(b.lines) == 1 and words(b) <= 14))
+              and b.bbox.y0 >= 0.93 * H and gap_above(b) >= 1.0 * size):
             b.kind = BlockKind.FOOTER
             b.provenance = "bottom-strip"
         elif b.kind == BlockKind.TEXT and len(b.lines) <= 2 and words(b) <= 6 and b.bbox.y0 >= 0.89 * H and size <= 0.8 * body and gap_above(b) >= 0.8 * body:
@@ -626,7 +651,8 @@ def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
     while changed:
         changed = False
         for b in blocks:
-            if b.kind != BlockKind.TEXT or len(b.lines) > 2 or words(b) > 4 or b.bbox.y1 > 0.14 * H:
+            # ("J. Appl. Cryst. (1974). 7, 222" under the page number "222")
+            if b.kind != BlockKind.TEXT or len(b.lines) > 2 or words(b) > 8 or b.bbox.y1 > 0.14 * H:
                 continue
             size = b.size or body
             for h in headers:
@@ -988,7 +1014,7 @@ def _adopt_ruled_headers(tables: list[Block], lines, size: float) -> tuple[list[
         for c in t.cells:
             c.row += 1
         for c in cols:
-            t.cells.append(TableCell(text=" ".join(w.text for w in buckets.get(c.col, [])), row=0, col=c.col,
+            t.cells.append(TableCell(text=clean_cell_text(" ".join(w.text for w in buckets.get(c.col, []))), row=0, col=c.col,
                                      bbox=BBox(c.bbox.x0, top, c.bbox.x1, t.bbox.y0), is_header=True))
         t.n_rows += 1
         t.bbox = BBox(t.bbox.x0, min(t.bbox.y0, top), t.bbox.x1, t.bbox.y1)
@@ -1010,6 +1036,9 @@ def _numeric_share(table) -> float:
     return numeric / len(filled)
 
 
+_NUMBER_TOKEN = re.compile(r"^[<>≤≥(]?[-+−]?[\d.,]+%?\)?[*†‡]{0,2}$")
+
+
 def _rebuild_sparse_ruled_tables(tables: list[Block], lines, size: float) -> list[Block]:
     """A ruled table whose rules only frame the header (a crop report: boxed
     headings over an unruled body) comes back from the rule-based finder as one
@@ -1026,14 +1055,24 @@ def _rebuild_sparse_ruled_tables(tables: list[Block], lines, size: float) -> lis
             continue
         centres = sorted(l.bbox.cy for l in inside)
         baselines = 1 + sum(1 for a, c in zip(centres, centres[1:]) if c - a > 0.5 * size)
+        # A body cell holding a run of numbers ("2.82 <0.001 1.96 0.001 2.94
+        # <0.001 2.63 0.04") is a sub-table the rules did not divide: a logistic
+        # regression table ruled around its header and its two model blocks only.
+        # (Only in a table of few rows: a bus timetable's note row holds many
+        # numbers too, and rebuilding the timetable from its lines dragged a
+        # running head into a cell.)
+        crowded = b.table.n_rows <= 8 and any(c.row > 0 and sum(1 for tok in c.text.split() if _NUMBER_TOKEN.match(tok)) >= 6 for c in b.table.cells)
         # Only a table whose rules frame just the heading (one or two body rows
         # holding many lines) is suspect; a ruled table of wrapped prose cells
         # has many rows of its own and is left alone.
-        if b.table.n_rows > 3 or b.table.n_rows * 2 >= baselines:
+        if not crowded and (b.table.n_rows > 3 or b.table.n_rows * 2 >= baselines):
             out.append(b)
             continue
         rebuilt = table_from_lines(inside, size, trusted=True)
-        if rebuilt is not None and rebuilt.n_rows > b.table.n_rows and rebuilt.n_cols >= 2 and _numeric_share(rebuilt) >= 0.3:
+        # A crowded cell is evidence enough; its rebuild carries a title and
+        # stacked headings that dilute the numeric share (0.21 on the regression table).
+        share_needed = 0.15 if crowded else 0.3
+        if rebuilt is not None and rebuilt.n_rows > b.table.n_rows and rebuilt.n_cols >= 2 and _numeric_share(rebuilt) >= share_needed:
             rebuilt.bbox = b.bbox
             rebuilt.provenance = "ruled-rebuilt"
             out.append(Block(kind=BlockKind.TABLE, bbox=b.bbox, table=rebuilt, provenance="ruled-rebuilt", confidence=b.confidence))

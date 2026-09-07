@@ -9,6 +9,8 @@ Status, plans and results live in `docs/` and are kept current:
 | Where the project is right now, in plain English | [docs/STATUS.md](docs/STATUS.md) |
 | What is coming next and why | [docs/ROADMAP.md](docs/ROADMAP.md) |
 | How we measure "better than the other tools", and current scores | [docs/BENCHMARKS.md](docs/BENCHMARKS.md) |
+| What Marker and MinerU do, and which of their ideas are worth taking | [docs/M14_MARKER_MINERU.md](docs/M14_MARKER_MINERU.md) |
+| The lateral-thinking round: facts it established, converging ideas, shortlist, owner decisions | [docs/LATERAL_ROUND_1.md](docs/LATERAL_ROUND_1.md) |
 | The output format we produce | [docs/OKF_SPEC.md](docs/OKF_SPEC.md) |
 | Why things were built the way they were | [docs/DECISIONS.md](docs/DECISIONS.md) |
 | The GPU experiment for scanned pages (run once, 3 Sept) and the optional vision stage | [docs/GPU_PLAN.md](docs/GPU_PLAN.md) |

@@ -15,6 +15,7 @@ import re
 from dataclasses import dataclass, field
 
 from truedoc.model import BBox, Block, BlockKind, Line, Page, Table, TableCell
+from truedoc.tables.cells import clean_cell_text
 
 _NUMERIC = re.compile(
     r"^[\(\[]?[-+−–<>≤≥↑↓~≈]?\s*[\d.,]+\s*(?:[±+\-−]\s*[\d.,]+)?\s*%?[\)\]]?[*†‡a-z]{0,2}$|^[-–—]$|^n/?a$|^n\.?s\.?$|^\d+[\d.,]*\s*[×x]\s*10[-−]?\d*$"
@@ -319,24 +320,46 @@ def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[fl
         return rows, []
     need = max(3, 0.6 * rows_with_words)
     all_words = [w for r in rows for seg in r.segments for w in seg.words]
+    all_segments = [seg for r in rows for seg in r.segments]
     events = sorted([(x0, 1) for x0, _ in spans] + [(x1, -1) for _, x1 in spans], key=lambda e: (e[0], e[1]))
     cuts: list[float] = []
     depth = 0
     start: float | None = None
+
+    def straddled(c: float) -> bool:
+        return any(w.bbox.x0 < c - 1 and w.bbox.x1 > c + 1 for w in all_words)
+
     for x, d in events:
         depth += d
         if depth >= need and start is None:
             start = x
         elif depth < need and start is not None:
             if x - start >= 1.0:
-                # The cut sits at the range's right end, just before the words
-                # that close it, not at its midpoint: rows without a vote (a
-                # wrapped description line) fill the range from the left, and
-                # the midpoint of a wide range landed in one of their word
-                # spaces ("(approx." | "90-95%"), moving half a cell over.
-                cuts.append(x - 1.0)
+                # A segment running across the whole range belongs to both
+                # sides (a group heading, a title over the table): no cut, even
+                # through one of its word spaces. A heading row set closer than
+                # two ems ("N Minimum Maximum Gemiddelde Sd") is one segment
+                # too, but its own word gap over the range voted for the cut.
+                spanning = [s for s in all_segments if s.bbox.x0 <= start + 1 and s.bbox.x1 >= x - 1]
+
+                def open_over(s: Line) -> bool:
+                    ws = sorted(s.words, key=lambda w: w.bbox.x0)
+                    return any(b.bbox.x0 - a.bbox.x1 >= 0.4 * size and a.bbox.x1 < x and b.bbox.x0 > start
+                               for a, b in zip(ws, ws[1:]))
+
+                if all(open_over(s) for s in spanning):
+                    # The right end first, just before the words that close the
+                    # range: rows without a vote (a wrapped description line)
+                    # fill the range from the left, and the midpoint of a wide
+                    # range landed in one of their word spaces ("(approx." |
+                    # "90-95%"), moving half a cell over. A heading centred over
+                    # the right column can reach back over that end ("C14" over
+                    # "23.8"); then the middle, then the left end.
+                    for c in (x - 1.0, (start + x) / 2.0, start + 1.0):
+                        if not straddled(c):
+                            cuts.append(c)
+                            break
             start = None
-    cuts = [c for c in cuts if not any(w.bbox.x0 < c - 1 and w.bbox.x1 > c + 1 for w in all_words)]
     if not cuts:
         return rows, []
     out: list[_Row] = []
@@ -359,6 +382,19 @@ def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[fl
         segs.sort(key=lambda l: l.bbox.x0)
         out.append(_Row(segments=segs, y0=r.y0, y1=r.y1))
     return out, cuts
+
+
+def _headings_in_order(row: _Row, cols: list[int]) -> bool:
+    """A row of short headings set a shade left of the narrow columns beneath
+    them ("BM BF WM ... Total" over "4 4 7 ... 25"): by position two headings
+    share a column and another column has none, yet the row holds one heading
+    per column of the stretch it covers. Such a row is read in order."""
+    n = len(cols)
+    if n < 3 or len(set(cols)) == n or cols != sorted(cols):
+        return False
+    if cols[-1] - cols[0] + 1 != n:
+        return False
+    return not any(_NUMERIC.match(seg.text.strip()) for seg in row.segments)
 
 
 def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bool = False) -> Table | None:
@@ -385,8 +421,10 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
     grid_rows: list[list[str]] = []
     for r in cand.rows:
         cells = [""] * n_cols
-        for seg in r.segments:
-            ci = _column_of(seg.bbox, columns)
+        cols = [_column_of(seg.bbox, columns) for seg in r.segments]
+        if _headings_in_order(r, cols):
+            cols = list(range(cols[0], cols[0] + len(cols)))
+        for seg, ci in zip(r.segments, cols):
             cells[ci] = (cells[ci] + " " + seg.text).strip() if cells[ci] else seg.text
         grid_rows.append(cells)
 
@@ -445,22 +483,25 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
     if filled_rows < 2:
         return None
 
+    rowspans = _label_rowspans(grid_rows, row_geom, n_header) if len(row_geom) == len(grid_rows) else {}
     cells: list[TableCell] = []
     covered = {(r, c + k) for (r, c), span in spans.items() for k in range(1, span)}
+    covered |= {(r + k, 0) for r, n in rowspans.items() for k in range(1, n)}
     for ri, row in enumerate(grid_rows):
         for ci, text in enumerate(row):
             if (ri, ci) in covered:
                 continue
             span = spans.get((ri, ci), 1)
+            down = rowspans.get(ri, 1) if ci == 0 else 1
             x0, x1 = col_bounds[ci][0], col_bounds[min(n_cols - 1, ci + span - 1)][1]
             if ri < len(row_geom):
-                y0, y1 = row_geom[ri].y0 - 0.3 * size, row_geom[ri].y1 + 0.3 * size
+                y0, y1 = row_geom[ri].y0 - 0.3 * size, row_geom[min(len(row_geom) - 1, ri + down - 1)].y1 + 0.3 * size
             else:
                 y0, y1 = cand.bbox.y0, cand.bbox.y1
-            cells.append(TableCell(text=text, row=ri, col=ci, colspan=span, is_header=(ri < max(1, n_header)), bbox=BBox(x0, y0, x1, y1)))
+            cells.append(TableCell(text=clean_cell_text(text), row=ri, col=ci, rowspan=down, colspan=span, is_header=(ri < max(1, n_header)), bbox=BBox(x0, y0, x1, y1)))
     # Stacked headings (a group heading over its sub-headings) need HTML: markdown
     # tables have one heading row and no spanning cells.
-    merged = n_header >= 2 or any(span > 1 for span in spans.values())
+    merged = n_header >= 2 or any(span > 1 for span in spans.values()) or bool(rowspans)
     return Table(n_rows=len(grid_rows), n_cols=n_cols, cells=cells, bbox=cand.bbox, has_merged=merged, provenance="textlayer-aligned")
 
 
@@ -604,7 +645,7 @@ def _header_structure(grid, geom, n_header, col_bounds, size):
             if above is not None and not unit and span_of(r, c) == span_of(above, c):
                 gap = geom[r].y0 - geom[above].y1 if r < len(geom) and above < len(geom) else 0.0
                 if gap <= 0.8 * size * (r - above):
-                    header[above][c] = (header[above][c] + " " + text).strip()
+                    header[above][c] = _join_lines(header[above][c], text)
                     header[r][c] = ""
                     spans.pop((r, c), None)
                     continue
@@ -659,7 +700,13 @@ def _merge_header_rows(grid: list[list[str]]) -> list[list[str]]:
     # Only merge when the stacked rows look like headings (short cells), not data.
     if any(len(c.split()) > 6 for row in header_rows for c in row if c):
         return grid
-    merged = [" ".join(row[c] for row in header_rows if row[c]).strip() for c in range(len(grid[0]))]
+    merged = []
+    for c in range(len(grid[0])):
+        text = ""
+        for row in header_rows:
+            if row[c]:
+                text = _join_lines(text, row[c])
+        merged.append(text)
     return [merged] + grid[first_data:]
 
 
@@ -675,6 +722,27 @@ def _column_of(b: BBox, columns: list[tuple[float, float]]) -> int:
 _CONNECTORS = {"and", "or", "of", "the", "a", "an", "to", "for", "in", "on", "with", "by", "&", "at", "from", "as", "per", "not"}
 
 
+def _join_lines(upper: str, lower: str) -> str:
+    """Join two lines of one cell. A word broken at a hyphen closes up
+    ("Diver-" / "sity" gives "Diversity"), a hyphenated compound keeps its
+    hyphen with no space after it ("Automotive-" / "Industrial", "NON-" /
+    "RECURRING", "self-" / "employed"); anything else takes a space."""
+    upper, lower = upper.rstrip(), lower.lstrip()
+    if not upper or not lower:
+        return upper or lower
+    if upper.endswith("-") and len(upper) >= 2 and upper[-2].isalnum() and lower[:1].isalnum():
+        if lower[:1].islower():
+            from truedoc.ocr.rapid import _common_words
+
+            words = _common_words()
+            head, tail = upper[:-1].split()[-1].lower(), lower.split()[0].lower()
+            if head in words and tail.rstrip(".,;:") in words:
+                return upper + lower
+            return upper[:-1] + lower
+        return upper + lower
+    return upper + " " + lower
+
+
 def _continues(prev_text: str, text: str) -> bool:
     """Does `text` read as the continuation of the wrapped cell `prev_text`?"""
     p, t = prev_text.strip(), text.strip()
@@ -685,6 +753,56 @@ def _continues(prev_text: str, text: str) -> bool:
     if p[-1] in ",;:-–&/":
         return True
     return p.split()[-1].lower() in _CONNECTORS
+
+
+_ENTRY_END = re.compile(r"\(\s*[^()]*\d[^()]*\)\s*[*†‡]?\s*$")
+
+
+def _label_rowspans(grid: list[list[str]], geom: list[_Row], n_header: int) -> dict[int, int]:
+    """A row label written once for a group of entry rows ("Education" beside
+    three education levels, a year beside its quarters) spans the group.
+
+    A label centred on its group has entries above it as well as below; a
+    label set at the top of its group has them below only. The label's text
+    moves to the group's first row (the grid is changed in place) and the
+    result maps that row to the number of rows spanned.
+    """
+    data = [r for r in range(n_header, len(grid)) if any(grid[r][1:])]
+    labels = [r for r in data if grid[r][0]]
+    entries = [r for r in data if not grid[r][0]]
+    # Entry rows must be the rule, not a missing value here and there.
+    if not labels or len(entries) < 2 * len(labels) or len(geom) != len(grid):
+        return {}
+
+    def cy(r: int) -> float:
+        return (geom[r].y0 + geom[r].y1) / 2.0
+
+    pitches = sorted(cy(b) - cy(a) for a, b in zip(data, data[1:]))
+    pitch = pitches[len(pitches) // 2] if pitches else 0.0
+    centred = entries[0] < labels[0]
+    owner: dict[int, int] = {}
+    for e in entries:
+        if centred:
+            best = min(labels, key=lambda l: abs(cy(l) - cy(e)))
+            if abs(cy(best) - cy(e)) > 2.5 * max(pitch, 1.0):
+                continue
+        else:
+            above = [l for l in labels if l < e]
+            if not above:
+                continue
+            best = above[-1]
+        owner[e] = best
+    spans: dict[int, int] = {}
+    for l in labels:
+        members = sorted([l] + [e for e, o in owner.items() if o == l])
+        lo, hi = members[0], members[-1]
+        # A group is one unbroken stretch of rows.
+        if hi == lo or hi - lo + 1 != len(members) or any(r not in data for r in range(lo, hi + 1)):
+            continue
+        if lo != l:
+            grid[lo][0], grid[l][0] = grid[l][0], ""
+        spans[lo] = hi - lo + 1
+    return spans
 
 
 def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) -> tuple[list[list[str]], list[_Row]]:
@@ -750,7 +868,10 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
                 continue
         tight = bool(filled) and gap <= 0.6 * size and all(prev[i] for i in filled) and not any(_NUMERIC.match(cells[i].strip()) for i in filled)
         is_continuation = tight and (
-            (cells[0] == "" and all(cells[i][:1].islower() or len(cells[i].split()) > 2 for i in filled))
+            # A long line under a heading reads as a wrapped continuation, unless
+            # it is an entry in its own right, closing with a count or share
+            # ("High school or less (107; 16.3%)" under "Groups").
+            (cells[0] == "" and all(cells[i][:1].islower() or (len(cells[i].split()) > 2 and not _ENTRY_END.search(cells[i])) for i in filled))
             # Every column wraps ("US Citizens and" / "Permanent Residents" over
             # "Please visit the" / "program website"): each filled cell must read
             # as the continuation of the cell above it.
@@ -758,7 +879,7 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
         )
         if is_continuation:
             for i in filled:
-                prev[i] = (prev[i] + " " + cells[i]).strip()
+                prev[i] = _join_lines(prev[i], cells[i])
             out_rows[-1] = _Row(segments=prev_row.segments + row.segments, y0=prev_row.y0, y1=row.y1)
         else:
             out.append(cells)

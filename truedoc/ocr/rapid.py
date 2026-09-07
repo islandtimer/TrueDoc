@@ -257,6 +257,15 @@ _MIN_WORDLIKE = 0.5
 # The change admits a turned Spanish decree (0.84) and a scanned financial table
 # (0.82, numeric share 0.45), both real text.
 _RESCUE_MIN_CONFIDENCE = 0.8
+# A page that is mostly numbers (a scanned table of measurements) is accepted
+# from the page floor up: no word list can vouch for numbers, and the engine's
+# confidence on clean digits runs lower than on words. Census of 7 Sept over
+# the 73 benchmark pages that came out empty: one page has a numeric share of
+# 0.5 or more with a confidence above the floor (a wastewater table, 0.785,
+# share 0.74, 248 lines); the other three such pages are a single line or read
+# under 0.7, and every handwriting page stays under 0.75.
+_NUMERIC_RESCUE_SHARE = 0.5
+_NUMERIC_RESCUE_MIN_LINES = 20
 
 
 _WORDS: Optional[set] = None
@@ -359,6 +368,7 @@ def apply_ocr(page: Page, pdf_page: "pymupdf.Page", allow_turn: bool = True) -> 
     language_like = _looks_like_language(lines)
     page.meta["ocr_languagelike"] = round(language_like, 2)
     rescued = conf >= _RESCUE_MIN_CONFIDENCE and (numeric_share >= 0.3 or language_like >= 0.7)
+    rescued = rescued or (numeric_share >= _NUMERIC_RESCUE_SHARE and len(lines) >= _NUMERIC_RESCUE_MIN_LINES)
     if conf < _MIN_PAGE_CONFIDENCE or (wordlike < _MIN_WORDLIKE and not rescued):
         page.meta["ocr_rejected"] = True
         return False

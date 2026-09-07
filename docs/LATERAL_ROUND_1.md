@@ -1,0 +1,92 @@
+# Lateral-thinking round 1: the harvest
+
+_7 September 2026. Ten independent thinkers, one Edward de Bono technique each, working read-only from an evidence pack (`docs/lateral_round_1/evidence_pack.md`) and the repository, with the Marker/MinerU report withheld. Their reports are in `docs/lateral_round_1/ideas_<technique>.md`. This page is the harvest: what the round established as fact, where the thinkers converged, the shortlist with cheap tests, and the decisions that are the owner's._
+
+## How the round ran
+
+Techniques: random entry (eight random words), provocation, challenge, reversal, escape from dominant ideas, stepping stone, concept fan, fractionation, other people's views, and a black-hat contrarian with a product lens. Each thinker wrote six to ten ideas with the technique trail, a mechanism, the failure group and reach, a cost, a one-hour falsification test and the strongest objection. Most thinkers also ran their own censuses over run 48's failing checks with the benchmark's own checker; those numbers are tagged by the thinker who measured them. A usage limit cut the first launch short; three thinkers were rerun with a smaller tool budget. About 2.4 million tokens in all.
+
+## What the round established (facts, each measured by at least one thinker; the ones marked "re-checked" I confirmed myself)
+
+1. **The OCR pass reads scans at a fraction of their resolution.** `ocr/rapid.py` renders a page at most 2,000 px on the long side. The old-scan images are 3,200 to 6,400 px (median 3,205; 93 of 98 pages exceed the cap; re-checked), old-scan maths 3,583 median, and RapidOCR's detector never shrinks a large image itself. Nearly every failing old-scan check sits on a page read at a half or a third of the scanner's pixels. Found independently by five thinkers.
+2. **Long tiny text is mostly our own OCR, not somebody else's layer.** 53 of the 90 failing checks are on 16 to 23 pages with no text layer at all (dictionary and encyclopaedia scans at 72 to 167 dpi); the evidence pack called them hidden-layer errors. Five thinkers. Re-checked on one page.
+3. **The pack's set-aside sentence was inverted.** "13 of 66 strings found against the layer's 9" says our read found more, not fewer; and that trial ran at the 2,000 px cap. Every thinker noticed. A word-level merge of the two readings has never been measured.
+4. **Old-scan maths is formulas only.** All 458 checks are formula checks (re-checked); prose OCR gains nothing there; 251 are one-line equations needing correct characters and script placement, 207 are structured.
+5. **The formula rebuild runs on OCR pages and invents structure.** On `old_scans_math/1_pg113` our output holds `$$\mathrm{h}(2_{\mathrm{c}}\mathrm{c}_{2}\mathrm{x}-\mathrm{x})...$$` for a page that reads `h(2c-x)`: subscripts inferred from evenly divided OCR boxes (re-checked). A fidelity fault under the project's own first principle, whatever the score. Two thinkers.
+6. **Near misses are spaces and single letters.** Across multi-column, tiny text and old scans, 96 missing snippets differ only in spacing or spacing plus punctuation (29 in spacing alone) and about 250 by one to three letters; 1,507 of the 1,896 failing checks allow zero edits, so one wrong letter in a 64-character snippet fails a check. Three thinkers.
+7. **Multi-column is not an ordering problem.** Only 17 of 233 failing order checks have both snippets present in the wrong order; the rest are missing or garbled text. The PDF's own content-stream order, where both snippets can be found in it, is right for 290 of 314 passing checks and 21 of 25 failing ones (stepping stone), and right for 8 of the 17 true misorders (fractionation).
+8. **Tables: the pool is tables we found and built wrongly.** With the checker's own parser, 116 to 143 failing cells sit inside a table we emitted (wrong neighbour or heading, or the cell merged with its neighbour), 27 to 78 are present in our text but in no table, 53 have no table, and about 45 are nowhere (pictures, rejected OCR). Four thinkers, with slightly different counts.
+9. **The classical ceiling is about 72.5.** The contrarian's census: a perfect classical run winning every failing check whose text already exists in evidence we hold would reach 72.5; 27.5 points sit behind pixels. Half of all remaining failures are on scanned pages of a kind the owner's four sample documents (born-digital, exact text layers) do not contain.
+10. **Small facts with checks attached.** TeX ligatures (fi, fl, ff, ffi, ffl) arrive as blanks from the text layer on nine multi-column pages: 13 order checks fail only for that (challenge). Producer `/Artifact` marks wrap the running heads on a fifth of digital pages: 3 failing header checks are exactly that text (challenge, stepping stone). Parenthesised statistics stacked under their values: 8 table checks on 5 pages (challenge). Vector-drawn text on two table pages: 10 checks (challenge, fractionation). Plain `k = 2` written as `$k=2$`: 6 to 17 multi-column checks, and no arXiv reference is short and backslash-free (four thinkers). Eight of the 28 failing header checks are lines we ourselves promoted to headings (reversal). The picture-OCR experiment could never have won a table check, because that path builds paragraphs after the table stage (concept fan).
+11. **A licence problem the round found in passing.** PyMuPDF, which reads every text layer we use, is dual-licensed AGPL 3.0 or a commercial licence from Artifex (re-checked in the installed package's metadata). Decision D007 excludes AGPL components. This needs the owner's call: buy the commercial licence, or move the text layer to a permissive reader (pypdfium2, pdfplumber).
+
+## Where the thinkers converged
+
+| Idea | Reached independently by | What it rests on | Reach (checks) | Cost |
+|---|---|---|---|---|
+| Read scans at native resolution, tiled | reversal, provocation, fractionation, concept fan, random entry, escape | fact 1 | tens to a few hundred (old scans, tables on scans, tiny text) | an afternoon |
+| Two witnesses: word-level arbitration between a hidden layer (or our read) and a re-read of the same line at full resolution | reversal, challenge, escape, concept fan, random entry, provocation, stepping stone, fractionation | fact 3; the two readings find different strings | 30 to 90 | one to two days |
+| Formulas as strings on OCR pages (switch the geometric rebuild off there; wrap the read line) | escape, random entry | facts 4 and 5; a floor of about 25 references already present as plain text | 25 floor, more with better characters | half a day |
+| Per-line OCR acceptance with an honest note, instead of an empty page | reversal, challenge, escape, concept fan, random entry, provocation | 71 empty pages fail the baseline check; letterheads and dates on handwritten letters are print | 20 to 70 | half a day plus the owner's decision |
+| Spaces and punctuation from the language and the ink on OCR pages | reversal, concept fan, provocation, fractionation | fact 6; measured one-sided: tiny text +6/-0, old scans +4/-1 with a plain rule | 20 to 50 | half a day |
+| Sentence continuity as an ordering signal (defer the interloper; the content stream as a witness) | reversal, escape, concept fan, random entry, provocation, stepping stone, fractionation | fact 7 | 20 to 40 | a day |
+| Columns from the numbers; headings handed down; HTML spans | reversal, concept fan, escape, stepping stone | fact 8; the checker honours th, colspan, rowspan | 30 to 50 | a day |
+| Character-grid tables for monospace printouts | challenge, concept fan, random entry, provocation, stepping stone, fractionation | the census page is a perfect 4.8 pt grid | 5 to 10 here, many in the field | half a day |
+| A conservation check: every visible text-layer word lands in the body or is named as furniture | reversal, escape, contrarian | dropped text is nobody's fault today | 20 to 40 and a lasting instrument | half a day |
+| A small formula-image model on formula crops, accepted only when re-rendering matches the ink | escape, concept fan, fractionation | old-scan maths at 4.1 | 30 to 150 | two days; the owner's yes on a small model |
+| The page as its own font: cluster glyph shapes, majority label | stepping stone, provocation, fractionation, contrarian | consistency of metal type | 20 to 60 | two to four days; the wild one |
+| Body band and running-head "passport" rules for single pages | reversal, random entry, challenge, other people's views | 8 of 28 header misses are our own headings | 4 to 12 | half a day |
+| The gutter from the ink: on scanned two-column pages whose hidden layer interleaves the columns line by line, an ink profile at 100 dpi shows the white channel the layer's boxes hide | other people's views, provocation | verified on three pages (02e31046, 0208fbb5) | 30 to 50 | half a day |
+| OCR confusion correction by word list, recorded in the front matter (the typist's clogged "e": e to a/o/s on typewriter scans, e to c on book layers) | other people's views, random entry (the choir) | the commonest letter edits in the near misses | 30 to 50 | half a day; touches D008 in spirit |
+
+## The shortlist, in the order I would test them
+
+Each test is the thinkers' one-hour test, tightened. Tests marked "done" were run on run 48's outputs while the round was still finishing.
+
+1. **Native-resolution OCR, tiled.** Test: ten old-scan pages we read badly, the three 600-dpi newspaper clippings and one scanned table; OCR at native size in overlapping tiles against today's 2,000 px; count reference snippets found at each check's allowance and watch the page confidences. Kill: no more snippets found.
+2. **Formulas as strings on OCR pages.** Test done (no conversion): 7 failing references are present verbatim, spaces ignored, as plain text in our output (the escape thinker's looser count was 25). Build regardless of the count, because the current output invents structure there; the score gain waits on better characters.
+3. **TeX ligature codes.** Test done by the challenge thinker: 13 checks. Build: two hours.
+4. **Plain inline maths in prose.** Test done: unwrapping short backslash-free `$...$` runs in run 48's multi-column outputs wins 1 check, and the same rule ungated on arXiv loses 20, so it needs a page-type gate and is worth one check. Set aside.
+5. **Punctuation and spaces on OCR pages, then gaps from the ink.** Test done: a space after `, ; :` before a letter, on scanned pages only, wins 12 checks and loses none on run 48's outputs (tiny text 6, old scans 5, multi-column 1). Build the plain rule now; then the ink-projection version on the 24 spacing-only pages.
+6. **Stacked parenthesised statistics merged into their value row.** Test on the five pages' grids: 8 checks. Two hours.
+7. **Two witnesses on tiny-text and multi-column scans.** Test: crop the disputed lines at native resolution, run the recogniser alone, count disputed tokens it reads as the reference does, and count correct tokens it would corrupt. Kill: under a third right, or more than one in ten corrupted.
+8. **Per-line acceptance census.** Test: OCR the 71 empty pages, list lines at confidence 0.9 with three word-like tokens, read forty by eye. This produces the evidence for the owner's decision; it builds nothing until the decision is made.
+9. **Content-stream order as a witness with a trust gate.** Test: per-page rank agreement between stream order and our column order on the pages where the stream is right and where it is wrong; a single threshold must separate them.
+10. **Columns from the numbers, headings handed down, HTML spans.** Test: hand-write the HTML for two pages and run the checker; then prototype the vote on three pages.
+11. **Character-grid tables.** Test: print the census page's character grid and see the blank columns fall between the reference's cells.
+12. **Conservation check.** Test: for the 46 in-layer absent multi-column snippets, name the block kind that swallowed each.
+13. **Formula-image model, gated.** Test after a scratch install: twenty crops, count matches through the checker's render comparison. Kill: under three of twenty.
+14. **Tesseract as a second engine on the 37 typed old-scan pages** (the contrarian's falsifier). Kill: under 20 strings found; over 40 means a classical route worth two to four points exists.
+
+## Decisions that are the owner's
+
+- **Partial pages.** Six thinkers want a page the gate rejects to keep its confident printed lines (letterhead, date, caption) with a front-matter count and a visible note. It amends the empty-file rule (D008, D009). The score gain is real (up to 71 baseline checks) and the reader's gain is a letterhead without the letter; the thinkers disagree on whether that helps or misleads.
+- **Small task models.** A formula-image model (pix2tex, MIT) and a second OCR engine (Tesseract, Apache 2.0) are not vision-language models, but they are models reading pixels; their output would carry the inferred tag under D015. Yes or no?
+- **PyMuPDF's licence** (fact 11).
+- **Meaning-first product work.** The contrarian's second half proposes what the benchmark cannot test on the owner's documents: a cross-page pass (furniture by repetition, printed-page map, tables and lists stitched across pages), benefit records with polarity and scope ("covered / not covered"), resolved cross-references, a glossary of defined terms, a ledger of every amount with its label, two-route disagreement as a doubt signal, and a ranked review list. Its census of the four sample documents is in `docs/lateral_round_1/ideas_contrarian.md`.
+
+## The plan agreed with the owner (7 September, midday)
+
+**Wave 1, first thing after the compact, then run 49.** Everything here is already measured, except the resolution test, which is an hour.
+
+1. A space after `, ; :` before a letter, on text that came from OCR (ours or a hidden layer): 12 checks, no losses, measured on run 48's outputs.
+2. TeX ligature codes recovered from the text layer (fi, fl, ff, ffi, ffl arriving as blanks): 13 checks, measured by the challenge thinker.
+3. The formula rebuild switched off on OCR pages; equation lines written as the plain strings the reader saw, inside `$...$`. A fidelity fix first; 7 references are already present as plain text.
+4. Statistics stacked under their values in a table (a value row over a "(4.07)" row) merged into one cell: 8 checks on five pages.
+5. The one-hour test of OCR at the scan's own resolution, in overlapping tiles: ten old-scan pages we read badly, the three 600-dpi clippings, one scanned table. If it finds more text, the tiled reader is built the same afternoon.
+
+Then run 49 with these and the morning's seven rules (hyphen-wrapped cells, group labels, paired lines in ruled cells, crowded cells rebuilt, wider running heads, tiny-type word spaces, small caps).
+
+**Wave 2, the rest of the week, each idea tested for an hour before it is built:** two witnesses (the hidden layer's word where it is right, our reading where it is right); the PDF's content-stream order as a tie-breaker with a trust gate; table columns from the numbers with headings handed down and HTML spans; character-grid tables for printouts; a conservation check that no visible word is dropped silently; the gutter found from the ink on scans whose layer interleaves the columns; the small running-head rules. Anything that fails its test is set aside with its numbers in the log.
+
+**Wave 3, on the owner's decisions:** partial pages with a visible note; small task models (a formula-image reader, a second OCR engine); the meaning-first product work on the owner's documents.
+
+**Target and ceiling.** 72.5 is the ceiling: what a perfect run would score if it won every failing check whose text we already hold, and some of those cannot be won because the benchmark's own answers are wrong. The no-model target is **70 by the end of the week**. 72.5 is the wall we measure against, not the goal.
+
+**The stopping rule.** `bench/tools/ceiling_census.py` counts, after each run, how many failing checks still have their text in evidence we hold (the mechanical pool). When that pool stops shrinking while runs keep landing, the classical path is done and the remaining points belong to the model tiers.
+
+**Open, and larger than any of this:** PyMuPDF's licence (fact 11).
+
+## Set aside by the round itself
+
+Looking up public transcriptions of the handwritten letters (invention by another name); a greedy dictionary word-splitter (measured: +5/-96); the PDF metadata as a passport (every benchmark file was rewritten by pypdf and carries none); the structure tree (no benchmark PDF has one); heading levels by clustering (ours are fine); reading order as a target in itself (17 checks).

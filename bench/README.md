@@ -71,3 +71,7 @@ python bench/math_check.py 2503.03873_pg5 2503.03879_pg4 2503.03899_pg9 2503.039
 ```
 
 expected 57/64 (as of run 31's launch, 4 Sept 18:26; 56 from run 28 to run 30, so 56 stays the floor for the launcher gate; 57 for a while on 4 Sept morning, 56 after round 10, 54 at run 13). The first sample expects 46/52 since run 32's launch (45 from run 28, 44 before). Add `--show-fails` to see the failing checks.
+
+## The stopping rule for classical work
+
+`python bench/tools/ceiling_census.py` (from the lateral round, 7 September) sorts every failing text and table check of the latest run into buckets: our output empty; text in the raw layer but not in our output; text in our output but the check still fails; text in neither; no text layer. The first three are the mechanical pool. Run it after each benchmark run; when the pool stops shrinking while runs keep landing, the classical path is done (decision D018). `bench/tools/lateral_census_concept_fan.py` prints the near-miss pairs for the tiny-text and multi-column sections, the harness for the two-witness test.

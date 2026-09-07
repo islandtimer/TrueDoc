@@ -74,3 +74,11 @@ follow the link instead of meeting "face.8" and a stray paragraph. Notes stay in
 headers-and-footers checks that want some of them gone are accepted as lost). Endnotes (notes on a later page, under a "Notes"
 heading or in a run of numbered notes) are linked by a document-level pass; a number reused on a later page gets a page-qualified
 key (`[^1-p12]`) so keys stay unique. Markers inside formulas are not linked (a raised digit there is an exponent).
+
+## D018 - The no-model target is 70, the ceiling 72.5, and the census pool is the stopping rule (2026-09-07, owner's decision)
+
+The lateral round's census (`bench/tools/ceiling_census.py`) found that a perfect classical run, winning every failing check whose text already exists in evidence we hold, would score about 72.5 on olmOCR-bench; the other 27.5 points sit behind pixels that only a better reader of images can turn into letters. The owner set the no-model target at 70 (by the end of the week of 7 September) and treats 72.5 as the wall to measure against, not the goal. The stopping rule for classical work: run the census after each benchmark run; when the mechanical pool stops shrinking while runs keep landing, the classical path is done and the remaining points belong to the model tiers (D014). The three-wave plan is in `docs/LATERAL_ROUND_1.md`.
+
+## Open: PyMuPDF's licence against D007 (found 2026-09-07, owner's decision pending)
+
+PyMuPDF, which reads every text layer TrueDoc uses, is dual-licensed: GNU AGPL 3.0 or a commercial licence from Artifex (the installed package's metadata says so). D007 excludes AGPL components from the product path. The choices are a commercial licence or moving the text-layer stage to a permissive reader (pypdfium2, pdfplumber). Nothing else in the product path is affected.

@@ -442,7 +442,7 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
                         # on a private-use code that the formula code maps back.
                         # (A blank with no drawn glyph behind it is a synthetic space.)
                         text = chr(0xE000 + ord(text))
-                    text = _central_european(font, _symbol_font_mark(font, unfold_truncated_surrogate(text, font)))
+                    text = _small_caps(font, _central_european(font, _symbol_font_mark(font, unfold_truncated_surrogate(text, font))))
                     ch = Char(
                         text=text,
                         bbox=cbox,
@@ -731,6 +731,21 @@ def _central_european(font: str, text: str) -> str:
     return text
 
 
+_SMALL_CAPS_FONT = _re.compile(r"(?:SC|SmallCaps|Smallcaps|SCaps)(?:It|Ital|Italic|Bd|Bold|BoldItalic)?$")
+
+
+def _small_caps(font: str, text: str) -> str:
+    """A small-caps font ("TimesTen-RomanSC") prints its lowercase letters as
+    small capitals: a reader sees "ROTTIER S., PIETTE J." where the text layer
+    says "Rottier S., Piette J."; the page's reading is the capitals."""
+    if not text or not any(c.islower() for c in text):
+        return text
+    base = font.split("+", 1)[-1]
+    if _SMALL_CAPS_FONT.search(base):
+        return text.upper()
+    return text
+
+
 # The symbol fonts of 2000s journal PDFs set with Advent 3B2 carry their own
 # encoding, so their glyphs arrive as the Latin characters at the same codes:
 # "(n ¼ 562)" is "(n = 562)", "m tð Þ ¼ m0 þ" is "m(t) = m0 +", and the minus
@@ -802,6 +817,10 @@ def _chars_to_words(chars: list[Char], ocr_layer: bool = False) -> list[Word]:
     # (a font whose declared widths are wrong): the word-space rule below measures
     # from that baseline.
     raw_median = raw_gaps[len(raw_gaps) // 2] if raw_gaps else 0.0
+    # The gap almost every letter pair on the line stays under: a word space in
+    # a tiny bold caption (0.78 pt at 6.4 pt, "James Norwood") is under the
+    # absolute floor below, yet stands far above the line's own letter gaps.
+    high_gap = gaps[int(0.9 * (len(gaps) - 1))] if gaps else 0.0
     # OCR layers: the letter gap is judged per run between explicit spaces (one
     # run may be letter-spaced while its neighbours touch). A word gap inside a
     # run must stand clearly above that run's letter gap; when almost no letter
@@ -853,6 +872,11 @@ def _chars_to_words(chars: list[Char], ocr_layer: bool = False) -> list[Word]:
                 # Glyph boxes wider than the glyphs (a font whose declared widths are
                 # wrong) overlap their neighbours by a constant amount; a word space
                 # still stands a quarter of an em above that constant.
+                flush()
+            elif (not ocr_layer and len(gaps) >= 6 and gap > 0.1 * size and gap > 3.0 * high_gap
+                  and gap > raw_median + 0.1 * size and c.text.isalnum() and prev.text.isalnum()):
+                # Tiny type: a tenth of an em that nine letter pairs in ten stay
+                # well under is a word space, whatever the absolute floor says.
                 flush()
             elif ocr_layer and gap > max(0.04 * size, 0.3):
                 tok_median, tok_pos_share, tok_pos_median = tok_stats.get(i, (median_gap, 0.0, 0.0))
