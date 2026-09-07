@@ -12,6 +12,15 @@ _TRAILING_DOTS = re.compile(r"\s*(?:\.\s?){4,}$")
 _LEADING_RULE = re.compile(r"^(?:[-–—]\s?){4,}\s*")
 _TRAILING_RULE = re.compile(r"\s*(?:[-–—]\s?){4,}$")
 _MEANING = re.compile(r"[^\W_]")
+# A statistic in brackets under a value: "(4.07)", "(-1.07)", "(.22)", "(0.0796)",
+# "(7)", "(42.9%)", "[0.12]"; not "(n = 12)", "(a)" or "(2)".
+_BRACKETED_STATISTIC = re.compile(r"^[\(\[]\s*[-+−–]?[\d,]*\.?\d+%?\s*[\)\]][*†‡]*$")
+
+
+def is_bracketed_statistic(text: str) -> bool:
+    """Is the cell a bracketed number, the shape of a standard error or t-value
+    printed under its estimate?"""
+    return bool(_BRACKETED_STATISTIC.match(text.strip()))
 
 
 def clean_cell_text(text: str) -> str:

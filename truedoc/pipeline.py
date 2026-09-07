@@ -584,6 +584,19 @@ def _replace_keys(text: str, rename: dict[str, str]) -> str:
 _SENTENCE_END = re.compile(r"[.!?][\"')\]]?(?:\s+[A-Z]|\s*$)")
 
 
+_KEY_VALUE = re.compile(r"^[A-Za-z][\w .()/-]{0,24}:\s*\S")
+
+
+def _control_stamp(table) -> bool:
+    """Short cells, at least half of them "key: value" pairs ("issued: 2019-04-17",
+    "reviewed: --"): the shape of a document-control box, not of a data table."""
+    filled = [c.text.strip() for c in table.cells if c.text.strip()]
+    if len(filled) < 2 or any(len(t.split()) > 4 for t in filled):
+        return False
+    keyed = sum(1 for t in filled if _KEY_VALUE.match(t) or t.endswith(":"))
+    return keyed * 2 >= len(filled)
+
+
 def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
     """Running heads and feet that survive the layout model's labels.
 
@@ -611,8 +624,18 @@ def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
         below = [o.bbox.y0 for o in text_blocks if o is not b and o.bbox.y0 >= b.bbox.y1 - 1.0 and o.bbox.x_overlap(b.bbox) > 0]
         return min(below) - b.bbox.y1 if below else 1e9
 
+    first_heading = min((b.bbox.y0 for b in blocks if b.kind == BlockKind.HEADING and b.lines), default=None)
     for b in blocks:
         size = b.size or body
+        # A document-control stamp at the head of a page ("Revision 2 | issued:
+        # 2019-04-17", "supersedes: Revision 1 | dated: 2016-09-06"): a small
+        # table of key: value cells above the page's first heading is furniture,
+        # however well its rows line up (five checks on one page in run 50).
+        if (b.kind == BlockKind.TABLE and b.table is not None and b.table.n_rows <= 4 and b.table.n_cols <= 2
+                and b.bbox.y1 <= 0.15 * H and (first_heading is None or b.bbox.y1 <= first_heading) and _control_stamp(b.table)):
+            b.kind = BlockKind.HEADER
+            b.provenance = "control-stamp"
+            continue
         if b.kind == BlockKind.HEADING and words(b) <= 8 and size <= 1.4 * body and len(b.lines) <= 2:
             if b.bbox.y1 <= 0.08 * H:
                 b.kind = BlockKind.HEADER
@@ -977,7 +1000,14 @@ def _adopt_ruled_headers(tables: list[Block], lines, size: float) -> tuple[list[
             for l in lines if id(l) not in used)
         # A frame taller than a couple of lines is a box around a column of rows, not a row.
         single_row = t.n_rows == 1 and t.bbox.height <= 2.5 * size
-        if single_row and not continues_below and len(cols) >= 2 and len(cols) == t.n_cols:
+        # A box of several rows carries its own heading, unless its first row is
+        # plainly data (a cell of more than four words, or one starting lowercase
+        # or with a symbol: "driverTypeAddress | Address of the Driver Type"); then
+        # the heading printed above the box ("# | Attribute | Description") is its
+        # heading as much as a one-row box's is.
+        first = [c.text.strip() for c in t.cells if c.row == 0 and c.text.strip()]
+        headerless = t.n_rows >= 2 and bool(first) and any(len(x.split()) > 4 or x[:1].islower() or not x[:1].isalnum() for x in first)
+        if ((single_row and not continues_below) or headerless) and len(cols) >= 2 and len(cols) == t.n_cols:
             # The headings of one row may arrive as separate lines (wide gaps between
             # columns split a line), so the band above the box is taken as a whole,
             # nearest baseline first.
@@ -1013,6 +1043,8 @@ def _adopt_ruled_headers(tables: list[Block], lines, size: float) -> tuple[list[
         top = min(l.bbox.y0 for l in row_lines)
         for c in t.cells:
             c.row += 1
+            if headerless:
+                c.is_header = False   # the box's first row was data, not a heading
         for c in cols:
             t.cells.append(TableCell(text=clean_cell_text(" ".join(w.text for w in buckets.get(c.col, []))), row=0, col=c.col,
                                      bbox=BBox(c.bbox.x0, top, c.bbox.x1, t.bbox.y0), is_header=True))
@@ -1023,6 +1055,14 @@ def _adopt_ruled_headers(tables: list[Block], lines, size: float) -> tuple[list[
     if used:
         lines = [l for l in lines if id(l) not in used]
     return kept, lines
+
+
+def _short_cell_share(table) -> float:
+    """Share of filled cells of three words or fewer: a grid of labels or names."""
+    filled = [c.text.strip() for c in table.cells if c.text.strip()]
+    if not filled:
+        return 0.0
+    return sum(1 for t in filled if len(t.split()) <= 3) / len(filled)
 
 
 def _numeric_share(table) -> float:
@@ -1072,7 +1112,16 @@ def _rebuild_sparse_ruled_tables(tables: list[Block], lines, size: float) -> lis
         # A crowded cell is evidence enough; its rebuild carries a title and
         # stacked headings that dilute the numeric share (0.21 on the regression table).
         share_needed = 0.15 if crowded else 0.3
-        if rebuilt is not None and rebuilt.n_rows > b.table.n_rows and rebuilt.n_cols >= 2 and _numeric_share(rebuilt) >= share_needed:
+        # A grid of short cells in several columns over many rows (a committee
+        # list of names with tick columns, boxed as one cell by the rules) is a
+        # table on its own evidence, numbers or not; boxed prose rebuilds, if at
+        # all, as long cells in one or two columns.
+        # (Only where the box holds three times more lines than the rules gave it
+        # rows: an ordinary ruled schedule with a few wrapped cells is left as the
+        # rules drew it.)
+        grid_like = (rebuilt is not None and rebuilt.n_cols >= 3 and rebuilt.n_rows >= 6 and _short_cell_share(rebuilt) >= 0.8
+                     and baselines >= 3 * b.table.n_rows)
+        if rebuilt is not None and rebuilt.n_rows > b.table.n_rows and rebuilt.n_cols >= 2 and (_numeric_share(rebuilt) >= share_needed or grid_like):
             rebuilt.bbox = b.bbox
             rebuilt.provenance = "ruled-rebuilt"
             out.append(Block(kind=BlockKind.TABLE, bbox=b.bbox, table=rebuilt, provenance="ruled-rebuilt", confidence=b.confidence))

@@ -36,7 +36,7 @@ _MATH_FONT_HINTS = (
     "BBOLD", "DOUBLESTRUCK", "DSROM", "DSSS",   # blackboard-bold fonts (bbold, boondox, dsfont)
     "MATH", "MTMI", "MTSY", "MTEX", "SYMBOL", "TXMI", "TXSY", "TXEX", "PXMI", "PXSY", "PXEX", "ESINT",
     "WASY", "STMARY", "BBM", "DSROM", "LMMATH", "STIXMATH", "CAMBRIAMATH", "MATHJAX", "XITSMATH",
-    "LATINMODERNMATH", "ASANAMATH", "TEXGYRE", "LMROMANSLANT",
+    "LATINMODERNMATH", "ASANAMATH", "LMROMANSLANT",
 )
 
 
@@ -44,6 +44,12 @@ def is_math_font(font: str) -> bool:
     f = font.upper()
     if "+" in f:
         f = f.split("+", 1)[1]
+    # The TeX Gyre families are text faces (Termes, Heros, Pagella, Bonum...)
+    # each with a Math companion; only the companion is a maths font. Calling
+    # the text face maths turned ten arXiv pages set in TeX Gyre Termes (the
+    # newtx package's body font) into one formula each, every space stripped.
+    if "TEXGYRE" in f:
+        return "MATH" in f
     return any(h in f for h in _MATH_FONT_HINTS)
 
 

@@ -96,6 +96,8 @@ def display_formula_blocks(page: Page, region_boxes: list[BBox]) -> list[Block]:
     block as one formula. Rows separated by a clear vertical gap stay separate.
     """
     blocks: list[Block] = []
+    if page.quality.kind == "ocr-truedoc":
+        return _ocr_formula_blocks(page, region_boxes)
     rules = page_rules(page)
     for rb in region_boxes:
         # A glyph belongs to the region when its box centre or its x-height point
@@ -136,6 +138,37 @@ def display_formula_blocks(page: Page, region_boxes: list[BBox]) -> list[Block]:
             if numbers:
                 text += " " + " ".join("(" + n + ")" for n in numbers)
             blocks.append(Block(kind=BlockKind.FORMULA, bbox=bbox, text_override=text, provenance="math-textlayer", confidence=0.6))
+    return blocks
+
+
+# Characters the engine read that TeX would otherwise swallow: a brace the
+# reader saw is a brace ("x-[3y+{3z-(z-x)+y}-2x]" lost its braces, and three
+# checks, as bare grouping in run 49).
+_TEX_SPECIALS = str.maketrans({"%": r"\%", "&": r"\&", "#": r"\#", "_": r"\_", "{": r"\{", "}": r"\}"})
+
+
+def _ocr_formula_blocks(page: Page, region_boxes: list[BBox]) -> list[Block]:
+    """Formula regions on a page TrueDoc read by OCR: each line as the string the
+    engine read, inside `$$...$$`, one per line.
+
+    The rebuild from glyph geometry needs real glyph boxes and fonts; an OCR
+    line has neither (its characters are spread evenly over the line box, all in
+    one nominal font), so the rebuild invents superscripts, subscripts and
+    fractions that are not on the page ("2_{c}c_{2}x" for "2c-x"). The engine's
+    own reading, kept whole, says only what it saw (D008/D009).
+    """
+    blocks: list[Block] = []
+    for rb in region_boxes:
+        lines = sorted((l for l in page.lines if rb.contains_point(l.bbox.cx, l.bbox.cy)), key=lambda l: (l.bbox.y0, l.bbox.x0))
+        rows = []
+        for l in lines:
+            text = " ".join(w.text for w in l.words).strip()
+            if text:
+                rows.append("$$" + text.translate(_TEX_SPECIALS) + "$$")
+        if not rows:
+            continue
+        bbox = BBox.union_all(l.bbox for l in lines)
+        blocks.append(Block(kind=BlockKind.FORMULA, bbox=bbox, text_override="\n".join(rows), provenance="math-ocr", confidence=0.4))
     return blocks
 
 
@@ -230,6 +263,24 @@ def inline_math_text(line: Line, rules: list[BBox]) -> str:
             if 0 <= j < len(words) and words[j].text in _RELATION_WORDS and not huge[j]:
                 flags[i] = True
                 flags[j] = True
+    # A run of dots and commas between two formula words is part of the formula:
+    # a set "{τ1, . . . , τN}" reaches the layer as a maths word, five one-
+    # character text-font words and a maths word, and a reader writes it as one
+    # sequence (the single-word bridge below cannot chain through the run).
+    i = 0
+    while i < len(words):
+        if not flags[i] or huge[i]:
+            i += 1
+            continue
+        j = i + 1
+        while j < len(words) and not flags[j] and not huge[j] and len(words[j].text) <= 2 and all(ch in ".,;…" for ch in words[j].text):
+            j += 1
+        if j < len(words) and flags[j] and 2 <= j - i <= 7:
+            for k in range(i + 1, j):
+                flags[k] = True
+            i = j
+        else:
+            i += 1
     # Bridge single non-math words between math words when they are function names,
     # operators, numbers or symbols; and absorb operator/number words adjacent to a maths word.
     changed = True

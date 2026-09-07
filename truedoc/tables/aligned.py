@@ -15,12 +15,13 @@ import re
 from dataclasses import dataclass, field
 
 from truedoc.model import BBox, Block, BlockKind, Line, Page, Table, TableCell
-from truedoc.tables.cells import clean_cell_text
+from truedoc.tables.cells import clean_cell_text, is_bracketed_statistic
 
 _NUMERIC = re.compile(
-    r"^[\(\[]?[-+−–<>≤≥↑↓~≈]?\s*[\d.,]+\s*(?:[±+\-−]\s*[\d.,]+)?\s*%?[\)\]]?[*†‡a-z]{0,2}$|^[-–—]$|^n/?a$|^n\.?s\.?$|^\d+[\d.,]*\s*[×x]\s*10[-−]?\d*$"
-    # a value with its error or count in parentheses: "−.25 (.23)", "7.90 (3.07)", "12 (4.5%)"
-    r"|^[-+−]?[\d.,]+\s*%?\s*\([-+−]?[\d.,]+\s*%?\)[*†‡a-z]{0,2}$",
+    r"^[\(\[]?[-+−–<>≤≥↑↓~≈]?\s*[\d.,]+\s*(?:[±+\-−]\s*[\d.,]+)?\s*%?[\)\]]?[*†‡a-z]{0,3}$|^[-–—]$|^n/?a$|^n\.?s\.?$|^\d+[\d.,]*\s*[×x]\s*10[-−]?\d*$"
+    # a value with its error or count in parentheses: "−.25 (.23)", "7.90 (3.07)", "12 (4.5%)";
+    # significance stars sit on the value ("0.0475** (0.0205)"), up to three of them
+    r"|^[-+−]?\s*[\d.,]+\s*%?[*†‡a-z]{0,3}\s*\([-+−]?\s*[\d.,]+\s*%?\)[*†‡a-z]{0,3}$",
     re.IGNORECASE,
 )
 
@@ -47,11 +48,36 @@ def find_aligned_tables(page: Page, lines: list[Line], body_size: float) -> tupl
     """Return (table blocks, lines not consumed by any table)."""
     size = body_size or 10.0
     all_lines = list(lines)
-    # Running headers and footers never belong to a table.
+    # Running headers and footers never belong to a table: the top and bottom
+    # strips are left out. Rows of several cells alone in a strip are not a
+    # table either (a document-control stamp, "issued: | 2019-04-17" over three
+    # more such rows, is furniture; reading it as a table cost five checks in
+    # run 50). The one exception is the heading row of a table that starts in
+    # the strip (a continued table's "Category | Region | Phenotype" over its
+    # first body rows), which sits within a line of a body row of several cells.
     top_zone = 0.09 * page.height
     bottom_zone = page.height - 0.09 * page.height
-    lines = [l for l in lines if not l.rotated and not (l.bbox.y1 <= top_zone or l.bbox.y0 >= bottom_zone)]
-    rows = _cluster_rows(lines, size)
+    lines = [l for l in lines if not l.rotated]
+    body = [l for l in lines if not (l.bbox.y1 <= top_zone or l.bbox.y0 >= bottom_zone)]
+    body_multi = [r for r in _cluster_rows(body, size) if _is_multicell(r, size)]
+    for strip, nearest_first in (([l for l in lines if l.bbox.y1 <= top_zone], lambda r: -r.y0), ([l for l in lines if l.bbox.y0 >= bottom_zone], lambda r: r.y0)):
+        multi = [r for r in _cluster_rows(strip, size) if _is_multicell(r, size)] if strip else []
+        # Nearest the body first: a row the table takes in carries the row above
+        # it (a heading over a first data row that also sits in the strip).
+        pool = list(body_multi)
+        for r in sorted(multi, key=nearest_first):
+            # ... and its cells start where the table's columns start (a report's
+            # banner of wide centred titles right above a table is not its heading),
+            # and the body below it is a table of at least two such rows (the third
+            # row of a document-control stamp that crosses the strip's edge is not).
+            near = [b for b in pool if -0.6 * size <= b.y0 - r.y1 <= 1.8 * size or -0.6 * size <= r.y0 - b.y1 <= 1.8 * size]
+            if near and any(_columns_align(r, b, size) for b in near):
+                first = min(near, key=lambda b: b.y0)
+                run_below = sum(1 for b in pool if -0.6 * size <= b.y0 - first.y0 <= 3.6 * size)
+                if run_below >= 2:
+                    body.extend(r.segments)
+                    pool.append(r)
+    rows = _cluster_rows(body, size)
     candidates = _find_runs(rows, size)
     tables: list[Block] = []
     consumed: set[int] = set()
@@ -203,6 +229,11 @@ def _find_runs(rows: list[_Row], size: float) -> list[_Candidate]:
         if _is_multicell(row, size):
             run.append(row)
             singles_in_a_row = 0
+        elif _wrapped_cell_line(row, run, size):
+            # The rest of a wrapped cell ("Bhattacharya et al., 2012;" under
+            # "Huber et al., 2002; Hou et al., 2006;" in a references column):
+            # inside the table, not a break in it, however many lines it takes.
+            run.append(row)
         else:
             singles_in_a_row += 1
             if singles_in_a_row > 1:
@@ -212,6 +243,39 @@ def _find_runs(rows: list[_Row], size: float) -> list[_Candidate]:
                 run.append(row)
     close()
     return candidates
+
+
+def _columns_align(r: _Row, b: _Row, size: float) -> bool:
+    """Do the cells of row `r` start on the columns of row `b` (within an em): at
+    least two of them, and at least half? (A heading "# | Attribute | Description"
+    over rows whose first column is empty aligns two of three; a banner of wide
+    centred titles aligns none.)"""
+    starts = [s.bbox.x0 for s in b.segments]
+    if len(r.segments) < 2:
+        return False
+    aligned = sum(1 for s in r.segments if any(abs(s.bbox.x0 - x0) <= 1.0 * size for x0 in starts))
+    return aligned >= 2 and aligned * 2 >= len(r.segments)
+
+
+def _wrapped_cell_line(row: _Row, run: list[_Row], size: float) -> bool:
+    """A lone line that starts on a column of the last row of several cells and
+    stays inside that column: the continuation of a wrapped cell. A caption or a
+    note across the table starts at the table's edge, off any column but the
+    first, and runs past the next column's start."""
+    if len(row.segments) != 1:
+        return False
+    ref = next((r for r in reversed(run) if len(r.segments) >= 2), None)
+    if ref is None:
+        return False
+    seg = row.segments[0]
+    starts = sorted(s.bbox.x0 for s in ref.segments)
+    for i, x0 in enumerate(starts):
+        if abs(seg.bbox.x0 - x0) <= 0.5 * size:
+            if i == 0:
+                return False   # the first column's edge is also where a caption starts
+            nxt = starts[i + 1] if i + 1 < len(starts) else None
+            return nxt is None or seg.bbox.x1 <= nxt - 0.3 * size
+    return False
 
 
 def _channels(rows: list[_Row], x0: float, x1: float, size: float) -> list[tuple[float, float]]:
@@ -457,7 +521,11 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         return None
     short = sum(1 for c in non_empty if len(c.split()) <= 4)
     numeric = sum(1 for c in non_empty if _NUMERIC.match(c.strip()))
-    if not trusted:
+    # A dichotomous key ("A. Glands of the involucre ovate ..." beside "Euphorbia
+    # helioscopia", "aa. Glands kidney-shaped ..." beside "B") is a two-column
+    # table of long leads and short names that every prose test would throw out.
+    key = _key_table(grid_rows, n_cols)
+    if not trusted and not key:
         # Character-weighted view: columns of body text flanked by margin line
         # numbers look "half numeric" cell-wise but are overwhelmingly prose.
         total_chars = sum(len(c) for c in non_empty) or 1
@@ -471,10 +539,16 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         n_words = sum(len(c.split()) for c in non_empty)
         words_per_row = n_words / max(1, len(grid_rows))
         words_per_cell = n_words / max(1, len(non_empty))
-        sliced = n_cols > 1.5 * median_segments   # the cuts carved the text layer's segments into pieces
+        # The cuts carved the text layer's segments into pieces when the columns
+        # filled on most rows outnumber the segments a row came with. Columns
+        # filled on few rows (the tick columns of a checklist of names) are not
+        # pieces of anything: they are why such a list has more columns than
+        # segments, and they must not make it prose.
+        dense_cols = sum(1 for c in range(n_cols) if sum(1 for row in grid_rows if row[c]) >= 0.5 * len(grid_rows))
+        sliced = dense_cols > 1.5 * median_segments
         if numeric < 0.1 * len(non_empty) and words_per_row >= 6 and (words_per_cell >= 3 or sliced):
             return None
-    if strict:
+    if strict and not key:
         if short < 0.6 * len(non_empty) and numeric < 0.3 * len(non_empty):
             return None
         if n_cols == 2 and numeric < 0.25 * len(non_empty) and short < 0.85 * len(non_empty):
@@ -719,6 +793,28 @@ def _column_of(b: BBox, columns: list[tuple[float, float]]) -> int:
     return best
 
 
+_ENUMERATOR = re.compile(r"^(?:[A-Za-z]{1,2}\.|\d{1,3}\.|[ivxlcIVXLC]{1,5}\.|\(?[A-Za-z0-9]{1,3}\))\s")
+
+
+def _key_table(grid: list[list[str]], n_cols: int) -> bool:
+    """Two columns, three rows or more: every left cell opens with an enumerator
+    ("A.", "aa.", "1.", "(b)") and the right cells are short labels on four rows
+    in five. A column of prose beside margin line numbers is the mirror image
+    (numbers left, prose right) and does not pass."""
+    if n_cols != 2 or len(grid) < 3:
+        return False
+    rows = [r for r in grid if r[0] and r[1]]
+    if len(rows) < 3 or len(rows) < 0.8 * len(grid):
+        return False
+    if not all(_ENUMERATOR.match(r[0].strip()) for r in rows):
+        return False
+    return sum(1 for r in rows if len(r[1].split()) <= 3) >= 0.8 * len(rows)
+
+
+def _has_digit(text: str) -> bool:
+    return any(ch.isdigit() for ch in text)
+
+
 _CONNECTORS = {"and", "or", "of", "the", "a", "an", "to", "for", "in", "on", "with", "by", "&", "at", "from", "as", "per", "not"}
 
 
@@ -816,6 +912,7 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
     rows = list(rows)
     out: list[list[str]] = [grid[0]]
     out_rows: list[_Row] = [rows[0]]
+    took_statistics: set[int] = set()   # rows of `out` that have folded a statistics row in
     k = 1
     while k < len(grid):
         cells, row = grid[k], rows[k]
@@ -866,6 +963,18 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
                     nxt[i] = cells[i]
                 rows[k] = _Row(segments=row.segments + nxt_row.segments, y0=min(row.y0, nxt_row.y0), y1=max(row.y1, nxt_row.y1))
                 continue
+        # A statistic set under its value ("0.150**" over "(4.07)": a t-value, a
+        # standard error) is one cell with the value, which is how a reader
+        # quotes it: a row with nothing in the label column whose filled cells
+        # are all bracketed numbers, each under a number in the row above.
+        if (filled and not cells[0] and gap <= 0.6 * size and len(out) >= 2 and len(out) - 1 not in took_statistics
+                and all(is_bracketed_statistic(cells[i]) for i in filled)
+                and all(prev[i] and any(ch.isdigit() for ch in prev[i]) and not is_bracketed_statistic(prev[i]) for i in filled)):
+            for i in filled:
+                prev[i] = prev[i] + " " + cells[i]
+            out_rows[-1] = _Row(segments=prev_row.segments + row.segments, y0=prev_row.y0, y1=row.y1)
+            took_statistics.add(len(out) - 1)
+            continue
         tight = bool(filled) and gap <= 0.6 * size and all(prev[i] for i in filled) and not any(_NUMERIC.match(cells[i].strip()) for i in filled)
         is_continuation = tight and (
             # A long line under a heading reads as a wrapped continuation, unless
@@ -874,8 +983,17 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
             (cells[0] == "" and all(cells[i][:1].islower() or (len(cells[i].split()) > 2 and not _ENTRY_END.search(cells[i])) for i in filled))
             # Every column wraps ("US Citizens and" / "Permanent Residents" over
             # "Please visit the" / "program website"): each filled cell must read
-            # as the continuation of the cell above it.
-            or all(_continues(prev[i], cells[i]) for i in filled)
+            # as the continuation of the cell above it. A value carrying a number
+            # under a value carrying a number is a row of its own however
+            # lowercase it starts ("kłodę | do 15 pkt." under "głowę i szyję |
+            # do 5 pkt.", a scoring sheet folded into one row): a wrapped cell
+            # does not split its number from the line above.
+            or (all(_continues(prev[i], cells[i]) for i in filled)
+                # (The number test yields to a comma, a hyphen or a connector at the
+                # end of the cell above: "ENGR 350A," over "ENGR 370A", "(approx. 90-"
+                # over "95% design level)" are wrapped cells, numbers or not.)
+                and not any(_has_digit(prev[i]) and _has_digit(cells[i]) and len(cells[i].split()) <= 4
+                            and prev[i].rstrip()[-1:] not in ",;:-–&/" for i in filled))
         )
         if is_continuation:
             for i in filled:

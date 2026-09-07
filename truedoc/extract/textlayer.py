@@ -7,6 +7,7 @@ assessment of how trustworthy the text layer is.
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import unicodedata
 
@@ -471,6 +472,13 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
             if _needs_ink(c.font):
                 c.bbox = _extension_box(c)
 
+    # Glyphs a TeX-era Type 3 font left unnamed arrive as their raw codes; in a
+    # text font those are the ligatures "fi", "ff", "fl" (blanks in "classi cation").
+    if any(_is_raw_code(c.text) for c in chars_all):
+        if _recover_tex_codes(pending):
+            chars_all = [c for line_chars, _ in pending for c in line_chars]
+            page.meta["tex_codes_recovered"] = True
+
     # Verdicts that rest on reported colours and paint order are checked against
     # the rendered page: text a reader cannot see renders as a uniform patch.
     visibility.total_chars = sum(1 for c in chars_all if not c.text.isspace())
@@ -546,7 +554,11 @@ _SHORT_WORDS = {"a", "an", "as", "at", "be", "by", "do", "he", "if", "in", "is",
 # and the 8,000th word.
 _COMMON_COST = 12.6
 _EVERYDAY_COST = 11.45
-_GLUED_PUNCT = _re.compile(r"(?<=[;:])(?=[A-Za-z])|(?<=[.)])(?=[A-Z])")
+# A semicolon or colon followed directly by a letter is a word break the layer's
+# engine missed, and so is a comma followed by a word ("plant,and"; a single
+# letter after a comma is a symbol in a list, "A,B"); a full stop or a closing
+# bracket is one only before a capital ("1991).The"), since "e.g." is a word.
+_GLUED_PUNCT = _re.compile(r"(?<=[;:])(?=[A-Za-z])|(?<=,)(?=[A-Za-z]{2})|(?<=[.)])(?=[A-Z])")
 _vocab: dict | None = None
 
 
@@ -612,9 +624,105 @@ def _split_token(token: str, monospace: bool = False) -> list[str] | None:
     return out
 
 
+# TeX's original text encoding (OT1), the codes under 0x20. A Type 3 font made by
+# dvips names its glyphs by code, so MuPDF hands these back raw; Python treats
+# 0x0B-0x0D as whitespace, and "classi cation", "o -line" and "e cient" are how
+# "fi", "ff" and "ffi" reached the output (13 multi-column checks, lateral round
+# of 7 Sept 2026). The ligature slots are the signature of a text font in this
+# encoding; a symbol font (cmsy, cmmi) uses the same codes for other glyphs and
+# is told apart by its use: single letters, never words.
+_OT1_CODES = {
+    0x00: "Γ", 0x01: "Δ", 0x02: "Θ", 0x03: "Λ", 0x04: "Ξ", 0x05: "Π", 0x06: "Σ", 0x07: "Υ", 0x08: "Φ", 0x09: "Ψ", 0x0A: "Ω",
+    0x0B: "ff", 0x0C: "fi", 0x0D: "fl", 0x0E: "ffi", 0x0F: "ffl",
+    0x10: "ı", 0x11: "ȷ", 0x12: "`", 0x13: "´", 0x14: "ˇ", 0x15: "˘", 0x16: "¯", 0x17: "˚",
+    0x18: "¸", 0x19: "ß", 0x1A: "æ", 0x1B: "œ", 0x1C: "ø", 0x1D: "Æ", 0x1E: "Œ", 0x1F: "Ø",
+}
+_OT1_LIGATURE_CODES = range(0x0B, 0x10)
+# The Cork encoding (T1) keeps the five ligatures at 0x1B-0x1F. Its other low
+# codes are quotation marks and dashes, which a text font uses constantly, so a
+# font is only read as T1 when the ligature slots are the only raw codes it has.
+# (No benchmark page uses it; the rule is covered by a unit test only.)
+_T1_CODES = {0x1B: "ff", 0x1C: "fi", 0x1D: "fl", 0x1E: "ffi", 0x1F: "ffl"}
+
+
+def _is_raw_code(text: str) -> bool:
+    # (0x0D, a carriage return elsewhere, is "fl" here: MuPDF never puts line
+    # breaks among a line's characters, so the code can only be a glyph's.)
+    return len(text) == 1 and ord(text) < 0x20 and text not in ("\t", "\n")
+
+
+def _recover_tex_codes(pending: list[tuple[list[Char], tuple[float, float]]]) -> bool:
+    """Read the raw glyph codes of TeX text fonts as the letters they stand for.
+
+    A font qualifies when its characters on the page are mostly letters set in
+    words (runs of three or more letters of that font), and its raw codes carry
+    the encoding's signature: any code in the OT1 ligature slots makes it OT1;
+    codes only in the T1 ligature slots make it T1. A code is then replaced when
+    a letter of the same font stands next to it, one character per letter, the
+    glyph's box shared out between them. Returns True when anything changed.
+    """
+    total: dict[str, int] = {}
+    in_runs: dict[str, int] = {}
+    alpha: dict[str, int] = {}
+    codes: dict[str, set[int]] = {}
+    for line_chars, _ in pending:
+        for c in line_chars:
+            if c.text.isspace() and not _is_raw_code(c.text):
+                continue
+            total[c.font] = total.get(c.font, 0) + 1
+            if _is_raw_code(c.text):
+                codes.setdefault(c.font, set()).add(ord(c.text))
+            elif c.text.isalpha():
+                alpha[c.font] = alpha.get(c.font, 0) + 1
+        j = 0
+        while j < len(line_chars):
+            c = line_chars[j]
+            if c.text.isalpha():
+                k = j
+                while k < len(line_chars) and line_chars[k].font == c.font and line_chars[k].text.isalpha():
+                    k += 1
+                if k - j >= 3:
+                    in_runs[c.font] = in_runs.get(c.font, 0) + (k - j)
+                j = k
+            else:
+                j += 1
+    tables: dict[str, dict[int, str]] = {}
+    for font, cs in codes.items():
+        n = total.get(font, 0)
+        if n < 20 or alpha.get(font, 0) < 0.5 * n or in_runs.get(font, 0) < 0.5 * n:
+            continue
+        if any(code in _OT1_LIGATURE_CODES for code in cs):
+            tables[font] = _OT1_CODES
+        elif cs <= set(_T1_CODES):
+            tables[font] = _T1_CODES
+    if not tables:
+        return False
+    changed = False
+    for entry in pending:
+        line_chars = entry[0]
+        out: list[Char] = []
+        for i, c in enumerate(line_chars):
+            table = tables.get(c.font) if _is_raw_code(c.text) else None
+            text = table.get(ord(c.text)) if table else None
+            if text is None or c.hidden:
+                out.append(c)
+                continue
+            neighbours = [line_chars[k] for k in (i - 1, i + 1) if 0 <= k < len(line_chars)]
+            if not any(n.font == c.font and n.text.isalpha() for n in neighbours):
+                out.append(c)
+                continue
+            step = c.bbox.width / len(text)
+            for k, letter in enumerate(text):
+                box = BBox(c.bbox.x0 + k * step, c.bbox.y0, c.bbox.x0 + (k + 1) * step, c.bbox.y1)
+                out.append(dataclasses.replace(c, text=letter, bbox=box))
+            changed = True
+        line_chars[:] = out
+    return changed
+
+
 def _split_glued_words(line: Line) -> Line:
     """On an OCR layer, break words the layer glued together: by dictionary for
-    runs of letters, and at punctuation followed by a capital ("1991).The")."""
+    runs of letters, and at punctuation ("1991).The", "plant,and")."""
     new_words: list[Word] = []
     changed = False
     for w in line.words:

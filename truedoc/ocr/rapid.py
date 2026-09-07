@@ -227,6 +227,21 @@ def ocr_region(pdf_page: "pymupdf.Page", bbox: BBox) -> tuple[list[Line], float,
     return lines, conf, (_looks_like_text(lines) if lines else 0.0)
 
 
+# The engine reads "plant,and" or "Smith;Jones" as one token when the printed
+# space after the mark is narrow: a comma, semicolon or colon followed directly
+# by a word is a word break. A single letter after the mark is a symbol in a
+# list ("A,B", "x,y") and stays; web and e-mail addresses keep their colons.
+# Measured on run 48's outputs (7 Sept): 12 checks won, none lost (the single-
+# letter guard keeps a table cell "A,B" that the bare rule lost).
+_GLUED_PUNCT = re.compile(r"(?<=[,;:])(?=[A-Za-z]{2})")
+
+
+def _punct_parts(tok: str) -> list[str]:
+    if "://" in tok or "@" in tok or "www." in tok:
+        return [tok]
+    return [p for p in _GLUED_PUNCT.split(tok) if p]
+
+
 def _split_words(text: str, bbox: BBox, score: float) -> list[Word]:
     tokens = text.split()
     if not tokens:
@@ -237,13 +252,14 @@ def _split_words(text: str, bbox: BBox, score: float) -> list[Word]:
     words: list[Word] = []
     pos = 0
     for tok in tokens:
-        chars: list[Char] = []
-        for ch in tok:
-            x0 = bbox.x0 + pos * cw
-            chars.append(Char(text=ch, bbox=BBox(x0, bbox.y0, x0 + cw, bbox.y1), font="OCR", size=size, origin_y=bbox.y1))
-            pos += 1
+        for part in _punct_parts(tok):
+            chars: list[Char] = []
+            for ch in part:
+                x0 = bbox.x0 + pos * cw
+                chars.append(Char(text=ch, bbox=BBox(x0, bbox.y0, x0 + cw, bbox.y1), font="OCR", size=size, origin_y=bbox.y1))
+                pos += 1
+            words.append(Word(text=part, bbox=BBox.union_all(c.bbox for c in chars), chars=chars))
         pos += 1  # the space
-        words.append(Word(text=tok, bbox=BBox.union_all(c.bbox for c in chars), chars=chars))
     return words
 
 

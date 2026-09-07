@@ -11,6 +11,27 @@ def test_paired_lines_become_rows():
                                             ["Passband", "390-930 nm"], ["Velocity accuracy", "< 2 km/s"]]
 
 
+def test_a_single_stacked_cell_of_entries_still_splits():
+    # One stacked cell whose every line carries a number is a stack of entries
+    # (a tariff's tiers), not a wrapped title: rows of their own (a rebate table
+    # lost "$200" as a cell of its own in run 50).
+    row = ["EBTR", "", "Battery Storage", "1-80 Kwh - $50\n81-600 Kwh - $100\n601+ Kwh - $200", ""]
+    assert split_multiline_row(row, 5) == [
+        ["EBTR", "", "Battery Storage", "1-80 Kwh - $50", ""],
+        ["", "", "", "81-600 Kwh - $100", ""],
+        ["", "", "", "601+ Kwh - $200", ""],
+    ]
+
+
+def test_a_single_stacked_cell_is_a_wrapped_cell():
+    # Only one cell holds two lines: nothing pairs up across the row, so the
+    # lines are a wrapped title, not two rows ("Chief, Cardiac Catheterization
+    # Laboratory" / "MedStar Union Memorial Hospital" beside a name; a
+    # cardiology roster lost this check in run 49).
+    assert split_multiline_row(["MedStar Health", "John Wang, M.D.", "Chief, Cardiac Catheterization Laboratory\nMedStar Union Memorial Hospital"], 3) is None
+    assert split_multiline_row(["", "Stuart Seides, M.D.", "Physician Executive Director\nMedStar Heart Institute"], 3) is None
+
+
 def test_wrapped_cells_stay_one_row():
     # A wrapped description beside a value and its note.
     assert split_multiline_row(["x", "Superficial partial\nthickness", "2 x 10^6 cells\n(n/a)"], 3) is None
