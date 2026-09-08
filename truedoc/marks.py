@@ -23,7 +23,8 @@ MARK_TEXT = {"tick": "✓", "cross": "✗", "dot": "●", "circle": "○", "squa
 
 _GRID = 32          # template resolution (cells per side)
 _MIN_PT = 3.0       # smallest mark side, in points
-_MAX_PT = 30.0      # largest mark side, in points
+_MAX_PT = 30.0      # largest mark side, in points on a letter-sized page
+_LETTER_PT = 792.0  # the long side of a letter page: the size the limits above assume
 
 
 @dataclass
@@ -58,14 +59,30 @@ def _rect(r, M) -> BBox:
     return BBox(float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1))
 
 
-def _small(b: BBox) -> bool:
-    if b.width < _MIN_PT or b.height < _MIN_PT or b.width > _MAX_PT or b.height > _MAX_PT:
+def _page_scale(page: Page) -> float:
+    """How much larger than a letter page this one is.
+
+    A mark is small relative to its page, not in absolute points. Slide-shaped and poster-sized
+    pages draw everything larger: the owner's Huddle Black policy is laid out at 1920 x 1080 and
+    marks its benefit table with 40-point ticks, which an absolute 30-point ceiling rejected, so
+    the table came out with every coverage cell empty. Only pages bigger than a letter page
+    scale; smaller ones keep the absolute floor, because a mark still has to be drawable.
+    """
+    side = max(page.width or 0.0, page.height or 0.0)
+    return max(1.0, side / _LETTER_PT)
+
+
+def _small(b: BBox, scale: float = 1.0) -> bool:
+    if b.width < _MIN_PT * scale or b.height < _MIN_PT * scale:
+        return False
+    if b.width > _MAX_PT * scale or b.height > _MAX_PT * scale:
         return False
     aspect = b.width / max(b.height, 0.1)
     return 0.4 <= aspect <= 2.5
 
 
 def _candidates(pdf_page: "pymupdf.Page", page: Page, M) -> list[BBox]:
+    scale = _page_scale(page)
     boxes: list[BBox] = []
     try:
         for p in pdf_page.get_drawings():
@@ -76,14 +93,14 @@ def _candidates(pdf_page: "pymupdf.Page", page: Page, M) -> list[BBox]:
             # A stroke or fill so faint it is white on white is not a mark.
             if p.get("fill") is None and p.get("color") is None:
                 continue
-            if _small(b):
+            if _small(b, scale):
                 boxes.append(b)
     except Exception:
         pass
     try:
         for info in pdf_page.get_image_info():
             b = _rect(info["bbox"], M)
-            if _small(b):
+            if _small(b, scale):
                 boxes.append(b)
     except Exception:
         pass
@@ -104,7 +121,7 @@ def _candidates(pdf_page: "pymupdf.Page", page: Page, M) -> list[BBox]:
     # (an underline or a box around a word is a drawing, not a mark).
     out: list[BBox] = []
     for b in merged:
-        if not _small(b):
+        if not _small(b, scale):
             continue
         if any(c.bbox.overlap_fraction(b) > 0.3 for c in page.chars if not c.text.isspace() and c.bbox.y1 > b.y0 and c.bbox.y0 < b.y1):
             continue
@@ -123,6 +140,20 @@ def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None) -> Mark | None:
     filled = sum(sum(row) for row in mask)
     if filled < 0.02 * n * n:
         return None
+    # A solid shape with something cut out of it: the meaning is the hole, not the ink. The
+    # owner's Huddle Black policy marks cover with a white tick knocked out of a solid green
+    # disc and no cover with a white cross in a red one; read as ink both are discs, so both
+    # columns said the same thing, which tells a reader everything is covered. This runs before
+    # the ring test on purpose: a solid disc has ink all the way round, so it reads as a ring,
+    # and erasing that ring throws away the very shape that carries the meaning. Only a hole
+    # that reads as a tick or a cross is taken (that is what is drawn this way), and only from
+    # a shape solid enough to be a background - a true ring is too thin to qualify.
+    if filled >= 0.45 * n * n:
+        hole = _knockout(mask)
+        if sum(sum(row) for row in hole) >= 0.03 * n * n:
+            kind, score = _best_template(hole)
+            if kind in ("tick", "cross"):
+                return Mark(bbox=box, kind=kind, score=score, colour=colour)
     ring = _has_ring(mask)
     if ring:
         core = _erase_ring(mask)
@@ -134,6 +165,29 @@ def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None) -> Mark | None:
     if kind is None:
         return Mark(bbox=box, kind="unknown", score=0.0, colour=colour)
     return Mark(bbox=box, kind=kind, score=score, colour=colour)
+
+
+def _knockout(mask):
+    """The shape cut out of a solid blob: pixels with ink on both sides of them, and above
+    and below. A crescent of background at the edge of a disc has ink on one side only, so it
+    does not count; a tick painted in white through the middle of the disc does."""
+    n = len(mask)
+    out = [[0] * n for _ in range(n)]
+    for y in range(n):
+        row = mask[y]
+        xs = [x for x in range(n) if row[x]]
+        if len(xs) < 2:
+            continue
+        for x in range(xs[0] + 1, xs[-1]):
+            if not row[x]:
+                out[y][x] = 1
+    for x in range(n):
+        ys = [y for y in range(n) if mask[y][x]]
+        lo, hi = (ys[0], ys[-1]) if len(ys) >= 2 else (n, -1)
+        for y in range(n):
+            if y <= lo or y >= hi:
+                out[y][x] = 0
+    return out
 
 
 def _ink(pdf_page, box: BBox, M):

@@ -79,7 +79,10 @@ def main():
             continue
         md = open(out, encoding="utf-8").read()
         name = os.path.basename(pdf)
-        mine = [t for t in tests_for(subset) if t.pdf.endswith(name)]
+        # Match the file name exactly. A suffix test looks right and is not: "5.pdf" also ends
+        # "15.pdf", "25.pdf" ... "95.pdf", so a check of old_scans/5 was scored against ten
+        # pages' checks and reported a loss of two dozen that did not exist (8 September).
+        mine = [t for t in tests_for(subset) if os.path.basename(t.pdf) == name]
         now = sum(1 for t in mine if t.run(md)[0])
         before = sum(1 for t in mine if (t.pdf, t.id) not in failed)
         total_now += now

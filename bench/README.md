@@ -92,4 +92,11 @@ Since run 58 two folders are joined with `+` (whole-page readings and picture cr
 
     PAGE_CHECK_ARGS="--vision-endpoint file:<olmocr2b>+<olmocr2c>" python bench/tools/page_check.py <run dir> <stem> ...
 
+Capture a page check to a file rather than piping it through `tail`: the per-page lines are the
+evidence, and the total alone cannot tell a real loss from a harness artefact. Until 8 September
+the tool matched a page's checks with `t.pdf.endswith(name)`, so `old_scans/5.pdf` also collected
+the checks for `15.pdf`, `25.pdf` ... `95.pdf` and reported two dozen losses that did not exist.
+When a check reports a surprising loss, remove the change and run it again: if the numbers do not
+move, the fault is in the measurement, not the code.
+
 For the next GPU session the two tools beside the crop tool are `bench/gpu/select_bands.py` (dense pages cut into overlapping bands, plus `--also-whole` for pages whose table is a vector drawing) and `bench/gpu/merge_bands.py` (the bands stitched back into one reading, the overlap dropped); the recipe is in `bench/gpu/README.md`.

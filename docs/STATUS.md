@@ -146,6 +146,20 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 - **Runs 30 to 37 (4 to 5 September, overnight loop): 64.8 to 65.6.** Formula round 16 (33 items) took the formula section from 82.6 to 86.8: the mathabx symbol font's codes read off a contact sheet of its glyphs, roots and scripts inside limits, italic Times fonts recognised by name, typed "..." told from the LaTeX dots by their spacing, negated relations, text-font terms such as "4k+1" joining their formula. The biggest single step was elsewhere: 89 benchmark pages were coming out empty because the OCR gate rejected confident reads of non-English scans as noise; accepting confident reads whose words look like any Latin-script language filled ten of them and was worth +0.2 on its own (tables 69.6 to 70.3, multi-column 71.9 to 72.7). Four rules were tried and withdrawn after page checks or a run showed losses (symbol-font spaces as negation slashes, fraction rows inside matrices, a respelling of "not in", a fold rule for numerator roots); each is written up in `docs/PROGRESS_LOG.md` so it is not retried blind. Held-out 61.8 to 62.2.
 - **6 September: pages lying on their side are turned before reading (run 38).** A landscape scan of a Spanish decree and a table printed up the page were both coming out empty: every line was filed as a rotated stamp. TrueDoc now notices when most of a page's text runs up or down, works out which way from the OCR engine's own angle classifier (or from the text layer's line directions), turns the page in memory and reads it again; the front matter says which pages were turned. A census of all 1,403 benchmark pages found exactly three such pages (one is a picture table with only its title in the text layer, left for the tables job). The bar for accepting confident non-English or numeric OCR moved from 0.85 to 0.80 on the census evidence (the two pages in that band that were rejected stay rejected). On the affected pages: 0 of 8 to 5 of 8, 0 of 5 to 5 of 5 and 0 of 8 to 5 of 8 checks; three ordinary OCR pages unchanged.
 
+## Fixed on your own documents, 8 September (evening)
+
+Your Huddle Black policy's benefit table used to convert with **every coverage cell empty**: the
+row labels were all there, but the ticks and crosses were gone, so "Emergency storage of your
+contents" came out blank where the page says covered for Home and not for Contents. That is the
+meaning of an insurance table inverted, not a lost detail, and the benchmark never showed it
+because no benchmark page is built that way. Two causes, both fixed and tested: the mark reader
+accepted marks only between 3 and 30 points, and that page is laid out at 1920 x 1080 rather than
+612 x 792, so its 40-point icons were rejected as too big; and those ticks and crosses are white
+glyphs knocked out of a solid coloured disc, so what carries the meaning is the hole, not the ink.
+The page now converts row for row. No benchmark page changed (134 large pages and all 110 pages
+carrying a mark are identical), so this is worth nothing on the exam and a great deal in the
+product - which is the reason your library is the test bed.
+
 ## Known limits today
 
 - Handwritten pages and old maths scans stay empty: the classical OCR engine cannot read them, and TrueDoc leaves such a page empty rather than fill it with nonsense (61 of the 79 benchmark pages that are still empty are handwriting). The optional vision stage reads them when you switch it on, with a rented GPU or an API key.
