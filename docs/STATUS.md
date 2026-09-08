@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-08, 17:00 (after run 63: 84.0 with the vision switch on, multi-column 82.9, held-out 80.9; without a model run 54, 67.4)_
+_Last updated: 2026-09-08, 18:10 (after run 64: 84.0 with the vision switch on, multi-column 82.9, held-out 80.9; without a model run 54, 67.4)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -71,7 +71,8 @@ _Last updated: 2026-09-08, 17:00 (after run 63: 84.0 with the vision switch on, 
 | TrueDoc run 60 (+ four more table shapes), 8 Sept 12:57 | 83.3 (CI 82.3-84.2; tables 87.3, nineteen won, eight lost; held-out 80.2; Chandra 83.1) |
 | TrueDoc run 61 (the eight losses repaired, the units rule), 8 Sept 14:24 | 83.5 (CI 82.6-84.4; tables 88.2, multi-column 80.7; fourteen won, none lost; held-out 80.6; Chandra 83.1) |
 | TrueDoc run 62 (five multi-column repairs), 8 Sept 15:45 | 83.7 (CI 82.7-84.6; multi-column 81.7, tiny text 88.2; fourteen won, four lost; held-out 80.8; Chandra 83.1) |
-| **TrueDoc run 63 (run 62's losses repaired, three furniture shapes), 8 Sept 16:57** | **84.0** (CI 83.1-84.8; multi-column 82.9, arXiv 87.4, headers 96.8; twenty-eight won, one lost; held-out 80.9; Chandra 83.1 is now the interval's lower bound) |
+| TrueDoc run 63 (run 62's losses repaired, three furniture shapes), 8 Sept 16:57 | 84.0 (CI 83.1-84.8; multi-column 82.9, arXiv 87.4, headers 96.8; twenty-eight won, one lost; held-out 80.9; Chandra 83.1 is now the interval's lower bound) |
+| **TrueDoc run 64 (a subscript arriving in two pieces is joined), 8 Sept 18:05** | **84.0** (CI 83.0-84.8; every section unchanged; one arXiv check won, none lost; held-out 80.9) |
 
 Note on run 1: about 6 points of it were an accident. Pages we could not read at all were written as a file holding one blank line, and the marking script treats a one-character answer as matching any phrase. That is fixed; every number since is honest.
 
@@ -105,8 +106,9 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 - **A backup of the code.** The repository is committed locally (6 September) but has no remote: add one (GitHub or similar) and push when you want an off-machine copy. Nothing is pushed unless you ask.
 - **Optional: name documents with icon-based tables.** Three of your insurance PDFs are in `samples/` and read correctly now; more examples of icons that carry meaning (legends, symbols other than ticks and crosses) would sharpen the recogniser.
 
-- **Decide PyMuPDF's licence.** It is AGPL or a paid Artifex licence (found 7 Sept); D007 rules out AGPL. Buy the licence, or approve moving the text-layer reader to a permissive library.
-- **Decide on partial pages and small task models** (wave 3 of `docs/LATERAL_ROUND_1.md`).
+- **Rent a GPU for session 4** (about an hour, a dollar or two at session 2's rate). This is the biggest lever left: roughly 3 points, from sending the model the pages it never read and the ones it read out of order (121 failing checks, `bench/gpu/select_bands.py` and `bench/gpu/merge_bands.py` are built and the recipe is in `bench/gpu/README.md`). Nothing is spent until you rent the instance.
+- **Decide PyMuPDF's licence.** It is AGPL or a paid Artifex licence (found 7 Sept); D007 rules out AGPL. Buy the licence, or approve moving the text-layer reader to a permissive library. Sized on 8 Sept: the census says PDFium can do the job (the two readers agree on all but about twenty pages, PDFium is 2.44 times faster), the swap is worth at most +0.30 points against at most -0.38, so it is a licence job rather than a score job, and the recommended order is after GPU session 4 unless that rental is more than a couple of days away.
+- (Done 7 Sept, evening, recorded as D020 on 8 Sept: partial pages stay closed and small task models stay out. Keeping the shaky reads of pages the OCR gate rejects was worth at most +1.4 against the model's +4.8 on the same pages, and the pages a reader would want are ones the model reads anyway; a formula-image reader and a second OCR engine have no territory left now that every page without a digital text layer goes to a model. One product question remains, in `docs/DECISIONS.md`: whether the free tier, which has no model, should emit a partial-page note instead of an empty file for the handful of pages our own OCR read confidently but the word-likeness gate rejected.)
 
 ## What is being worked on right now
 
