@@ -18,7 +18,9 @@ from truedoc.model import BBox, Block, BlockKind, Line, Page, Table, TableCell
 from truedoc.tables.cells import clean_cell_text, is_bracketed_statistic
 
 _NUMERIC = re.compile(
-    r"^[\(\[]?[-+−–<>≤≥↑↓~≈]?\s*[\d.,]+\s*(?:[±+\-−]\s*[\d.,]+)?\s*%?[\)\]]?[*†‡a-z]{0,3}$|^[-–—]$|^n/?a$|^n\.?s\.?$|^\d+[\d.,]*\s*[×x]\s*10[-−]?\d*$"
+    # A currency sign before the number ("$448", "€1,298") is still a number: a press release's
+    # revenue row read as a heading without it (run 58).
+    r"^[\(\[]?[-+−–<>≤≥↑↓~≈]?\s*[$€£¥]?\s?[\d.,]+\s*(?:[±+\-−]\s*[\d.,]+)?\s*%?[\)\]]?[*†‡a-z]{0,3}$|^[-–—]$|^n/?a$|^n\.?s\.?$|^\d+[\d.,]*\s*[×x]\s*10[-−]?\d*$"
     # a value with its error or count in parentheses: "−.25 (.23)", "7.90 (3.07)", "12 (4.5%)";
     # significance stars sit on the value ("0.0475** (0.0205)"), up to three of them
     r"|^[-+−]?\s*[\d.,]+\s*%?[*†‡a-z]{0,3}\s*\([-+−]?\s*[\d.,]+\s*%?\)[*†‡a-z]{0,3}$",
@@ -59,7 +61,24 @@ def find_aligned_tables(page: Page, lines: list[Line], body_size: float) -> tupl
     bottom_zone = page.height - 0.09 * page.height
     lines = [l for l in lines if not l.rotated]
     body = [l for l in lines if not (l.bbox.y1 <= top_zone or l.bbox.y0 >= bottom_zone)]
+    all_rows = _cluster_rows(lines, size)
     body_multi = [r for r in _cluster_rows(body, size) if _is_multicell(r, size)]
+    # A one-line group label ("Adjusted EPS*:") between a strip row and the body: the rows
+    # above and below it are one table (a press release's revenue and earnings rows, run 58,
+    # five checks), so the gap it makes is bridged.
+    labels = [r for r in all_rows if len(r.segments) == 1 and len(r.segments[0].text.split()) <= 4]
+
+    def bridged(r, b):
+        """The one-line label between two rows a longer gap apart, or None."""
+        gap_below = b.y0 - r.y1
+        gap_above = r.y0 - b.y1
+        if 1.8 * size < gap_below <= 3.4 * size:
+            return next((lab for lab in labels if r.y1 - 0.2 * size <= lab.y0 and lab.y1 <= b.y0 + 0.2 * size), None)
+        if 1.8 * size < gap_above <= 3.4 * size:
+            return next((lab for lab in labels if b.y1 - 0.2 * size <= lab.y0 and lab.y1 <= r.y0 + 0.2 * size), None)
+        return None
+
+    joined: set[int] = set()
     for strip, nearest_first in (([l for l in lines if l.bbox.y1 <= top_zone], lambda r: -r.y0), ([l for l in lines if l.bbox.y0 >= bottom_zone], lambda r: r.y0)):
         multi = [r for r in _cluster_rows(strip, size) if _is_multicell(r, size)] if strip else []
         # Nearest the body first: a row the table takes in carries the row above
@@ -70,13 +89,25 @@ def find_aligned_tables(page: Page, lines: list[Line], body_size: float) -> tupl
             # banner of wide centred titles right above a table is not its heading),
             # and the body below it is a table of at least two such rows (the third
             # row of a document-control stamp that crosses the strip's edge is not).
-            near = [b for b in pool if -0.6 * size <= b.y0 - r.y1 <= 1.8 * size or -0.6 * size <= r.y0 - b.y1 <= 1.8 * size]
+            near = [b for b in pool if -0.6 * size <= b.y0 - r.y1 <= 1.8 * size or -0.6 * size <= r.y0 - b.y1 <= 1.8 * size or bridged(r, b) is not None]
             if near and any(_columns_align(r, b, size) for b in near):
                 first = min(near, key=lambda b: b.y0)
                 run_below = sum(1 for b in pool if -0.6 * size <= b.y0 - first.y0 <= 3.6 * size)
-                if run_below >= 2:
+                # A row chaining onto a strip row already taken in rests on that row's proof; so
+                # does one with another strip row aligned on it (a block whose last row alone
+                # crosses into the body: a figure's key values, run 59).
+                stacked = any(m is not r and abs(m.y0 - r.y0) <= 3.6 * size and _columns_align(m, r, size) for m in multi)
+                if run_below >= 2 or id(first) in joined or (run_below >= 1 and stacked):
                     body.extend(r.segments)
+                    for b in near:
+                        lab = bridged(r, b)
+                        if lab is not None and id(lab) not in joined:
+                            body.extend(lab.segments)   # the label is a row of the table too
+                            joined.add(id(lab))
                     pool.append(r)
+                    joined.add(id(r))
+    # Strip rows taken in were appended out of order; the clusterer wants the page's order.
+    body.sort(key=lambda l: (l.bbox.y0, l.bbox.x0))
     rows = _cluster_rows(body, size)
     candidates = _find_runs(rows, size)
     tables: list[Block] = []
@@ -185,6 +216,25 @@ def _wrapped_label(row: _Row, run: list[_Row], size: float) -> bool:
             and text[:1].islower() and -0.6 * size <= row.y0 - run[-2].y1 <= 1.2 * size)
 
 
+def _centred_title(row: _Row, run: list[_Row], size: float) -> bool:
+    """A short one-line title centred over a run, just above it, that is not a caption."""
+    if len(row.segments) != 1:
+        return False
+    seg = row.segments[0]
+    text = seg.text.strip()
+    if _CAPTION_LIKE.match(text) or len(text.split()) > 6 or text.endswith((":", ".", ";", "?", "!")):
+        return False
+    x0 = min(s.bbox.x0 for r in run for s in r.segments)
+    x1 = max(s.bbox.x1 for r in run for s in r.segments)
+    width = x1 - x0
+    if width <= 0 or seg.bbox.width >= 0.9 * width:
+        return False
+    centre = (seg.bbox.x0 + seg.bbox.x1) / 2.0
+    if not (x0 + 0.25 * width <= centre <= x1 - 0.25 * width):
+        return False
+    return -0.6 * size <= run[0].y0 - row.y1 <= 1.5 * size
+
+
 def _find_runs(rows: list[_Row], size: float) -> list[_Candidate]:
     """Group vertically adjacent rows into candidate table regions."""
     candidates: list[_Candidate] = []
@@ -196,10 +246,11 @@ def _find_runs(rows: list[_Row], size: float) -> list[_Candidate]:
         nonlocal run, singles_in_a_row
         # Trim single-segment rows at both ends, except a heading fragment above
         # the first multi-cell row and a wrapped label under the last.
+        title: _Row | None = None
         while run and not _is_multicell(run[0], size):
             if _heading_fragment(run[0], run, size):
                 break
-            run.pop(0)
+            title = run.pop(0)
         while run and not _is_multicell(run[-1], size):
             if _wrapped_label(run[-1], run, size):
                 break
@@ -209,6 +260,13 @@ def _find_runs(rows: list[_Row], size: float) -> list[_Candidate]:
             bbox = BBox.union_all(seg.bbox for r in run for seg in r.segments)
             candidates.append(_Candidate(rows=list(run), bbox=bbox))
         elif len(run) == 2 and multi == 2 and all(len(r.segments) >= 3 for r in run):
+            bbox = BBox.union_all(seg.bbox for r in run for seg in r.segments)
+            candidates.append(_Candidate(rows=list(run), bbox=bbox))
+        elif (len(run) == 2 and multi == 2 and all(len(r.segments) >= 2 for r in run) and any(len(r.segments) >= 3 for r in run)
+              and title is not None and _centred_title(title, run, size)):
+            # A two-row table under its own centred title ("Scale Reliability Statistics" over
+            # "Cronbach's α | McDonald's ω" over one row of values): the title is its heading.
+            run.insert(0, title)
             bbox = BBox.union_all(seg.bbox for r in run for seg in r.segments)
             candidates.append(_Candidate(rows=list(run), bbox=bbox))
         run = []
@@ -251,9 +309,12 @@ def _columns_align(r: _Row, b: _Row, size: float) -> bool:
     over rows whose first column is empty aligns two of three; a banner of wide
     centred titles aligns none.)"""
     starts = [s.bbox.x0 for s in b.segments]
+    ends = [s.bbox.x1 for s in b.segments]
     if len(r.segments) < 2:
         return False
-    aligned = sum(1 for s in r.segments if any(abs(s.bbox.x0 - x0) <= 1.0 * size for x0 in starts))
+    # A right-aligned column of values lines up on its right edge ("TN 3600 µg l-1" over
+    # "pH 6.9"), so either edge counts.
+    aligned = sum(1 for s in r.segments if any(abs(s.bbox.x0 - x0) <= 1.0 * size for x0 in starts) or any(abs(s.bbox.x1 - x1) <= 1.0 * size for x1 in ends))
     return aligned >= 2 and aligned * 2 >= len(r.segments)
 
 
@@ -295,6 +356,11 @@ def _channels(rows: list[_Row], x0: float, x1: float, size: float) -> list[tuple
             cover[i] += 1
     n = len(rows)
     limit = max(1, int(0.2 * n)) if n >= 5 else 0
+    # Text lying wholly inside a run of low cover is a sparse column, not whitespace: a
+    # label column filled on five rows in twenty-nine ("Emotion Type": Sequential,
+    # Prevalent, Inverse) read as empty space from the table's edge to the next column,
+    # and an edge-to-column run is never a channel (run 58, two checks). Segments of two
+    # rows or more inside a run split it.
     channels: list[tuple[float, float]] = []
     i = 0
     while i < width:
@@ -302,7 +368,17 @@ def _channels(rows: list[_Row], x0: float, x1: float, size: float) -> list[tuple
             j = i
             while j + 1 < width and cover[j + 1] <= limit:
                 j += 1
-            if i > 0 and j < width - 1 and (j - i + 1) >= 0.6 * size:
+            lo, hi = x0 + i - 1.0, x0 + j + 2.0
+            inside = [(ri, seg) for ri, r in enumerate(rows) for seg in r.segments if seg.bbox.x0 >= lo and seg.bbox.x1 <= hi]
+            # (Two rows or more: a heading set a shade left of its narrow column sits in the
+            # gap on purpose and alone, and stays a heading in order.)
+            if inside and len({ri for ri, _ in inside}) >= 2:
+                a = int(min(seg.bbox.x0 for _, seg in inside) - x0)
+                b = int(max(seg.bbox.x1 for _, seg in inside) - x0)
+                for p, q in ((i, a - 1), (b + 1, j)):
+                    if p > 0 and q < width - 1 and (q - p + 1) >= 0.6 * size:
+                        channels.append((x0 + p, x0 + q + 1))
+            elif i > 0 and j < width - 1 and (j - i + 1) >= 0.6 * size:
                 channels.append((x0 + i, x0 + j + 1))
             i = j + 1
         else:
@@ -311,15 +387,43 @@ def _channels(rows: list[_Row], x0: float, x1: float, size: float) -> list[tuple
 
 
 def _split_side_by_side(cand: _Candidate, size: float) -> list[_Candidate]:
-    """Split a region into separate tables where a much wider whitespace channel divides it."""
+    """Split a region into separate tables where a much wider whitespace channel divides it,
+    or where a channel divides a prose column from a block of short cells."""
     channels = _channels(cand.rows, cand.bbox.x0, cand.bbox.x1, size)
+    prose_split = False
     if len(channels) < 3:
-        return [cand]
-    widths = sorted(c[1] - c[0] for c in channels)
-    median = widths[len(widths) // 2]
-    wide = [c for c in channels if (c[1] - c[0]) > max(2.5 * median, 2.0 * size)]
-    if not wide:
-        return [cand]
+        # A figure's key values ("surface water | bottom water" over "TP 120 µg l-1 | TP 1500
+        # µg l-1") set beside a column of prose: the channel between them parts eleven-word
+        # segments from cells of a few words, and the block is a table on its own even
+        # though the prose side has no columns (run 58, five checks).
+        wide = []
+        for c in channels:
+            mid = (c[0] + c[1]) / 2.0
+            # The segments adjacent to the channel, row by row: a channel between two columns of
+            # short cells is not a prose split because prose sits further left.
+            left: list[int] = []
+            right: list[int] = []
+            for r in cand.rows:
+                ls = [s for s in r.segments if s.bbox.cx < mid]
+                rs = [s for s in r.segments if s.bbox.cx >= mid]
+                if ls:
+                    left.append(len(max(ls, key=lambda s: s.bbox.x1).words))
+                if rs:
+                    right.append(len(min(rs, key=lambda s: s.bbox.x0).words))
+            if len(left) >= 3 and len(right) >= 3:
+                lm = sorted(left)[len(left) // 2]
+                rm = sorted(right)[len(right) // 2]
+                if (lm >= 7 and rm <= 4) or (rm >= 7 and lm <= 4):
+                    wide.append(c)
+        if not wide:
+            return [cand]
+        prose_split = True
+    else:
+        widths = sorted(c[1] - c[0] for c in channels)
+        median = widths[len(widths) // 2]
+        wide = [c for c in channels if (c[1] - c[0]) > max(2.5 * median, 2.0 * size)]
+        if not wide:
+            return [cand]
     cuts = sorted((c[0] + c[1]) / 2.0 for c in wide)
     parts: list[_Candidate] = []
     bounds = [cand.bbox.x0] + cuts + [cand.bbox.x1]
@@ -337,6 +441,8 @@ def _split_side_by_side(cand: _Candidate, size: float) -> list[_Candidate]:
             continue
         bbox = BBox.union_all(s.bbox for r in rows for s in r.segments)
         parts.append(_Candidate(rows=rows, bbox=bbox))
+    if prose_split:
+        return parts if parts else [cand]
     return parts if len(parts) >= 2 else [cand]
 
 
@@ -514,6 +620,8 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         n_header = 1
         if len(grid_rows) != before:
             row_geom = []
+    elif n_header == 1 and len(kept_columns) == n_cols and grid_geom:
+        spans = _single_header_spans(grid_rows, grid_geom[0], col_bounds)
 
     # Validation: tables are made of short cells, prose is not.
     non_empty = [c for row in grid_rows for c in row if c]
@@ -546,7 +654,10 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         # segments, and they must not make it prose.
         dense_cols = sum(1 for c in range(n_cols) if sum(1 for row in grid_rows if row[c]) >= 0.5 * len(grid_rows))
         sliced = dense_cols > 1.5 * median_segments
-        if numeric < 0.1 * len(non_empty) and words_per_row >= 6 and (words_per_cell >= 3 or sliced):
+        # Cells that carry a digit ("TP 120 µg l-1", a value with its unit) are not prose either,
+        # whatever the number pattern says of them (a figure's value block, run 59).
+        digitish = sum(1 for c in non_empty if any(ch.isdigit() for ch in c))
+        if numeric < 0.1 * len(non_empty) and digitish < 0.3 * len(non_empty) and words_per_row >= 6 and (words_per_cell >= 3 or sliced):
             return None
     if strict and not key:
         if short < 0.6 * len(non_empty) and numeric < 0.3 * len(non_empty):
@@ -699,6 +810,20 @@ def _header_structure(grid, geom, n_header, col_bounds, size):
             if end > start:
                 spans[(r, start)] = end - start + 1
 
+    # A title row (one cell) above a row of several headings spans every column those
+    # headings cover: "Scale Reliability Statistics" over "Cronbach's α | McDonald's ω" heads
+    # both, though its ink, centred over the whole table, reaches only the first (run 58's
+    # reliability table, three checks).
+    for r in range(n_header - 1):
+        filled = [c for c in range(n_cols) if header[r][c]]
+        below_filled = [c for c in range(n_cols) if header[r + 1][c]]
+        if len(filled) == 1 and len(below_filled) >= 2 and (r, filled[0]) not in spans:
+            start, end = min(below_filled), max(below_filled)
+            if start <= filled[0] <= end and end > start:
+                if start != filled[0]:
+                    header[r][start], header[r][filled[0]] = header[r][filled[0]], ""
+                spans[(r, start)] = end - start + 1
+
     def span_of(r, c):
         return spans.get((r, c), 1)
 
@@ -739,6 +864,71 @@ def _header_structure(grid, geom, n_header, col_bounds, size):
     spans = {(remap[r], c): s for (r, c), s in spans.items() if r in remap}
     header = [header[r] for r in kept]
     return header + grid[n_header:], len(header), spans, kept
+
+
+def _single_header_spans(grid: list[list[str]], geom: _Row, col_bounds: list[tuple[float, float]]) -> dict[tuple[int, int], int]:
+    """A one-row heading centred over a group of columns heads every column it covers.
+
+    "Program Committee" set over two name columns and their tick columns, with no heading
+    of their own beneath it, is the heading of each of them (a roster, run 58, three
+    checks). A heading whose ink reaches into a neighbouring column that has no heading but
+    has body text spans it, and one that already covers two columns runs on over such
+    columns until the next heading, both ways. Returns {(0, start): colspan}."""
+    header = grid[0]
+    n_cols = len(col_bounds)
+    body_has = [any(grid[r][c] for r in range(1, len(grid))) for c in range(n_cols)]
+
+    def reach(segs, k):
+        lo, hi = col_bounds[k]
+        best = max((min(s.bbox.x1, hi) - max(s.bbox.x0, lo)) for s in segs)
+        return best / max(1.0, hi - lo)
+
+    extents: list[tuple[int, int, int]] = []
+    for c in range(n_cols):
+        if not header[c]:
+            continue
+        mine = [s for s in geom.segments if s.text.strip() and s.text.strip() in header[c]]
+        if not mine:
+            continue
+        start = end = c
+        while start - 1 >= 0 and not header[start - 1] and body_has[start - 1] and reach(mine, start - 1) > 0.15:
+            start -= 1
+        while end + 1 < n_cols and not header[end + 1] and body_has[end + 1] and reach(mine, end + 1) > 0.15:
+            end += 1
+        extents.append((c, start, end))
+    heads = sorted(c for c, _, _ in extents)
+    spans: dict[tuple[int, int], int] = {}
+    # In a table of numbers, text under the span on the first body row is a second heading
+    # row the header count capped ("Mean (log DNA copies/g) ± SD" over "Microbiota | Pre-Test |
+    # ..."): the top heading spans nothing. A table without numbers (a roster of names) has
+    # no such row, and its heading spans its group.
+    def numeric_row(row):
+        filled = [x for x in row if x]
+        return bool(filled) and sum(1 for x in filled if _NUMERIC.match(x.strip())) >= max(1, 0.4 * len(filled))
+    numeric_table = any(numeric_row(r) for r in grid[1:])
+    for c, start, end in extents:
+        if end > start and numeric_table and len(grid) > 1:
+            # ... on any row under the span before the first numeric row ("Day 0 and 35 |
+            # Day 35 and 42" two rows under "Δ Average %", the row between empty there).
+            under: list[str] = []
+            for r in range(1, min(4, len(grid))):
+                if numeric_row(grid[r]):
+                    break
+                under += [grid[r][k] for k in range(start, end + 1) if grid[r][k]]
+            if under and not any(_NUMERIC.match(x.strip()) for x in under):
+                continue
+        if end > start:
+            prev_head = max((h for h in heads if h < c), default=-1)
+            next_head = min((h for h in heads if h > c), default=n_cols)
+            while start - 1 > prev_head and not header[start - 1] and body_has[start - 1]:
+                start -= 1
+            while end + 1 < next_head and not header[end + 1] and body_has[end + 1]:
+                end += 1
+        if end > start:
+            if start != c:
+                header[start], header[c] = header[c], ""
+            spans[(0, start)] = end - start + 1
+    return spans
 
 
 def _drop_empty_columns(grid: list[list[str]]) -> list[list[str]]:

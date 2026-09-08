@@ -33,5 +33,6 @@ Thumbs.db
 bench/gpu/pdfs/
 bench/gpu/out/
 bench/gpu/out2/
+bench/gpu/out3/
 bench/gpu/crops/
 bench/gpu/crops_failing/

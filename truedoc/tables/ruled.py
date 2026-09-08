@@ -6,6 +6,8 @@ detected. Cell text is taken from the text layer, so characters are exact.
 
 from __future__ import annotations
 
+import re
+
 import pymupdf
 
 from truedoc.model import BBox, Block, BlockKind, Table, TableCell
@@ -42,6 +44,9 @@ def fold_stacked_statistics(rows: list[list], n_cols: int) -> list[tuple[list, l
     return out
 
 
+_PLACEHOLDER = re.compile(r"^(?:[-–—.]{1,3}|n/?a|none|nil)$", re.I)
+
+
 def split_multiline_row(row: list, n_cols: int) -> list[list[str]] | None:
     """Lines that pair up across a ruled row's cells are rows of their own.
 
@@ -61,24 +66,131 @@ def split_multiline_row(row: list, n_cols: int) -> list[list[str]] | None:
     # every line of the stack carries a number, when it is a stack of entries
     # (a tariff's tiers, "1-80 Kwh - $50" over "81-600 Kwh - $100") and each
     # line is a row.
-    if not multi or len({len(lines[ci]) for ci in multi}) != 1:
+    if not multi:
+        return None
+    # A label cell one line taller than the stacks beside it wraps its first label
+    # ("Shapiro / W / P value" beside "0.46 / < 2.2e-16": "Shapiro W" and "P value");
+    # the wrapped line carries no digit and is short. Run 58 lost four checks to it.
+    # ... and at least two stacks agree on the row count: one stack beside a taller label
+    # is ambiguous and stays whole.
+    heights = {len(lines[ci]) for ci in multi}
+    if len(heights) == 2 and len(multi) >= 3:
+        k = min(heights)
+        tall = [ci for ci in multi if len(lines[ci]) == k + 1]
+        first = tall[0] if len(tall) == 1 else None
+        # ... and the stacks are single values, one number a line: a cell holding a row of
+        # numbers ("14664576 45182539.6 0.325", sub-columns the rules did not divide) is a
+        # sub-table, left whole for the rebuild from its lines (run 59 lost five checks to it).
+        single_values = all(sum(1 for tok in ln.split() if any(ch.isdigit() for ch in tok)) <= 1 for ci in multi if ci != multi[0] for ln in lines[ci])
+        if first is not None and first == multi[0] and single_values and not any(ch.isdigit() for ch in lines[first][0]) and len(lines[first][0].split()) <= 3:
+            lines[first] = [lines[first][0] + " " + lines[first][1]] + lines[first][2:]
+            heights = {len(lines[ci]) for ci in multi}
+    if len(heights) != 1:
         return None
     if len(multi) == 1 and not all(any(ch.isdigit() for ch in ln) for ln in lines[multi[0]]):
         return None
     # A one-line cell left of the stacks is the row's label ("Cd" beside
     # "Shapiro W / P value") and stays on the first row; one to the right is
     # the single value of a wrapped label, so the row is left whole.
-    if any(len(ls) == 1 and ci > multi[0] for ci, ls in enumerate(lines)):
+    # A dash or an empty marker to the right ("-" in a column with nothing to report)
+    # is not a value of a wrapped label: it fills the first row and the rest stay empty.
+    if any(len(ls) == 1 and ci > multi[0] and not _PLACEHOLDER.match(ls[0]) for ci, ls in enumerate(lines)):
         return None
     k = len(lines[multi[0]])
     if k > 8:
         return None
-    for ls in lines:
+    # Beside stacks of numbers the label lines pair up with them whatever their case
+    # ("Pearson r" over "p value"); a lowercase start is a wrapped line only elsewhere.
+    numeric_stacks = len(multi) >= 2 and all(all(any(ch.isdigit() for ch in ln) for ln in lines[ci]) for ci in multi[1:])
+    for ci, ls in enumerate(lines):
         if any(len(ln.split()) > 6 for ln in ls):
             return None
+        if numeric_stacks and ci == multi[0]:
+            continue
         if any(_continues(a, b) for a, b in zip(ls, ls[1:])):
             return None
     return [[(ls[i] if i < len(ls) else "") for ls in lines] for i in range(k)]
+
+
+def _row_bounds(cell_rects: list[list]) -> list[tuple[float, float] | None]:
+    """Each row's vertical extent: its shortest ruled cell (a tall cell spanning rows is not it)."""
+    out: list[tuple[float, float] | None] = []
+    for rects in cell_rects:
+        ys = [(r[1], r[3]) for r in rects if r is not None]
+        out.append(min(ys, key=lambda y: y[1] - y[0]) if ys else None)
+    return out
+
+
+def deal_tall_cells(pdf_page: "pymupdf.Page", rows: list, cell_rects: list[list]) -> None:
+    """Labels in a cell that spans several ruled rows go to the rows their lines fall in.
+
+    A statistical yearbook rules its value cells row by row and leaves the label column as
+    one tall cell: the extractor puts every label on the cell's first row and None on the
+    rows it spans (904a1b4e in run 58, four checks). Each text line inside the cell's box
+    belongs to the row whose extent holds its middle; rows left without a line stay empty.
+    Edits `rows` and `cell_rects` in place."""
+    if not cell_rects or len(cell_rects) != len(rows):
+        return
+    bounds = _row_bounds(cell_rects)
+    for s, row in enumerate(rows):
+        for ci, val in enumerate(row):
+            if not isinstance(val, str) or "\n" not in val or ci >= len(cell_rects[s]) or cell_rects[s][ci] is None:
+                continue
+            rect = pymupdf.Rect(cell_rects[s][ci])
+            spanned = [s]
+            r = s + 1
+            while r < len(rows) and ci < len(cell_rects[r]) and cell_rects[r][ci] is None and (rows[r][ci] if ci < len(rows[r]) else None) is None and bounds[r] is not None and bounds[r][1] <= rect.y1 + 2.0:
+                spanned.append(r)
+                r += 1
+            if len(spanned) < 2:
+                continue
+            try:
+                blocks = pdf_page.get_text("dict", clip=rect).get("blocks", [])
+            except Exception:
+                continue
+            texts: dict[int, list[str]] = {}
+            for b in blocks:
+                for line in b.get("lines", []):
+                    text = "".join(sp.get("text", "") for sp in line.get("spans", [])).strip()
+                    if not text:
+                        continue
+                    cy = (line["bbox"][1] + line["bbox"][3]) / 2.0
+                    home = min(spanned, key=lambda rr: 0.0 if bounds[rr][0] <= cy < bounds[rr][1] else min(abs(cy - bounds[rr][0]), abs(cy - bounds[rr][1])))
+                    texts.setdefault(home, []).append(text)
+            if not texts:
+                continue
+            for rr in spanned:
+                while len(rows[rr]) <= ci:
+                    rows[rr].append(None)
+                rows[rr][ci] = "\n".join(texts.get(rr, [])) or ""
+                cell_rects[rr][ci] = pymupdf.Rect(rect.x0, bounds[rr][0], rect.x1, bounds[rr][1])
+
+
+def column_spans(cell_rects: list[list], n_cols: int) -> dict[tuple[int, int], int]:
+    """{(row, col): colspan} for ruled cells whose box runs across the columns to their right.
+
+    '% da população' sits in one cell across the value columns of a yearbook table; the
+    extractor gives None for the columns it covers. The column centres come from the rows
+    that rule them."""
+    centres: list[float | None] = [None] * n_cols
+    for rects in cell_rects:
+        for ci in range(min(n_cols, len(rects))):
+            if centres[ci] is None and rects[ci] is not None:
+                centres[ci] = (rects[ci][0] + rects[ci][2]) / 2.0
+    spans: dict[tuple[int, int], int] = {}
+    for ri, rects in enumerate(cell_rects):
+        for ci in range(min(n_cols, len(rects))):
+            if rects[ci] is None:
+                continue
+            x0, x1 = rects[ci][0], rects[ci][2]
+            span = 1
+            cj = ci + 1
+            while cj < n_cols and (cj >= len(rects) or rects[cj] is None) and centres[cj] is not None and x0 < centres[cj] < x1:
+                span += 1
+                cj += 1
+            if span > 1:
+                spans[(ri, ci)] = span
+    return spans
 
 
 def find_ruled_tables(pdf_page: "pymupdf.Page") -> list[Block]:
@@ -109,6 +221,9 @@ def find_ruled_tables(pdf_page: "pymupdf.Page") -> list[Block]:
                 cell_rects.append(list(trow.cells))
         except Exception:
             cell_rects = []
+        rows = [list(r) for r in rows]
+        deal_tall_cells(pdf_page, rows, cell_rects)
+        spans = column_spans(cell_rects, n_cols) if cell_rects else {}
         # A body row whose cells hold lines that pair up becomes several rows;
         # a row of statistics under its values folds into the values' row.
         expanded: list[tuple[list, list[int], int, int]] = []   # (cell texts, source rows, slice, slices)
@@ -120,8 +235,23 @@ def find_ruled_tables(pdf_page: "pymupdf.Page") -> list[Block]:
             else:
                 expanded.append((row, srcs, 0, 1))
         n_rows = len(expanded)
+        has_merged = False
         for ri, (row, srcs, k, slices) in enumerate(expanded):
+            covered: set[int] = set()
+            # A sub-heading across the value columns ('% da população' over its rows) is a
+            # heading row: a reader takes it as the heading of the rows beneath (D019's
+            # yearbook page, two checks), and the scorer reads a spanning <th> the same way.
+            filled = [ci for ci in range(n_cols) if ci < len(row) and (row[ci] or "").strip()]
+            sub_heading = (len(filled) == 1 and spans.get((srcs[0], filled[0]), 1) >= 2 and slices == 1
+                           and not any(ch.isdigit() for ch in row[filled[0]]) and ri > 0)
             for ci in range(n_cols):
+                if ci in covered:
+                    continue
+                span = spans.get((srcs[0], ci), 1) if len(srcs) == 1 else 1
+                for extra in range(1, span):
+                    covered.add(ci + extra)
+                if span > 1:
+                    has_merged = True
                 val = row[ci] if ci < len(row) else None
                 text = (val or "").replace("\n", " ").strip()
                 if text:
@@ -139,13 +269,13 @@ def find_ruled_tables(pdf_page: "pymupdf.Page") -> list[Block]:
                         h = (cr.y1 - cr.y0) / slices
                         cr = pymupdf.Rect(cr.x0, cr.y0 + k * h, cr.x1, cr.y0 + (k + 1) * h)
                     cbox = BBox(float(cr.x0), float(cr.y0), float(cr.x1), float(cr.y1))
-                cells.append(TableCell(text=clean_cell_text(text), row=ri, col=ci, is_header=(ri == 0), bbox=cbox))
+                cells.append(TableCell(text=clean_cell_text(text), row=ri, col=ci, colspan=span, is_header=(ri == 0 or sub_heading), bbox=cbox))
         if non_empty < min(4, n_rows * n_cols):
             continue
         rect = pymupdf.Rect(t.bbox)
         if pdf_page.rotation:
             rect = rect * pdf_page.rotation_matrix
         bbox = BBox(float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1))
-        table = Table(n_rows=n_rows, n_cols=n_cols, cells=cells, bbox=bbox, provenance="pymupdf-lines")
+        table = Table(n_rows=n_rows, n_cols=n_cols, cells=cells, bbox=bbox, has_merged=has_merged, provenance="pymupdf-lines")
         blocks.append(Block(kind=BlockKind.TABLE, bbox=bbox, table=table, provenance="pymupdf-lines", confidence=0.8))
     return blocks
