@@ -819,7 +819,11 @@ def _header_structure(grid, geom, n_header, col_bounds, size):
         below_filled = [c for c in range(n_cols) if header[r + 1][c]]
         if len(filled) == 1 and len(below_filled) >= 2 and (r, filled[0]) not in spans:
             start, end = min(below_filled), max(below_filled)
-            if start <= filled[0] <= end and end > start:
+            # "Number of Agreement" over "Item | I-CVI" with "(ranked 3 or 4)" two rows down
+            # in its own column is a two-line heading with single-line headings centred
+            # beside it, not a title (3c0b540d, run 60): a title's column has nothing more.
+            continued = any(header[r2][filled[0]] for r2 in range(r + 2, n_header))
+            if start <= filled[0] <= end and end > start and not continued:
                 if start != filled[0]:
                     header[r][start], header[r][filled[0]] = header[r][filled[0]], ""
                 spans[(r, start)] = end - start + 1

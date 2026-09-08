@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-08, 11:23 (after run 59: 83.2 with the vision switch on, tables 86.2, held-out 80.3; without a model run 54, 67.4)_
+_Last updated: 2026-09-08, 17:00 (after run 63: 84.0 with the vision switch on, multi-column 82.9, held-out 80.9; without a model run 54, 67.4)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -67,7 +67,11 @@ _Last updated: 2026-09-08, 11:23 (after run 59: 83.2 with the vision switch on, 
 | TrueDoc run 56 (+ the partial-reading rule, first form), 8 Sept 00:33 | 82.8 (a regression of ten checks on six pages: the raw layer counted as the page's reading; repaired for run 57) |
 | TrueDoc run 57 (+ the partial-reading rule, repaired), 8 Sept 01:26 | 82.9 (tables 84.0, four checks more than run 55, none lost; held-out 80.0) |
 | TrueDoc run 58 (+ picture-text regions: pictures holding tables on digital pages transcribed by the model, GPU session 3), 8 Sept 09:16 | 83.0 (CI 82.1-84.1; tables 85.1, twelve checks more, none lost; held-out 80.0) |
-| **TrueDoc run 59 (+ four table rules from run 58's failures), 8 Sept 11:17** | **83.2** (CI 82.3-84.1; tables 86.2, sixteen won, five lost; held-out 80.3; Chandra 83.1) |
+| TrueDoc run 59 (+ four table rules from run 58's failures), 8 Sept 11:17 | 83.2 (CI 82.3-84.1; tables 86.2, sixteen won, five lost; held-out 80.3) |
+| TrueDoc run 60 (+ four more table shapes), 8 Sept 12:57 | 83.3 (CI 82.3-84.2; tables 87.3, nineteen won, eight lost; held-out 80.2; Chandra 83.1) |
+| TrueDoc run 61 (the eight losses repaired, the units rule), 8 Sept 14:24 | 83.5 (CI 82.6-84.4; tables 88.2, multi-column 80.7; fourteen won, none lost; held-out 80.6; Chandra 83.1) |
+| TrueDoc run 62 (five multi-column repairs), 8 Sept 15:45 | 83.7 (CI 82.7-84.6; multi-column 81.7, tiny text 88.2; fourteen won, four lost; held-out 80.8; Chandra 83.1) |
+| **TrueDoc run 63 (run 62's losses repaired, three furniture shapes), 8 Sept 16:57** | **84.0** (CI 83.1-84.8; multi-column 82.9, arXiv 87.4, headers 96.8; twenty-eight won, one lost; held-out 80.9; Chandra 83.1 is now the interval's lower bound) |
 
 Note on run 1: about 6 points of it were an accident. Pages we could not read at all were written as a file holding one blank line, and the marking script treats a one-character answer as matching any phrase. That is fixed; every number since is honest.
 
@@ -75,7 +79,7 @@ What moved across the runs, section by section: formulas 0 to 41 (rebuilt from t
 
 ## Where we are
 
-**Day 7 (8 September, morning): a working converter scoring 67.4 on the public exam without a model (run 54; held-out pages 65.0) and 83.2 with the vision switch on (run 59; tables 86.2; held-out 80.3), against a best published 83.1, passed on the point estimate; 65.6 at the first commit three days earlier.** **The vision stage is inside the converter (D014, D019): every page without a digital text layer goes to a model, the page's own lines witness the running heads it transcribes, and every such page carries a note and the inferred tag. Run 55 replayed a model's readings from disk; a served model end to end is the next step.** The converter reads the PDF's own text, works out columns, paragraphs, headings, running heads and feet, tables (ruled and unruled), rebuilds formulas as LaTeX from the letters and positions in the PDF, uses a free layout-detection model (about 3 seconds a page on this CPU) to settle structure, reads image-only pages with a classical OCR engine and refuses its reading when it looks like noise, and writes Open Knowledge Format markdown with YAML front matter. Nothing is invented: an unreadable page comes out empty, hidden text stays out of the body, and anything a model wrote is marked as inferred.
+**Day 7 (8 September, morning): a working converter scoring 67.4 on the public exam without a model (run 54; held-out pages 65.0) and 84.0 with the vision switch on (run 63; multi-column 82.9, tables 88.2; held-out 80.9), against a best published 83.1, which is now the lower end of our confidence interval; 65.6 at the first commit three days earlier.** **The vision stage is inside the converter (D014, D019): every page without a digital text layer goes to a model, the page's own lines witness the running heads it transcribes, and every such page carries a note and the inferred tag. Run 55 replayed a model's readings from disk; a served model end to end is the next step.** The converter reads the PDF's own text, works out columns, paragraphs, headings, running heads and feet, tables (ruled and unruled), rebuilds formulas as LaTeX from the letters and positions in the PDF, uses a free layout-detection model (about 3 seconds a page on this CPU) to settle structure, reads image-only pages with a classical OCR engine and refuses its reading when it looks like noise, and writes Open Knowledge Format markdown with YAML front matter. Nothing is invented: an unreadable page comes out empty, hidden text stays out of the body, and anything a model wrote is marked as inferred.
 
 Section by section (run 54): formulas 87.0, above every published tool's figure for that section; headers and footers 96.6; plain pages 94.7; tiny-text book scans 81.2; tables 80.0 (70.3 two days ago); multi-column 73.9; old scans 21.5 and old-scan maths 4.1. The last two, a quarter of the exam, are handwriting and old print that no classical rule reads; they move only with the vision tier, which is your call (D014): with olmOCR 2 reading every page that has no digital text layer the same run scores 82.7 (old-scan maths 80.8, old scans 46.6; measured 7 September, 21:35, from a 21-minute GPU session costing 85 cents). A held-out fifth of the pages, never tuned on, scores 65.0 (63.3 two days ago).
 

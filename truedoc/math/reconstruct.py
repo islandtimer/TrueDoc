@@ -506,6 +506,24 @@ def _bar_arrow_to_mapsto(latex: str) -> str:
     return "".join(out)
 
 
+_TWO_SCRIPTS = re.compile(r"([_^])[{]([^{}]*)[}]\s*\1[{]([^{}]*)[}]")
+
+
+def _join_scripts(latex: str) -> str:
+    """A script that arrived in two pieces is one script: "E_{s}_{,t}" is "E_{s,t}".
+
+    Two scripts of the same kind in a row are not LaTeX, so a renderer refuses the whole
+    formula and the reader loses it ("(E_{t,s}\\times E_{s}_{,t})[2]" in run 62). A
+    script nested inside another ("x_{a_{b}}") is a different thing and is left alone.
+    """
+    for _ in range(4):
+        new = _TWO_SCRIPTS.sub(lambda m: m.group(1) + "{" + m.group(2) + m.group(3) + "}", latex)
+        if new == latex:
+            break
+        latex = new
+    return latex
+
+
 def _polish(latex: str) -> str:
     latex = re.sub(r"\s+", " ", latex).strip()
     latex = latex.replace(r"\cdot\cdot\cdot", r"\cdots ").replace(r"\cdot \cdot \cdot", r"\cdots ")
@@ -553,7 +571,7 @@ def _polish(latex: str) -> str:
         (r"\sim_{=}", r"\cong"), (r"\sim_{-}", r"\simeq"),
     ):
         latex = latex.replace(pair, single + " ")
-    return re.sub(r"\s+", " ", latex).strip()
+    return _join_scripts(re.sub(r"\s+", " ", latex).strip())
 
 
 def _attach_core_scripts(core: str, right: list[Glyph], base_oy: float, base_x1: float, size: float, depth: int) -> tuple[str, list[Glyph]]:

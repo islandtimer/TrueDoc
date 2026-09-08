@@ -54,3 +54,37 @@ RTX 4090 (24 GB) in Hungary at US$0.382/hour, `PyTorch (Vast)` template; 33 minu
 2. On the machine: `bash run_olmocr2.sh ~/gpu/crops_failing ~/gpu/out_crops` (and the same for `crops`).
 3. Back here: `python bench/gpu/merge.py place --out bench/gpu/out3 --candidate olmocr2c`, then copy `bench/gpu/crops_failing/manifest.json` (and `crops/manifest.json`, concatenated) to `bench/data/olmocr-bench/bench_data/olmocr2c/manifest.json`.
 4. Run 58: `EXTRA="--vision-endpoint file:bench/data/olmocr-bench/bench_data/olmocr2b+bench/data/olmocr-bench/bench_data/olmocr2c" nohup bash bench/tools/launch_run.sh 58 truedoc57 56 > bench/out/launch/nohup58.log 2>&1 &` (no `--vision-pages-only`: the region questions must be on; icons and figure descriptions come back empty from disk, picture transcriptions come from the crops).
+
+## Session 4, step by step (prepared 8 September 2026, after run 62; not yet run)
+
+The question: on the densest pages the model leaves text unread (77 failing checks, about 1.9
+points). Does reading a third of a page at a time recover it? The pages chosen already have
+whole-page readings, so the answer is a direct comparison, not a guess.
+
+1. On this machine, cut the worst pages into bands (about 72 one-page PDFs, a few megabytes):
+
+       python bench/gpu/select_bands.py --failed bench/runs/<latest run>/failed_tests.jsonl
+
+2. Rent an RTX 4090 on vast.ai as before, **test the link first** (the section above), then
+   upload `bench/gpu/bands/` and run `run_olmocr2.sh` over it exactly as session 3 ran the crops.
+3. Fetch the readings back into `bench/gpu/out4/`, keeping the `<category>/<stem>__b<i>.md`
+   layout, and copy `bench/gpu/bands/manifest.json` beside them.
+4. Stitch the bands into whole-page readings and place them as a candidate folder:
+
+       python bench/gpu/merge_bands.py bench/gpu/out4 bench/data/olmocr-bench/bench_data/olmocr2d
+
+5. Score the banded readings against the whole-page ones on the same pages:
+
+       python bench/gpu/merge_by_list.py <base run dir> olmocr2d <out candidate> none --score
+
+   A gain says the treatment works and should go to every dense page; no gain says the model's
+   limit is the model, and the next rental should serve a stronger one instead.
+
+**Also send these eight pages whole** (step 1 above): their table is a *vector drawing*, so
+`select_regions.py` never cropped them (it looks for image objects, and there is none) and no
+model has seen them; together they hold about twenty failing table checks.
+
+    python bench/gpu/select_bands.py --failed bench/runs/<latest run>/failed_tests.jsonl \
+        --also-whole f5e5d540,fbeb6edc,94f7559a,3d780cdc,4db371ae,8bb41f19,9921f236,8160caa0
+
+A page sent whole arrives as a single band, so the stitcher passes its reading straight through.

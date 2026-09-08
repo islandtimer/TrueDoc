@@ -58,8 +58,48 @@ def _starts_with_list_marker(line: Line) -> bool:
     return bool(re.match(r"^[•◦▪●‣⁃·]", first))
 
 
+def _is_fragment(line: Line) -> bool:
+    """A short lowercase fragment cut off the end of a line by a wide gap."""
+    t = line.text.strip()
+    return 0 < len(line.words) <= 3 and bool(t) and t[0].isalpha() and t[0].islower()
+
+
+def _starts_a_column(line: Line, starts: list[tuple[float, float]], size: float) -> bool:
+    """Other lines nearby start where this one does: it heads a column of text, not a line."""
+    return any(abs(x0 - line.bbox.x0) <= 2.0 and 0.5 * size < abs(y0 - line.bbox.y0) <= 8.0 * size for x0, y0 in starts)
+
+
+def _fragment_host(line: Line, open_blocks: list[Block], size: float, gutters: list[tuple[float, float]]) -> Block | None:
+    """The open block whose last line the fragment continues: on its baseline, in its face and
+    size, ending without punctuation, and within a stretched word space of its end, or within
+    six ems when the fragment stays inside the block's own width ("A sweet domestic comedy" |
+    "from the" in a newspaper's justified column, 20_pg39 in run 60). Never across a column
+    gutter, and never beyond the block's width: the next column's "cohort." on the same
+    baseline is not the rest of the line (0e5f0c3447, a page-check loss)."""
+    for blk in open_blocks:
+        if blk.meta.get("closed") or not blk.lines:
+            continue
+        last = blk.lines[-1]
+        if abs(last.baseline - line.baseline) > 0.3 * size:
+            continue
+        gap = line.bbox.x0 - last.bbox.x1
+        inside = len(blk.lines) >= 2 and line.bbox.x1 <= blk.bbox.x1 + 1.0 * size
+        if not (0.0 <= gap <= 1.5 * size or (inside and gap <= 6.0 * size)):
+            continue
+        if any(g0 < line.bbox.x0 and g1 > last.bbox.x1 for g0, g1 in gutters):
+            continue
+        lt = last.text.rstrip()
+        if not lt or not (lt[-1].isalnum() or lt[-1] in ",;"):
+            continue
+        if abs((last.size or size) - size) > 0.15 * size or font_family(last) != font_family(line):
+            continue
+        return blk
+    return None
+
+
 def build_blocks(page: Page, lines: list[Line] | None = None) -> list[Block]:
     lines = sorted(page.lines if lines is None else lines, key=lambda l: (round(l.bbox.y0, 1), l.bbox.x0))
+    starts = [(l.bbox.x0, l.bbox.y0) for l in lines if l.words]
     blocks: list[Block] = []
     open_blocks: list[Block] = []
     top_zone = 0.09 * page.height
@@ -70,6 +110,14 @@ def build_blocks(page: Page, lines: list[Line] | None = None) -> list[Block]:
         if not line.words:
             continue
         size = max(line.size, 0.7 * line.bbox.height) or page.body_font_size or 10.0
+        if _is_fragment(line) and not _starts_a_column(line, starts, size):
+            host = _fragment_host(line, open_blocks, size, page.meta.get("column_gutters") or [])
+            if host is not None:
+                last = host.lines[-1]
+                last.words.extend(line.words)
+                last.bbox = last.bbox.union(line.bbox)
+                host.bbox = host.bbox.union(line.bbox)
+                continue
         best: Block | None = None
         best_score = 0.0
         heading_line = _heading_like(line)

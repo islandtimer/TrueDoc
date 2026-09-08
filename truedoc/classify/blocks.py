@@ -22,6 +22,8 @@ _NUMBERED_HEADING = re.compile(r"^\s*(\d{1,2}(?:\.\d{1,2}){0,4})\.?\s+\S")
 _CONTACT = re.compile(
     r"(https?://|www\.|\b[\w.+-]+@[\w-]+\.[\w.]+|\bdoi\b|\bdoi:|10\.\d{4,}/|journal homepage|available (online )?at|"
     r"downloaded from|\b\d{3}[-. ]\d{3}[-. ]\d{4}\b|\bfecha y hora\b|\bcustodiado\b|\bcopyright\b|©|"
+    # a bare web address ("health.ucsd.edu/jacobs"): a host name with a familiar top-level domain
+    r"\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:edu|org|com|gov|net|int|mil|ac\.uk|co\.uk|org\.uk|gov\.uk|de|fr|ch|au|ca|io|nl|es|it|se|no|dk|fi|be|at|nz|ie|jp|cn|in|br)(?:/[^\s]*)?(?=[\s.,;:)]|$)|"
     # journal running heads and dated stamps: "v. 19, n. 1 (2021)", "Vol. 3, No. 2", "ISSN", "Date: 2019-03-15".
     # A volume alone is not enough: manuscript citations read "Ff. v. 48, f. 114."
     r"\bv(?:ol)?\.?\s*\d+[,.]?\s*n[oº°]?\.?\s*\d+|\bissn\b|\bdate:\s*\d|\b\d{4}-\d{2}-\d{2}\b)",
@@ -90,7 +92,8 @@ def classify_blocks(page: Page, blocks: list[Block]) -> None:
             b.kind = BlockKind.HEADING
         elif sizes_reliable and b.lines and b.lines[0].bold and n_lines <= 2 and len(text) <= 120 and size >= body * 0.9 and not text.endswith((",", ";")):
             b.kind = BlockKind.HEADING
-        elif _NUMBERED_HEADING.match(text) and n_lines == 1 and len(text) <= 100 and (b.lines[0].bold or size >= body * 1.05 or b.meta.get("heading_like")):
+        elif (_NUMBERED_HEADING.match(text) and n_lines == 1 and len(text) <= 100 and (b.lines[0].bold or size >= body * 1.05 or b.meta.get("heading_like"))
+              and not (size < 0.9 * body and b.bbox.y0 >= 0.8 * page.height)):   # "9 Ibid" in small type at the foot is a note
             b.kind = BlockKind.HEADING
         elif _SECTION_WORDS.match(text) and n_lines == 1:
             b.kind = BlockKind.HEADING

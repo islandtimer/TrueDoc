@@ -184,6 +184,7 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
         if regions:
             blocks = apply_layout(page, blocks, regions, pdf_page=pdf_page, ocr=opts.ocr)
     blocks = _merge_label_headings(blocks, page.body_font_size)
+    blocks = _merge_wrapped_headings(blocks, page.body_font_size)
 
     _margin_cleanup(page, blocks)
 
@@ -215,6 +216,72 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
 
 
 _HEADING_LABEL = re.compile(r"^(?:[IVXLC]{1,6}\.?|\d{1,2}(?:\.\d{1,2}){0,3}\.?|[A-Z]\.)$")
+_NUMBERED_START = re.compile(r"^\s*(?:\d{1,2}(?:\.\d{1,2}){0,4}\.?|[IVXLC]{1,6}\.|[A-Z]\.)\s+\S")
+_CONNECTIVE_END = re.compile(
+    r"(?:\b(?:and|or|of|the|a|an|for|in|on|to|with|by|at|from|de|des|du|la|le|les|et|y|e|di|da|del|und|der|die|das|van|von|&)|[(\[,:;/\-\u2013])$",
+    re.IGNORECASE,
+)
+
+
+def _merge_wrapped_headings(blocks: list[Block], body: float) -> list[Block]:
+    """A heading wrapped over two or three lines is one heading.
+
+    Headings are set with wider leading than body text, so the segmenter gives each line of
+    a wrapped heading a block of its own and the classifier makes two headings of them ("4
+    Determination of the electrical" over "parameters"; run 60's output held 98 headings
+    starting with a lowercase letter on 56 pages). A one-line heading directly under a
+    heading of the same size and weight continues it when the upper line does not end a
+    sentence and the lower one starts lowercase, or the upper line ends on a connective or
+    an open bracket, or both are long title-case lines aligned on the left or the centre.
+    A numbered lower line is a heading of its own."""
+    heads = sorted((b for b in blocks if b.kind == BlockKind.HEADING and b.lines), key=lambda b: (b.bbox.y0, b.bbox.x0))
+    text_like = [b for b in blocks if b.lines and b.kind in (BlockKind.TEXT, BlockKind.HEADING, BlockKind.LIST_ITEM, BlockKind.CAPTION)]
+    removed: set[int] = set()
+
+    def something_between(a: Block, b: Block, size: float) -> bool:
+        """A line of another block sits between the two (two run-in headings a line apart,
+        03ccfe8bb1 in run 62): they are not one wrapped heading."""
+        return any(c is not a and c is not b and id(c) not in removed and c.bbox.y0 >= a.bbox.y1 - 0.3 * size and c.bbox.y1 <= b.bbox.y0 + 0.3 * size
+                   and c.bbox.x_overlap(a.bbox) > 0.3 * min(a.bbox.width, c.bbox.width) for c in text_like)
+
+    for a in heads:
+        if id(a) in removed:
+            continue
+        while len(a.lines) < 3:
+            size = max(a.size or body, 1.0)
+            nxt = None
+            for b in heads:
+                if b is a or id(b) in removed or len(b.lines) != 1:
+                    continue
+                gap = b.bbox.y0 - a.bbox.y1
+                if not (-0.3 * size <= gap <= 1.2 * size) or something_between(a, b, size):
+                    continue
+                if b.bbox.x_overlap(a.bbox) <= 0.3 * min(a.bbox.width, b.bbox.width):
+                    continue
+                if abs((b.size or size) - size) > 0.12 * size or a.lines[-1].bold != b.lines[0].bold:
+                    continue
+                if not _wraps_heading(a, b, size):
+                    continue
+                if nxt is None or b.bbox.y0 < nxt.bbox.y0:
+                    nxt = b
+            if nxt is None:
+                break
+            a.lines.extend(nxt.lines)
+            a.bbox = a.bbox.union(nxt.bbox)
+            removed.add(id(nxt))
+    return [b for b in blocks if id(b) not in removed]
+
+
+def _wraps_heading(a: Block, b: Block, size: float) -> bool:
+    ta, tb = a.text.strip(), b.text.strip()
+    if not ta or not tb or len(ta) + len(tb) > 200 or ta[-1] in ".!?:":
+        return False
+    if _NUMBERED_START.match(tb):
+        return False
+    if tb[0].islower() or _CONNECTIVE_END.search(ta) or ta.count("(") > ta.count(")"):
+        return True
+    aligned = abs(b.bbox.x0 - a.bbox.x0) <= 0.5 * size or abs(b.bbox.cx - a.bbox.cx) <= 0.5 * size
+    return aligned and len(ta) >= 25 and tb[0].isupper()
 
 
 def _merge_label_headings(blocks: list[Block], body: float) -> list[Block]:
@@ -636,12 +703,17 @@ def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
             b.kind = BlockKind.HEADER
             b.provenance = "control-stamp"
             continue
-        if b.kind == BlockKind.HEADING and words(b) <= 8 and size <= 1.4 * body and len(b.lines) <= 2:
-            if b.bbox.y1 <= 0.08 * H:
+        if b.kind == BlockKind.HEADING and words(b) <= 8 and len(b.lines) <= 2:
+            # At the top a title in display type stays a title; at the foot a short line
+            # is a running foot whatever its size (a newspaper's masthead line, "Surfside
+            # Gazette • AUGUST 2013" in 18 pt, eac8e314 in run 62).
+            if b.bbox.y1 <= 0.08 * H and size <= 1.4 * body:
                 b.kind = BlockKind.HEADER
                 b.provenance = "margin-heading"
                 headers.append(b)
-            elif b.bbox.y0 >= 0.92 * H and gap_above(b) >= 1.0 * size:
+            elif b.bbox.y0 >= 0.92 * H and (gap_above(b) >= 1.0 * size or size > 1.4 * body):
+                # (a heading sits above its text: display type this low, with no text below
+                # it, is a masthead line even when a column's last line touches it)
                 b.kind = BlockKind.FOOTER
                 b.provenance = "margin-heading"
         # A few short lines of body-sized text at the very top of the page, set
@@ -686,6 +758,17 @@ def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
                     headers.append(b)
                     changed = True
                     break
+    # A short line in a running head's or foot's own size that repeats its text is furniture
+    # wherever it sits, whatever the layout model called it (a form's label at the foot of its
+    # box, "Schedule A (Form 990) 2022", 8e953483); a title in display type that repeats it
+    # is the title.
+    furniture = {re.sub(r"\s+", " ", b.text).strip().lower(): (b.size or body) for b in blocks if b.kind in (BlockKind.HEADER, BlockKind.FOOTER) and b.text.strip()}
+    for b in blocks:
+        if b.kind in (BlockKind.TEXT, BlockKind.HEADING) and b.lines and len(b.lines) <= 2 and len(b.text) <= 80:
+            fsize = furniture.get(re.sub(r"\s+", " ", b.text).strip().lower())
+            if fsize is not None and (b.size or body) <= 1.2 * fsize:
+                b.kind = BlockKind.HEADER if b.bbox.y0 < H / 2 else BlockKind.FOOTER
+                b.provenance = "repeated-head"
 
 
 def _attach_marks(pdf_page: "pymupdf.Page", page: Page, blocks: list[Block]) -> None:

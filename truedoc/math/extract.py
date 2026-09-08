@@ -446,15 +446,41 @@ _GREEK_AND_SYMBOLS = set("αβγδεϵζηθϑικλμνξπϖρϱσςτυφϕχ
 _GREEK_AND_SYMBOLS |= {"Ω", "∆", "µ"}
 
 
+# Prose set in the text fonts that carries a Greek letter or a relation sign without being
+# maths: a unit ("μm", "µg", "μL", "°C"), a measurement with its relation ("≤260", "<0.05",
+# ">90%"), a name with a Greek letter attached ("IFN-γ", "TNF-α", "β-catenin"). Run 59 had
+# nineteen multi-column checks failing on such spans written as LaTeX; a reader wants them plain.
+_UNIT_WORD = re.compile(r"^[µμ](?:m|g|l|L|M|s|mol|Hz|W|V|A|F|Sv|Pa|J|N|T)$|^°[CF]$")
+_RELATION_NUMBER = re.compile(r"^[≤≥<>≈∼~]\s?[-+−]?\d[\d.,]*%?(?:-[A-Za-z]+){0,3}$")   # "≤5-year-old" too
+_GREEK_NAME = re.compile(r"^[A-Za-z]{2,}-[α-ωΑ-Ω]$|^[α-ωΑ-Ω]-[A-Za-z]{2,}$|^[A-Za-z]{2,}[α-ωΑ-Ω]$")
+
+
+def _symbol_face(font: str) -> bool:
+    """The Symbol face (Symbol, SymbolMT, Symbol-Bold), prose's source of Greek letters."""
+    f = font.upper()
+    if "+" in f:
+        f = f.split("+", 1)[1]
+    return f.startswith("SYMBOL")
+
+
 def _word_is_math(w: Word) -> bool:
     """Words carrying a glyph from a maths font, a Greek letter or a maths symbol.
 
     Purely numeric or operator-only words ("2010-2015", "p<0.05") are left
-    alone: wrapping them in $...$ would change ordinary prose.
+    alone: wrapping them in $...$ would change ordinary prose. So are units,
+    measurements and Greek-lettered names set in the text fonts.
     """
     if not w.chars:
         return False
-    return any(is_math_font(c.font) or c.text in _GREEK_AND_SYMBOLS for c in w.chars)
+    core = w.text.strip("(),.;:")
+    if _UNIT_WORD.fullmatch(core) or _RELATION_NUMBER.fullmatch(core) or _GREEK_NAME.fullmatch(core):
+        # Prose borrows its Greek letters and relation signs from the Symbol face; only a
+        # glyph from a real maths font (TeX, an OpenType maths font) makes such a word maths.
+        if not any(is_math_font(c.font) and not _symbol_face(c.font) for c in w.chars):
+            return False
+    if any(is_math_font(c.font) for c in w.chars):
+        return True
+    return any(c.text in _GREEK_AND_SYMBOLS for c in w.chars)
 
 
 def _variable_with_script(w: Word) -> bool:

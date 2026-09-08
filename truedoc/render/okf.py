@@ -44,15 +44,7 @@ def join_lines(lines: list[Line], texts: list[str] | None = None) -> str:
             out = out[:-1] + " " + text[1:]
             continue
         if out.endswith("-") and len(out) >= 2 and not out.endswith(" -"):
-            prev_word = out.rsplit(" ", 1)[-1][:-1]
-            next_word = text.split(" ", 1)[0]
-            if text[0].islower() and "-" not in prev_word and next_word.lower().strip(".,;:") not in _FUNCTION_WORDS:
-                out = out[:-1] + text
-                continue
-            if text[0].islower() and "-" not in prev_word:
-                out = out[:-1] + text
-                continue
-            out = out + text
+            out = _join_at_hyphen(out, text)
             continue
         # A word broken over the line break with no hyphen at all (an OCR'd text
         # layer that lost it: "typi" / "cally" on a multi-column page): join the
@@ -62,6 +54,40 @@ def join_lines(lines: list[Line], texts: list[str] | None = None) -> str:
             continue
         out = out + " " + text
     return out
+
+
+def _join_at_hyphen(out: str, text: str) -> str:
+    """Join the text after a line ending in a hyphen.
+
+    The hyphen is dropped only when the two halves make one word: the English word list
+    knows "research" ("re-" / "search"), so the halves join; it knows "racist" and "free"
+    but not "racistfree", so "racist-free" keeps its hyphen (run 60 joined it, and
+    "third-highest", "cluster-level": five checks). A half starting with a capital or a
+    digit keeps the hyphen ("G-CSF", "2019-2020"); a hyphen before a function word is a
+    suspended one and keeps its space ("40- to 100-μm"). Halves the list does not know
+    join, a broken word being the commoner case."""
+    prev_word = out.rsplit(" ", 1)[-1][:-1]
+    core = text.split(" ", 1)[0].strip(".,;:!?)]\"'")
+    if not text[0].islower() or "-" in prev_word or not core:
+        return out + text
+    if core.lower() in _FUNCTION_WORDS:
+        return out + " " + text
+    from truedoc.extract.textlayer import _dictionary
+
+    vocab = _dictionary()
+    a, b = prev_word.lower().lstrip("([\"'"), core.lower()
+    if vocab is not None and a.isalpha() and b.isalpha() and (a + b) not in vocab and a in vocab and b in vocab and len(a) >= 2 and len(b) >= 2:
+        # A prefix joins its word ("pre-" / "dialysis": the list lacks the compound), unless
+        # the two vowels would meet ("anti-" / "inflammatory", "re-" / "enter").
+        if a not in _PREFIXES or (a[-1] in "aeiou" and b[0] == a[-1]):
+            return out + text
+    return out[:-1] + text
+
+
+_PREFIXES = {"pre", "post", "non", "anti", "co", "re", "de", "sub", "super", "inter", "intra", "multi", "semi", "pseudo", "micro",
+             "macro", "over", "under", "ultra", "un", "dis", "mis", "counter", "extra", "hyper", "hypo", "meta", "mid", "neo", "pro",
+             "trans", "bi", "tri", "uni", "poly", "mono", "auto", "bio", "geo", "electro", "photo", "thermo", "hydro", "immuno",
+             "neuro", "cardio", "radio", "socio", "psycho", "eco", "pan", "peri", "para", "iso", "homo", "hetero", "cyto", "endo"}
 
 
 def _broken_word(a: str, b: str) -> bool:
@@ -87,7 +113,8 @@ def render_table(table: Table) -> str:
         row = []
         for c in range(table.n_cols):
             cell = grid[r][c]
-            row.append(_md_cell(cell.text if cell else ""))
+            # A cell spanning rows is written once, in the first row it covers.
+            row.append(_md_cell(cell.text if cell and cell.row == r else ""))
         rows.append(row)
     if not rows:
         return ""
@@ -309,7 +336,7 @@ def _continues(prev: str, nxt: str) -> bool:
 
 def _join_paragraphs(prev: str, nxt: str) -> str:
     if prev.endswith("-") and nxt[0].islower():
-        return prev[:-1] + nxt
+        return _join_at_hyphen(prev, nxt)
     return prev + " " + nxt
 
 

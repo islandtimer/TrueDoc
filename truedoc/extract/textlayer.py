@@ -1089,7 +1089,56 @@ def _column_gutters(lines: list[Line]) -> list[tuple[float, float]]:
         i = j
     # Many channels means aligned text (a table, a listing), not columns; the
     # table finder owns those.
-    return gutters if len(gutters) <= 3 else []
+    if len(gutters) > 3:
+        return []
+    for g in _edge_gutters(segs, x0, width, size):
+        # A strict channel inside an edge gutter is the core of it: the edges say how wide.
+        inside = [h for h in gutters if g[0] < h[1] and h[0] < g[1]]
+        for h in inside:
+            gutters.remove(h)
+        gutters.append((min([g[0]] + [h[0] for h in inside]), max([g[1]] + [h[1] for h in inside])))
+    return sorted(gutters) if len(gutters) <= 3 else []
+
+
+def _edge_gutters(segs: list[Line], x0: float, width: float, size: float) -> list[tuple[float, float]]:
+    """Gutters shown by the columns' edges when lines cross the channel.
+
+    A Physical Review Letters page sets its title, authors and abstract across both columns
+    and MuPDF joins ten body lines across its 16-point gutter, so more lines cross the
+    channel than the strict scan allows and the two columns read as one (53 pages of run
+    60). The columns' edges still show it: a good share of the lines start at the right
+    column's edge, and the lines wholly left of that edge end just before it. Lines that
+    cross with words on both sides must stay a minority (a form's label and value columns
+    are not two columns of text)."""
+    n = len(segs)
+    starts: dict[int, int] = {}
+    for l in segs:
+        k = int(round(l.bbox.x0 / 2.0)) * 2
+        starts[k] = starts.get(k, 0) + 1
+    out: list[tuple[float, float]] = []
+    for k, count in sorted(starts.items(), key=lambda kv: -kv[1])[:6]:
+        if count < 0.15 * n or not (x0 + 0.25 * width <= k <= x0 + 0.75 * width):
+            continue
+        right = float(k) - 1.0
+        ends = [l.bbox.x1 for l in segs if l.bbox.x1 < right - 0.2 * size and l.bbox.x1 >= right - 0.35 * width]
+        if len(ends) < 0.15 * n:
+            continue
+        left = max(ends)
+        if right - left < 0.3 * size:
+            continue
+        both = sum(1 for l in segs if l.bbox.x0 < left - 0.2 * size and l.bbox.x1 > right + 0.2 * size
+                   and any(w.bbox.x1 <= left + 0.5 for w in l.words) and any(w.bbox.x0 >= right - 0.5 for w in l.words))
+        if both > 0.35 * n:
+            continue
+        words = [w for l in segs for w in l.words]
+        mid = (left + right) / 2.0
+        spanning = sum(1 for w in words if w.bbox.x0 < mid < w.bbox.x1)
+        if spanning > 0.2 * n:
+            continue
+        if sum(1 for w in words if w.bbox.x1 <= left + 0.5) < 0.2 * len(words) or sum(1 for w in words if w.bbox.x0 >= right - 0.5) < 0.2 * len(words):
+            continue
+        out.append((left, right))
+    return out
 
 
 def _fuse_touching_words(line: Line) -> Line:
@@ -1140,6 +1189,18 @@ def _gap_crosses_gutter(a: float, b: float, gutters: list[tuple[float, float]]) 
     return any(hi > g0 and lo < g1 for g0, g1 in gutters)
 
 
+def _gap_covers_gutter(a: float, b: float, gutters: list[tuple[float, float]], size: float) -> bool:
+    """The gap between two neighbours covers a gutter: all of a narrow one, and of a wide
+    one at least 0.7 em (a full-width title's word spaces touch a wide gutter without
+    covering it)."""
+    lo, hi = min(a, b), max(a, b)
+    for g0, g1 in gutters:
+        overlap = min(hi, g1) - max(lo, g0)
+        if overlap >= min(0.7 * (g1 - g0), 0.7 * size) and overlap > 0:
+            return True
+    return False
+
+
 def _lone_gutter_number(line: Line, gutters: list[tuple[float, float]]) -> bool:
     return len(line.words) == 1 and _is_line_number(line.words[0]) and _in_gutter(line.words[0], gutters)
 
@@ -1158,8 +1219,11 @@ def _split_at_gutters(lines: list[Line], gutters: list[tuple[float, float]]) -> 
             out.append(l)
             continue
         groups: list[list[Word]] = [[l.words[0]]]
+        size = max(l.size, 1.0)
         for prev, w in zip(l.words, l.words[1:]):
-            if _gap_crosses_gutter(prev.bbox.x1, w.bbox.x0, gutters) or (_is_line_number(w) and _in_gutter(w, gutters)) or (_is_line_number(prev) and _in_gutter(prev, gutters)):
+            # A word gap splits at a wide gutter only when it covers most of it: the word
+            # spaces of a title set across both columns do not.
+            if _gap_covers_gutter(prev.bbox.x1, w.bbox.x0, gutters, size) or (_is_line_number(w) and _in_gutter(w, gutters)) or (_is_line_number(prev) and _in_gutter(prev, gutters)):
                 groups.append([w])
             else:
                 groups[-1].append(w)
@@ -1195,6 +1259,8 @@ def _reassemble_lines(lines: list[Line], gutters: list[tuple[float, float]] | No
     # across it rather than around it.
     lines = _fold_symbol_lines(list(lines), early=True, rules=rules)
     ordered = sorted(lines, key=lambda l: (round(l.baseline, 1), l.bbox.x0))
+    rows = _column_rows(ordered, gutters) if gutters else {}
+    measures = _column_measures(rows) if rows else {}
     out: list[Line] = []
     for seg in ordered:
         if seg.rotated or not out:
@@ -1216,6 +1282,21 @@ def _reassemble_lines(lines: list[Line], gutters: list[tuple[float, float]] | No
             if len(ref.words) >= 3:
                 inner = sorted(b.bbox.x0 - a.bbox.x1 for a, b in zip(ref.words, ref.words[1:]))
                 limit = max(limit, min(1.4 * inner[len(inner) // 2], 2.2 * size))
+        # Two segments that together run from a column's left edge to its right edge are
+        # one justified line whatever the stretch of the gap between them, up to an em and
+        # a half ("with the name, El Nino?" | "Resisting the tempta-", 09f90a8fad in run 60:
+        # the second half became a block of its own, read after the other column).
+        if measures:
+            col = _column_of(seg, gutters)
+            ext = rows.get((col, int(round(seg.baseline))))
+            m = measures.get(col)
+            if ext and m and _column_of(last, gutters) == col and abs(ext[0] - m[0]) <= 0.6 * size and abs(ext[1] - m[1]) <= 0.6 * size:
+                limit = max(limit, 1.5 * size)
+        # A stretched gap is joined unless a channel of white runs through it: two narrow
+        # columns whose gutter went unfound (a newspaper page) leave their lines' word gaps
+        # as wide as the gutter, and no word on any nearby line crosses the gutter.
+        if gap > 1.0 * size and limit > 1.0 * size and _channel_through(last.bbox.x1, seg.bbox.x0, seg.baseline, ordered, size):
+            limit = 1.0 * size
         # Segments may overlap horizontally when one starts with the denominator of an
         # inline fraction that sits under the previous segment's numerator.
         # A segment that is only a big bracket or operator has no baseline of its
@@ -1230,7 +1311,12 @@ def _reassemble_lines(lines: list[Line], gutters: list[tuple[float, float]] | No
         # Only lines carrying scripts or maths symbols interleave this way; table cells
         # and OCR layers with loose boxes must keep their separate segments.
         interleaved = gap < -1.0 * size and same_baseline and similar_size and (_has_scripts(seg) or _has_scripts(last)) and _words_interleave(last.words, seg.words)
-        across_gutter = (gap > 0 and _gap_crosses_gutter(last.bbox.x1, seg.bbox.x0, gutters)) or _lone_gutter_number(seg, gutters) or _lone_gutter_number(last, gutters)
+        # Whichever half sorts first (a maths glyph's baseline a tenth of a point off puts the
+        # right half before the left), two segments on opposite sides of a gutter stay apart:
+        # the formula path below used to glue a left column's line to the right column's.
+        first, second = (last, seg) if last.bbox.x0 <= seg.bbox.x0 else (seg, last)
+        across_gutter = (any(first.bbox.x1 <= g1 + 1.0 and second.bbox.x0 >= g0 - 1.0 for g0, g1 in gutters)
+                         or _lone_gutter_number(seg, gutters) or _lone_gutter_number(last, gutters))
         # A sum sign with its limits, or a stacked fraction, stands between the
         # two halves of a text line as segments of its own ("the length of P is"
         # [sum, n, i=1] "w(v_i) and the ..."): the halves are one line when the
@@ -1270,6 +1356,58 @@ def _reassemble_lines(lines: list[Line], gutters: list[tuple[float, float]] | No
         else:
             out.append(seg)
     return _attach_satellites(_merge_uniform_rows(_fold_symbol_lines(out, rules=rules), gutters), rules)
+
+
+def _channel_through(x0: float, x1: float, baseline: float, lines: list[Line], size: float) -> bool:
+    """A vertical channel of white runs through the gap (x0, x1): on the lines within a dozen
+    line heights, no word covers its middle. Two narrow columns whose gutter went unfound show
+    as such a channel, and as their lines share baselines their union passed for one
+    full-width line (a newspaper page, 20_pg46, and 03ccfe8bb1 in run 62)."""
+    mid = (x0 + x1) / 2.0
+    seen: set[int] = set()
+    crossed = False
+    for l in lines:
+        if l.rotated or not l.words or not (0.5 * size < abs(l.baseline - baseline) <= 12.0 * size):
+            continue
+        seen.add(int(round(l.baseline)))
+        if any(w.bbox.x0 < mid < w.bbox.x1 for w in l.words):
+            crossed = True
+    return len(seen) >= 6 and not crossed
+
+
+def _column_of(line: Line, gutters: list[tuple[float, float]]) -> int:
+    """Which column a segment sits in: the number of gutters to its left."""
+    return sum(1 for g in gutters if line.bbox.x0 >= g[1] - 1.0)
+
+
+def _column_rows(lines: list[Line], gutters: list[tuple[float, float]]) -> dict[tuple[int, int], list[float]]:
+    """Per column and baseline, the extent of the segments on that line: a producer that
+    places every word on its own gives a line as many segments, and their union is the line."""
+    rows: dict[tuple[int, int], list[float]] = {}
+    for l in lines:
+        if l.rotated or not l.words:
+            continue
+        r = rows.setdefault((_column_of(l, gutters), int(round(l.baseline))), [l.bbox.x0, l.bbox.x1])
+        r[0], r[1] = min(r[0], l.bbox.x0), max(r[1], l.bbox.x1)
+    return rows
+
+
+def _column_measures(rows: dict[tuple[int, int], list[float]]) -> dict[int, tuple[float, float]]:
+    """Each column's left and right edge: the tenth and ninetieth percentiles of its lines'
+    edges. A measure is one column's only when most of its lines run its full width: two
+    columns whose gutter went unfound would otherwise pass for one wide measure, and lines
+    joined across it (a newspaper page, 20_pg40)."""
+    out: dict[int, tuple[float, float]] = {}
+    for col in {c for c, _ in rows}:
+        exts = [r for (c, _), r in rows.items() if c == col]
+        if len(exts) < 4:
+            continue
+        x0s = sorted(r[0] for r in exts)
+        x1s = sorted(r[1] for r in exts)
+        c0, c1 = x0s[int(0.1 * (len(x0s) - 1))], x1s[int(0.9 * (len(x1s) - 1))]
+        if sum(1 for r in exts if r[1] - r[0] >= 0.85 * (c1 - c0)) >= 0.5 * len(exts):
+            out[col] = (c0, c1)
+    return out
 
 
 def _radical_or_accent_segment(line: Line) -> bool:

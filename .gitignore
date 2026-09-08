@@ -36,3 +36,5 @@ bench/gpu/out2/
 bench/gpu/out3/
 bench/gpu/crops/
 bench/gpu/crops_failing/
+bench/gpu/bands/
+bench/gpu/out4/

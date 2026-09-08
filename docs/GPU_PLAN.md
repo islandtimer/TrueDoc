@@ -99,3 +99,36 @@ Serving the model on a rented GPU (the development path, until an on-demand endp
     vllm serve allenai/olmOCR-2-7B-1025-FP8 --served-model-name olmocr --port 8000 --max-model-len 16384
 
 then from this machine `ssh -L 8000:localhost:8000 -p <port> root@<host>` and `truedoc convert file.pdf --vision-endpoint http://localhost:8000`. The vLLM flags are the ones olmOCR's own pipeline uses [recalled, to be confirmed on the next rental]. Nothing is spent until an instance is rented.
+
+## Where the remaining points are (measured after run 62, 8 September 2026, 16:40)
+
+A category's score is checks passed over checks in that category, and the overall score is the
+mean of the eight categories, so a check is worth a different amount in each: 0.028 points in
+tiny text, 0.027 in old-scan maths, 0.024 in old scans, 0.016 in headers, 0.014 in
+multi-column, 0.012 in tables, 0.004 in arXiv maths. Run 62's 913 failing checks (tuned-on)
+sort into two piles:
+
+| where the fault is | checks | points |
+|---|---|---|
+| pages TrueDoc reads itself (a digital text layer) | 528 | 4.4 |
+| pages a model reads for us (no digital layer) | 385 | 9.2 |
+
+The model's pile is the larger prize and none of it is our code: an audit of every check on
+those pages (`scratchpad/audit_model_pages.py`) found our processing loses nothing against the
+model's raw reading and wins nine checks. Sorting those 385 by what the reading itself shows:
+
+| what went wrong in the model's reading | checks | points | what would fix it |
+|---|---|---|---|
+| read the text but garbled it | 219 | 5.5 | a better model (or two models voting) |
+| never read that text at all | 77 | 1.9 | less page at a time: bands, or a second pass |
+| read it exactly, in the wrong order | 44 | 1.1 | column-aware prompting or crops |
+
+The misses cluster on the densest pages: a maths textbook page with eleven, a reference page
+with nine, a dictionary page with five. **Session 4 (prepared, not run):** `bench/gpu/select_bands.py`
+cuts the two dozen worst pages into three overlapping bands each (about 72 crops, minutes of GPU
+time), the GPU reads them exactly as it read whole pages, and `bench/gpu/merge_bands.py` stitches
+each page's bands back into one reading, dropping the lines the overlap repeats. Because those
+pages already have whole-page readings, the two can be scored against each other on the same
+checks: the session answers "does reading less at a time recover the missed text?" for the price
+of a coffee. If it does, the same treatment goes to every dense page. The 219 garbled checks are
+a separate question (a stronger model), and the owner's to decide, since both cost a rental.

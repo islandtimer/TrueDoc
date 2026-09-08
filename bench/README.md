@@ -83,3 +83,13 @@ expected 57/64 (as of run 31's launch, 4 Sept 18:26; 56 from run 28 to run 30, s
     EXTRA="--vision-endpoint file:bench/data/olmocr-bench/bench_data/olmocr2b --vision-pages-only" nohup bash bench/tools/launch_run.sh 55 truedoc54 56 > bench/out/launch/nohup55.log 2>&1 &
 
 `file:<folder>` replays a model's saved readings (`truedoc/vision/file_readings.py`); a served model takes `http://host:port` instead. `bench/tools/watch_run.sh <N>` prints the run's status lines as they appear and exits when the run is scored, which is what the Monitor tool runs.
+
+Since run 58 two folders are joined with `+` (whole-page readings and picture crops):
+
+    EXTRA="--vision-endpoint file:bench/data/olmocr-bench/bench_data/olmocr2b+bench/data/olmocr-bench/bench_data/olmocr2c" nohup bash bench/tools/launch_run.sh <N> truedoc<N-1> 56 > bench/out/launch/nohup<N>.log 2>&1 &
+
+**Page checks on pages a model read need the same setting**, or they show losses that are not real:
+
+    PAGE_CHECK_ARGS="--vision-endpoint file:<olmocr2b>+<olmocr2c>" python bench/tools/page_check.py <run dir> <stem> ...
+
+For the next GPU session the two tools beside the crop tool are `bench/gpu/select_bands.py` (dense pages cut into overlapping bands, plus `--also-whole` for pages whose table is a vector drawing) and `bench/gpu/merge_bands.py` (the bands stitched back into one reading, the overlap dropped); the recipe is in `bench/gpu/README.md`.
