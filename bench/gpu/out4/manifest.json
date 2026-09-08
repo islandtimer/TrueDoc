@@ -1,0 +1,962 @@
+[
+ {
+  "crop": "old_scans_math/5_pg174__b0.pdf",
+  "page": "old_scans_math/5_pg174.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   380.0,
+   230.76
+  ],
+  "missed_checks": 11
+ },
+ {
+  "crop": "old_scans_math/5_pg174__b1.pdf",
+  "page": "old_scans_math/5_pg174.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   196.57333333333332,
+   380.0,
+   444.4266666666666
+  ],
+  "missed_checks": 11
+ },
+ {
+  "crop": "old_scans_math/5_pg174__b2.pdf",
+  "page": "old_scans_math/5_pg174.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   410.24,
+   380.0,
+   641.0
+  ],
+  "missed_checks": 11
+ },
+ {
+  "crop": "old_scans_math/3_pg634__b0.pdf",
+  "page": "old_scans_math/3_pg634.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   371.5199890136719,
+   207.100810546875
+  ],
+  "missed_checks": 9
+ },
+ {
+  "crop": "old_scans_math/3_pg634__b1.pdf",
+  "page": "old_scans_math/3_pg634.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   176.419208984375,
+   371.5199890136719,
+   398.8608203125
+  ],
+  "missed_checks": 9
+ },
+ {
+  "crop": "old_scans_math/3_pg634__b2.pdf",
+  "page": "old_scans_math/3_pg634.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   368.17921875,
+   371.5199890136719,
+   575.280029296875
+  ],
+  "missed_checks": 9
+ },
+ {
+  "crop": "old_scans/83__b0.pdf",
+  "page": "old_scans/83.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   2109.75,
+   631.53
+  ],
+  "missed_checks": 6
+ },
+ {
+  "crop": "old_scans/83__b1.pdf",
+  "page": "old_scans/83.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   537.97,
+   2109.75,
+   1216.28
+  ],
+  "missed_checks": 6
+ },
+ {
+  "crop": "old_scans/83__b2.pdf",
+  "page": "old_scans/83.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1122.72,
+   2109.75,
+   1754.25
+  ],
+  "missed_checks": 6
+ },
+ {
+  "crop": "long_tiny_text/16c_pg1__b0.pdf",
+  "page": "long_tiny_text/16c_pg1.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   1152.0,
+   638.6400000000001
+  ],
+  "missed_checks": 5
+ },
+ {
+  "crop": "long_tiny_text/16c_pg1__b1.pdf",
+  "page": "long_tiny_text/16c_pg1.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   544.0266666666666,
+   1152.0,
+   1229.9733333333334
+  ],
+  "missed_checks": 5
+ },
+ {
+  "crop": "long_tiny_text/16c_pg1__b2.pdf",
+  "page": "long_tiny_text/16c_pg1.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1135.3600000000001,
+   1152.0,
+   1774.0
+  ],
+  "missed_checks": 5
+ },
+ {
+  "crop": "old_scans/43__b0.pdf",
+  "page": "old_scans/43.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   3081.0,
+   895.05
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/43__b1.pdf",
+  "page": "old_scans/43.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   762.45,
+   3081.0,
+   1723.8
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/43__b2.pdf",
+  "page": "old_scans/43.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1591.2,
+   3081.0,
+   2486.25
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/62__b0.pdf",
+  "page": "old_scans/62.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   3629.25,
+   868.86
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/62__b1.pdf",
+  "page": "old_scans/62.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   740.14,
+   3629.25,
+   1673.36
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/62__b2.pdf",
+  "page": "old_scans/62.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1544.64,
+   3629.25,
+   2413.5
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/70__b0.pdf",
+  "page": "old_scans/70.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   4011.75,
+   922.59
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/70__b1.pdf",
+  "page": "old_scans/70.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   785.91,
+   4011.75,
+   1776.84
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/70__b2.pdf",
+  "page": "old_scans/70.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1640.16,
+   4011.75,
+   2562.75
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/89__b0.pdf",
+  "page": "old_scans/89.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   2209.5,
+   623.16
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/89__b1.pdf",
+  "page": "old_scans/89.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   530.84,
+   2209.5,
+   1200.16
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/89__b2.pdf",
+  "page": "old_scans/89.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1107.84,
+   2209.5,
+   1731.0
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans_math/4_pg48__b0.pdf",
+  "page": "old_scans_math/4_pg48.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   319.1000061035156,
+   183.70799560546877
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans_math/4_pg48__b1.pdf",
+  "page": "old_scans_math/4_pg48.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   156.49199625651042,
+   319.1000061035156,
+   353.80799153645836
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans_math/4_pg48__b2.pdf",
+  "page": "old_scans_math/4_pg48.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   326.5919921875,
+   319.1000061035156,
+   510.29998779296875
+  ],
+  "missed_checks": 3
+ },
+ {
+  "crop": "old_scans/81__b0.pdf",
+  "page": "old_scans/81.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   2142.0,
+   632.07
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/81__b1.pdf",
+  "page": "old_scans/81.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   538.43,
+   2142.0,
+   1217.32
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/81__b2.pdf",
+  "page": "old_scans/81.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1123.68,
+   2142.0,
+   1755.75
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/17__b0.pdf",
+  "page": "old_scans/17.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   1887.0,
+   865.35
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/17__b1.pdf",
+  "page": "old_scans/17.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   737.15,
+   1887.0,
+   1666.6
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/17__b2.pdf",
+  "page": "old_scans/17.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1538.4,
+   1887.0,
+   2403.75
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/71__b0.pdf",
+  "page": "old_scans/71.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   3965.25,
+   920.16
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/71__b1.pdf",
+  "page": "old_scans/71.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   783.84,
+   3965.25,
+   1772.16
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/71__b2.pdf",
+  "page": "old_scans/71.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1635.84,
+   3965.25,
+   2556.0
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/92__b0.pdf",
+  "page": "old_scans/92.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   3102.0,
+   948.24
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/92__b1.pdf",
+  "page": "old_scans/92.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   807.76,
+   3102.0,
+   1826.24
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/92__b2.pdf",
+  "page": "old_scans/92.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1685.76,
+   3102.0,
+   2634.0
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/90__b0.pdf",
+  "page": "old_scans/90.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   3519.75,
+   619.65
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/90__b1.pdf",
+  "page": "old_scans/90.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   527.85,
+   3519.75,
+   1193.4
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/90__b2.pdf",
+  "page": "old_scans/90.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1101.6,
+   3519.75,
+   1721.25
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans_math/1_pg19__b0.pdf",
+  "page": "old_scans_math/1_pg19.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   331.55999755859375,
+   179.10719604492186
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans_math/1_pg19__b1.pdf",
+  "page": "old_scans_math/1_pg19.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   152.5727966308594,
+   331.55999755859375,
+   344.9471923828125
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans_math/1_pg19__b2.pdf",
+  "page": "old_scans_math/1_pg19.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   318.41279296875,
+   331.55999755859375,
+   497.5199890136719
+  ],
+  "missed_checks": 2
+ },
+ {
+  "crop": "old_scans/22__b0.pdf",
+  "page": "old_scans/22.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   1767.75,
+   438.21
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/22__b1.pdf",
+  "page": "old_scans/22.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   373.29,
+   1767.75,
+   843.96
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/22__b2.pdf",
+  "page": "old_scans/22.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   779.04,
+   1767.75,
+   1217.25
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/80__b0.pdf",
+  "page": "old_scans/80.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   2252.25,
+   637.2
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/80__b1.pdf",
+  "page": "old_scans/80.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   542.8,
+   2252.25,
+   1227.2
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/80__b2.pdf",
+  "page": "old_scans/80.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1132.8,
+   2252.25,
+   1770.0
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/78__b0.pdf",
+  "page": "old_scans/78.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   2407.5,
+   644.76
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/78__b1.pdf",
+  "page": "old_scans/78.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   549.24,
+   2407.5,
+   1241.76
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/78__b2.pdf",
+  "page": "old_scans/78.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1146.24,
+   2407.5,
+   1791.0
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/13__b0.pdf",
+  "page": "old_scans/13.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   1191.0,
+   681.48
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/13__b1.pdf",
+  "page": "old_scans/13.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   580.52,
+   1191.0,
+   1312.48
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/13__b2.pdf",
+  "page": "old_scans/13.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1211.52,
+   1191.0,
+   1893.0
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/98__b0.pdf",
+  "page": "old_scans/98.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   2318.25,
+   663.12
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/98__b1.pdf",
+  "page": "old_scans/98.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   564.88,
+   2318.25,
+   1277.12
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/98__b2.pdf",
+  "page": "old_scans/98.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1178.88,
+   2318.25,
+   1842.0
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/96__b0.pdf",
+  "page": "old_scans/96.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   1197.75,
+   655.83
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/96__b1.pdf",
+  "page": "old_scans/96.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   558.67,
+   1197.75,
+   1263.08
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/96__b2.pdf",
+  "page": "old_scans/96.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1165.92,
+   1197.75,
+   1821.75
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/93__b0.pdf",
+  "page": "old_scans/93.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   2220.0,
+   663.12
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/93__b1.pdf",
+  "page": "old_scans/93.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   564.88,
+   2220.0,
+   1277.12
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/93__b2.pdf",
+  "page": "old_scans/93.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1178.88,
+   2220.0,
+   1842.0
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/4__b0.pdf",
+  "page": "old_scans/4.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   1778.25,
+   852.66
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/4__b1.pdf",
+  "page": "old_scans/4.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   726.34,
+   1778.25,
+   1642.16
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/4__b2.pdf",
+  "page": "old_scans/4.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1515.84,
+   1778.25,
+   2368.5
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/27__b0.pdf",
+  "page": "old_scans/27.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   1816.5,
+   867.78
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/27__b1.pdf",
+  "page": "old_scans/27.pdf",
+  "order": 1,
+  "bbox": [
+   0.0,
+   739.22,
+   1816.5,
+   1671.28
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "old_scans/27__b2.pdf",
+  "page": "old_scans/27.pdf",
+  "order": 2,
+  "bbox": [
+   0.0,
+   1542.72,
+   1816.5,
+   2410.5
+  ],
+  "missed_checks": 1
+ },
+ {
+  "crop": "tables/3d780cdcc987c65fdc7e1628c6a32af33d5d_pg22_pg1__b0.pdf",
+  "page": "tables/3d780cdcc987c65fdc7e1628c6a32af33d5d_pg22_pg1.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   595.2000122070312,
+   841.9199829101562
+  ],
+  "missed_checks": 0
+ },
+ {
+  "crop": "tables/4db371aebdbbfa28531a816f9bf26ed0a028_pg52_pg1__b0.pdf",
+  "page": "tables/4db371aebdbbfa28531a816f9bf26ed0a028_pg52_pg1.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   595.3200073242188,
+   841.9199829101562
+  ],
+  "missed_checks": 0
+ },
+ {
+  "crop": "tables/8160caa0f0e21fbd0ef674de8759df133ccf_pg12_pg1__b0.pdf",
+  "page": "tables/8160caa0f0e21fbd0ef674de8759df133ccf_pg12_pg1.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   720.0,
+   540.0
+  ],
+  "missed_checks": 0
+ },
+ {
+  "crop": "tables/8bb41f199759c5ce6c2dbbf7fc7dc1d71923_pg28__b0.pdf",
+  "page": "tables/8bb41f199759c5ce6c2dbbf7fc7dc1d71923_pg28.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   612.0,
+   792.0
+  ],
+  "missed_checks": 0
+ },
+ {
+  "crop": "tables/94f7559a72a6cc9affb8a2487c983304a95e_pg18_pg1__b0.pdf",
+  "page": "tables/94f7559a72a6cc9affb8a2487c983304a95e_pg18_pg1.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   842.0,
+   595.0
+  ],
+  "missed_checks": 0
+ },
+ {
+  "crop": "tables/9921f236dc953b145dc2ff6bd7670c422212_pg349__b0.pdf",
+  "page": "tables/9921f236dc953b145dc2ff6bd7670c422212_pg349.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   842.0,
+   595.0
+  ],
+  "missed_checks": 0
+ },
+ {
+  "crop": "tables/f5e5d540d2d21fb259a00bbbfbed7abacdf2_pg12__b0.pdf",
+  "page": "tables/f5e5d540d2d21fb259a00bbbfbed7abacdf2_pg12.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   595.2760009765625,
+   793.7009887695312
+  ],
+  "missed_checks": 0
+ },
+ {
+  "crop": "tables/fbeb6edcf6ad16adbd2a27b54da0c1771389_pg1__b0.pdf",
+  "page": "tables/fbeb6edcf6ad16adbd2a27b54da0c1771389_pg1.pdf",
+  "order": 0,
+  "bbox": [
+   0.0,
+   0.0,
+   842.0,
+   595.219970703125
+  ],
+  "missed_checks": 0
+ }
+]

@@ -75,10 +75,43 @@ whole-page readings, so the answer is a direct comparison, not a guess.
 
 5. Score the banded readings against the whole-page ones on the same pages:
 
-       python bench/gpu/merge_by_list.py <base run dir> olmocr2d <out candidate> none --score
+       python bench/gpu/merge_by_list.py <base candidate> olmocr2d <out candidate> any --score
+
+   Use `any`, not `all`. `all` means "every page the census listed as non-digital", and the eight
+   whole-page table sends are *digital* pages, so `all` discards their readings without a word:
+   on 8 September that hid the only part of session 4 that worked. `any` means "every page the
+   model has a reading for". Check the merge's own line ("N from olmocr2d") against the number of
+   pages the stitcher wrote before believing any score.
 
    A gain says the treatment works and should go to every dense page; no gain says the model's
    limit is the model, and the next rental should serve a stronger one instead.
+
+## What happened on 8 September 2026 (session 4: the answer is no)
+
+RTX 4090 (48 GB) in California at US$0.657/hour, chosen for its link rather than its price: the
+listing showed 8762 Mbps down and the pre-flight test gave 14 MB/s from both PyPI and Hugging
+Face, so dependencies and the 8.5 GB of weights took **nine minutes against twenty-five in the
+first session**. Eighteen minutes of instance time in all, about 40 cents. 80 bands read with
+zero pipeline failures; three bands produced no file because they were near-empty page bottoms
+(re-reading one returned the single word "Hubbard"), and the stitcher skipped the two pages whose
+last band was empty, so 30 of 32 pages were scored.
+
+**Result: 84.2 against run 64's 84.0.** Eleven net checks on pages that held 136 failing ones,
+where the census projected 3.0 points. Old scans +5, tiny text +4, old-scan maths **-4**, the
+vector-drawn tables sent whole **+5**, baseline +1. Two readings of it:
+
+- **Banding is a wash.** It recovers text at the bottom of a dense scan and loses maths, because
+  a formula cut across a band boundary is unreadable in both halves. Any rollout would have to
+  exempt maths pages, and the remainder is not worth changing the vision path for.
+- **It did not generalise.** Eight of the 30 pages are held-out and carry 30 of the 136 checks;
+  the held-out score was identical before and after (1058 of 1255 both times). Every net gain
+  landed on a tuned-on page.
+
+Worth keeping: the eight vector-drawn-table pages. Their readings are on disk and cost nothing
+more, and they point at a product rule — a digital page whose content is a table drawn as vector
+paths should go to the model, the way picture-text regions already do (`select_regions.py` cannot
+see them: it looks for image objects and there are none). The next rental serves a stronger model
+(PaddleOCR-VL, Apache-2.0), which is where the remaining 5.5 points sit; plan it before renting.
 
 **Also send these eight pages whole** (step 1 above): their table is a *vector drawing*, so
 `select_regions.py` never cropped them (it looks for image objects, and there is none) and no

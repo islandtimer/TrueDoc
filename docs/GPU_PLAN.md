@@ -132,3 +132,36 @@ pages already have whole-page readings, the two can be scored against each other
 checks: the session answers "does reading less at a time recover the missed text?" for the price
 of a coffee. If it does, the same treatment goes to every dense page. The 219 garbled checks are
 a separate question (a stronger model), and the owner's to decide, since both cost a rental.
+
+## Result of session 4 (8 September 2026, evening): reading less at a time does not work
+
+The session ran as planned and answered its question in the negative. 32 pages holding 136
+failing checks were cut into 80 overlapping bands, read on a rented RTX 4090 in 18 minutes of
+instance time (about 40 cents), stitched back into whole-page readings and merged over run 64.
+
+**84.2 against run 64's 84.0: eleven net checks where the table above projected 3.0 points.**
+
+| | checks | reading |
+|---|---|---|
+| old scans, banded | +5 | text at the bottom of a dense scan does come back |
+| tiny text, banded | +4 | the same |
+| old-scan maths, banded | **-4** | a formula cut across a band boundary is unreadable in both halves |
+| tables, sent whole | **+5** | the eight vector-drawn tables no model had ever seen |
+| baseline | +1 | |
+
+Two things settle it. **Banding is a wash**: strip out the maths pages it damages and the
+remainder does not justify changing the vision path. **It did not generalise**: eight of the 30
+scored pages are held-out and carry 30 of the 136 checks, and the held-out score was identical
+before and after (1058 of 1255 both times), so every net gain landed on a tuned-on page.
+
+So the 77 "never read that text at all" checks and the 44 "wrong order" checks are not recovered
+by sending less page at a time. The remaining 9.2 points on model pages are, in practice, one
+question rather than three: **a stronger model**. PaddleOCR-VL (Apache-2.0) is the candidate and
+is also the second witness M16 asked for; plan the session before renting, as sessions 2 to 4
+were planned, because that discipline is why each cost under a dollar.
+
+The one keeper is not about bands at all. The eight pages whose table is drawn as vector paths
+were sent whole because `select_regions.py` cannot see them — it looks for image objects and
+there are none — and they won 5 checks. Their readings are on disk. That is a product rule worth
+building on the CPU, with no rental: a digital page whose content is a vector-drawn table goes to
+the model, exactly as picture-text regions already do.

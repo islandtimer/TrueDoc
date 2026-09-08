@@ -29,12 +29,14 @@ Thumbs.db
 # Secrets
 .env
 
-# GPU step working files (benchmark PDFs copied for shipping, model outputs)
+# GPU step working files: inputs only. These are cut from the benchmark PDFs by
+# select_pages.py, select_regions.py and select_bands.py, so they cost nothing to remake.
 bench/gpu/pdfs/
-bench/gpu/out/
-bench/gpu/out2/
-bench/gpu/out3/
 bench/gpu/crops/
 bench/gpu/crops_failing/
 bench/gpu/bands/
-bench/gpu/out4/
+
+# The model readings under bench/gpu/out*/ are NOT ignored, deliberately. They are the output of
+# four paid GPU sessions, under two megabytes in all, and every run since 55 replays them from
+# disk through --vision-endpoint file:. Losing them would make every score since unreproducible
+# without renting a GPU again, and the repository has no remote to fall back on.

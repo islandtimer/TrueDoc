@@ -1,0 +1,1491 @@
+== system
+name, memory.total [MiB]
+NVIDIA GeForce RTX 4090, 49140 MiB
+Python 3.12.3
+== dependencies
+W: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+== run
+-- headers_footers (20 pdfs)
+2026-09-03 02:18:26,913 - __main__ - INFO - If you run out of GPU memory during start-up or get 'KV cache is larger than available memory' errors, retry with lower values, e.g. --gpu_memory_utilization 0.80  --max_model_len 16384
+INFO:olmocr.check:pdftoppm is installed and working.
+2026-09-03 02:18:26,929 - __main__ - INFO - Got --pdfs argument, going to add to the work queue
+2026-09-03 02:18:26,930 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//08404c3b520de340f0b0ed583d2083324c5cbfda_page_10_processed.pdf as PDF document
+2026-09-03 02:18:26,930 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//0a8610e71123d3cf389a1e8652aa486b9f8dcfa2_page_1_processed.pdf as PDF document
+2026-09-03 02:18:26,930 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//0bdb95a688274d4700bb459e1d9e98e795bbbd05_page_25_processed.pdf as PDF document
+2026-09-03 02:18:26,930 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//0f727ae22d10919282c22063a6cade3e1fe0b3d2_page_1.pdf as PDF document
+2026-09-03 02:18:26,930 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//11253d83d886378909f8b24d24d8a90412099087_page_4.pdf as PDF document
+2026-09-03 02:18:26,930 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//1218c2e64afa8cbdcb4880220c7abb6540d38e51_page_3_processed.pdf as PDF document
+2026-09-03 02:18:26,930 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//13a5d2868ae9a6740bbec1122a6e247f646cb1a5_page_11_processed.pdf as PDF document
+2026-09-03 02:18:26,930 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//29cf8f78dcf746f0d24796dea279a36234362a28_page_30.pdf as PDF document
+2026-09-03 02:18:26,930 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//5d5fda4b4605502351b87808760b66dc70bd40fa_page_16.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//7b3ad57e2874674ad6f4aa71c9be495e65dcf449_page_2.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//7f757df3765dcaae45710b624bb76553ded10b50_page_4.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//8063d40c50199f37405b48fbc93af2386abe6d09_page_1.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//afba776380fbae80e0399e5b7f5f2ac1523ee487_page_1.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//b329b8083ee2abe62999617011b888e980924905_page_3.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//b4c3c4ac3d6f7b52a993cec7ca8b3ad43cecabad_page_3.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//c0d59815ea7ffafa34fb1ba2bc0d2ec6a976f6dd_page_1.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//c655ed75d1f645f3ddc601f992a7d99c845a5e6f_page_8.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//d660c61fbcb505d9f6e8ae38f435bed6822bd23b_page_12.pdf as PDF document
+2026-09-03 02:18:26,931 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//d8b9c4cd0ba9b036e09168c8dccccd1d43315ef4_page_1.pdf as PDF document
+2026-09-03 02:18:26,932 - __main__ - INFO - Loading file at /root/gpu/pdfs/headers_footers//f43191d17ea26f7058d5f9e5c6b3b4cc35bfaef2_page_63.pdf as PDF document
+2026-09-03 02:18:26,932 - __main__ - INFO - Found 20 regular pdf paths and 0 tarballs to add
+Sampling PDFs to calculate optimal length:   0%|          | 0/20 [00:00<?, ?it/s]Sampling PDFs to calculate optimal length: 100%|██████████| 20/20 [00:00<00:00, 758.92it/s]
+2026-09-03 02:18:26,960 - __main__ - INFO - Calculated items_per_group: 500 based on average pages per PDF: 1.00
+2026-09-03 02:18:28,782 - __main__ - INFO - Starting pipeline with PID 3777
+2026-09-03 02:18:28,782 - __main__ - INFO - Downloading model with hugging face 'allenai/olmOCR-2-7B-1025-FP8'
+Fetching 20 files:   0%|          | 0/20 [00:00<?, ?it/s]Fetching 20 files:  40%|████      | 8/20 [00:01<00:02,  4.26it/s]Fetching 20 files:  80%|████████  | 16/20 [00:04<00:01,  3.55it/s]Fetching 20 files:  80%|████████  | 16/20 [00:16<00:04,  1.04s/it]Fetching 20 files:  85%|████████▌ | 17/20 [00:29<00:05,  1.72s/it]Fetching 20 files:  90%|█████████ | 18/20 [01:31<00:10,  5.11s/it]Fetching 20 files:  95%|█████████▌| 19/20 [02:21<00:07,  7.44s/it]Fetching 20 files: 100%|██████████| 20/20 [02:56<00:00,  8.84s/it]Fetching 20 files: 100%|██████████| 20/20 [02:56<00:00,  8.84s/it]
+2026-09-03 02:21:27,155 - __main__ - INFO - Using internal server at http://localhost:30024/v1
+INFO:olmocr.work_queue:Initialized queue with 1 work items
+2026-09-03 02:21:27,259 - __main__ - WARNING - Attempt 1: Please wait for vllm server to become ready...
+2026-09-03 02:21:28,284 - __main__ - WARNING - Attempt 2: Please wait for vllm server to become ready...
+2026-09-03 02:21:29,321 - __main__ - WARNING - Attempt 3: Please wait for vllm server to become ready...
+2026-09-03 02:21:30,358 - __main__ - WARNING - Attempt 4: Please wait for vllm server to become ready...
+2026-09-03 02:21:31,399 - __main__ - WARNING - Attempt 5: Please wait for vllm server to become ready...
+2026-09-03 02:21:32,434 - __main__ - WARNING - Attempt 6: Please wait for vllm server to become ready...
+2026-09-03 02:21:33,490 - __main__ - WARNING - Attempt 7: Please wait for vllm server to become ready...
+2026-09-03 02:21:34,543 - __main__ - WARNING - Attempt 8: Please wait for vllm server to become ready...
+2026-09-03 02:21:34,734 - vllm - INFO - INFO 09-03 02:21:34 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:21:34,748 - vllm - INFO - WARNING 09-03 02:21:34 [argparse_utils.py:79] argument '--disable-log-requests' is deprecated and replaced with '--enable-log-requests'. This will be removed in v0.12.0.
+2026-09-03 02:21:34,750 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:21:34 [api_server.py:1977] vLLM API server version 0.11.2
+2026-09-03 02:21:34,754 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:21:34 [utils.py:253] non-default args: {'model_tag': 'allenai/olmOCR-2-7B-1025-FP8', 'port': 30024, 'uvicorn_log_level': 'warning', 'model': 'allenai/olmOCR-2-7B-1025-FP8', 'max_model_len': 16384, 'served_model_name': ['olmocr'], 'limit_mm_per_prompt': {'video': 0}}
+2026-09-03 02:21:35,598 - __main__ - WARNING - Attempt 9: Please wait for vllm server to become ready...
+2026-09-03 02:21:36,651 - __main__ - WARNING - Attempt 10: Please wait for vllm server to become ready...
+2026-09-03 02:21:37,703 - __main__ - WARNING - Attempt 11: Please wait for vllm server to become ready...
+2026-09-03 02:21:38,756 - __main__ - WARNING - Attempt 12: Please wait for vllm server to become ready...
+2026-09-03 02:21:39,807 - __main__ - WARNING - Attempt 13: Please wait for vllm server to become ready...
+2026-09-03 02:21:40,867 - __main__ - WARNING - Attempt 14: Please wait for vllm server to become ready...
+2026-09-03 02:21:41,903 - __main__ - WARNING - Attempt 15: Please wait for vllm server to become ready...
+2026-09-03 02:21:42,954 - __main__ - WARNING - Attempt 16: Please wait for vllm server to become ready...
+2026-09-03 02:21:44,007 - __main__ - WARNING - Attempt 17: Please wait for vllm server to become ready...
+2026-09-03 02:21:45,064 - __main__ - WARNING - Attempt 18: Please wait for vllm server to become ready...
+2026-09-03 02:21:46,117 - __main__ - WARNING - Attempt 19: Please wait for vllm server to become ready...
+2026-09-03 02:21:46,468 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:21:46 [model.py:631] Resolved architecture: Qwen2_5_VLForConditionalGeneration
+2026-09-03 02:21:46,469 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:21:46 [model.py:1745] Using max model len 16384
+2026-09-03 02:21:46,687 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:21:46 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:21:47,169 - __main__ - WARNING - Attempt 20: Please wait for vllm server to become ready...
+2026-09-03 02:21:48,206 - __main__ - WARNING - Attempt 21: Please wait for vllm server to become ready...
+2026-09-03 02:21:49,244 - __main__ - WARNING - Attempt 22: Please wait for vllm server to become ready...
+2026-09-03 02:21:50,279 - __main__ - WARNING - Attempt 23: Please wait for vllm server to become ready...
+2026-09-03 02:21:51,326 - __main__ - WARNING - Attempt 24: Please wait for vllm server to become ready...
+2026-09-03 02:21:52,352 - __main__ - WARNING - Attempt 25: Please wait for vllm server to become ready...
+2026-09-03 02:21:53,403 - __main__ - WARNING - Attempt 26: Please wait for vllm server to become ready...
+2026-09-03 02:21:54,460 - __main__ - WARNING - Attempt 27: Please wait for vllm server to become ready...
+2026-09-03 02:21:55,511 - __main__ - WARNING - Attempt 28: Please wait for vllm server to become ready...
+2026-09-03 02:21:56,564 - __main__ - WARNING - Attempt 29: Please wait for vllm server to become ready...
+2026-09-03 02:21:57,618 - __main__ - WARNING - Attempt 30: Please wait for vllm server to become ready...
+2026-09-03 02:21:58,668 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:21:58 [core.py:93] Initializing a V1 LLM engine (v0.11.2) with config: model='allenai/olmOCR-2-7B-1025-FP8', speculative_config=None, tokenizer='allenai/olmOCR-2-7B-1025-FP8', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=16384, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=compressed-tensors, enforce_eager=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=0, served_model_name=olmocr, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'splitting_ops': ['vllm::unified_attention', 'vllm::unified_attention_with_output', 'vllm::unified_mla_attention', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::gdn_attention_core', 'vllm::kda_attention', 'vllm::sparse_attn_indexer'], 'compile_mm_encoder': False, 'use_inductor': None, 'compile_sizes': [], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {}, 'max_cudagraph_capture_size': 512, 'local_cache_dir': None}
+2026-09-03 02:21:58,674 - __main__ - WARNING - Attempt 31: Please wait for vllm server to become ready...
+2026-09-03 02:21:59,726 - __main__ - WARNING - Attempt 32: Please wait for vllm server to become ready...
+2026-09-03 02:22:00,779 - __main__ - WARNING - Attempt 33: Please wait for vllm server to become ready...
+2026-09-03 02:22:01,815 - __main__ - WARNING - Attempt 34: Please wait for vllm server to become ready...
+2026-09-03 02:22:02,197 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:02 [parallel_state.py:1208] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.17.0.4:35379 backend=nccl
+2026-09-03 02:22:02,215 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:22:02,221 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:22:02,222 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:22:02,223 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:22:02,224 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:22:02,225 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:22:02,225 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:02 [parallel_state.py:1394] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+2026-09-03 02:22:02,839 - __main__ - WARNING - Attempt 35: Please wait for vllm server to become ready...
+2026-09-03 02:22:03,209 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:22:03,898 - __main__ - WARNING - Attempt 36: Please wait for vllm server to become ready...
+2026-09-03 02:22:04,956 - __main__ - WARNING - Attempt 37: Please wait for vllm server to become ready...
+2026-09-03 02:22:06,009 - __main__ - WARNING - Attempt 38: Please wait for vllm server to become ready...
+2026-09-03 02:22:07,062 - __main__ - WARNING - Attempt 39: Please wait for vllm server to become ready...
+2026-09-03 02:22:08,102 - __main__ - WARNING - Attempt 40: Please wait for vllm server to become ready...
+2026-09-03 02:22:09,137 - __main__ - WARNING - Attempt 41: Please wait for vllm server to become ready...
+2026-09-03 02:22:10,191 - __main__ - WARNING - Attempt 42: Please wait for vllm server to become ready...
+2026-09-03 02:22:11,243 - __main__ - WARNING - Attempt 43: Please wait for vllm server to become ready...
+2026-09-03 02:22:12,302 - __main__ - WARNING - Attempt 44: Please wait for vllm server to become ready...
+2026-09-03 02:22:13,355 - __main__ - WARNING - Attempt 45: Please wait for vllm server to become ready...
+2026-09-03 02:22:14,407 - __main__ - WARNING - Attempt 46: Please wait for vllm server to become ready...
+2026-09-03 02:22:15,460 - __main__ - WARNING - Attempt 47: Please wait for vllm server to become ready...
+2026-09-03 02:22:15,632 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:15 [gpu_model_runner.py:3259] Starting to load model allenai/olmOCR-2-7B-1025-FP8...
+2026-09-03 02:22:16,513 - __main__ - WARNING - Attempt 48: Please wait for vllm server to become ready...
+2026-09-03 02:22:17,571 - __main__ - WARNING - Attempt 49: Please wait for vllm server to become ready...
+2026-09-03 02:22:18,624 - __main__ - WARNING - Attempt 50: Please wait for vllm server to become ready...
+2026-09-03 02:22:19,675 - __main__ - WARNING - Attempt 51: Please wait for vllm server to become ready...
+2026-09-03 02:22:20,727 - __main__ - WARNING - Attempt 52: Please wait for vllm server to become ready...
+2026-09-03 02:22:21,786 - __main__ - WARNING - Attempt 53: Please wait for vllm server to become ready...
+2026-09-03 02:22:22,839 - __main__ - WARNING - Attempt 54: Please wait for vllm server to become ready...
+2026-09-03 02:22:23,891 - __main__ - WARNING - Attempt 55: Please wait for vllm server to become ready...
+2026-09-03 02:22:24,943 - __main__ - WARNING - Attempt 56: Please wait for vllm server to become ready...
+2026-09-03 02:22:25,996 - __main__ - WARNING - Attempt 57: Please wait for vllm server to become ready...
+2026-09-03 02:22:27,053 - __main__ - WARNING - Attempt 58: Please wait for vllm server to become ready...
+2026-09-03 02:22:28,105 - __main__ - WARNING - Attempt 59: Please wait for vllm server to become ready...
+2026-09-03 02:22:29,157 - __main__ - WARNING - Attempt 60: Please wait for vllm server to become ready...
+2026-09-03 02:22:30,209 - __main__ - WARNING - Attempt 61: Please wait for vllm server to become ready...
+2026-09-03 02:22:31,266 - __main__ - WARNING - Attempt 62: Please wait for vllm server to become ready...
+2026-09-03 02:22:32,318 - __main__ - WARNING - Attempt 63: Please wait for vllm server to become ready...
+2026-09-03 02:22:33,372 - __main__ - WARNING - Attempt 64: Please wait for vllm server to become ready...
+2026-09-03 02:22:34,425 - __main__ - WARNING - Attempt 65: Please wait for vllm server to become ready...
+2026-09-03 02:22:34,644 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:34 [cuda.py:418] Valid backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']
+2026-09-03 02:22:34,644 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:34 [cuda.py:427] Using FLASH_ATTN backend.
+2026-09-03 02:22:35,482 - __main__ - WARNING - Attempt 66: Please wait for vllm server to become ready...
+2026-09-03 02:22:36,534 - __main__ - WARNING - Attempt 67: Please wait for vllm server to become ready...
+2026-09-03 02:22:36,863 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/3 [00:00<?, ?it/s]
+2026-09-03 02:22:37,027 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m Loading safetensors checkpoint shards:  33% Completed | 1/3 [00:00<00:00,  6.11it/s]
+2026-09-03 02:22:37,586 - __main__ - WARNING - Attempt 68: Please wait for vllm server to become ready...
+2026-09-03 02:22:37,642 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m Loading safetensors checkpoint shards:  67% Completed | 2/3 [00:00<00:00,  2.33it/s]
+2026-09-03 02:22:38,639 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.49it/s]
+2026-09-03 02:22:38,639 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.73it/s]
+2026-09-03 02:22:38,639 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m
+2026-09-03 02:22:38,641 - __main__ - WARNING - Attempt 69: Please wait for vllm server to become ready...
+2026-09-03 02:22:38,850 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:38 [default_loader.py:314] Loading weights took 1.99 seconds
+2026-09-03 02:22:39,398 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:39 [gpu_model_runner.py:3338] Model loading took 9.5222 GiB memory and 22.832555 seconds
+2026-09-03 02:22:39,691 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:39 [gpu_model_runner.py:4088] Encoder cache will be initialized with a budget of 16384 tokens, and profiled with 1 image items of the maximum feature size.
+2026-09-03 02:22:39,692 - __main__ - WARNING - Attempt 70: Please wait for vllm server to become ready...
+2026-09-03 02:22:40,749 - __main__ - WARNING - Attempt 71: Please wait for vllm server to become ready...
+2026-09-03 02:22:41,784 - __main__ - WARNING - Attempt 72: Please wait for vllm server to become ready...
+2026-09-03 02:22:42,836 - __main__ - WARNING - Attempt 73: Please wait for vllm server to become ready...
+2026-09-03 02:22:43,888 - __main__ - WARNING - Attempt 74: Please wait for vllm server to become ready...
+2026-09-03 02:22:44,944 - __main__ - WARNING - Attempt 75: Please wait for vllm server to become ready...
+2026-09-03 02:22:45,999 - __main__ - WARNING - Attempt 76: Please wait for vllm server to become ready...
+2026-09-03 02:22:47,050 - __main__ - WARNING - Attempt 77: Please wait for vllm server to become ready...
+2026-09-03 02:22:48,103 - __main__ - WARNING - Attempt 78: Please wait for vllm server to become ready...
+2026-09-03 02:22:49,155 - __main__ - WARNING - Attempt 79: Please wait for vllm server to become ready...
+2026-09-03 02:22:50,213 - __main__ - WARNING - Attempt 80: Please wait for vllm server to become ready...
+2026-09-03 02:22:51,265 - __main__ - WARNING - Attempt 81: Please wait for vllm server to become ready...
+2026-09-03 02:22:52,317 - __main__ - WARNING - Attempt 82: Please wait for vllm server to become ready...
+2026-09-03 02:22:53,369 - __main__ - WARNING - Attempt 83: Please wait for vllm server to become ready...
+2026-09-03 02:22:54,424 - __main__ - WARNING - Attempt 84: Please wait for vllm server to become ready...
+2026-09-03 02:22:54,605 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:54 [backends.py:631] Using cache directory: /root/.cache/vllm/torch_compile_cache/7c54eba28a/rank_0_0/backbone for vLLM's torch.compile
+2026-09-03 02:22:54,605 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:54 [backends.py:647] Dynamo bytecode transform time: 10.33 s
+2026-09-03 02:22:55,478 - __main__ - WARNING - Attempt 85: Please wait for vllm server to become ready...
+2026-09-03 02:22:56,531 - __main__ - WARNING - Attempt 86: Please wait for vllm server to become ready...
+2026-09-03 02:22:57,268 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m [rank0]:W0903 02:22:57.267000 4061 torch/_inductor/codegen/triton_combo_kernel.py:97] [0/0] ComboKernels: 1 long reduction nodes are separated
+2026-09-03 02:22:57,583 - __main__ - WARNING - Attempt 87: Please wait for vllm server to become ready...
+2026-09-03 02:22:58,029 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m [rank0]:W0903 02:22:58.028000 4061 torch/_inductor/codegen/triton_combo_kernel.py:97] [0/0] ComboKernels: 1 long reduction nodes are separated
+2026-09-03 02:22:58,641 - __main__ - WARNING - Attempt 88: Please wait for vllm server to become ready...
+2026-09-03 02:22:59,150 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:22:59 [backends.py:251] Cache the graph for dynamic shape for later use
+2026-09-03 02:22:59,693 - __main__ - WARNING - Attempt 89: Please wait for vllm server to become ready...
+2026-09-03 02:23:00,745 - __main__ - WARNING - Attempt 90: Please wait for vllm server to become ready...
+2026-09-03 02:23:01,485 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m [rank0]:W0903 02:23:01.483000 4061 torch/_inductor/codegen/triton_combo_kernel.py:97] [0/0] ComboKernels: 1 long reduction nodes are separated
+2026-09-03 02:23:01,719 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m [rank0]:W0903 02:23:01.718000 4061 torch/_inductor/codegen/triton_combo_kernel.py:97] [0/0] ComboKernels: 1 long reduction nodes are separated
+2026-09-03 02:23:01,797 - __main__ - WARNING - Attempt 91: Please wait for vllm server to become ready...
+2026-09-03 02:23:02,849 - __main__ - WARNING - Attempt 92: Please wait for vllm server to become ready...
+2026-09-03 02:23:03,905 - __main__ - WARNING - Attempt 93: Please wait for vllm server to become ready...
+2026-09-03 02:23:04,957 - __main__ - WARNING - Attempt 94: Please wait for vllm server to become ready...
+2026-09-03 02:23:06,009 - __main__ - WARNING - Attempt 95: Please wait for vllm server to become ready...
+2026-09-03 02:23:07,061 - __main__ - WARNING - Attempt 96: Please wait for vllm server to become ready...
+2026-09-03 02:23:08,321 - __main__ - WARNING - Attempt 97: Please wait for vllm server to become ready...
+2026-09-03 02:23:09,347 - __main__ - WARNING - Attempt 98: Please wait for vllm server to become ready...
+2026-09-03 02:23:10,371 - __main__ - WARNING - Attempt 99: Please wait for vllm server to become ready...
+2026-09-03 02:23:11,410 - __main__ - WARNING - Attempt 100: Please wait for vllm server to become ready...
+2026-09-03 02:23:12,445 - __main__ - WARNING - Attempt 101: Please wait for vllm server to become ready...
+2026-09-03 02:23:13,497 - __main__ - WARNING - Attempt 102: Please wait for vllm server to become ready...
+2026-09-03 02:23:14,545 - __main__ - WARNING - Attempt 103: Please wait for vllm server to become ready...
+2026-09-03 02:23:15,602 - __main__ - WARNING - Attempt 104: Please wait for vllm server to become ready...
+2026-09-03 02:23:16,654 - __main__ - WARNING - Attempt 105: Please wait for vllm server to become ready...
+2026-09-03 02:23:17,706 - __main__ - WARNING - Attempt 106: Please wait for vllm server to become ready...
+2026-09-03 02:23:18,759 - __main__ - WARNING - Attempt 107: Please wait for vllm server to become ready...
+2026-09-03 02:23:19,813 - __main__ - WARNING - Attempt 108: Please wait for vllm server to become ready...
+2026-09-03 02:23:20,875 - __main__ - WARNING - Attempt 109: Please wait for vllm server to become ready...
+2026-09-03 02:23:21,928 - __main__ - WARNING - Attempt 110: Please wait for vllm server to become ready...
+2026-09-03 02:23:22,981 - __main__ - WARNING - Attempt 111: Please wait for vllm server to become ready...
+2026-09-03 02:23:24,034 - __main__ - WARNING - Attempt 112: Please wait for vllm server to become ready...
+2026-09-03 02:23:25,090 - __main__ - WARNING - Attempt 113: Please wait for vllm server to become ready...
+2026-09-03 02:23:26,142 - __main__ - WARNING - Attempt 114: Please wait for vllm server to become ready...
+2026-09-03 02:23:27,195 - __main__ - WARNING - Attempt 115: Please wait for vllm server to become ready...
+2026-09-03 02:23:28,248 - __main__ - WARNING - Attempt 116: Please wait for vllm server to become ready...
+2026-09-03 02:23:29,306 - __main__ - WARNING - Attempt 117: Please wait for vllm server to become ready...
+2026-09-03 02:23:30,359 - __main__ - WARNING - Attempt 118: Please wait for vllm server to become ready...
+2026-09-03 02:23:31,412 - __main__ - WARNING - Attempt 119: Please wait for vllm server to become ready...
+2026-09-03 02:23:32,464 - __main__ - WARNING - Attempt 120: Please wait for vllm server to become ready...
+2026-09-03 02:23:33,517 - __main__ - WARNING - Attempt 121: Please wait for vllm server to become ready...
+2026-09-03 02:23:33,540 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:23:33 [backends.py:282] Compiling a graph for dynamic shape takes 38.26 s
+2026-09-03 02:23:34,576 - __main__ - WARNING - Attempt 122: Please wait for vllm server to become ready...
+2026-09-03 02:23:35,628 - __main__ - WARNING - Attempt 123: Please wait for vllm server to become ready...
+2026-09-03 02:23:35,715 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:23:35 [monitor.py:34] torch.compile takes 48.59 s in total
+2026-09-03 02:23:36,680 - __main__ - WARNING - Attempt 124: Please wait for vllm server to become ready...
+2026-09-03 02:23:37,000 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:23:37 [gpu_worker.py:359] Available KV cache memory: 30.32 GiB
+2026-09-03 02:23:37,413 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:23:37 [kv_cache_utils.py:1229] GPU KV cache size: 567,776 tokens
+2026-09-03 02:23:37,414 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:23:37 [kv_cache_utils.py:1234] Maximum concurrency for 16,384 tokens per request: 34.65x
+2026-09-03 02:23:37,733 - __main__ - WARNING - Attempt 125: Please wait for vllm server to become ready...
+2026-09-03 02:23:38,789 - __main__ - WARNING - Attempt 126: Please wait for vllm server to become ready...
+2026-09-03 02:23:39,704 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   4%|▍         | 2/51 [00:00<00:02, 19.26it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  10%|▉         | 5/51 [00:00<00:02, 19.95it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  16%|█▌        | 8/51 [00:00<00:02, 20.42it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  22%|██▏       | 11/51 [00:00<00:01, 21.34it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  27%|██▋       | 14/51 [00:00<00:01, 21.83it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  33%|███▎      | 17/51 [00:00<00:01, 22.74it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  39%|███▉      | 20/51 [00:00<00:01, 24.39it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  45%|████▌     | 23/51 [00:00<00:01, 25.59it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  51%|█████     | 26/51 [00:01<00:00, 26.71it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  57%|█████▋    | 29/51 [00:01<00:00, 27.53it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  63%|██████▎   | 32/51 [00:01<00:00, 28.01it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  71%|███████   | 36/51 [00:01<00:00, 29.55it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  78%|███████▊  | 40/51 [00:01<00:00, 30.61it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  86%|████████▋ | 44/51 [00:01<00:00, 31.78it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  94%|█████████▍| 48/51 [00:01<00:00, 32.97it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 51/51 [00:01<00:00, 27.32it/s]
+2026-09-03 02:23:39,843 - __main__ - WARNING - Attempt 127: Please wait for vllm server to become ready...
+2026-09-03 02:23:40,782 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m Capturing CUDA graphs (decode, FULL):   0%|          | 0/35 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL):   9%|▊         | 3/35 [00:00<00:01, 27.21it/s]Capturing CUDA graphs (decode, FULL):  17%|█▋        | 6/35 [00:00<00:01, 28.67it/s]Capturing CUDA graphs (decode, FULL):  26%|██▌       | 9/35 [00:00<00:00, 29.20it/s]Capturing CUDA graphs (decode, FULL):  37%|███▋      | 13/35 [00:00<00:00, 29.81it/s]Capturing CUDA graphs (decode, FULL):  49%|████▊     | 17/35 [00:00<00:00, 30.46it/s]Capturing CUDA graphs (decode, FULL):  60%|██████    | 21/35 [00:00<00:00, 31.61it/s]Capturing CUDA graphs (decode, FULL):  71%|███████▏  | 25/35 [00:00<00:00, 32.68it/s]Capturing CUDA graphs (decode, FULL):  83%|████████▎ | 29/35 [00:00<00:00, 33.49it/s]Capturing CUDA graphs (decode, FULL):  94%|█████████▍| 33/35 [00:01<00:00, 34.38it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 35/35 [00:01<00:00, 32.48it/s]
+2026-09-03 02:23:40,895 - __main__ - WARNING - Attempt 128: Please wait for vllm server to become ready...
+2026-09-03 02:23:41,211 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:23:41 [gpu_model_runner.py:4244] Graph capturing finished in 4 secs, took 0.53 GiB
+2026-09-03 02:23:41,216 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4061)[0;0m INFO 09-03 02:23:41 [core.py:250] init engine (profile, create kv cache, warmup model) took 61.82 seconds
+2026-09-03 02:23:41,948 - __main__ - WARNING - Attempt 129: Please wait for vllm server to become ready...
+2026-09-03 02:23:43,000 - __main__ - WARNING - Attempt 130: Please wait for vllm server to become ready...
+2026-09-03 02:23:43,884 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:43 [api_server.py:1725] Supported tasks: ['generate']
+2026-09-03 02:23:44,056 - __main__ - WARNING - Attempt 131: Please wait for vllm server to become ready...
+2026-09-03 02:23:44,467 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m WARNING 09-03 02:23:44 [model.py:1568] Default sampling parameters have been overridden by the model's Hugging Face generation config recommended from the model creator. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+2026-09-03 02:23:44,468 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:44 [serving_responses.py:154] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:23:44,894 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:44 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:23:45,108 - __main__ - WARNING - Attempt 132: Please wait for vllm server to become ready...
+2026-09-03 02:23:45,336 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:45 [serving_completion.py:73] Using default completion sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:23:45,789 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:45 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:23:45,789 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:45 [api_server.py:2052] Starting vLLM API server 0 on http://0.0.0.0:30024
+2026-09-03 02:23:45,789 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:45 [launcher.py:38] Available routes are:
+2026-09-03 02:23:45,789 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:45 [launcher.py:46] Route: /openapi.json, Methods: GET, HEAD
+2026-09-03 02:23:45,790 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:45 [launcher.py:46] Route: /docs, Methods: GET, HEAD
+2026-09-03 02:23:45,790 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:45 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: GET, HEAD
+2026-09-03 02:23:45,790 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:45 [launcher.py:46] Route: /redoc, Methods: GET, HEAD
+2026-09-03 02:23:45,790 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:45 [launcher.py:46] Route: /metrics, Methods: GET
+INFO:httpx:HTTP Request: GET http://localhost:30024/v1/models "HTTP/1.1 200 OK"
+2026-09-03 02:23:46,191 - __main__ - INFO - vllm server is ready.
+2026-09-03 02:23:46,192 - __main__ - INFO - Queue remaining: 1
+2026-09-03 02:23:46,192 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:23:46,192 - __main__ - INFO - 
+Worker ID
+---------
+2026-09-03 02:23:46,192 - __main__ - INFO - Worker 1 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 2 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 3 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 4 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 5 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 6 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 7 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 8 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 9 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 10 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 11 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 12 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 13 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 14 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 15 exiting due to empty queue
+2026-09-03 02:23:46,193 - __main__ - INFO - Worker 16 exiting due to empty queue
+2026-09-03 02:23:46,194 - __main__ - INFO - Worker 17 exiting due to empty queue
+2026-09-03 02:23:46,194 - __main__ - INFO - Worker 18 exiting due to empty queue
+2026-09-03 02:23:46,194 - __main__ - INFO - Worker 19 exiting due to empty queue
+2026-09-03 02:23:46,195 - __main__ - INFO - Worker 0 processing work item c9ff0dcb0b3b20dff1a6ce666704178c99bc6597
+2026-09-03 02:23:46,199 - __main__ - INFO - Created all tasks for c9ff0dcb0b3b20dff1a6ce666704178c99bc6597
+2026-09-03 02:23:48,575 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:23:54,034 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:23:54 [chat_utils.py:557] Detected the chat template content format to be 'openai'. You can set `--chat-template-content-format` to override this.
+2026-09-03 02:23:56,197 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:23:56,197 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:23:56,197 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 20     
+2026-09-03 02:24:06,207 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:24:06,207 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:24:06,208 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 20     
+2026-09-03 02:24:12,519 - __main__ - INFO - No document text for /root/gpu/pdfs/headers_footers//b4c3c4ac3d6f7b52a993cec7ca8b3ad43cecabad_page_3.pdf
+2026-09-03 02:24:16,209 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:24:16,209 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.04                      0.05
+finished_on_attempt_0                      0.04                      0.05
+server_input_tokens                      69.08                     80.43
+server_output_tokens                      3.21                      3.74
+2026-09-03 02:24:16,209 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 14       | 20     
+2026-09-03 02:24:18,176 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:24:18 [loggers.py:236] Engine 000: Avg prompt throughput: 3401.5 tokens/s, Avg generation throughput: 393.6 tokens/s, Running: 6 reqs, Waiting: 0 reqs, GPU KV cache usage: 2.1%, Prefix cache hit rate: 6.3%, MM cache hit rate: 0.0%
+2026-09-03 02:24:18,176 - __main__ - INFO - New peak running requests: 6
+2026-09-03 02:24:18,176 - __main__ - INFO - vllm running req: 6 queue req: 0
+2026-09-03 02:24:26,211 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:24:26,211 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.04                      0.05
+finished_on_attempt_0                      0.04                      0.05
+server_input_tokens                      76.46                     91.57
+server_output_tokens                      8.28                      9.92
+2026-09-03 02:24:26,211 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 16       | 20     
+2026-09-03 02:24:28,176 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:24:28 [loggers.py:236] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 399.0 tokens/s, Running: 3 reqs, Waiting: 0 reqs, GPU KV cache usage: 1.5%, Prefix cache hit rate: 6.3%, MM cache hit rate: 0.0%
+2026-09-03 02:24:28,176 - __main__ - INFO - vllm running req: 3 queue req: 0
+2026-09-03 02:24:36,213 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:24:36,213 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.05                      0.06
+finished_on_attempt_0                      0.05                      0.06
+server_input_tokens                      83.19                    102.41
+server_output_tokens                     16.21                     19.96
+2026-09-03 02:24:36,213 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 18       | 20     
+2026-09-03 02:24:38,176 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:24:38 [loggers.py:236] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 210.4 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.7%, Prefix cache hit rate: 6.3%, MM cache hit rate: 0.0%
+2026-09-03 02:24:38,177 - __main__ - INFO - vllm running req: 1 queue req: 0
+2026-09-03 02:24:46,223 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:24:46,223 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.05                      0.06
+finished_on_attempt_0                      0.05                      0.06
+server_input_tokens                      85.34                    107.90
+server_output_tokens                     20.91                     26.44
+2026-09-03 02:24:46,223 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 19       | 20     
+2026-09-03 02:24:48,178 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:24:48 [loggers.py:236] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 84.6 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.8%, Prefix cache hit rate: 6.3%, MM cache hit rate: 0.0%
+2026-09-03 02:24:48,178 - __main__ - INFO - vllm running req: 1 queue req: 0
+2026-09-03 02:24:54,785 - __main__ - INFO - Finished TaskGroup for worker on c9ff0dcb0b3b20dff1a6ce666704178c99bc6597
+2026-09-03 02:24:54,786 - __main__ - INFO - Got 19 docs for c9ff0dcb0b3b20dff1a6ce666704178c99bc6597
+2026-09-03 02:24:54,788 - __main__ - INFO - Writing 19 markdown files for c9ff0dcb0b3b20dff1a6ce666704178c99bc6597
+2026-09-03 02:24:54,794 - __main__ - INFO - Worker 0 exiting due to empty queue
+2026-09-03 02:24:54,794 - __main__ - INFO - Got cancellation request for VLLM server
+2026-09-03 02:24:54,853 - vllm - INFO - [1;36m(APIServer pid=4052)[0;0m INFO 09-03 02:24:54 [launcher.py:110] Shutting down FastAPI HTTP server.
+2026-09-03 02:24:54,993 - vllm - INFO - [rank0]:[W903 02:24:54.761412745 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+2026-09-03 02:24:56,420 - __main__ - INFO - ================================================================================
+2026-09-03 02:24:56,420 - __main__ - INFO - FINAL METRICS SUMMARY
+2026-09-03 02:24:56,420 - __main__ - INFO - ================================================================================
+2026-09-03 02:24:56,420 - __main__ - INFO - Total elapsed time: 389.51 seconds
+2026-09-03 02:24:56,420 - __main__ - INFO - Total Server Input tokens: 34,018
+2026-09-03 02:24:56,420 - __main__ - INFO - Total Server Output tokens: 11,433
+2026-09-03 02:24:56,420 - __main__ - INFO - Finished input tokens: 32,232
+2026-09-03 02:24:56,420 - __main__ - INFO - Finished output tokens: 11,402
+2026-09-03 02:24:56,420 - __main__ - INFO - Completed pages: 20
+2026-09-03 02:24:56,420 - __main__ - INFO - Failed pages: 0
+2026-09-03 02:24:56,420 - __main__ - INFO - Page Failure rate: 0.00%
+2026-09-03 02:24:56,420 - __main__ - INFO - 
+2026-09-03 02:24:56,420 - __main__ - INFO - Pages finished by attempt number:
+2026-09-03 02:24:56,420 - __main__ - INFO -   Attempt 0: 20 pages (100.0%) - Cumulative: 20 (100.0%)
+2026-09-03 02:24:56,420 - __main__ - INFO - Server Input tokens/sec rate: 87.34
+2026-09-03 02:24:56,420 - __main__ - INFO - Server Output tokens/sec rate: 29.35
+2026-09-03 02:24:56,421 - __main__ - INFO - Finished Input tokens/sec rate: 82.75
+2026-09-03 02:24:56,421 - __main__ - INFO - Finished Output tokens/sec rate: 29.27
+2026-09-03 02:24:56,421 - __main__ - INFO - ================================================================================
+2026-09-03 02:24:56,421 - __main__ - INFO - Work done
+2026-09-03 02:24:56,425 - __main__ - INFO - VLLM Process already terminated
+-- multi_column (6 pdfs)
+2026-09-03 02:25:01,857 - __main__ - INFO - If you run out of GPU memory during start-up or get 'KV cache is larger than available memory' errors, retry with lower values, e.g. --gpu_memory_utilization 0.80  --max_model_len 16384
+INFO:olmocr.check:pdftoppm is installed and working.
+2026-09-03 02:25:01,873 - __main__ - INFO - Got --pdfs argument, going to add to the work queue
+2026-09-03 02:25:01,873 - __main__ - INFO - Loading file at /root/gpu/pdfs/multi_column//00d8a44d3066bbc4bd8df149d0dafb96f423_page_3_pg1.pdf as PDF document
+2026-09-03 02:25:01,873 - __main__ - INFO - Loading file at /root/gpu/pdfs/multi_column//02a3e23da54b82c414d272051b0b5d8f44d8_page_12_pg1.pdf as PDF document
+2026-09-03 02:25:01,873 - __main__ - INFO - Loading file at /root/gpu/pdfs/multi_column//02a3e23da54b82c414d272051b0b5d8f44d8_page_14_pg1.pdf as PDF document
+2026-09-03 02:25:01,874 - __main__ - INFO - Loading file at /root/gpu/pdfs/multi_column//02a3e23da54b82c414d272051b0b5d8f44d8_page_16_pg1.pdf as PDF document
+2026-09-03 02:25:01,874 - __main__ - INFO - Loading file at /root/gpu/pdfs/multi_column//02a3e23da54b82c414d272051b0b5d8f44d8_page_17_pg1.pdf as PDF document
+2026-09-03 02:25:01,874 - __main__ - INFO - Loading file at /root/gpu/pdfs/multi_column//02a3e23da54b82c414d272051b0b5d8f44d8_page_3_pg1.pdf as PDF document
+2026-09-03 02:25:01,874 - __main__ - INFO - Found 6 regular pdf paths and 0 tarballs to add
+Sampling PDFs to calculate optimal length:   0%|          | 0/6 [00:00<?, ?it/s]Sampling PDFs to calculate optimal length: 100%|██████████| 6/6 [00:00<00:00, 929.86it/s]
+2026-09-03 02:25:01,882 - __main__ - INFO - Calculated items_per_group: 500 based on average pages per PDF: 1.00
+2026-09-03 02:25:03,735 - __main__ - INFO - Starting pipeline with PID 4581
+2026-09-03 02:25:03,735 - __main__ - INFO - Downloading model with hugging face 'allenai/olmOCR-2-7B-1025-FP8'
+Fetching 20 files:   0%|          | 0/20 [00:00<?, ?it/s]Fetching 20 files: 100%|██████████| 20/20 [00:00<00:00, 2002.77it/s]
+2026-09-03 02:25:05,148 - __main__ - INFO - Using internal server at http://localhost:30024/v1
+INFO:olmocr.work_queue:Initialized queue with 1 work items
+2026-09-03 02:25:05,246 - __main__ - WARNING - Attempt 1: Please wait for vllm server to become ready...
+2026-09-03 02:25:06,273 - __main__ - WARNING - Attempt 2: Please wait for vllm server to become ready...
+2026-09-03 02:25:07,310 - __main__ - WARNING - Attempt 3: Please wait for vllm server to become ready...
+2026-09-03 02:25:08,347 - __main__ - WARNING - Attempt 4: Please wait for vllm server to become ready...
+2026-09-03 02:25:09,376 - __main__ - WARNING - Attempt 5: Please wait for vllm server to become ready...
+2026-09-03 02:25:10,410 - __main__ - WARNING - Attempt 6: Please wait for vllm server to become ready...
+2026-09-03 02:25:11,467 - __main__ - WARNING - Attempt 7: Please wait for vllm server to become ready...
+2026-09-03 02:25:12,522 - __main__ - WARNING - Attempt 8: Please wait for vllm server to become ready...
+2026-09-03 02:25:12,744 - vllm - INFO - INFO 09-03 02:25:12 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:25:12,758 - vllm - INFO - WARNING 09-03 02:25:12 [argparse_utils.py:79] argument '--disable-log-requests' is deprecated and replaced with '--enable-log-requests'. This will be removed in v0.12.0.
+2026-09-03 02:25:12,760 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:25:12 [api_server.py:1977] vLLM API server version 0.11.2
+2026-09-03 02:25:12,764 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:25:12 [utils.py:253] non-default args: {'model_tag': 'allenai/olmOCR-2-7B-1025-FP8', 'port': 30024, 'uvicorn_log_level': 'warning', 'model': 'allenai/olmOCR-2-7B-1025-FP8', 'max_model_len': 16384, 'served_model_name': ['olmocr'], 'limit_mm_per_prompt': {'video': 0}}
+2026-09-03 02:25:13,580 - __main__ - WARNING - Attempt 9: Please wait for vllm server to become ready...
+2026-09-03 02:25:14,634 - __main__ - WARNING - Attempt 10: Please wait for vllm server to become ready...
+2026-09-03 02:25:15,689 - __main__ - WARNING - Attempt 11: Please wait for vllm server to become ready...
+2026-09-03 02:25:16,635 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:25:16 [model.py:631] Resolved architecture: Qwen2_5_VLForConditionalGeneration
+2026-09-03 02:25:16,636 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:25:16 [model.py:1745] Using max model len 16384
+2026-09-03 02:25:16,741 - __main__ - WARNING - Attempt 12: Please wait for vllm server to become ready...
+2026-09-03 02:25:17,109 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:25:17 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:25:17,794 - __main__ - WARNING - Attempt 13: Please wait for vllm server to become ready...
+2026-09-03 02:25:18,852 - __main__ - WARNING - Attempt 14: Please wait for vllm server to become ready...
+2026-09-03 02:25:19,904 - __main__ - WARNING - Attempt 15: Please wait for vllm server to become ready...
+2026-09-03 02:25:20,956 - __main__ - WARNING - Attempt 16: Please wait for vllm server to become ready...
+2026-09-03 02:25:22,009 - __main__ - WARNING - Attempt 17: Please wait for vllm server to become ready...
+2026-09-03 02:25:23,037 - __main__ - WARNING - Attempt 18: Please wait for vllm server to become ready...
+2026-09-03 02:25:24,089 - __main__ - WARNING - Attempt 19: Please wait for vllm server to become ready...
+2026-09-03 02:25:25,141 - __main__ - WARNING - Attempt 20: Please wait for vllm server to become ready...
+2026-09-03 02:25:26,192 - __main__ - WARNING - Attempt 21: Please wait for vllm server to become ready...
+2026-09-03 02:25:27,250 - __main__ - WARNING - Attempt 22: Please wait for vllm server to become ready...
+2026-09-03 02:25:28,302 - __main__ - WARNING - Attempt 23: Please wait for vllm server to become ready...
+2026-09-03 02:25:29,355 - __main__ - WARNING - Attempt 24: Please wait for vllm server to become ready...
+2026-09-03 02:25:29,729 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:25:29 [core.py:93] Initializing a V1 LLM engine (v0.11.2) with config: model='allenai/olmOCR-2-7B-1025-FP8', speculative_config=None, tokenizer='allenai/olmOCR-2-7B-1025-FP8', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=16384, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=compressed-tensors, enforce_eager=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=0, served_model_name=olmocr, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'splitting_ops': ['vllm::unified_attention', 'vllm::unified_attention_with_output', 'vllm::unified_mla_attention', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::gdn_attention_core', 'vllm::kda_attention', 'vllm::sparse_attn_indexer'], 'compile_mm_encoder': False, 'use_inductor': None, 'compile_sizes': [], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {}, 'max_cudagraph_capture_size': 512, 'local_cache_dir': None}
+2026-09-03 02:25:30,401 - __main__ - WARNING - Attempt 25: Please wait for vllm server to become ready...
+2026-09-03 02:25:31,454 - __main__ - WARNING - Attempt 26: Please wait for vllm server to become ready...
+2026-09-03 02:25:32,518 - __main__ - WARNING - Attempt 27: Please wait for vllm server to become ready...
+2026-09-03 02:25:33,572 - __main__ - WARNING - Attempt 28: Please wait for vllm server to become ready...
+2026-09-03 02:25:33,653 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:25:33 [parallel_state.py:1208] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.17.0.4:34947 backend=nccl
+2026-09-03 02:25:33,675 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:25:33,682 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:25:33,683 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:25:33,684 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:25:33,685 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:25:33,686 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:25:33,686 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:25:33 [parallel_state.py:1394] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+2026-09-03 02:25:34,598 - __main__ - WARNING - Attempt 29: Please wait for vllm server to become ready...
+2026-09-03 02:25:34,771 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:25:35,653 - __main__ - WARNING - Attempt 30: Please wait for vllm server to become ready...
+2026-09-03 02:25:36,712 - __main__ - WARNING - Attempt 31: Please wait for vllm server to become ready...
+2026-09-03 02:25:37,764 - __main__ - WARNING - Attempt 32: Please wait for vllm server to become ready...
+2026-09-03 02:25:38,817 - __main__ - WARNING - Attempt 33: Please wait for vllm server to become ready...
+2026-09-03 02:25:39,869 - __main__ - WARNING - Attempt 34: Please wait for vllm server to become ready...
+2026-09-03 02:25:40,922 - __main__ - WARNING - Attempt 35: Please wait for vllm server to become ready...
+2026-09-03 02:25:41,980 - __main__ - WARNING - Attempt 36: Please wait for vllm server to become ready...
+2026-09-03 02:25:43,033 - __main__ - WARNING - Attempt 37: Please wait for vllm server to become ready...
+2026-09-03 02:25:44,085 - __main__ - WARNING - Attempt 38: Please wait for vllm server to become ready...
+2026-09-03 02:25:45,138 - __main__ - WARNING - Attempt 39: Please wait for vllm server to become ready...
+2026-09-03 02:25:46,195 - __main__ - WARNING - Attempt 40: Please wait for vllm server to become ready...
+2026-09-03 02:25:47,247 - __main__ - WARNING - Attempt 41: Please wait for vllm server to become ready...
+2026-09-03 02:25:48,312 - __main__ - WARNING - Attempt 42: Please wait for vllm server to become ready...
+2026-09-03 02:25:49,363 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:25:49 [gpu_model_runner.py:3259] Starting to load model allenai/olmOCR-2-7B-1025-FP8...
+2026-09-03 02:25:49,365 - __main__ - WARNING - Attempt 43: Please wait for vllm server to become ready...
+2026-09-03 02:25:50,135 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:25:50 [cuda.py:418] Valid backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']
+2026-09-03 02:25:50,135 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:25:50 [cuda.py:427] Using FLASH_ATTN backend.
+2026-09-03 02:25:50,422 - __main__ - WARNING - Attempt 44: Please wait for vllm server to become ready...
+2026-09-03 02:25:51,475 - __main__ - WARNING - Attempt 45: Please wait for vllm server to become ready...
+2026-09-03 02:25:52,001 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/3 [00:00<?, ?it/s]
+2026-09-03 02:25:52,167 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m Loading safetensors checkpoint shards:  33% Completed | 1/3 [00:00<00:00,  6.02it/s]
+2026-09-03 02:25:52,527 - __main__ - WARNING - Attempt 46: Please wait for vllm server to become ready...
+2026-09-03 02:25:52,784 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m Loading safetensors checkpoint shards:  67% Completed | 2/3 [00:00<00:00,  2.32it/s]
+2026-09-03 02:25:53,578 - __main__ - WARNING - Attempt 47: Please wait for vllm server to become ready...
+2026-09-03 02:25:53,722 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.51it/s]
+2026-09-03 02:25:53,722 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.74it/s]
+2026-09-03 02:25:53,723 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m
+2026-09-03 02:25:53,974 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:25:53 [default_loader.py:314] Loading weights took 1.97 seconds
+2026-09-03 02:25:54,516 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:25:54 [gpu_model_runner.py:3338] Model loading took 9.5222 GiB memory and 4.217083 seconds
+2026-09-03 02:25:54,629 - __main__ - WARNING - Attempt 48: Please wait for vllm server to become ready...
+2026-09-03 02:25:54,777 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:25:54 [gpu_model_runner.py:4088] Encoder cache will be initialized with a budget of 16384 tokens, and profiled with 1 image items of the maximum feature size.
+2026-09-03 02:25:55,686 - __main__ - WARNING - Attempt 49: Please wait for vllm server to become ready...
+2026-09-03 02:25:56,739 - __main__ - WARNING - Attempt 50: Please wait for vllm server to become ready...
+2026-09-03 02:25:57,791 - __main__ - WARNING - Attempt 51: Please wait for vllm server to become ready...
+2026-09-03 02:25:58,843 - __main__ - WARNING - Attempt 52: Please wait for vllm server to become ready...
+2026-09-03 02:25:59,900 - __main__ - WARNING - Attempt 53: Please wait for vllm server to become ready...
+2026-09-03 02:26:00,954 - __main__ - WARNING - Attempt 54: Please wait for vllm server to become ready...
+2026-09-03 02:26:02,006 - __main__ - WARNING - Attempt 55: Please wait for vllm server to become ready...
+2026-09-03 02:26:03,058 - __main__ - WARNING - Attempt 56: Please wait for vllm server to become ready...
+2026-09-03 02:26:04,110 - __main__ - WARNING - Attempt 57: Please wait for vllm server to become ready...
+2026-09-03 02:26:05,168 - __main__ - WARNING - Attempt 58: Please wait for vllm server to become ready...
+2026-09-03 02:26:06,226 - __main__ - WARNING - Attempt 59: Please wait for vllm server to become ready...
+2026-09-03 02:26:07,279 - __main__ - WARNING - Attempt 60: Please wait for vllm server to become ready...
+2026-09-03 02:26:08,333 - __main__ - WARNING - Attempt 61: Please wait for vllm server to become ready...
+2026-09-03 02:26:09,209 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:26:09 [backends.py:631] Using cache directory: /root/.cache/vllm/torch_compile_cache/7c54eba28a/rank_0_0/backbone for vLLM's torch.compile
+2026-09-03 02:26:09,209 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:26:09 [backends.py:647] Dynamo bytecode transform time: 10.44 s
+2026-09-03 02:26:09,391 - __main__ - WARNING - Attempt 62: Please wait for vllm server to become ready...
+2026-09-03 02:26:10,443 - __main__ - WARNING - Attempt 63: Please wait for vllm server to become ready...
+2026-09-03 02:26:11,495 - __main__ - WARNING - Attempt 64: Please wait for vllm server to become ready...
+2026-09-03 02:26:12,547 - __main__ - WARNING - Attempt 65: Please wait for vllm server to become ready...
+2026-09-03 02:26:13,605 - __main__ - WARNING - Attempt 66: Please wait for vllm server to become ready...
+2026-09-03 02:26:13,850 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:26:13 [backends.py:210] Directly load the compiled graph(s) for dynamic shape from the cache, took 3.956 s
+2026-09-03 02:26:14,657 - __main__ - WARNING - Attempt 67: Please wait for vllm server to become ready...
+2026-09-03 02:26:15,711 - __main__ - WARNING - Attempt 68: Please wait for vllm server to become ready...
+2026-09-03 02:26:15,755 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:26:15 [monitor.py:34] torch.compile takes 14.40 s in total
+2026-09-03 02:26:16,765 - __main__ - WARNING - Attempt 69: Please wait for vllm server to become ready...
+2026-09-03 02:26:16,807 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:26:16 [gpu_worker.py:359] Available KV cache memory: 30.32 GiB
+2026-09-03 02:26:17,167 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:26:17 [kv_cache_utils.py:1229] GPU KV cache size: 567,776 tokens
+2026-09-03 02:26:17,167 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:26:17 [kv_cache_utils.py:1234] Maximum concurrency for 16,384 tokens per request: 34.65x
+2026-09-03 02:26:17,816 - __main__ - WARNING - Attempt 70: Please wait for vllm server to become ready...
+2026-09-03 02:26:18,874 - __main__ - WARNING - Attempt 71: Please wait for vllm server to become ready...
+2026-09-03 02:26:19,450 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   4%|▍         | 2/51 [00:00<00:02, 19.43it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   8%|▊         | 4/51 [00:00<00:02, 19.73it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  14%|█▎        | 7/51 [00:00<00:02, 20.07it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  20%|█▉        | 10/51 [00:00<00:01, 20.69it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  25%|██▌       | 13/51 [00:00<00:01, 21.36it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  31%|███▏      | 16/51 [00:00<00:01, 21.83it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  37%|███▋      | 19/51 [00:00<00:01, 23.54it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  43%|████▎     | 22/51 [00:00<00:01, 24.89it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  49%|████▉     | 25/51 [00:01<00:00, 26.00it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  55%|█████▍    | 28/51 [00:01<00:00, 26.74it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  61%|██████    | 31/51 [00:01<00:00, 27.28it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  69%|██████▊   | 35/51 [00:01<00:00, 28.37it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  76%|███████▋  | 39/51 [00:01<00:00, 29.26it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  84%|████████▍ | 43/51 [00:01<00:00, 30.19it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  92%|█████████▏| 47/51 [00:01<00:00, 31.28it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 51/51 [00:01<00:00, 30.78it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 51/51 [00:01<00:00, 26.56it/s]
+2026-09-03 02:26:19,926 - __main__ - WARNING - Attempt 72: Please wait for vllm server to become ready...
+2026-09-03 02:26:20,614 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m Capturing CUDA graphs (decode, FULL):   0%|          | 0/35 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL):   9%|▊         | 3/35 [00:00<00:01, 26.16it/s]Capturing CUDA graphs (decode, FULL):  17%|█▋        | 6/35 [00:00<00:01, 27.55it/s]Capturing CUDA graphs (decode, FULL):  26%|██▌       | 9/35 [00:00<00:00, 28.11it/s]Capturing CUDA graphs (decode, FULL):  34%|███▍      | 12/35 [00:00<00:00, 28.59it/s]Capturing CUDA graphs (decode, FULL):  43%|████▎     | 15/35 [00:00<00:00, 28.76it/s]Capturing CUDA graphs (decode, FULL):  54%|█████▍    | 19/35 [00:00<00:00, 29.59it/s]Capturing CUDA graphs (decode, FULL):  66%|██████▌   | 23/35 [00:00<00:00, 30.38it/s]Capturing CUDA graphs (decode, FULL):  77%|███████▋  | 27/35 [00:00<00:00, 30.94it/s]Capturing CUDA graphs (decode, FULL):  89%|████████▊ | 31/35 [00:01<00:00, 30.66it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 35/35 [00:01<00:00, 31.39it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 35/35 [00:01<00:00, 30.09it/s]
+2026-09-03 02:26:20,986 - __main__ - WARNING - Attempt 73: Please wait for vllm server to become ready...
+2026-09-03 02:26:21,020 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:26:21 [gpu_model_runner.py:4244] Graph capturing finished in 4 secs, took 0.53 GiB
+2026-09-03 02:26:21,026 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4664)[0;0m INFO 09-03 02:26:21 [core.py:250] init engine (profile, create kv cache, warmup model) took 26.51 seconds
+2026-09-03 02:26:22,039 - __main__ - WARNING - Attempt 74: Please wait for vllm server to become ready...
+2026-09-03 02:26:23,099 - __main__ - WARNING - Attempt 75: Please wait for vllm server to become ready...
+2026-09-03 02:26:23,756 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:23 [api_server.py:1725] Supported tasks: ['generate']
+2026-09-03 02:26:24,151 - __main__ - WARNING - Attempt 76: Please wait for vllm server to become ready...
+2026-09-03 02:26:24,242 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m WARNING 09-03 02:26:24 [model.py:1568] Default sampling parameters have been overridden by the model's Hugging Face generation config recommended from the model creator. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+2026-09-03 02:26:24,243 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:24 [serving_responses.py:154] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:26:24,722 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:24 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:26:25,201 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:25 [serving_completion.py:73] Using default completion sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:26:25,203 - __main__ - WARNING - Attempt 77: Please wait for vllm server to become ready...
+2026-09-03 02:26:25,619 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:25 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:26:25,619 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:25 [api_server.py:2052] Starting vLLM API server 0 on http://0.0.0.0:30024
+2026-09-03 02:26:25,619 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:25 [launcher.py:38] Available routes are:
+2026-09-03 02:26:25,619 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:25 [launcher.py:46] Route: /openapi.json, Methods: GET, HEAD
+2026-09-03 02:26:25,619 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:25 [launcher.py:46] Route: /docs, Methods: GET, HEAD
+2026-09-03 02:26:25,619 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:25 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: GET, HEAD
+2026-09-03 02:26:25,619 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:25 [launcher.py:46] Route: /redoc, Methods: GET, HEAD
+2026-09-03 02:26:25,619 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:25 [launcher.py:46] Route: /metrics, Methods: GET
+INFO:httpx:HTTP Request: GET http://localhost:30024/v1/models "HTTP/1.1 200 OK"
+2026-09-03 02:26:26,319 - __main__ - INFO - vllm server is ready.
+2026-09-03 02:26:26,320 - __main__ - INFO - Queue remaining: 1
+2026-09-03 02:26:26,320 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:26:26,321 - __main__ - INFO - 
+Worker ID
+---------
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 1 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 2 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 3 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 4 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 5 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 6 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 7 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 8 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 9 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 10 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 11 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 12 exiting due to empty queue
+2026-09-03 02:26:26,322 - __main__ - INFO - Worker 13 exiting due to empty queue
+2026-09-03 02:26:26,323 - __main__ - INFO - Worker 14 exiting due to empty queue
+2026-09-03 02:26:26,323 - __main__ - INFO - Worker 15 exiting due to empty queue
+2026-09-03 02:26:26,323 - __main__ - INFO - Worker 16 exiting due to empty queue
+2026-09-03 02:26:26,323 - __main__ - INFO - Worker 17 exiting due to empty queue
+2026-09-03 02:26:26,323 - __main__ - INFO - Worker 18 exiting due to empty queue
+2026-09-03 02:26:26,323 - __main__ - INFO - Worker 19 exiting due to empty queue
+2026-09-03 02:26:26,324 - __main__ - INFO - Worker 0 processing work item f59ddf0d388a15e0d3b7ff1d8cee8bbc06d5f82b
+2026-09-03 02:26:26,324 - __main__ - INFO - Created all tasks for f59ddf0d388a15e0d3b7ff1d8cee8bbc06d5f82b
+2026-09-03 02:26:29,282 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:26:34,714 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:34 [chat_utils.py:557] Detected the chat template content format to be 'openai'. You can set `--chat-template-content-format` to override this.
+2026-09-03 02:26:36,323 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:26:36,323 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:26:36,323 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 6      
+2026-09-03 02:26:46,333 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:26:46,334 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:26:46,334 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 6      
+2026-09-03 02:26:56,344 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:26:56,344 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:26:56,344 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 6      
+2026-09-03 02:26:59,765 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:26:59 [loggers.py:236] Engine 000: Avg prompt throughput: 984.2 tokens/s, Avg generation throughput: 425.7 tokens/s, Running: 6 reqs, Waiting: 0 reqs, GPU KV cache usage: 2.4%, Prefix cache hit rate: 5.7%, MM cache hit rate: 0.0%
+2026-09-03 02:26:59,765 - __main__ - INFO - New peak running requests: 6
+2026-09-03 02:26:59,765 - __main__ - INFO - vllm running req: 6 queue req: 0
+2026-09-03 02:27:06,347 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:27:06,348 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.03                      0.03
+finished_on_attempt_0                      0.03                      0.03
+server_input_tokens                      52.58                     52.58
+server_output_tokens                     35.29                     35.29
+2026-09-03 02:27:06,348 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 4        | 6      
+2026-09-03 02:27:08,006 - __main__ - INFO - Finished TaskGroup for worker on f59ddf0d388a15e0d3b7ff1d8cee8bbc06d5f82b
+2026-09-03 02:27:08,006 - __main__ - INFO - Got 6 docs for f59ddf0d388a15e0d3b7ff1d8cee8bbc06d5f82b
+2026-09-03 02:27:08,008 - __main__ - INFO - Writing 6 markdown files for f59ddf0d388a15e0d3b7ff1d8cee8bbc06d5f82b
+2026-09-03 02:27:08,012 - __main__ - INFO - Worker 0 exiting due to empty queue
+2026-09-03 02:27:08,012 - __main__ - INFO - Got cancellation request for VLLM server
+2026-09-03 02:27:08,071 - vllm - INFO - [1;36m(APIServer pid=4657)[0;0m INFO 09-03 02:27:08 [launcher.py:110] Shutting down FastAPI HTTP server.
+2026-09-03 02:27:08,186 - vllm - INFO - [rank0]:[W903 02:27:08.954346484 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+2026-09-03 02:27:09,678 - __main__ - INFO - ================================================================================
+2026-09-03 02:27:09,678 - __main__ - INFO - FINAL METRICS SUMMARY
+2026-09-03 02:27:09,678 - __main__ - INFO - ================================================================================
+2026-09-03 02:27:09,678 - __main__ - INFO - Total elapsed time: 127.82 seconds
+2026-09-03 02:27:09,678 - __main__ - INFO - Total Server Input tokens: 9,842
+2026-09-03 02:27:09,678 - __main__ - INFO - Total Server Output tokens: 7,113
+2026-09-03 02:27:09,678 - __main__ - INFO - Finished input tokens: 9,842
+2026-09-03 02:27:09,678 - __main__ - INFO - Finished output tokens: 7,113
+2026-09-03 02:27:09,679 - __main__ - INFO - Completed pages: 6
+2026-09-03 02:27:09,679 - __main__ - INFO - Failed pages: 0
+2026-09-03 02:27:09,679 - __main__ - INFO - Page Failure rate: 0.00%
+2026-09-03 02:27:09,679 - __main__ - INFO - 
+2026-09-03 02:27:09,679 - __main__ - INFO - Pages finished by attempt number:
+2026-09-03 02:27:09,679 - __main__ - INFO -   Attempt 0: 6 pages (100.0%) - Cumulative: 6 (100.0%)
+2026-09-03 02:27:09,679 - __main__ - INFO - Server Input tokens/sec rate: 77.00
+2026-09-03 02:27:09,679 - __main__ - INFO - Server Output tokens/sec rate: 55.65
+2026-09-03 02:27:09,679 - __main__ - INFO - Finished Input tokens/sec rate: 77.00
+2026-09-03 02:27:09,679 - __main__ - INFO - Finished Output tokens/sec rate: 55.65
+2026-09-03 02:27:09,679 - __main__ - INFO - ================================================================================
+2026-09-03 02:27:09,679 - __main__ - INFO - Work done
+2026-09-03 02:27:09,683 - __main__ - INFO - VLLM Process already terminated
+-- old_scans (63 pdfs)
+2026-09-03 02:27:15,231 - __main__ - INFO - If you run out of GPU memory during start-up or get 'KV cache is larger than available memory' errors, retry with lower values, e.g. --gpu_memory_utilization 0.80  --max_model_len 16384
+INFO:olmocr.check:pdftoppm is installed and working.
+2026-09-03 02:27:15,246 - __main__ - INFO - Got --pdfs argument, going to add to the work queue
+2026-09-03 02:27:15,246 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//1.pdf as PDF document
+2026-09-03 02:27:15,247 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//12.pdf as PDF document
+2026-09-03 02:27:15,247 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//13.pdf as PDF document
+2026-09-03 02:27:15,247 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//14.pdf as PDF document
+2026-09-03 02:27:15,247 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//19.pdf as PDF document
+2026-09-03 02:27:15,247 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//20.pdf as PDF document
+2026-09-03 02:27:15,247 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//21.pdf as PDF document
+2026-09-03 02:27:15,247 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//22.pdf as PDF document
+2026-09-03 02:27:15,247 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//26.pdf as PDF document
+2026-09-03 02:27:15,248 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//27.pdf as PDF document
+2026-09-03 02:27:15,248 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//29.pdf as PDF document
+2026-09-03 02:27:15,248 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//3.pdf as PDF document
+2026-09-03 02:27:15,248 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//30.pdf as PDF document
+2026-09-03 02:27:15,248 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//32.pdf as PDF document
+2026-09-03 02:27:15,248 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//33.pdf as PDF document
+2026-09-03 02:27:15,248 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//34.pdf as PDF document
+2026-09-03 02:27:15,249 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//35.pdf as PDF document
+2026-09-03 02:27:15,249 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//37.pdf as PDF document
+2026-09-03 02:27:15,249 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//38.pdf as PDF document
+2026-09-03 02:27:15,249 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//39.pdf as PDF document
+2026-09-03 02:27:15,249 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//4.pdf as PDF document
+2026-09-03 02:27:15,249 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//40.pdf as PDF document
+2026-09-03 02:27:15,249 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//41.pdf as PDF document
+2026-09-03 02:27:15,250 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//42.pdf as PDF document
+2026-09-03 02:27:15,250 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//43.pdf as PDF document
+2026-09-03 02:27:15,250 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//44.pdf as PDF document
+2026-09-03 02:27:15,250 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//45.pdf as PDF document
+2026-09-03 02:27:15,250 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//46.pdf as PDF document
+2026-09-03 02:27:15,250 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//47.pdf as PDF document
+2026-09-03 02:27:15,250 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//48.pdf as PDF document
+2026-09-03 02:27:15,251 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//49.pdf as PDF document
+2026-09-03 02:27:15,251 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//5.pdf as PDF document
+2026-09-03 02:27:15,251 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//50.pdf as PDF document
+2026-09-03 02:27:15,251 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//51.pdf as PDF document
+2026-09-03 02:27:15,251 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//52.pdf as PDF document
+2026-09-03 02:27:15,251 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//53.pdf as PDF document
+2026-09-03 02:27:15,251 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//54.pdf as PDF document
+2026-09-03 02:27:15,252 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//55.pdf as PDF document
+2026-09-03 02:27:15,252 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//56.pdf as PDF document
+2026-09-03 02:27:15,252 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//57.pdf as PDF document
+2026-09-03 02:27:15,252 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//7.pdf as PDF document
+2026-09-03 02:27:15,252 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//76.pdf as PDF document
+2026-09-03 02:27:15,252 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//77.pdf as PDF document
+2026-09-03 02:27:15,252 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//78.pdf as PDF document
+2026-09-03 02:27:15,253 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//79.pdf as PDF document
+2026-09-03 02:27:15,253 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//8.pdf as PDF document
+2026-09-03 02:27:15,253 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//80.pdf as PDF document
+2026-09-03 02:27:15,253 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//81.pdf as PDF document
+2026-09-03 02:27:15,253 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//82.pdf as PDF document
+2026-09-03 02:27:15,253 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//83.pdf as PDF document
+2026-09-03 02:27:15,253 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//84.pdf as PDF document
+2026-09-03 02:27:15,254 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//85.pdf as PDF document
+2026-09-03 02:27:15,254 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//86.pdf as PDF document
+2026-09-03 02:27:15,254 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//87.pdf as PDF document
+2026-09-03 02:27:15,254 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//89.pdf as PDF document
+2026-09-03 02:27:15,254 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//90.pdf as PDF document
+2026-09-03 02:27:15,254 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//91.pdf as PDF document
+2026-09-03 02:27:15,254 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//92.pdf as PDF document
+2026-09-03 02:27:15,254 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//93.pdf as PDF document
+2026-09-03 02:27:15,255 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//96.pdf as PDF document
+2026-09-03 02:27:15,255 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//97.pdf as PDF document
+2026-09-03 02:27:15,255 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//98.pdf as PDF document
+2026-09-03 02:27:15,255 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans//99.pdf as PDF document
+2026-09-03 02:27:15,255 - __main__ - INFO - Found 63 regular pdf paths and 0 tarballs to add
+Sampling PDFs to calculate optimal length:   0%|          | 0/63 [00:00<?, ?it/s]Sampling PDFs to calculate optimal length: 100%|██████████| 63/63 [00:00<00:00, 659.62it/s]
+2026-09-03 02:27:15,353 - __main__ - INFO - Calculated items_per_group: 500 based on average pages per PDF: 1.00
+2026-09-03 02:27:17,244 - __main__ - INFO - Starting pipeline with PID 4874
+2026-09-03 02:27:17,244 - __main__ - INFO - Downloading model with hugging face 'allenai/olmOCR-2-7B-1025-FP8'
+Fetching 20 files:   0%|          | 0/20 [00:00<?, ?it/s]Fetching 20 files: 100%|██████████| 20/20 [00:00<00:00, 2243.72it/s]
+2026-09-03 02:27:18,561 - __main__ - INFO - Using internal server at http://localhost:30024/v1
+INFO:olmocr.work_queue:Initialized queue with 1 work items
+2026-09-03 02:27:18,642 - __main__ - WARNING - Attempt 1: Please wait for vllm server to become ready...
+2026-09-03 02:27:19,682 - __main__ - WARNING - Attempt 2: Please wait for vllm server to become ready...
+2026-09-03 02:27:20,718 - __main__ - WARNING - Attempt 3: Please wait for vllm server to become ready...
+2026-09-03 02:27:21,755 - __main__ - WARNING - Attempt 4: Please wait for vllm server to become ready...
+2026-09-03 02:27:22,795 - __main__ - WARNING - Attempt 5: Please wait for vllm server to become ready...
+2026-09-03 02:27:23,831 - __main__ - WARNING - Attempt 6: Please wait for vllm server to become ready...
+2026-09-03 02:27:24,883 - __main__ - WARNING - Attempt 7: Please wait for vllm server to become ready...
+2026-09-03 02:27:25,934 - __main__ - WARNING - Attempt 8: Please wait for vllm server to become ready...
+2026-09-03 02:27:26,121 - vllm - INFO - INFO 09-03 02:27:26 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:27:26,135 - vllm - INFO - WARNING 09-03 02:27:26 [argparse_utils.py:79] argument '--disable-log-requests' is deprecated and replaced with '--enable-log-requests'. This will be removed in v0.12.0.
+2026-09-03 02:27:26,136 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:27:26 [api_server.py:1977] vLLM API server version 0.11.2
+2026-09-03 02:27:26,141 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:27:26 [utils.py:253] non-default args: {'model_tag': 'allenai/olmOCR-2-7B-1025-FP8', 'port': 30024, 'uvicorn_log_level': 'warning', 'model': 'allenai/olmOCR-2-7B-1025-FP8', 'max_model_len': 16384, 'served_model_name': ['olmocr'], 'limit_mm_per_prompt': {'video': 0}}
+2026-09-03 02:27:26,991 - __main__ - WARNING - Attempt 9: Please wait for vllm server to become ready...
+2026-09-03 02:27:28,044 - __main__ - WARNING - Attempt 10: Please wait for vllm server to become ready...
+2026-09-03 02:27:29,100 - __main__ - WARNING - Attempt 11: Please wait for vllm server to become ready...
+2026-09-03 02:27:30,152 - __main__ - WARNING - Attempt 12: Please wait for vllm server to become ready...
+2026-09-03 02:27:30,336 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:27:30 [model.py:631] Resolved architecture: Qwen2_5_VLForConditionalGeneration
+2026-09-03 02:27:30,336 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:27:30 [model.py:1745] Using max model len 16384
+2026-09-03 02:27:30,802 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:27:30 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:27:31,199 - __main__ - WARNING - Attempt 13: Please wait for vllm server to become ready...
+2026-09-03 02:27:32,260 - __main__ - WARNING - Attempt 14: Please wait for vllm server to become ready...
+2026-09-03 02:27:33,297 - __main__ - WARNING - Attempt 15: Please wait for vllm server to become ready...
+2026-09-03 02:27:34,349 - __main__ - WARNING - Attempt 16: Please wait for vllm server to become ready...
+2026-09-03 02:27:35,402 - __main__ - WARNING - Attempt 17: Please wait for vllm server to become ready...
+2026-09-03 02:27:36,459 - __main__ - WARNING - Attempt 18: Please wait for vllm server to become ready...
+2026-09-03 02:27:37,513 - __main__ - WARNING - Attempt 19: Please wait for vllm server to become ready...
+2026-09-03 02:27:38,565 - __main__ - WARNING - Attempt 20: Please wait for vllm server to become ready...
+2026-09-03 02:27:39,619 - __main__ - WARNING - Attempt 21: Please wait for vllm server to become ready...
+2026-09-03 02:27:40,675 - __main__ - WARNING - Attempt 22: Please wait for vllm server to become ready...
+2026-09-03 02:27:41,728 - __main__ - WARNING - Attempt 23: Please wait for vllm server to become ready...
+2026-09-03 02:27:42,565 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:27:42 [core.py:93] Initializing a V1 LLM engine (v0.11.2) with config: model='allenai/olmOCR-2-7B-1025-FP8', speculative_config=None, tokenizer='allenai/olmOCR-2-7B-1025-FP8', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=16384, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=compressed-tensors, enforce_eager=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=0, served_model_name=olmocr, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'splitting_ops': ['vllm::unified_attention', 'vllm::unified_attention_with_output', 'vllm::unified_mla_attention', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::gdn_attention_core', 'vllm::kda_attention', 'vllm::sparse_attn_indexer'], 'compile_mm_encoder': False, 'use_inductor': None, 'compile_sizes': [], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {}, 'max_cudagraph_capture_size': 512, 'local_cache_dir': None}
+2026-09-03 02:27:42,780 - __main__ - WARNING - Attempt 24: Please wait for vllm server to become ready...
+2026-09-03 02:27:43,839 - __main__ - WARNING - Attempt 25: Please wait for vllm server to become ready...
+2026-09-03 02:27:44,873 - __main__ - WARNING - Attempt 26: Please wait for vllm server to become ready...
+2026-09-03 02:27:45,930 - __main__ - WARNING - Attempt 27: Please wait for vllm server to become ready...
+2026-09-03 02:27:46,505 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:27:46 [parallel_state.py:1208] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.17.0.4:38289 backend=nccl
+2026-09-03 02:27:46,525 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:27:46,531 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:27:46,532 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:27:46,533 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:27:46,534 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:27:46,535 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:27:46,535 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:27:46 [parallel_state.py:1394] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+2026-09-03 02:27:46,983 - __main__ - WARNING - Attempt 28: Please wait for vllm server to become ready...
+2026-09-03 02:27:47,582 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:27:48,036 - __main__ - WARNING - Attempt 29: Please wait for vllm server to become ready...
+2026-09-03 02:27:49,072 - __main__ - WARNING - Attempt 30: Please wait for vllm server to become ready...
+2026-09-03 02:27:50,111 - __main__ - WARNING - Attempt 31: Please wait for vllm server to become ready...
+2026-09-03 02:27:51,145 - __main__ - WARNING - Attempt 32: Please wait for vllm server to become ready...
+2026-09-03 02:27:52,197 - __main__ - WARNING - Attempt 33: Please wait for vllm server to become ready...
+2026-09-03 02:27:53,249 - __main__ - WARNING - Attempt 34: Please wait for vllm server to become ready...
+2026-09-03 02:27:54,301 - __main__ - WARNING - Attempt 35: Please wait for vllm server to become ready...
+2026-09-03 02:27:55,358 - __main__ - WARNING - Attempt 36: Please wait for vllm server to become ready...
+2026-09-03 02:27:56,410 - __main__ - WARNING - Attempt 37: Please wait for vllm server to become ready...
+2026-09-03 02:27:57,462 - __main__ - WARNING - Attempt 38: Please wait for vllm server to become ready...
+2026-09-03 02:27:58,513 - __main__ - WARNING - Attempt 39: Please wait for vllm server to become ready...
+2026-09-03 02:27:59,569 - __main__ - WARNING - Attempt 40: Please wait for vllm server to become ready...
+2026-09-03 02:28:00,632 - __main__ - WARNING - Attempt 41: Please wait for vllm server to become ready...
+2026-09-03 02:28:01,066 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:01 [gpu_model_runner.py:3259] Starting to load model allenai/olmOCR-2-7B-1025-FP8...
+2026-09-03 02:28:01,685 - __main__ - WARNING - Attempt 42: Please wait for vllm server to become ready...
+2026-09-03 02:28:01,829 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:01 [cuda.py:418] Valid backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']
+2026-09-03 02:28:01,829 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:01 [cuda.py:427] Using FLASH_ATTN backend.
+2026-09-03 02:28:02,738 - __main__ - WARNING - Attempt 43: Please wait for vllm server to become ready...
+2026-09-03 02:28:03,438 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:03 [weight_utils.py:441] Time spent downloading weights for allenai/olmOCR-2-7B-1025-FP8: 0.848143 seconds
+2026-09-03 02:28:03,795 - __main__ - WARNING - Attempt 44: Please wait for vllm server to become ready...
+2026-09-03 02:28:03,922 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/3 [00:00<?, ?it/s]
+2026-09-03 02:28:04,085 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m Loading safetensors checkpoint shards:  33% Completed | 1/3 [00:00<00:00,  6.14it/s]
+2026-09-03 02:28:04,691 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m Loading safetensors checkpoint shards:  67% Completed | 2/3 [00:00<00:00,  2.36it/s]
+2026-09-03 02:28:04,848 - __main__ - WARNING - Attempt 45: Please wait for vllm server to become ready...
+2026-09-03 02:28:05,616 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.53it/s]
+2026-09-03 02:28:05,616 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.77it/s]
+2026-09-03 02:28:05,616 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m
+2026-09-03 02:28:05,898 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:05 [default_loader.py:314] Loading weights took 1.95 seconds
+2026-09-03 02:28:05,899 - __main__ - WARNING - Attempt 46: Please wait for vllm server to become ready...
+2026-09-03 02:28:06,438 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:06 [gpu_model_runner.py:3338] Model loading took 9.5222 GiB memory and 4.421968 seconds
+2026-09-03 02:28:06,695 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:06 [gpu_model_runner.py:4088] Encoder cache will be initialized with a budget of 16384 tokens, and profiled with 1 image items of the maximum feature size.
+2026-09-03 02:28:06,924 - __main__ - WARNING - Attempt 47: Please wait for vllm server to become ready...
+2026-09-03 02:28:07,957 - __main__ - WARNING - Attempt 48: Please wait for vllm server to become ready...
+2026-09-03 02:28:09,015 - __main__ - WARNING - Attempt 49: Please wait for vllm server to become ready...
+2026-09-03 02:28:10,066 - __main__ - WARNING - Attempt 50: Please wait for vllm server to become ready...
+2026-09-03 02:28:11,119 - __main__ - WARNING - Attempt 51: Please wait for vllm server to become ready...
+2026-09-03 02:28:12,172 - __main__ - WARNING - Attempt 52: Please wait for vllm server to become ready...
+2026-09-03 02:28:13,228 - __main__ - WARNING - Attempt 53: Please wait for vllm server to become ready...
+2026-09-03 02:28:14,262 - __main__ - WARNING - Attempt 54: Please wait for vllm server to become ready...
+2026-09-03 02:28:15,313 - __main__ - WARNING - Attempt 55: Please wait for vllm server to become ready...
+2026-09-03 02:28:16,370 - __main__ - WARNING - Attempt 56: Please wait for vllm server to become ready...
+2026-09-03 02:28:17,422 - __main__ - WARNING - Attempt 57: Please wait for vllm server to become ready...
+2026-09-03 02:28:18,479 - __main__ - WARNING - Attempt 58: Please wait for vllm server to become ready...
+2026-09-03 02:28:19,518 - __main__ - WARNING - Attempt 59: Please wait for vllm server to become ready...
+2026-09-03 02:28:20,552 - __main__ - WARNING - Attempt 60: Please wait for vllm server to become ready...
+2026-09-03 02:28:21,236 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:21 [backends.py:631] Using cache directory: /root/.cache/vllm/torch_compile_cache/7c54eba28a/rank_0_0/backbone for vLLM's torch.compile
+2026-09-03 02:28:21,237 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:21 [backends.py:647] Dynamo bytecode transform time: 10.34 s
+2026-09-03 02:28:21,604 - __main__ - WARNING - Attempt 61: Please wait for vllm server to become ready...
+2026-09-03 02:28:22,661 - __main__ - WARNING - Attempt 62: Please wait for vllm server to become ready...
+2026-09-03 02:28:23,694 - __main__ - WARNING - Attempt 63: Please wait for vllm server to become ready...
+2026-09-03 02:28:24,745 - __main__ - WARNING - Attempt 64: Please wait for vllm server to become ready...
+2026-09-03 02:28:25,798 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:25 [backends.py:210] Directly load the compiled graph(s) for dynamic shape from the cache, took 3.867 s
+2026-09-03 02:28:25,800 - __main__ - WARNING - Attempt 65: Please wait for vllm server to become ready...
+2026-09-03 02:28:26,857 - __main__ - WARNING - Attempt 66: Please wait for vllm server to become ready...
+2026-09-03 02:28:27,701 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:27 [monitor.py:34] torch.compile takes 14.21 s in total
+2026-09-03 02:28:27,909 - __main__ - WARNING - Attempt 67: Please wait for vllm server to become ready...
+2026-09-03 02:28:28,763 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:28 [gpu_worker.py:359] Available KV cache memory: 30.32 GiB
+2026-09-03 02:28:28,961 - __main__ - WARNING - Attempt 68: Please wait for vllm server to become ready...
+2026-09-03 02:28:29,122 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:29 [kv_cache_utils.py:1229] GPU KV cache size: 567,776 tokens
+2026-09-03 02:28:29,122 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:29 [kv_cache_utils.py:1234] Maximum concurrency for 16,384 tokens per request: 34.65x
+2026-09-03 02:28:30,012 - __main__ - WARNING - Attempt 69: Please wait for vllm server to become ready...
+2026-09-03 02:28:31,064 - __main__ - WARNING - Attempt 70: Please wait for vllm server to become ready...
+2026-09-03 02:28:31,332 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   6%|▌         | 3/51 [00:00<00:02, 20.52it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  12%|█▏        | 6/51 [00:00<00:02, 20.73it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  18%|█▊        | 9/51 [00:00<00:01, 21.07it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  24%|██▎       | 12/51 [00:00<00:01, 21.78it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  29%|██▉       | 15/51 [00:00<00:01, 22.32it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  35%|███▌      | 18/51 [00:00<00:01, 23.67it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  41%|████      | 21/51 [00:00<00:01, 25.20it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  47%|████▋     | 24/51 [00:01<00:01, 26.43it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  53%|█████▎    | 27/51 [00:01<00:00, 27.31it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  59%|█████▉    | 30/51 [00:01<00:00, 28.01it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  67%|██████▋   | 34/51 [00:01<00:00, 29.05it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  75%|███████▍  | 38/51 [00:01<00:00, 30.31it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  82%|████████▏ | 42/51 [00:01<00:00, 31.35it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  90%|█████████ | 46/51 [00:01<00:00, 32.50it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  98%|█████████▊| 50/51 [00:01<00:00, 33.56it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 51/51 [00:01<00:00, 27.63it/s]
+2026-09-03 02:28:32,122 - __main__ - WARNING - Attempt 71: Please wait for vllm server to become ready...
+2026-09-03 02:28:32,410 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m Capturing CUDA graphs (decode, FULL):   0%|          | 0/35 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL):   9%|▊         | 3/35 [00:00<00:01, 27.37it/s]Capturing CUDA graphs (decode, FULL):  17%|█▋        | 6/35 [00:00<00:01, 28.75it/s]Capturing CUDA graphs (decode, FULL):  26%|██▌       | 9/35 [00:00<00:00, 29.07it/s]Capturing CUDA graphs (decode, FULL):  37%|███▋      | 13/35 [00:00<00:00, 29.75it/s]Capturing CUDA graphs (decode, FULL):  49%|████▊     | 17/35 [00:00<00:00, 30.37it/s]Capturing CUDA graphs (decode, FULL):  60%|██████    | 21/35 [00:00<00:00, 31.68it/s]Capturing CUDA graphs (decode, FULL):  71%|███████▏  | 25/35 [00:00<00:00, 32.78it/s]Capturing CUDA graphs (decode, FULL):  83%|████████▎ | 29/35 [00:00<00:00, 33.34it/s]Capturing CUDA graphs (decode, FULL):  94%|█████████▍| 33/35 [00:01<00:00, 34.33it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 35/35 [00:01<00:00, 32.45it/s]
+2026-09-03 02:28:32,781 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:32 [gpu_model_runner.py:4244] Graph capturing finished in 4 secs, took 0.53 GiB
+2026-09-03 02:28:32,787 - vllm - INFO - [1;36m(EngineCore_DP0 pid=4956)[0;0m INFO 09-03 02:28:32 [core.py:250] init engine (profile, create kv cache, warmup model) took 26.35 seconds
+2026-09-03 02:28:33,173 - __main__ - WARNING - Attempt 72: Please wait for vllm server to become ready...
+2026-09-03 02:28:34,207 - __main__ - WARNING - Attempt 73: Please wait for vllm server to become ready...
+2026-09-03 02:28:35,259 - __main__ - WARNING - Attempt 74: Please wait for vllm server to become ready...
+2026-09-03 02:28:36,258 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:36 [api_server.py:1725] Supported tasks: ['generate']
+2026-09-03 02:28:36,318 - __main__ - WARNING - Attempt 75: Please wait for vllm server to become ready...
+2026-09-03 02:28:36,701 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m WARNING 09-03 02:28:36 [model.py:1568] Default sampling parameters have been overridden by the model's Hugging Face generation config recommended from the model creator. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+2026-09-03 02:28:36,701 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:36 [serving_responses.py:154] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:28:37,143 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:28:37,343 - __main__ - WARNING - Attempt 76: Please wait for vllm server to become ready...
+2026-09-03 02:28:37,534 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [serving_completion.py:73] Using default completion sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:28:37,974 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:28:37,974 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [api_server.py:2052] Starting vLLM API server 0 on http://0.0.0.0:30024
+2026-09-03 02:28:37,974 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [launcher.py:38] Available routes are:
+2026-09-03 02:28:37,974 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [launcher.py:46] Route: /openapi.json, Methods: HEAD, GET
+2026-09-03 02:28:37,974 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [launcher.py:46] Route: /docs, Methods: HEAD, GET
+2026-09-03 02:28:37,974 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+2026-09-03 02:28:37,974 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [launcher.py:46] Route: /redoc, Methods: HEAD, GET
+2026-09-03 02:28:37,975 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:37 [launcher.py:46] Route: /metrics, Methods: GET
+INFO:httpx:HTTP Request: GET http://localhost:30024/v1/models "HTTP/1.1 200 OK"
+2026-09-03 02:28:38,441 - __main__ - INFO - vllm server is ready.
+2026-09-03 02:28:38,442 - __main__ - INFO - Queue remaining: 1
+2026-09-03 02:28:38,443 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:28:38,443 - __main__ - INFO - 
+Worker ID
+---------
+2026-09-03 02:28:38,444 - __main__ - INFO - Worker 1 exiting due to empty queue
+2026-09-03 02:28:38,444 - __main__ - INFO - Worker 2 exiting due to empty queue
+2026-09-03 02:28:38,444 - __main__ - INFO - Worker 3 exiting due to empty queue
+2026-09-03 02:28:38,444 - __main__ - INFO - Worker 4 exiting due to empty queue
+2026-09-03 02:28:38,444 - __main__ - INFO - Worker 5 exiting due to empty queue
+2026-09-03 02:28:38,444 - __main__ - INFO - Worker 6 exiting due to empty queue
+2026-09-03 02:28:38,444 - __main__ - INFO - Worker 7 exiting due to empty queue
+2026-09-03 02:28:38,444 - __main__ - INFO - Worker 8 exiting due to empty queue
+2026-09-03 02:28:38,444 - __main__ - INFO - Worker 9 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 10 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 11 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 12 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 13 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 14 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 15 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 16 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 17 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 18 exiting due to empty queue
+2026-09-03 02:28:38,445 - __main__ - INFO - Worker 19 exiting due to empty queue
+2026-09-03 02:28:38,446 - __main__ - INFO - Worker 0 processing work item c052cc491e3e6b65904a0dd7486f76ad93df086e
+2026-09-03 02:28:38,451 - __main__ - INFO - Created all tasks for c052cc491e3e6b65904a0dd7486f76ad93df086e
+2026-09-03 02:28:48,444 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:28:48,445 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:28:48,445 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 63     
+2026-09-03 02:28:51,399 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:28:56,770 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:28:56 [chat_utils.py:557] Detected the chat template content format to be 'openai'. You can set `--chat-template-content-format` to override this.
+2026-09-03 02:28:58,447 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:28:58,447 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:28:58,447 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 63     
+2026-09-03 02:29:08,452 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:29:08,453 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:29:08,453 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 63     
+2026-09-03 02:29:18,463 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:29:18,463 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:29:18,463 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 63     
+2026-09-03 02:29:21,999 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:29:21 [loggers.py:236] Engine 000: Avg prompt throughput: 8103.9 tokens/s, Avg generation throughput: 91.7 tokens/s, Running: 49 reqs, Waiting: 14 reqs, GPU KV cache usage: 13.7%, Prefix cache hit rate: 6.5%, MM cache hit rate: 0.0%
+2026-09-03 02:29:21,999 - __main__ - INFO - New peak running requests: 49
+2026-09-03 02:29:21,999 - __main__ - INFO - vllm running req: 49 queue req: 14
+2026-09-03 02:29:28,464 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:29:28,464 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.25                      0.25
+finished_on_attempt_0                      0.25                      0.25
+server_input_tokens                     419.23                    419.23
+server_output_tokens                     32.08                     32.08
+2026-09-03 02:29:28,464 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 33       | 63     
+2026-09-03 02:29:31,999 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:29:31 [loggers.py:236] Engine 000: Avg prompt throughput: 2770.8 tokens/s, Avg generation throughput: 1294.7 tokens/s, Running: 6 reqs, Waiting: 0 reqs, GPU KV cache usage: 2.3%, Prefix cache hit rate: 6.4%, MM cache hit rate: 0.0%
+2026-09-03 02:29:31,999 - __main__ - INFO - vllm running req: 6 queue req: 0
+2026-09-03 02:29:34,703 - __main__ - INFO - Finished TaskGroup for worker on c052cc491e3e6b65904a0dd7486f76ad93df086e
+2026-09-03 02:29:34,703 - __main__ - INFO - Got 63 docs for c052cc491e3e6b65904a0dd7486f76ad93df086e
+2026-09-03 02:29:34,706 - __main__ - INFO - Writing 63 markdown files for c052cc491e3e6b65904a0dd7486f76ad93df086e
+2026-09-03 02:29:34,723 - __main__ - INFO - Worker 0 exiting due to empty queue
+2026-09-03 02:29:34,723 - __main__ - INFO - Got cancellation request for VLLM server
+2026-09-03 02:29:34,783 - vllm - INFO - [1;36m(APIServer pid=4949)[0;0m INFO 09-03 02:29:34 [launcher.py:110] Shutting down FastAPI HTTP server.
+2026-09-03 02:29:34,952 - vllm - INFO - [rank0]:[W903 02:29:34.721133779 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+2026-09-03 02:29:36,562 - __main__ - INFO - ================================================================================
+2026-09-03 02:29:36,562 - __main__ - INFO - FINAL METRICS SUMMARY
+2026-09-03 02:29:36,562 - __main__ - INFO - ================================================================================
+2026-09-03 02:29:36,562 - __main__ - INFO - Total elapsed time: 141.33 seconds
+2026-09-03 02:29:36,562 - __main__ - INFO - Total Server Input tokens: 108,746
+2026-09-03 02:29:36,562 - __main__ - INFO - Total Server Output tokens: 14,465
+2026-09-03 02:29:36,563 - __main__ - INFO - Finished input tokens: 108,746
+2026-09-03 02:29:36,563 - __main__ - INFO - Finished output tokens: 14,465
+2026-09-03 02:29:36,563 - __main__ - INFO - Completed pages: 63
+2026-09-03 02:29:36,563 - __main__ - INFO - Failed pages: 0
+2026-09-03 02:29:36,563 - __main__ - INFO - Page Failure rate: 0.00%
+2026-09-03 02:29:36,563 - __main__ - INFO - 
+2026-09-03 02:29:36,563 - __main__ - INFO - Pages finished by attempt number:
+2026-09-03 02:29:36,563 - __main__ - INFO -   Attempt 0: 63 pages (100.0%) - Cumulative: 63 (100.0%)
+2026-09-03 02:29:36,563 - __main__ - INFO - Server Input tokens/sec rate: 769.43
+2026-09-03 02:29:36,563 - __main__ - INFO - Server Output tokens/sec rate: 102.35
+2026-09-03 02:29:36,563 - __main__ - INFO - Finished Input tokens/sec rate: 769.43
+2026-09-03 02:29:36,563 - __main__ - INFO - Finished Output tokens/sec rate: 102.35
+2026-09-03 02:29:36,563 - __main__ - INFO - ================================================================================
+2026-09-03 02:29:36,563 - __main__ - INFO - Work done
+2026-09-03 02:29:36,597 - __main__ - INFO - VLLM Process already terminated
+-- old_scans_math (10 pdfs)
+2026-09-03 02:29:42,111 - __main__ - INFO - If you run out of GPU memory during start-up or get 'KV cache is larger than available memory' errors, retry with lower values, e.g. --gpu_memory_utilization 0.80  --max_model_len 16384
+INFO:olmocr.check:pdftoppm is installed and working.
+2026-09-03 02:29:42,127 - __main__ - INFO - Got --pdfs argument, going to add to the work queue
+2026-09-03 02:29:42,127 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//1_pg10.pdf as PDF document
+2026-09-03 02:29:42,127 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//1_pg125.pdf as PDF document
+2026-09-03 02:29:42,127 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//1_pg131.pdf as PDF document
+2026-09-03 02:29:42,127 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//1_pg19.pdf as PDF document
+2026-09-03 02:29:42,128 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//1_pg40.pdf as PDF document
+2026-09-03 02:29:42,128 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//1_pg61.pdf as PDF document
+2026-09-03 02:29:42,128 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//1_pg63.pdf as PDF document
+2026-09-03 02:29:42,128 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//1_pg72.pdf as PDF document
+2026-09-03 02:29:42,128 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//3_pg204.pdf as PDF document
+2026-09-03 02:29:42,128 - __main__ - INFO - Loading file at /root/gpu/pdfs/old_scans_math//5_pg174.pdf as PDF document
+2026-09-03 02:29:42,128 - __main__ - INFO - Found 10 regular pdf paths and 0 tarballs to add
+Sampling PDFs to calculate optimal length:   0%|          | 0/10 [00:00<?, ?it/s]Sampling PDFs to calculate optimal length: 100%|██████████| 10/10 [00:00<00:00, 1128.38it/s]
+2026-09-03 02:29:42,139 - __main__ - INFO - Calculated items_per_group: 500 based on average pages per PDF: 1.00
+2026-09-03 02:29:43,979 - __main__ - INFO - Starting pipeline with PID 5258
+2026-09-03 02:29:43,979 - __main__ - INFO - Downloading model with hugging face 'allenai/olmOCR-2-7B-1025-FP8'
+Fetching 20 files:   0%|          | 0/20 [00:00<?, ?it/s]Fetching 20 files: 100%|██████████| 20/20 [00:00<00:00, 1905.77it/s]
+2026-09-03 02:29:46,329 - __main__ - INFO - Using internal server at http://localhost:30024/v1
+INFO:olmocr.work_queue:Initialized queue with 1 work items
+2026-09-03 02:29:46,425 - __main__ - WARNING - Attempt 1: Please wait for vllm server to become ready...
+2026-09-03 02:29:47,451 - __main__ - WARNING - Attempt 2: Please wait for vllm server to become ready...
+2026-09-03 02:29:48,488 - __main__ - WARNING - Attempt 3: Please wait for vllm server to become ready...
+2026-09-03 02:29:49,525 - __main__ - WARNING - Attempt 4: Please wait for vllm server to become ready...
+2026-09-03 02:29:50,565 - __main__ - WARNING - Attempt 5: Please wait for vllm server to become ready...
+2026-09-03 02:29:51,601 - __main__ - WARNING - Attempt 6: Please wait for vllm server to become ready...
+2026-09-03 02:29:52,653 - __main__ - WARNING - Attempt 7: Please wait for vllm server to become ready...
+2026-09-03 02:29:53,704 - __main__ - WARNING - Attempt 8: Please wait for vllm server to become ready...
+2026-09-03 02:29:53,893 - vllm - INFO - INFO 09-03 02:29:53 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:29:53,907 - vllm - INFO - WARNING 09-03 02:29:53 [argparse_utils.py:79] argument '--disable-log-requests' is deprecated and replaced with '--enable-log-requests'. This will be removed in v0.12.0.
+2026-09-03 02:29:53,909 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:29:53 [api_server.py:1977] vLLM API server version 0.11.2
+2026-09-03 02:29:53,913 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:29:53 [utils.py:253] non-default args: {'model_tag': 'allenai/olmOCR-2-7B-1025-FP8', 'port': 30024, 'uvicorn_log_level': 'warning', 'model': 'allenai/olmOCR-2-7B-1025-FP8', 'max_model_len': 16384, 'served_model_name': ['olmocr'], 'limit_mm_per_prompt': {'video': 0}}
+2026-09-03 02:29:54,753 - __main__ - WARNING - Attempt 9: Please wait for vllm server to become ready...
+2026-09-03 02:29:55,805 - __main__ - WARNING - Attempt 10: Please wait for vllm server to become ready...
+2026-09-03 02:29:56,857 - __main__ - WARNING - Attempt 11: Please wait for vllm server to become ready...
+2026-09-03 02:29:57,909 - __main__ - WARNING - Attempt 12: Please wait for vllm server to become ready...
+2026-09-03 02:29:58,566 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:29:58 [model.py:631] Resolved architecture: Qwen2_5_VLForConditionalGeneration
+2026-09-03 02:29:58,567 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:29:58 [model.py:1745] Using max model len 16384
+2026-09-03 02:29:58,961 - __main__ - WARNING - Attempt 13: Please wait for vllm server to become ready...
+2026-09-03 02:29:59,037 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:29:59 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:30:00,019 - __main__ - WARNING - Attempt 14: Please wait for vllm server to become ready...
+2026-09-03 02:30:01,072 - __main__ - WARNING - Attempt 15: Please wait for vllm server to become ready...
+2026-09-03 02:30:02,126 - __main__ - WARNING - Attempt 16: Please wait for vllm server to become ready...
+2026-09-03 02:30:03,179 - __main__ - WARNING - Attempt 17: Please wait for vllm server to become ready...
+2026-09-03 02:30:04,235 - __main__ - WARNING - Attempt 18: Please wait for vllm server to become ready...
+2026-09-03 02:30:05,286 - __main__ - WARNING - Attempt 19: Please wait for vllm server to become ready...
+2026-09-03 02:30:06,338 - __main__ - WARNING - Attempt 20: Please wait for vllm server to become ready...
+2026-09-03 02:30:07,390 - __main__ - WARNING - Attempt 21: Please wait for vllm server to become ready...
+2026-09-03 02:30:08,447 - __main__ - WARNING - Attempt 22: Please wait for vllm server to become ready...
+2026-09-03 02:30:09,498 - __main__ - WARNING - Attempt 23: Please wait for vllm server to become ready...
+2026-09-03 02:30:10,551 - __main__ - WARNING - Attempt 24: Please wait for vllm server to become ready...
+2026-09-03 02:30:11,603 - __main__ - WARNING - Attempt 25: Please wait for vllm server to become ready...
+2026-09-03 02:30:11,853 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:11 [core.py:93] Initializing a V1 LLM engine (v0.11.2) with config: model='allenai/olmOCR-2-7B-1025-FP8', speculative_config=None, tokenizer='allenai/olmOCR-2-7B-1025-FP8', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=16384, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=compressed-tensors, enforce_eager=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=0, served_model_name=olmocr, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'splitting_ops': ['vllm::unified_attention', 'vllm::unified_attention_with_output', 'vllm::unified_mla_attention', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::gdn_attention_core', 'vllm::kda_attention', 'vllm::sparse_attn_indexer'], 'compile_mm_encoder': False, 'use_inductor': None, 'compile_sizes': [], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {}, 'max_cudagraph_capture_size': 512, 'local_cache_dir': None}
+2026-09-03 02:30:12,662 - __main__ - WARNING - Attempt 26: Please wait for vllm server to become ready...
+2026-09-03 02:30:13,718 - __main__ - WARNING - Attempt 27: Please wait for vllm server to become ready...
+2026-09-03 02:30:14,771 - __main__ - WARNING - Attempt 28: Please wait for vllm server to become ready...
+2026-09-03 02:30:15,822 - __main__ - WARNING - Attempt 29: Please wait for vllm server to become ready...
+2026-09-03 02:30:16,874 - __main__ - WARNING - Attempt 30: Please wait for vllm server to become ready...
+2026-09-03 02:30:17,930 - __main__ - WARNING - Attempt 31: Please wait for vllm server to become ready...
+2026-09-03 02:30:18,412 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:18 [parallel_state.py:1208] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.17.0.4:43429 backend=nccl
+2026-09-03 02:30:18,428 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:30:18,435 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:30:18,436 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:30:18,437 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:30:18,438 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:30:18,439 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:30:18,439 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:18 [parallel_state.py:1394] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+2026-09-03 02:30:18,983 - __main__ - WARNING - Attempt 32: Please wait for vllm server to become ready...
+2026-09-03 02:30:20,034 - __main__ - WARNING - Attempt 33: Please wait for vllm server to become ready...
+2026-09-03 02:30:20,037 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:30:21,086 - __main__ - WARNING - Attempt 34: Please wait for vllm server to become ready...
+2026-09-03 02:30:22,121 - __main__ - WARNING - Attempt 35: Please wait for vllm server to become ready...
+2026-09-03 02:30:23,161 - __main__ - WARNING - Attempt 36: Please wait for vllm server to become ready...
+2026-09-03 02:30:24,195 - __main__ - WARNING - Attempt 37: Please wait for vllm server to become ready...
+2026-09-03 02:30:25,246 - __main__ - WARNING - Attempt 38: Please wait for vllm server to become ready...
+2026-09-03 02:30:26,298 - __main__ - WARNING - Attempt 39: Please wait for vllm server to become ready...
+2026-09-03 02:30:27,355 - __main__ - WARNING - Attempt 40: Please wait for vllm server to become ready...
+2026-09-03 02:30:28,408 - __main__ - WARNING - Attempt 41: Please wait for vllm server to become ready...
+2026-09-03 02:30:29,460 - __main__ - WARNING - Attempt 42: Please wait for vllm server to become ready...
+2026-09-03 02:30:30,512 - __main__ - WARNING - Attempt 43: Please wait for vllm server to become ready...
+2026-09-03 02:30:31,570 - __main__ - WARNING - Attempt 44: Please wait for vllm server to become ready...
+2026-09-03 02:30:32,623 - __main__ - WARNING - Attempt 45: Please wait for vllm server to become ready...
+2026-09-03 02:30:33,674 - __main__ - WARNING - Attempt 46: Please wait for vllm server to become ready...
+2026-09-03 02:30:34,726 - __main__ - WARNING - Attempt 47: Please wait for vllm server to become ready...
+2026-09-03 02:30:35,167 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:35 [gpu_model_runner.py:3259] Starting to load model allenai/olmOCR-2-7B-1025-FP8...
+2026-09-03 02:30:35,778 - __main__ - WARNING - Attempt 48: Please wait for vllm server to become ready...
+2026-09-03 02:30:35,941 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:35 [cuda.py:418] Valid backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']
+2026-09-03 02:30:35,941 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:35 [cuda.py:427] Using FLASH_ATTN backend.
+2026-09-03 02:30:36,836 - __main__ - WARNING - Attempt 49: Please wait for vllm server to become ready...
+2026-09-03 02:30:37,888 - __main__ - WARNING - Attempt 50: Please wait for vllm server to become ready...
+2026-09-03 02:30:38,305 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/3 [00:00<?, ?it/s]
+2026-09-03 02:30:38,473 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m Loading safetensors checkpoint shards:  33% Completed | 1/3 [00:00<00:00,  5.99it/s]
+2026-09-03 02:30:38,953 - __main__ - WARNING - Attempt 51: Please wait for vllm server to become ready...
+2026-09-03 02:30:39,091 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m Loading safetensors checkpoint shards:  67% Completed | 2/3 [00:00<00:00,  2.31it/s]
+2026-09-03 02:30:40,007 - __main__ - WARNING - Attempt 52: Please wait for vllm server to become ready...
+2026-09-03 02:30:40,041 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.49it/s]
+2026-09-03 02:30:40,042 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.73it/s]
+2026-09-03 02:30:40,042 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m
+2026-09-03 02:30:40,294 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:40 [default_loader.py:314] Loading weights took 1.99 seconds
+2026-09-03 02:30:40,856 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:40 [gpu_model_runner.py:3338] Model loading took 9.5222 GiB memory and 4.752647 seconds
+2026-09-03 02:30:41,064 - __main__ - WARNING - Attempt 53: Please wait for vllm server to become ready...
+2026-09-03 02:30:41,116 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:41 [gpu_model_runner.py:4088] Encoder cache will be initialized with a budget of 16384 tokens, and profiled with 1 image items of the maximum feature size.
+2026-09-03 02:30:42,119 - __main__ - WARNING - Attempt 54: Please wait for vllm server to become ready...
+2026-09-03 02:30:43,171 - __main__ - WARNING - Attempt 55: Please wait for vllm server to become ready...
+2026-09-03 02:30:44,223 - __main__ - WARNING - Attempt 56: Please wait for vllm server to become ready...
+2026-09-03 02:30:45,275 - __main__ - WARNING - Attempt 57: Please wait for vllm server to become ready...
+2026-09-03 02:30:46,332 - __main__ - WARNING - Attempt 58: Please wait for vllm server to become ready...
+2026-09-03 02:30:47,384 - __main__ - WARNING - Attempt 59: Please wait for vllm server to become ready...
+2026-09-03 02:30:48,435 - __main__ - WARNING - Attempt 60: Please wait for vllm server to become ready...
+2026-09-03 02:30:49,485 - __main__ - WARNING - Attempt 61: Please wait for vllm server to become ready...
+2026-09-03 02:30:50,541 - __main__ - WARNING - Attempt 62: Please wait for vllm server to become ready...
+2026-09-03 02:30:51,593 - __main__ - WARNING - Attempt 63: Please wait for vllm server to become ready...
+2026-09-03 02:30:52,644 - __main__ - WARNING - Attempt 64: Please wait for vllm server to become ready...
+2026-09-03 02:30:53,696 - __main__ - WARNING - Attempt 65: Please wait for vllm server to become ready...
+2026-09-03 02:30:54,752 - __main__ - WARNING - Attempt 66: Please wait for vllm server to become ready...
+2026-09-03 02:30:55,422 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:55 [backends.py:631] Using cache directory: /root/.cache/vllm/torch_compile_cache/7c54eba28a/rank_0_0/backbone for vLLM's torch.compile
+2026-09-03 02:30:55,422 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:55 [backends.py:647] Dynamo bytecode transform time: 10.03 s
+2026-09-03 02:30:55,809 - __main__ - WARNING - Attempt 67: Please wait for vllm server to become ready...
+2026-09-03 02:30:56,863 - __main__ - WARNING - Attempt 68: Please wait for vllm server to become ready...
+2026-09-03 02:30:57,916 - __main__ - WARNING - Attempt 69: Please wait for vllm server to become ready...
+2026-09-03 02:30:58,969 - __main__ - WARNING - Attempt 70: Please wait for vllm server to become ready...
+2026-09-03 02:30:59,864 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:30:59 [backends.py:210] Directly load the compiled graph(s) for dynamic shape from the cache, took 3.773 s
+2026-09-03 02:31:00,026 - __main__ - WARNING - Attempt 71: Please wait for vllm server to become ready...
+2026-09-03 02:31:01,079 - __main__ - WARNING - Attempt 72: Please wait for vllm server to become ready...
+2026-09-03 02:31:01,765 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:31:01 [monitor.py:34] torch.compile takes 13.80 s in total
+2026-09-03 02:31:02,131 - __main__ - WARNING - Attempt 73: Please wait for vllm server to become ready...
+2026-09-03 02:31:02,804 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:31:02 [gpu_worker.py:359] Available KV cache memory: 30.32 GiB
+2026-09-03 02:31:03,180 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:31:03 [kv_cache_utils.py:1229] GPU KV cache size: 567,776 tokens
+2026-09-03 02:31:03,180 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:31:03 [kv_cache_utils.py:1234] Maximum concurrency for 16,384 tokens per request: 34.65x
+2026-09-03 02:31:03,182 - __main__ - WARNING - Attempt 74: Please wait for vllm server to become ready...
+2026-09-03 02:31:04,238 - __main__ - WARNING - Attempt 75: Please wait for vllm server to become ready...
+2026-09-03 02:31:05,294 - __main__ - WARNING - Attempt 76: Please wait for vllm server to become ready...
+2026-09-03 02:31:05,359 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   6%|▌         | 3/51 [00:00<00:02, 20.52it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  12%|█▏        | 6/51 [00:00<00:02, 20.79it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  18%|█▊        | 9/51 [00:00<00:01, 21.18it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  24%|██▎       | 12/51 [00:00<00:01, 21.75it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  29%|██▉       | 15/51 [00:00<00:01, 22.31it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  35%|███▌      | 18/51 [00:00<00:01, 23.72it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  41%|████      | 21/51 [00:00<00:01, 25.26it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  47%|████▋     | 24/51 [00:01<00:01, 26.52it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  53%|█████▎    | 27/51 [00:01<00:00, 27.36it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  61%|██████    | 31/51 [00:01<00:00, 28.25it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  69%|██████▊   | 35/51 [00:01<00:00, 29.46it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  76%|███████▋  | 39/51 [00:01<00:00, 30.56it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  84%|████████▍ | 43/51 [00:01<00:00, 31.80it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  92%|█████████▏| 47/51 [00:01<00:00, 32.95it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 51/51 [00:01<00:00, 32.48it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 51/51 [00:01<00:00, 27.73it/s]
+2026-09-03 02:31:06,346 - __main__ - WARNING - Attempt 77: Please wait for vllm server to become ready...
+2026-09-03 02:31:06,429 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m Capturing CUDA graphs (decode, FULL):   0%|          | 0/35 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL):   9%|▊         | 3/35 [00:00<00:01, 27.54it/s]Capturing CUDA graphs (decode, FULL):  17%|█▋        | 6/35 [00:00<00:01, 28.86it/s]Capturing CUDA graphs (decode, FULL):  29%|██▊       | 10/35 [00:00<00:00, 29.58it/s]Capturing CUDA graphs (decode, FULL):  40%|████      | 14/35 [00:00<00:00, 30.13it/s]Capturing CUDA graphs (decode, FULL):  51%|█████▏    | 18/35 [00:00<00:00, 30.93it/s]Capturing CUDA graphs (decode, FULL):  63%|██████▎   | 22/35 [00:00<00:00, 32.15it/s]Capturing CUDA graphs (decode, FULL):  74%|███████▍  | 26/35 [00:00<00:00, 33.31it/s]Capturing CUDA graphs (decode, FULL):  86%|████████▌ | 30/35 [00:00<00:00, 34.15it/s]Capturing CUDA graphs (decode, FULL):  97%|█████████▋| 34/35 [00:01<00:00, 34.77it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 35/35 [00:01<00:00, 32.71it/s]
+2026-09-03 02:31:06,785 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:31:06 [gpu_model_runner.py:4244] Graph capturing finished in 4 secs, took 0.53 GiB
+2026-09-03 02:31:06,791 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5340)[0;0m INFO 09-03 02:31:06 [core.py:250] init engine (profile, create kv cache, warmup model) took 25.93 seconds
+2026-09-03 02:31:07,397 - __main__ - WARNING - Attempt 78: Please wait for vllm server to become ready...
+2026-09-03 02:31:08,448 - __main__ - WARNING - Attempt 79: Please wait for vllm server to become ready...
+2026-09-03 02:31:09,505 - __main__ - WARNING - Attempt 80: Please wait for vllm server to become ready...
+2026-09-03 02:31:09,518 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:09 [api_server.py:1725] Supported tasks: ['generate']
+2026-09-03 02:31:09,969 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m WARNING 09-03 02:31:09 [model.py:1568] Default sampling parameters have been overridden by the model's Hugging Face generation config recommended from the model creator. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+2026-09-03 02:31:09,969 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:09 [serving_responses.py:154] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:31:10,417 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:10 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:31:10,556 - __main__ - WARNING - Attempt 81: Please wait for vllm server to become ready...
+2026-09-03 02:31:10,859 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:10 [serving_completion.py:73] Using default completion sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:31:11,295 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:11 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:31:11,296 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:11 [api_server.py:2052] Starting vLLM API server 0 on http://0.0.0.0:30024
+2026-09-03 02:31:11,296 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:11 [launcher.py:38] Available routes are:
+2026-09-03 02:31:11,296 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:11 [launcher.py:46] Route: /openapi.json, Methods: HEAD, GET
+2026-09-03 02:31:11,296 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:11 [launcher.py:46] Route: /docs, Methods: HEAD, GET
+2026-09-03 02:31:11,296 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:11 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+2026-09-03 02:31:11,296 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:11 [launcher.py:46] Route: /redoc, Methods: HEAD, GET
+2026-09-03 02:31:11,296 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:11 [launcher.py:46] Route: /metrics, Methods: GET
+2026-09-03 02:31:11,609 - __main__ - WARNING - Attempt 82: Please wait for vllm server to become ready...
+INFO:httpx:HTTP Request: GET http://localhost:30024/v1/models "HTTP/1.1 200 OK"
+2026-09-03 02:31:12,726 - __main__ - INFO - vllm server is ready.
+2026-09-03 02:31:12,733 - __main__ - INFO - Queue remaining: 1
+2026-09-03 02:31:12,733 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:31:12,733 - __main__ - INFO - 
+Worker ID
+---------
+2026-09-03 02:31:12,734 - __main__ - INFO - Worker 1 exiting due to empty queue
+2026-09-03 02:31:12,734 - __main__ - INFO - Worker 2 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 3 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 4 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 5 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 6 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 7 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 8 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 9 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 10 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 11 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 12 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 13 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 14 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 15 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 16 exiting due to empty queue
+2026-09-03 02:31:12,735 - __main__ - INFO - Worker 17 exiting due to empty queue
+2026-09-03 02:31:12,736 - __main__ - INFO - Worker 18 exiting due to empty queue
+2026-09-03 02:31:12,736 - __main__ - INFO - Worker 19 exiting due to empty queue
+2026-09-03 02:31:12,737 - __main__ - INFO - Worker 0 processing work item 7bd193be70d75bf463c9310ea06149483f75c9f0
+2026-09-03 02:31:12,737 - __main__ - INFO - Created all tasks for 7bd193be70d75bf463c9310ea06149483f75c9f0
+2026-09-03 02:31:15,961 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:31:21,430 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:21 [chat_utils.py:557] Detected the chat template content format to be 'openai'. You can set `--chat-template-content-format` to override this.
+2026-09-03 02:31:22,735 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:31:22,735 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:31:22,735 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 10     
+2026-09-03 02:31:32,746 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:31:32,746 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:31:32,746 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 10     
+2026-09-03 02:31:42,747 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:31:42,747 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.02                      0.02
+finished_on_attempt_0                      0.02                      0.02
+server_input_tokens                      25.80                     25.80
+server_output_tokens                      7.44                      7.44
+2026-09-03 02:31:42,747 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 2        | 10     
+2026-09-03 02:31:44,861 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:44 [loggers.py:236] Engine 000: Avg prompt throughput: 1532.8 tokens/s, Avg generation throughput: 576.0 tokens/s, Running: 2 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.7%, Prefix cache hit rate: 6.6%, MM cache hit rate: 0.0%
+2026-09-03 02:31:44,861 - __main__ - INFO - New peak running requests: 2
+2026-09-03 02:31:44,861 - __main__ - INFO - vllm running req: 2 queue req: 0
+2026-09-03 02:31:46,170 - __main__ - INFO - Finished TaskGroup for worker on 7bd193be70d75bf463c9310ea06149483f75c9f0
+2026-09-03 02:31:46,171 - __main__ - INFO - Got 10 docs for 7bd193be70d75bf463c9310ea06149483f75c9f0
+2026-09-03 02:31:46,173 - __main__ - INFO - Writing 10 markdown files for 7bd193be70d75bf463c9310ea06149483f75c9f0
+2026-09-03 02:31:46,177 - __main__ - INFO - Worker 0 exiting due to empty queue
+2026-09-03 02:31:46,177 - __main__ - INFO - Got cancellation request for VLLM server
+2026-09-03 02:31:46,234 - vllm - INFO - [1;36m(APIServer pid=5333)[0;0m INFO 09-03 02:31:46 [launcher.py:110] Shutting down FastAPI HTTP server.
+2026-09-03 02:31:46,369 - vllm - INFO - [rank0]:[W903 02:31:46.137721671 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+2026-09-03 02:31:47,796 - __main__ - INFO - ================================================================================
+2026-09-03 02:31:47,796 - __main__ - INFO - FINAL METRICS SUMMARY
+2026-09-03 02:31:47,796 - __main__ - INFO - ================================================================================
+2026-09-03 02:31:47,796 - __main__ - INFO - Total elapsed time: 125.69 seconds
+2026-09-03 02:31:47,796 - __main__ - INFO - Total Server Input tokens: 15,330
+2026-09-03 02:31:47,796 - __main__ - INFO - Total Server Output tokens: 5,921
+2026-09-03 02:31:47,796 - __main__ - INFO - Finished input tokens: 15,330
+2026-09-03 02:31:47,796 - __main__ - INFO - Finished output tokens: 5,921
+2026-09-03 02:31:47,796 - __main__ - INFO - Completed pages: 10
+2026-09-03 02:31:47,796 - __main__ - INFO - Failed pages: 0
+2026-09-03 02:31:47,796 - __main__ - INFO - Page Failure rate: 0.00%
+2026-09-03 02:31:47,797 - __main__ - INFO - 
+2026-09-03 02:31:47,797 - __main__ - INFO - Pages finished by attempt number:
+2026-09-03 02:31:47,797 - __main__ - INFO -   Attempt 0: 10 pages (100.0%) - Cumulative: 10 (100.0%)
+2026-09-03 02:31:47,797 - __main__ - INFO - Server Input tokens/sec rate: 121.97
+2026-09-03 02:31:47,797 - __main__ - INFO - Server Output tokens/sec rate: 47.11
+2026-09-03 02:31:47,797 - __main__ - INFO - Finished Input tokens/sec rate: 121.97
+2026-09-03 02:31:47,797 - __main__ - INFO - Finished Output tokens/sec rate: 47.11
+2026-09-03 02:31:47,797 - __main__ - INFO - ================================================================================
+2026-09-03 02:31:47,797 - __main__ - INFO - Work done
+2026-09-03 02:31:47,801 - __main__ - INFO - VLLM Process already terminated
+-- tables (12 pdfs)
+2026-09-03 02:31:53,314 - __main__ - INFO - If you run out of GPU memory during start-up or get 'KV cache is larger than available memory' errors, retry with lower values, e.g. --gpu_memory_utilization 0.80  --max_model_len 16384
+INFO:olmocr.check:pdftoppm is installed and working.
+2026-09-03 02:31:53,332 - __main__ - INFO - Got --pdfs argument, going to add to the work queue
+2026-09-03 02:31:53,332 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//0486cc2ec11e21b6a8280ca71073ca28ea3f_pg1.pdf as PDF document
+2026-09-03 02:31:53,332 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//0684e33bd901b116725b6a0e0d21398f7315_pg4_pg1.pdf as PDF document
+2026-09-03 02:31:53,332 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//30c92c35171cd45479bd3083dbf574b31c9a_pg44.pdf as PDF document
+2026-09-03 02:31:53,332 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//371cfed48826fdffb18d9e1d5a9010ab0ccf_pg10_pg1.pdf as PDF document
+2026-09-03 02:31:53,332 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//3d780cdcc987c65fdc7e1628c6a32af33d5d_pg22_pg1.pdf as PDF document
+2026-09-03 02:31:53,332 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//426df27cf990a3426b9e0731ad346f28184f_pg9.pdf as PDF document
+2026-09-03 02:31:53,333 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//4db371aebdbbfa28531a816f9bf26ed0a028_pg52_pg1.pdf as PDF document
+2026-09-03 02:31:53,333 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//8097792c7266cdd2875e30cdf31ddcde348b_pg1.pdf as PDF document
+2026-09-03 02:31:53,333 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//9e6a5b213e4fd5906842ebe6b0c5538e9e7b_pg12.pdf as PDF document
+2026-09-03 02:31:53,333 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//d896f9ae5405c8d6b147ae9c9c20a0abb6c4_pg4_pg1.pdf as PDF document
+2026-09-03 02:31:53,333 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//fbeb6edcf6ad16adbd2a27b54da0c1771389_pg1.pdf as PDF document
+2026-09-03 02:31:53,333 - __main__ - INFO - Loading file at /root/gpu/pdfs/tables//fcb362aa304b7b0bedec37f6c74f8ce3751a_pg2.pdf as PDF document
+2026-09-03 02:31:53,333 - __main__ - INFO - Found 12 regular pdf paths and 0 tarballs to add
+Sampling PDFs to calculate optimal length:   0%|          | 0/12 [00:00<?, ?it/s]Sampling PDFs to calculate optimal length: 100%|██████████| 12/12 [00:00<00:00, 679.84it/s]
+2026-09-03 02:31:53,352 - __main__ - INFO - Calculated items_per_group: 500 based on average pages per PDF: 1.00
+2026-09-03 02:31:55,240 - __main__ - INFO - Starting pipeline with PID 5513
+2026-09-03 02:31:55,240 - __main__ - INFO - Downloading model with hugging face 'allenai/olmOCR-2-7B-1025-FP8'
+Fetching 20 files:   0%|          | 0/20 [00:00<?, ?it/s]Fetching 20 files: 100%|██████████| 20/20 [00:00<00:00, 2138.15it/s]
+2026-09-03 02:31:56,324 - __main__ - INFO - Using internal server at http://localhost:30024/v1
+INFO:olmocr.work_queue:Initialized queue with 1 work items
+2026-09-03 02:31:56,421 - __main__ - WARNING - Attempt 1: Please wait for vllm server to become ready...
+2026-09-03 02:31:57,456 - __main__ - WARNING - Attempt 2: Please wait for vllm server to become ready...
+2026-09-03 02:31:58,492 - __main__ - WARNING - Attempt 3: Please wait for vllm server to become ready...
+2026-09-03 02:31:59,529 - __main__ - WARNING - Attempt 4: Please wait for vllm server to become ready...
+2026-09-03 02:32:00,569 - __main__ - WARNING - Attempt 5: Please wait for vllm server to become ready...
+2026-09-03 02:32:01,620 - __main__ - WARNING - Attempt 6: Please wait for vllm server to become ready...
+2026-09-03 02:32:02,674 - __main__ - WARNING - Attempt 7: Please wait for vllm server to become ready...
+2026-09-03 02:32:03,725 - __main__ - WARNING - Attempt 8: Please wait for vllm server to become ready...
+2026-09-03 02:32:03,888 - vllm - INFO - INFO 09-03 02:32:03 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:32:03,902 - vllm - INFO - WARNING 09-03 02:32:03 [argparse_utils.py:79] argument '--disable-log-requests' is deprecated and replaced with '--enable-log-requests'. This will be removed in v0.12.0.
+2026-09-03 02:32:03,904 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:32:03 [api_server.py:1977] vLLM API server version 0.11.2
+2026-09-03 02:32:03,908 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:32:03 [utils.py:253] non-default args: {'model_tag': 'allenai/olmOCR-2-7B-1025-FP8', 'port': 30024, 'uvicorn_log_level': 'warning', 'model': 'allenai/olmOCR-2-7B-1025-FP8', 'max_model_len': 16384, 'served_model_name': ['olmocr'], 'limit_mm_per_prompt': {'video': 0}}
+2026-09-03 02:32:04,785 - __main__ - WARNING - Attempt 9: Please wait for vllm server to become ready...
+2026-09-03 02:32:05,838 - __main__ - WARNING - Attempt 10: Please wait for vllm server to become ready...
+2026-09-03 02:32:06,889 - __main__ - WARNING - Attempt 11: Please wait for vllm server to become ready...
+2026-09-03 02:32:07,061 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:32:07 [model.py:631] Resolved architecture: Qwen2_5_VLForConditionalGeneration
+2026-09-03 02:32:07,062 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:32:07 [model.py:1745] Using max model len 16384
+2026-09-03 02:32:07,512 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:32:07 [scheduler.py:216] Chunked prefill is enabled with max_num_batched_tokens=2048.
+2026-09-03 02:32:07,940 - __main__ - WARNING - Attempt 12: Please wait for vllm server to become ready...
+2026-09-03 02:32:08,991 - __main__ - WARNING - Attempt 13: Please wait for vllm server to become ready...
+2026-09-03 02:32:10,048 - __main__ - WARNING - Attempt 14: Please wait for vllm server to become ready...
+2026-09-03 02:32:11,100 - __main__ - WARNING - Attempt 15: Please wait for vllm server to become ready...
+2026-09-03 02:32:12,151 - __main__ - WARNING - Attempt 16: Please wait for vllm server to become ready...
+2026-09-03 02:32:13,201 - __main__ - WARNING - Attempt 17: Please wait for vllm server to become ready...
+2026-09-03 02:32:14,258 - __main__ - WARNING - Attempt 18: Please wait for vllm server to become ready...
+2026-09-03 02:32:15,309 - __main__ - WARNING - Attempt 19: Please wait for vllm server to become ready...
+2026-09-03 02:32:16,361 - __main__ - WARNING - Attempt 20: Please wait for vllm server to become ready...
+2026-09-03 02:32:17,413 - __main__ - WARNING - Attempt 21: Please wait for vllm server to become ready...
+2026-09-03 02:32:18,470 - __main__ - WARNING - Attempt 22: Please wait for vllm server to become ready...
+2026-09-03 02:32:19,126 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:19 [core.py:93] Initializing a V1 LLM engine (v0.11.2) with config: model='allenai/olmOCR-2-7B-1025-FP8', speculative_config=None, tokenizer='allenai/olmOCR-2-7B-1025-FP8', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=16384, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, data_parallel_size=1, disable_custom_all_reduce=False, quantization=compressed-tensors, enforce_eager=False, kv_cache_dtype=auto, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=0, served_model_name=olmocr, enable_prefix_caching=True, enable_chunked_prefill=True, pooler_config=None, compilation_config={'level': None, 'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'splitting_ops': ['vllm::unified_attention', 'vllm::unified_attention_with_output', 'vllm::unified_mla_attention', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::gdn_attention_core', 'vllm::kda_attention', 'vllm::sparse_attn_indexer'], 'compile_mm_encoder': False, 'use_inductor': None, 'compile_sizes': [], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [1, 2, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 416, 432, 448, 464, 480, 496, 512], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {}, 'max_cudagraph_capture_size': 512, 'local_cache_dir': None}
+2026-09-03 02:32:19,521 - __main__ - WARNING - Attempt 23: Please wait for vllm server to become ready...
+2026-09-03 02:32:20,572 - __main__ - WARNING - Attempt 24: Please wait for vllm server to become ready...
+2026-09-03 02:32:21,623 - __main__ - WARNING - Attempt 25: Please wait for vllm server to become ready...
+2026-09-03 02:32:22,682 - __main__ - WARNING - Attempt 26: Please wait for vllm server to become ready...
+2026-09-03 02:32:22,933 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:22 [parallel_state.py:1208] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.17.0.4:45149 backend=nccl
+2026-09-03 02:32:22,957 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:32:22,964 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:32:22,965 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:32:22,966 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:32:22,967 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:32:22,968 - vllm - INFO - [Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+2026-09-03 02:32:22,968 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:22 [parallel_state.py:1394] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+2026-09-03 02:32:23,739 - __main__ - WARNING - Attempt 27: Please wait for vllm server to become ready...
+2026-09-03 02:32:24,033 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:32:24,790 - __main__ - WARNING - Attempt 28: Please wait for vllm server to become ready...
+2026-09-03 02:32:25,842 - __main__ - WARNING - Attempt 29: Please wait for vllm server to become ready...
+2026-09-03 02:32:26,893 - __main__ - WARNING - Attempt 30: Please wait for vllm server to become ready...
+2026-09-03 02:32:27,949 - __main__ - WARNING - Attempt 31: Please wait for vllm server to become ready...
+2026-09-03 02:32:29,004 - __main__ - WARNING - Attempt 32: Please wait for vllm server to become ready...
+2026-09-03 02:32:30,054 - __main__ - WARNING - Attempt 33: Please wait for vllm server to become ready...
+2026-09-03 02:32:31,104 - __main__ - WARNING - Attempt 34: Please wait for vllm server to become ready...
+2026-09-03 02:32:32,155 - __main__ - WARNING - Attempt 35: Please wait for vllm server to become ready...
+2026-09-03 02:32:33,211 - __main__ - WARNING - Attempt 36: Please wait for vllm server to become ready...
+2026-09-03 02:32:34,262 - __main__ - WARNING - Attempt 37: Please wait for vllm server to become ready...
+2026-09-03 02:32:35,313 - __main__ - WARNING - Attempt 38: Please wait for vllm server to become ready...
+2026-09-03 02:32:36,364 - __main__ - WARNING - Attempt 39: Please wait for vllm server to become ready...
+2026-09-03 02:32:36,714 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:36 [gpu_model_runner.py:3259] Starting to load model allenai/olmOCR-2-7B-1025-FP8...
+2026-09-03 02:32:37,391 - __main__ - WARNING - Attempt 40: Please wait for vllm server to become ready...
+2026-09-03 02:32:37,473 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:37 [cuda.py:418] Valid backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION']
+2026-09-03 02:32:37,473 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:37 [cuda.py:427] Using FLASH_ATTN backend.
+2026-09-03 02:32:38,415 - __main__ - WARNING - Attempt 41: Please wait for vllm server to become ready...
+2026-09-03 02:32:39,022 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:39 [weight_utils.py:441] Time spent downloading weights for allenai/olmOCR-2-7B-1025-FP8: 0.793282 seconds
+2026-09-03 02:32:39,476 - __main__ - WARNING - Attempt 42: Please wait for vllm server to become ready...
+2026-09-03 02:32:39,487 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m Loading safetensors checkpoint shards:   0% Completed | 0/3 [00:00<?, ?it/s]
+2026-09-03 02:32:39,652 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m Loading safetensors checkpoint shards:  33% Completed | 1/3 [00:00<00:00,  6.06it/s]
+2026-09-03 02:32:40,267 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m Loading safetensors checkpoint shards:  67% Completed | 2/3 [00:00<00:00,  2.33it/s]
+2026-09-03 02:32:40,512 - __main__ - WARNING - Attempt 43: Please wait for vllm server to become ready...
+2026-09-03 02:32:41,209 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.51it/s]
+2026-09-03 02:32:41,209 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m Loading safetensors checkpoint shards: 100% Completed | 3/3 [00:01<00:00,  1.74it/s]
+2026-09-03 02:32:41,209 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m
+2026-09-03 02:32:41,460 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:41 [default_loader.py:314] Loading weights took 1.97 seconds
+2026-09-03 02:32:41,568 - __main__ - WARNING - Attempt 44: Please wait for vllm server to become ready...
+2026-09-03 02:32:42,005 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:42 [gpu_model_runner.py:3338] Model loading took 9.5222 GiB memory and 4.351626 seconds
+2026-09-03 02:32:42,265 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:42 [gpu_model_runner.py:4088] Encoder cache will be initialized with a budget of 16384 tokens, and profiled with 1 image items of the maximum feature size.
+2026-09-03 02:32:42,619 - __main__ - WARNING - Attempt 45: Please wait for vllm server to become ready...
+2026-09-03 02:32:43,653 - __main__ - WARNING - Attempt 46: Please wait for vllm server to become ready...
+2026-09-03 02:32:44,676 - __main__ - WARNING - Attempt 47: Please wait for vllm server to become ready...
+2026-09-03 02:32:45,726 - __main__ - WARNING - Attempt 48: Please wait for vllm server to become ready...
+2026-09-03 02:32:46,783 - __main__ - WARNING - Attempt 49: Please wait for vllm server to become ready...
+2026-09-03 02:32:47,834 - __main__ - WARNING - Attempt 50: Please wait for vllm server to become ready...
+2026-09-03 02:32:48,885 - __main__ - WARNING - Attempt 51: Please wait for vllm server to become ready...
+2026-09-03 02:32:49,937 - __main__ - WARNING - Attempt 52: Please wait for vllm server to become ready...
+2026-09-03 02:32:50,993 - __main__ - WARNING - Attempt 53: Please wait for vllm server to become ready...
+2026-09-03 02:32:52,048 - __main__ - WARNING - Attempt 54: Please wait for vllm server to become ready...
+2026-09-03 02:32:53,099 - __main__ - WARNING - Attempt 55: Please wait for vllm server to become ready...
+2026-09-03 02:32:54,150 - __main__ - WARNING - Attempt 56: Please wait for vllm server to become ready...
+2026-09-03 02:32:55,201 - __main__ - WARNING - Attempt 57: Please wait for vllm server to become ready...
+2026-09-03 02:32:56,257 - __main__ - WARNING - Attempt 58: Please wait for vllm server to become ready...
+2026-09-03 02:32:56,935 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:56 [backends.py:631] Using cache directory: /root/.cache/vllm/torch_compile_cache/7c54eba28a/rank_0_0/backbone for vLLM's torch.compile
+2026-09-03 02:32:56,936 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:32:56 [backends.py:647] Dynamo bytecode transform time: 10.35 s
+2026-09-03 02:32:57,307 - __main__ - WARNING - Attempt 59: Please wait for vllm server to become ready...
+2026-09-03 02:32:58,358 - __main__ - WARNING - Attempt 60: Please wait for vllm server to become ready...
+2026-09-03 02:32:59,415 - __main__ - WARNING - Attempt 61: Please wait for vllm server to become ready...
+2026-09-03 02:33:00,471 - __main__ - WARNING - Attempt 62: Please wait for vllm server to become ready...
+2026-09-03 02:33:01,522 - __main__ - WARNING - Attempt 63: Please wait for vllm server to become ready...
+2026-09-03 02:33:01,683 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:33:01 [backends.py:210] Directly load the compiled graph(s) for dynamic shape from the cache, took 4.068 s
+2026-09-03 02:33:02,573 - __main__ - WARNING - Attempt 64: Please wait for vllm server to become ready...
+2026-09-03 02:33:03,622 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:33:03 [monitor.py:34] torch.compile takes 14.41 s in total
+2026-09-03 02:33:03,623 - __main__ - WARNING - Attempt 65: Please wait for vllm server to become ready...
+2026-09-03 02:33:04,623 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:33:04 [gpu_worker.py:359] Available KV cache memory: 30.32 GiB
+2026-09-03 02:33:04,679 - __main__ - WARNING - Attempt 66: Please wait for vllm server to become ready...
+2026-09-03 02:33:04,976 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:33:04 [kv_cache_utils.py:1229] GPU KV cache size: 567,776 tokens
+2026-09-03 02:33:04,976 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:33:04 [kv_cache_utils.py:1234] Maximum concurrency for 16,384 tokens per request: 34.65x
+2026-09-03 02:33:05,729 - __main__ - WARNING - Attempt 67: Please wait for vllm server to become ready...
+2026-09-03 02:33:06,781 - __main__ - WARNING - Attempt 68: Please wait for vllm server to become ready...
+2026-09-03 02:33:07,188 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/51 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   4%|▍         | 2/51 [00:00<00:02, 19.96it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   8%|▊         | 4/51 [00:00<00:02, 19.96it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  14%|█▎        | 7/51 [00:00<00:02, 20.13it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  20%|█▉        | 10/51 [00:00<00:01, 21.08it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  25%|██▌       | 13/51 [00:00<00:01, 21.81it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  31%|███▏      | 16/51 [00:00<00:01, 22.23it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  37%|███▋      | 19/51 [00:00<00:01, 24.10it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  43%|████▎     | 22/51 [00:00<00:01, 25.57it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  49%|████▉     | 25/51 [00:01<00:00, 26.74it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  55%|█████▍    | 28/51 [00:01<00:00, 27.58it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  61%|██████    | 31/51 [00:01<00:00, 28.22it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  69%|██████▊   | 35/51 [00:01<00:00, 29.50it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  76%|███████▋  | 39/51 [00:01<00:00, 30.51it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  84%|████████▍ | 43/51 [00:01<00:00, 31.80it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):  92%|█████████▏| 47/51 [00:01<00:00, 33.09it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 51/51 [00:01<00:00, 32.49it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 51/51 [00:01<00:00, 27.51it/s]
+2026-09-03 02:33:07,831 - __main__ - WARNING - Attempt 69: Please wait for vllm server to become ready...
+2026-09-03 02:33:08,271 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m Capturing CUDA graphs (decode, FULL):   0%|          | 0/35 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL):   9%|▊         | 3/35 [00:00<00:01, 26.40it/s]Capturing CUDA graphs (decode, FULL):  17%|█▋        | 6/35 [00:00<00:01, 28.30it/s]Capturing CUDA graphs (decode, FULL):  26%|██▌       | 9/35 [00:00<00:00, 29.01it/s]Capturing CUDA graphs (decode, FULL):  37%|███▋      | 13/35 [00:00<00:00, 29.73it/s]Capturing CUDA graphs (decode, FULL):  49%|████▊     | 17/35 [00:00<00:00, 30.37it/s]Capturing CUDA graphs (decode, FULL):  60%|██████    | 21/35 [00:00<00:00, 31.68it/s]Capturing CUDA graphs (decode, FULL):  71%|███████▏  | 25/35 [00:00<00:00, 32.83it/s]Capturing CUDA graphs (decode, FULL):  83%|████████▎ | 29/35 [00:00<00:00, 33.62it/s]Capturing CUDA graphs (decode, FULL):  94%|█████████▍| 33/35 [00:01<00:00, 34.20it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 35/35 [00:01<00:00, 32.34it/s]
+2026-09-03 02:33:08,625 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:33:08 [gpu_model_runner.py:4244] Graph capturing finished in 4 secs, took 0.53 GiB
+2026-09-03 02:33:08,631 - vllm - INFO - [1;36m(EngineCore_DP0 pid=5604)[0;0m INFO 09-03 02:33:08 [core.py:250] init engine (profile, create kv cache, warmup model) took 26.63 seconds
+2026-09-03 02:33:08,881 - __main__ - WARNING - Attempt 70: Please wait for vllm server to become ready...
+2026-09-03 02:33:09,938 - __main__ - WARNING - Attempt 71: Please wait for vllm server to become ready...
+2026-09-03 02:33:10,989 - __main__ - WARNING - Attempt 72: Please wait for vllm server to become ready...
+2026-09-03 02:33:11,181 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:11 [api_server.py:1725] Supported tasks: ['generate']
+2026-09-03 02:33:11,624 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m WARNING 09-03 02:33:11 [model.py:1568] Default sampling parameters have been overridden by the model's Hugging Face generation config recommended from the model creator. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+2026-09-03 02:33:11,624 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:11 [serving_responses.py:154] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:33:12,039 - __main__ - WARNING - Attempt 73: Please wait for vllm server to become ready...
+2026-09-03 02:33:12,067 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:33:12,524 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [serving_completion.py:73] Using default completion sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:33:12,966 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [serving_chat.py:131] Using default chat sampling params from model: {'repetition_penalty': 1.05, 'temperature': 1e-06}
+2026-09-03 02:33:12,966 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [api_server.py:2052] Starting vLLM API server 0 on http://0.0.0.0:30024
+2026-09-03 02:33:12,967 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [launcher.py:38] Available routes are:
+2026-09-03 02:33:12,967 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [launcher.py:46] Route: /openapi.json, Methods: HEAD, GET
+2026-09-03 02:33:12,967 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [launcher.py:46] Route: /docs, Methods: HEAD, GET
+2026-09-03 02:33:12,967 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+2026-09-03 02:33:12,967 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [launcher.py:46] Route: /redoc, Methods: HEAD, GET
+2026-09-03 02:33:12,967 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:12 [launcher.py:46] Route: /metrics, Methods: GET
+2026-09-03 02:33:13,072 - __main__ - WARNING - Attempt 74: Please wait for vllm server to become ready...
+INFO:httpx:HTTP Request: GET http://localhost:30024/v1/models "HTTP/1.1 200 OK"
+2026-09-03 02:33:14,192 - __main__ - INFO - vllm server is ready.
+2026-09-03 02:33:14,193 - __main__ - INFO - Queue remaining: 1
+2026-09-03 02:33:14,194 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:33:14,194 - __main__ - INFO - 
+Worker ID
+---------
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 1 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 2 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 3 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 4 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 5 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 6 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 7 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 8 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 9 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 10 exiting due to empty queue
+2026-09-03 02:33:14,195 - __main__ - INFO - Worker 11 exiting due to empty queue
+2026-09-03 02:33:14,196 - __main__ - INFO - Worker 12 exiting due to empty queue
+2026-09-03 02:33:14,196 - __main__ - INFO - Worker 13 exiting due to empty queue
+2026-09-03 02:33:14,196 - __main__ - INFO - Worker 14 exiting due to empty queue
+2026-09-03 02:33:14,196 - __main__ - INFO - Worker 15 exiting due to empty queue
+2026-09-03 02:33:14,196 - __main__ - INFO - Worker 16 exiting due to empty queue
+2026-09-03 02:33:14,196 - __main__ - INFO - Worker 17 exiting due to empty queue
+2026-09-03 02:33:14,196 - __main__ - INFO - Worker 18 exiting due to empty queue
+2026-09-03 02:33:14,196 - __main__ - INFO - Worker 19 exiting due to empty queue
+2026-09-03 02:33:14,197 - __main__ - INFO - Worker 0 processing work item 80bc981a7084c4fc6378fd4a658adc247d5194eb
+2026-09-03 02:33:14,198 - __main__ - INFO - Created all tasks for 80bc981a7084c4fc6378fd4a658adc247d5194eb
+2026-09-03 02:33:17,077 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m The image processor of type `Qwen2VLImageProcessor` is now loaded as a fast processor by default, even if the model checkpoint was saved with a slow processor. This is a breaking change and may produce slightly different outputs. To continue using the slow processor, instantiate this class with `use_fast=False`. Note that this behavior will be extended to all models in a future release.
+2026-09-03 02:33:22,574 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:22 [chat_utils.py:557] Detected the chat template content format to be 'openai'. You can set `--chat-template-content-format` to override this.
+2026-09-03 02:33:24,196 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:33:24,196 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:33:24,196 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 12     
+2026-09-03 02:33:34,207 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:33:34,207 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:33:34,207 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 12     
+2026-09-03 02:33:44,217 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:33:44,218 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+2026-09-03 02:33:44,218 - __main__ - INFO - 
+Worker ID | started
+----------+--------
+0         | 12     
+2026-09-03 02:33:45,857 - __main__ - INFO - Rotation error for /root/gpu/pdfs/tables//371cfed48826fdffb18d9e1d5a9010ab0ccf_pg10_pg1.pdf-1, retrying sequentially with rotation=270
+2026-09-03 02:33:49,086 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:49 [loggers.py:236] Engine 000: Avg prompt throughput: 2146.8 tokens/s, Avg generation throughput: 670.5 tokens/s, Running: 11 reqs, Waiting: 0 reqs, GPU KV cache usage: 4.0%, Prefix cache hit rate: 6.3%, MM cache hit rate: 0.0%
+2026-09-03 02:33:49,086 - __main__ - INFO - New peak running requests: 11
+2026-09-03 02:33:49,086 - __main__ - INFO - vllm running req: 11 queue req: 0
+2026-09-03 02:33:54,219 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:33:54,219 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.02                      0.02
+finished_on_attempt_0                      0.02                      0.02
+finished_on_attempt_1                      0.01                      0.01
+server_input_tokens                      55.66                     55.66
+server_output_tokens                     17.63                     17.63
+2026-09-03 02:33:54,219 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 3        | 12     
+2026-09-03 02:33:56,937 - __main__ - INFO - Rotation error for /root/gpu/pdfs/tables//0684e33bd901b116725b6a0e0d21398f7315_pg4_pg1.pdf-1, retrying sequentially with rotation=90
+2026-09-03 02:33:59,086 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:33:59 [loggers.py:236] Engine 000: Avg prompt throughput: 141.8 tokens/s, Avg generation throughput: 672.9 tokens/s, Running: 6 reqs, Waiting: 0 reqs, GPU KV cache usage: 2.8%, Prefix cache hit rate: 6.4%, MM cache hit rate: 0.0%
+2026-09-03 02:33:59,086 - __main__ - INFO - vllm running req: 6 queue req: 0
+2026-09-03 02:34:04,225 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:34:04,225 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.05                      0.05
+finished_on_attempt_0                      0.04                      0.04
+finished_on_attempt_1                      0.01                      0.01
+server_input_tokens                     100.00                    100.00
+server_output_tokens                     51.74                     51.74
+2026-09-03 02:34:04,225 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 6        | 12     
+2026-09-03 02:34:09,086 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:34:09 [loggers.py:236] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 442.0 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 2.3%, Prefix cache hit rate: 6.4%, MM cache hit rate: 0.0%
+2026-09-03 02:34:09,086 - __main__ - INFO - vllm running req: 4 queue req: 0
+2026-09-03 02:34:11,833 - __main__ - INFO - Rotation error for /root/gpu/pdfs/tables//4db371aebdbbfa28531a816f9bf26ed0a028_pg52_pg1.pdf-1, retrying sequentially with rotation=270
+2026-09-03 02:34:14,226 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:34:14,227 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.06                      0.06
+finished_on_attempt_0                      0.05                      0.05
+finished_on_attempt_1                      0.01                      0.01
+server_input_tokens                     138.71                    138.71
+server_output_tokens                    100.79                    100.79
+2026-09-03 02:34:14,227 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 9        | 12     
+2026-09-03 02:34:19,087 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:34:19 [loggers.py:236] Engine 000: Avg prompt throughput: 164.8 tokens/s, Avg generation throughput: 215.6 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.4%, Prefix cache hit rate: 6.4%, MM cache hit rate: 0.0%
+2026-09-03 02:34:19,088 - __main__ - INFO - vllm running req: 1 queue req: 0
+2026-09-03 02:34:24,233 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:34:24,233 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.07                      0.07
+finished_on_attempt_0                      0.06                      0.06
+finished_on_attempt_1                      0.01                      0.01
+server_input_tokens                     151.65                    151.65
+server_output_tokens                    128.95                    128.95
+2026-09-03 02:34:24,234 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 11       | 12     
+2026-09-03 02:34:29,088 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:34:29 [loggers.py:236] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 85.4 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.5%, Prefix cache hit rate: 6.4%, MM cache hit rate: 0.0%
+2026-09-03 02:34:29,088 - __main__ - INFO - vllm running req: 1 queue req: 0
+2026-09-03 02:34:34,240 - __main__ - INFO - Queue remaining: 0
+2026-09-03 02:34:34,240 - __main__ - INFO - 
+Metric Name                        Lifetime (tokens/sec)     Recently (tokens/sec)
+----------------------------------------------------------------------------------
+completed_pages                           0.07                      0.07
+finished_on_attempt_0                      0.06                      0.06
+finished_on_attempt_1                      0.01                      0.01
+server_input_tokens                     142.22                    142.22
+server_output_tokens                    120.93                    120.93
+2026-09-03 02:34:34,240 - __main__ - INFO - 
+Worker ID | finished | started
+----------+----------+--------
+0         | 11       | 12     
+2026-09-03 02:34:39,088 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:34:39 [loggers.py:236] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 85.1 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.7%, Prefix cache hit rate: 6.4%, MM cache hit rate: 0.0%
+2026-09-03 02:34:39,088 - __main__ - INFO - vllm running req: 1 queue req: 0
+2026-09-03 02:34:39,453 - __main__ - INFO - Finished TaskGroup for worker on 80bc981a7084c4fc6378fd4a658adc247d5194eb
+2026-09-03 02:34:39,453 - __main__ - INFO - Got 12 docs for 80bc981a7084c4fc6378fd4a658adc247d5194eb
+2026-09-03 02:34:39,455 - __main__ - INFO - Writing 12 markdown files for 80bc981a7084c4fc6378fd4a658adc247d5194eb
+2026-09-03 02:34:39,460 - __main__ - INFO - Worker 0 exiting due to empty queue
+2026-09-03 02:34:39,461 - __main__ - INFO - Got cancellation request for VLLM server
+2026-09-03 02:34:39,518 - vllm - INFO - [1;36m(APIServer pid=5587)[0;0m INFO 09-03 02:34:39 [launcher.py:110] Shutting down FastAPI HTTP server.
+2026-09-03 02:34:39,704 - vllm - INFO - [rank0]:[W903 02:34:39.472816347 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+2026-09-03 02:34:41,141 - __main__ - INFO - ================================================================================
+2026-09-03 02:34:41,141 - __main__ - INFO - FINAL METRICS SUMMARY
+2026-09-03 02:34:41,141 - __main__ - INFO - ================================================================================
+2026-09-03 02:34:41,141 - __main__ - INFO - Total elapsed time: 167.83 seconds
+2026-09-03 02:34:41,141 - __main__ - INFO - Total Server Input tokens: 24,536
+2026-09-03 02:34:41,141 - __main__ - INFO - Total Server Output tokens: 21,747
+2026-09-03 02:34:41,141 - __main__ - INFO - Finished input tokens: 19,822
+2026-09-03 02:34:41,141 - __main__ - INFO - Finished output tokens: 17,932
+2026-09-03 02:34:41,141 - __main__ - INFO - Completed pages: 12
+2026-09-03 02:34:41,142 - __main__ - INFO - Failed pages: 0
+2026-09-03 02:34:41,142 - __main__ - INFO - Page Failure rate: 0.00%
+2026-09-03 02:34:41,142 - __main__ - INFO - 
+2026-09-03 02:34:41,142 - __main__ - INFO - Pages finished by attempt number:
+2026-09-03 02:34:41,142 - __main__ - INFO -   Attempt 0: 9 pages (75.0%) - Cumulative: 9 (75.0%)
+2026-09-03 02:34:41,142 - __main__ - INFO -   Attempt 1: 3 pages (25.0%) - Cumulative: 12 (100.0%)
+2026-09-03 02:34:41,142 - __main__ - INFO - Server Input tokens/sec rate: 146.20
+2026-09-03 02:34:41,142 - __main__ - INFO - Server Output tokens/sec rate: 129.58
+2026-09-03 02:34:41,142 - __main__ - INFO - Finished Input tokens/sec rate: 118.11
+2026-09-03 02:34:41,142 - __main__ - INFO - Finished Output tokens/sec rate: 106.85
+2026-09-03 02:34:41,142 - __main__ - INFO - ================================================================================
+2026-09-03 02:34:41,142 - __main__ - INFO - Work done
+2026-09-03 02:34:41,147 - __main__ - INFO - VLLM Process already terminated
+== done: 0 markdown files

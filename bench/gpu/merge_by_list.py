@@ -40,7 +40,10 @@ for category in sorted(os.listdir(base_dir)):
         page = category + "/" + stem
         alt = os.path.join(model_dir, category, name)
         text = open(os.path.join(src, name), encoding="utf-8").read()
-        want = ("all" in kinds and page in pages) or pages.get(page) in kinds or ("blank" in kinds and len(text.strip()) < 20)
+        # "all" means every page the census listed as non-digital; "any" means every page the
+        # model has a reading for, digital ones included. Session 4's whole-page table sends are
+        # digital pages (their table is a vector drawing), so "all" silently dropped them.
+        want = ("any" in kinds) or ("all" in kinds and page in pages) or pages.get(page) in kinds or ("blank" in kinds and len(text.strip()) < 20)
         if want and os.path.exists(alt) and open(alt, encoding="utf-8").read().strip():
             shutil.copyfile(alt, os.path.join(out_dir, category, name))
             taken += 1
