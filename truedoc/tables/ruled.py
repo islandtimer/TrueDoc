@@ -10,6 +10,7 @@ import re
 
 import pymupdf
 
+from truedoc.extract import pdftext_rawdict
 from truedoc.model import BBox, Block, BlockKind, Table, TableCell
 from truedoc.tables.aligned import _continues
 from truedoc.tables.cells import clean_cell_text, is_bracketed_statistic
@@ -165,10 +166,19 @@ def deal_tall_cells(pdf_page: "pymupdf.Page", rows: list, cell_rects: list[list]
             spanned = tall_cell_rows(rows, cell_rects, bounds, s, ci)
             if len(spanned) < 2:
                 continue
-            try:
-                blocks = pdf_page.get_text("dict", clip=rect).get("blocks", [])
-            except Exception:
-                continue
+            blocks = None
+            if pdftext_rawdict.enabled():
+                # M18, D007: read through PDFium instead of AGPL-licensed MuPDF; the page was
+                # already built for the text layer, so this is a filter, not a second reading.
+                try:
+                    blocks = pdftext_rawdict.clipped_blocks(pdf_page.parent.name, pdf_page.number + 1, tuple(rect))
+                except Exception:
+                    blocks = None
+            if blocks is None:
+                try:
+                    blocks = pdf_page.get_text("dict", clip=rect).get("blocks", [])
+                except Exception:
+                    continue
             texts: dict[int, list[str]] = {}
             lines: list[tuple[str, float]] = []
             for b in blocks:

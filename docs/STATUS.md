@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-09, 21:00 (after run 65: 84.0 with the vision switch on, held-out 80.9, identical to run 64; without a model run 54, 67.4; the icon question measured and closed; the reader swap under way)_
+_Last updated: 2026-09-09, 22:50 (after run 65: 84.0 with the vision switch on, held-out 80.9, identical to run 64; without a model run 54, 67.4; the icon question measured and closed; the reader swap now reads 90/128 on the quick gate against MuPDF's 100, off by default and the shipped path unchanged)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 

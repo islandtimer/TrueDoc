@@ -72,14 +72,18 @@ def _needs_ink(font: str) -> bool:
     return is_extension_font(font) or any(h in f for h in _INK_FONT_HINTS)
 
 
-def _page_has_extension_font(pdf_page: "pymupdf.Page") -> bool:
+def _page_has_extension_font(pdf_page: "pymupdf.Page", raw: dict | None = None) -> bool:
+    if raw is not None and raw.get("source") == "pdftext":
+        return any(_needs_ink(sp.get("font", ""))
+                   for b in raw.get("blocks", []) if b.get("type") == 0
+                   for ln in b.get("lines", []) for sp in ln.get("spans", []))
     try:
         return any(_needs_ink(f[3]) for f in pdf_page.get_fonts())
     except Exception:
         return False
 
 
-def _extension_glyph_origins(pdf_page: "pymupdf.Page", M) -> list[tuple[float, float]]:
+def _extension_glyph_origins(pdf_page: "pymupdf.Page", M, raw: dict | None = None) -> list[tuple[float, float]]:
     """Origins of the real glyphs of maths-extension fonts.
 
     MuPDF's text extraction inserts a space character wherever it sees a gap,
@@ -87,8 +91,24 @@ def _extension_glyph_origins(pdf_page: "pymupdf.Page", M) -> list[tuple[float, f
     extension-font span is therefore either a synthetic blank or a real bracket
     glyph on a whitespace code; only the text trace, which lists drawn glyphs,
     can tell the two apart.
+
+    PDFium invents the same gap-filling spaces, but says so: it marks a character
+    it generated rather than found drawn, so on that path the answer is read off
+    the character instead of from a second trace of the page.
     """
     out: list[tuple[float, float]] = []
+    if raw is not None and raw.get("source") == "pdftext":
+        for block in raw.get("blocks", []):
+            if block.get("type") != 0:
+                continue
+            for ln in block.get("lines", []):
+                for span in ln.get("spans", []):
+                    if not _needs_ink(span.get("font", "")):
+                        continue
+                    for c in span.get("chars", []):
+                        if not c.get("generated"):
+                            out.append(_point(c.get("origin", (0, 0)), M))
+        return out
     try:
         for span in pdf_page.get_texttrace():
             if not _needs_ink(span.get("font", "")):
@@ -104,7 +124,7 @@ def _is_real_glyph(origin: tuple[float, float], origins: list[tuple[float, float
     return any(abs(origin[0] - x) <= 0.3 and abs(origin[1] - y) <= 0.3 for x, y in origins)
 
 
-def _attach_ink_boxes(pdf_page: "pymupdf.Page", chars: list[Char], flags: int, M) -> None:
+def _attach_ink_boxes(pdf_page: "pymupdf.Page", chars: list[Char], flags: int, M, raw: dict | None = None) -> None:
     """Measure the drawn outline of maths-extension glyphs, and recover their codes.
 
     Their font boxes are meaningless: the glyph hangs below its origin and the
@@ -114,17 +134,35 @@ def _attach_ink_boxes(pdf_page: "pymupdf.Page", chars: list[Char], flags: int, M
     formula code falls back on the font's design metrics. Glyphs MuPDF could not
     name come back as U+FFFD in the first pass; this pass asks for the raw code
     instead, which the cmex tables understand.
+
+    PDFium reports both boxes for every character in the one reading - the metric box
+    and the drawn outline - so on that path the outline is already in hand and no
+    second pass over the page is needed. That also makes the alignment exact rather
+    than assumed: the outlines come from the very characters `chars` was built from.
     """
+    measured: list[tuple[str, BBox]] = []
+    if raw is not None and raw.get("source") == "pdftext":
+        for block in raw.get("blocks", []):
+            if block.get("type") != 0:
+                continue
+            for ln in block.get("lines", []):
+                for span in ln.get("spans", []):
+                    for c in span.get("chars", []):
+                        if not c.get("c", ""):
+                            continue
+                        ink = c.get("ink")
+                        measured.append((c["c"], _rect(ink or c["bbox"], M)))
+        _apply_ink_boxes(chars, measured)
+        return
     accurate = getattr(pymupdf, "TEXT_ACCURATE_BBOXES", 0)
     cid = getattr(pymupdf, "TEXT_CID_FOR_UNKNOWN_UNICODE", 0)
     if not accurate and not cid:
         return
     try:
-        raw = pdf_page.get_text("rawdict", flags=flags | accurate | cid)
+        measured_raw = pdf_page.get_text("rawdict", flags=flags | accurate | cid)
     except Exception:
         return
-    measured: list[tuple[str, BBox]] = []
-    for block in raw.get("blocks", []):
+    for block in measured_raw.get("blocks", []):
         if block.get("type") != 0:
             continue
         for ln in block.get("lines", []):
@@ -132,6 +170,11 @@ def _attach_ink_boxes(pdf_page: "pymupdf.Page", chars: list[Char], flags: int, M
                 for c in span.get("chars", []):
                     if c.get("c", ""):
                         measured.append((c["c"], _rect(c["bbox"], M)))
+    _apply_ink_boxes(chars, measured)
+
+
+def _apply_ink_boxes(chars: list[Char], measured: list[tuple[str, BBox]]) -> None:
+    """Give each maths-extension glyph its measured outline, and recover its code."""
     if len(measured) != len(chars):
         return
     for ch, (text, box) in zip(chars, measured):
@@ -416,8 +459,8 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
     lines: list[Line] = []
     chars_all: list[Char] = []
     pending: list[tuple[list[Char], tuple[float, float]]] = []
-    extension = _page_has_extension_font(pdf_page)
-    glyph_origins = _extension_glyph_origins(pdf_page, M) if extension else []
+    extension = _page_has_extension_font(pdf_page, raw)
+    glyph_origins = _extension_glyph_origins(pdf_page, M, raw) if extension else []
     visibility = _Visibility(pdf_page, page.width, page.height, M)
     line_index = 0
     for block in raw.get("blocks", []):
@@ -477,7 +520,7 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
     # any line is built: their font boxes span several lines and would drag a
     # lone bracket into the wrong line.
     if extension and any(_needs_ink(c.font) for c in chars_all):
-        _attach_ink_boxes(pdf_page, chars_all, flags, M)
+        _attach_ink_boxes(pdf_page, chars_all, flags, M, raw)
         for c in chars_all:
             if _needs_ink(c.font):
                 c.bbox = _extension_box(c)
