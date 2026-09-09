@@ -843,6 +843,19 @@ def _attach_marks(pdf_page: "pymupdf.Page", page: Page, blocks: list[Block]) -> 
             ch = Char(text=m.text, bbox=m.bbox, font="mark", size=lsize, origin_y=l.bbox.y1)
             l.words.insert(0, Word(text=m.text, bbox=m.bbox, chars=[ch]))
             l.bbox = l.bbox.union(m.bbox)
+            continue
+        # A mark standing on its own in a picture region, with no line on its baseline to lead:
+        # the arrow an insurance policy puts between two statements, carrying the word "then".
+        # Only when it is the picture's whole content, so a decorative row of dots stays a
+        # picture rather than becoming one character.
+        for b in blocks:
+            if b.kind is not BlockKind.FIGURE or b.lines or b.meta.get("mark_only"):
+                continue
+            if not b.bbox.contains_point(cx, cy):
+                continue
+            if sum(1 for o in marks if b.bbox.contains_point(o.bbox.cx, o.bbox.cy)) == 1:
+                b.meta["mark_only"] = m.text
+            break
 
 
 def _insert_before_line(cell, page: Page, m) -> str:

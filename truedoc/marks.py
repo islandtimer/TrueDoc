@@ -19,7 +19,9 @@ import pymupdf
 
 from truedoc.model import BBox, Page
 
-MARK_TEXT = {"tick": "✓", "cross": "✗", "dot": "●", "circle": "○", "square": "■", "box": "□", "unknown": "[icon]"}
+MARK_TEXT = {"tick": "✓", "cross": "✗", "dot": "●", "circle": "○", "square": "■", "box": "□",
+             "arrow-down": "↓", "arrow-up": "↑", "arrow-right": "→", "arrow-left": "←",
+             "unknown": "[icon]"}
 
 _GRID = 32          # template resolution (cells per side)
 _MIN_PT = 3.0       # smallest mark side, in points
@@ -152,7 +154,7 @@ def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None) -> Mark | None:
         hole = _knockout(mask)
         if sum(sum(row) for row in hole) >= 0.03 * n * n:
             kind, score = _best_template(hole)
-            if kind in ("tick", "cross"):
+            if kind in ("tick", "cross") or (kind or "").startswith("arrow-"):
                 return Mark(bbox=box, kind=kind, score=score, colour=colour)
     ring = _has_ring(mask)
     if ring:
@@ -384,6 +386,50 @@ def _drop_specks(mask, min_share: float = 0.06):
     return out
 
 
+def _chevron(mask):
+    """An arrow head, or None.
+
+    Two arms meeting at a point. Told apart from a cross by the corners: an X puts ink in all
+    four, a chevron only in the two its arms open towards, and its point lands on the middle of
+    the opposite edge. Insurance documents chain statements down a page with these, where the
+    arrow is carrying the word "then".
+    """
+    n = len(mask)
+    ys = [y for y in range(n) if any(mask[y])]
+    xs = [x for x in range(n) if any(mask[y][x] for y in range(n))]
+    if not ys or not xs:
+        return None
+    y0, y1, x0, x1 = ys[0], ys[-1], xs[0], xs[-1]
+    h, w = y1 - y0 + 1, x1 - x0 + 1
+    if h < 4 or w < 4:
+        return None
+    # Patches are taken from the ink's own box, not the grid: the grid keeps the aspect ratio, so
+    # a chevron wider than it is tall sits letterboxed and every grid corner reads empty.
+    qh, qw = max(2, h // 4), max(2, w // 4)
+
+    def patch(px, py):
+        """Fraction of ink in a quarter-sized patch at (px, py) of the ink box, each 0..1."""
+        sx = x0 + int(px * (w - qw))
+        sy = y0 + int(py * (h - qh))
+        cells = [mask[y][x] for y in range(sy, min(n, sy + qh)) for x in range(sx, min(n, sx + qw))]
+        return sum(cells) / max(len(cells), 1)
+
+    tl, tr, bl, br = patch(0, 0), patch(1, 0), patch(0, 1), patch(1, 1)
+    top, bottom = patch(0.5, 0), patch(0.5, 1)
+    left, right = patch(0, 0.5), patch(1, 0.5)
+    # kind -> (the two corners the arms reach, the two they must not, the point)
+    shapes = {
+        "arrow-down": (tl, tr, bl, br, bottom),
+        "arrow-up": (bl, br, tl, tr, top),
+        "arrow-right": (tl, bl, tr, br, right),
+        "arrow-left": (tr, br, tl, bl, left),
+    }
+    for kind, (a, b, empty1, empty2, point) in shapes.items():
+        if a >= 0.25 and b >= 0.25 and empty1 <= 0.06 and empty2 <= 0.06 and point >= 0.25:
+            return kind, round(min(a, b, point), 2)
+    return None
+
+
 def _best_template(mask):
     """Say what shape the ink is.
 
@@ -404,6 +450,12 @@ def _best_template(mask):
     # arm lower-left. What is left of a ring adds a little ink everywhere.
     if thin and ul < 0.12 and ur >= 0.25 and ll >= 0.12 and lr <= 0.35 and ll + ur >= 0.6:
         return "tick", round(1.0 - ul - max(0.0, lr - 0.1), 2)
+    # An arrow head, before the cross test because the two are easily confused: both are two
+    # strokes crossing the middle. The difference is at the corners - an X reaches all four, a
+    # chevron reaches only the two it opens away from, and its point sits on the opposite edge.
+    arrow = _chevron(mask)
+    if arrow is not None:
+        return arrow
     # A cross: ink in all four quarters, lying along the two diagonals (a disc
     # has about half its ink there, a fat cross nearly all of it).
     if min(ul, ur, ll, lr) >= 0.12 and f["diag"] >= 0.75 and fill < 0.8:

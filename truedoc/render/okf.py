@@ -162,6 +162,12 @@ def render_block(block: Block) -> str:
     if k == BlockKind.TABLE and block.table is not None:
         return render_table(block.table)
     if k == BlockKind.FIGURE and not block.lines and block.text_override is None:
+        only = block.meta.get("mark_only")
+        if only:
+            # A picture whose whole content is one readable drawn mark is that mark, not an
+            # anonymous placeholder (D013). Insurance policies chain statements down a page with
+            # an arrow in a disc between them, where the arrow is carrying the word "then".
+            return only
         # A figure has no text of its own; it renders as an image placeholder, with a
         # model's description as alt text when the vision stage supplied one (D015).
         desc = block.meta.get("inferred_text")
