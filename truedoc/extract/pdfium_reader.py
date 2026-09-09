@@ -116,6 +116,40 @@ def page_chars(pdf_page, page_height: float, *, loose: bool = False) -> list[Raw
     return out
 
 
+def group_lines(chars: list[RawChar]) -> list[list[RawChar]]:
+    """Cut the flat character run into lines, the one thing PyMuPDF gives us for nothing.
+
+    PyMuPDF's rawdict arrives already grouped into blocks, lines and spans - its own layout
+    analysis, which TrueDoc has been inheriting free. PDFium hands back a flat run in reading
+    order, so the lines have to be cut from geometry. Two signals do it, and they are the same
+    ones the OCR-layer reassembly uses (D010): the baseline moves, or the pen jumps backwards by
+    more than a word, which is what starting a new line looks like from the character's side.
+
+    This is deliberately plain. Everything clever about lines - the gutter splits, the symbol
+    folds, the satellite attachment - already happens downstream on whatever lines it is given.
+    """
+    out: list[list[RawChar]] = []
+    current: list[RawChar] = []
+    baseline = 0.0
+    for c in chars:
+        size = c.size or 10.0
+        if not current:
+            current, baseline = [c], c.origin_y
+            continue
+        moved = abs(c.origin_y - baseline) > 0.3 * size
+        backwards = c.x0 < current[-1].x0 - 2.0 * size
+        if moved or backwards:
+            out.append(current)
+            current, baseline = [c], c.origin_y
+            continue
+        current.append(c)
+        # Follow a drifting baseline (a slightly rotated scan) rather than snapping to the first.
+        baseline = 0.7 * baseline + 0.3 * c.origin_y
+    if current:
+        out.append(current)
+    return out
+
+
 def read(path: str, page_index: int, *, loose: bool = False) -> list[RawChar]:
     """Convenience: open the file, read one page's characters, close it."""
     doc = pdfium.PdfDocument(path)
