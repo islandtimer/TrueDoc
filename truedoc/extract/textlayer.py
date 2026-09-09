@@ -383,13 +383,19 @@ class _Visibility:
         return out
 
 
-def _renders_uniform(pdf_page: "pymupdf.Page", box: BBox, M) -> bool | None:
+def _renders_uniform(pdf_page: "pymupdf.Page", box: BBox, M=None) -> bool | None:
     """Does this area of the page render as one flat colour (no visible ink)?
-    None when the area could not be rendered."""
+    None when the area could not be rendered.
+
+    `box` is in the rendered page's own space and is used as it stands. Text and drawing
+    coordinates come out of MuPDF unrotated and are turned once in `_rect`, but a clip is not
+    text: `get_pixmap` takes the *rendered* space, so turning the box back would photograph the
+    wrong part of a rotated page. Measured: clipping with the rendered-space rectangle reproduces
+    the matching region of the full render exactly, where the turned-back one returned a
+    differently shaped region elsewhere. `M` is accepted and ignored, so callers need not care.
+    """
     try:
         rect = pymupdf.Rect(box.x0 - 0.5, box.y0 - 0.5, box.x1 + 0.5, box.y1 + 0.5)
-        if M is not None:
-            rect = rect * ~M
         if rect.is_empty or rect.width < 1 or rect.height < 1:
             return True
         pix = pdf_page.get_pixmap(clip=rect, dpi=72, colorspace=pymupdf.csGRAY, alpha=False)

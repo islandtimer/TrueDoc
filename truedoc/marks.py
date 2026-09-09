@@ -192,12 +192,16 @@ def _knockout(mask):
     return out
 
 
-def _ink(pdf_page, box: BBox, M):
-    """A square boolean grid of "ink" pixels inside the box, and the ink colour."""
+def _ink(pdf_page, box: BBox, M=None):
+    """A square boolean grid of "ink" pixels inside the box, and the ink colour.
+
+    `box` is in the rendered page's own space and is used as it stands. `get_pixmap` clips in that
+    same space, so turning the box back into the unrotated one - which is right for text, and was
+    being done here - photographed the wrong patch of a rotated page and read its marks from it.
+    `M` is accepted and ignored, so callers need not care.
+    """
     rect = pymupdf.Rect(box.x0, box.y0, box.x1, box.y1)
-    if M is not None:
-        rect = rect * ~pymupdf.Matrix(M)
-        rect.normalize()
+    rect.normalize()
     pad = 0.08 * max(rect.width, rect.height)
     rect = pymupdf.Rect(rect.x0 - pad, rect.y0 - pad, rect.x1 + pad, rect.y1 + pad)
     zoom = _GRID / max(rect.width, rect.height, 1.0)
