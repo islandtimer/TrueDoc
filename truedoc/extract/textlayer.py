@@ -19,6 +19,7 @@ except Exception:
     pass
 
 from truedoc.math.symbols import is_extension_font, is_piece_glyph, latex_for_char, unfold_truncated_surrogate
+from truedoc.extract import pdftext_rawdict
 from truedoc.model import BBox, Char, Drawing, ImageRef, Line, Page, TextQuality, Word
 
 # Characters that indicate a broken or untrustworthy text layer.
@@ -398,10 +399,19 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
 
     flags = pymupdf.TEXTFLAGS_RAWDICT & ~pymupdf.TEXT_PRESERVE_LIGATURES
     flags |= pymupdf.TEXT_MEDIABOX_CLIP
-    try:
-        raw = pdf_page.get_text("rawdict", flags=flags)
-    except Exception:
-        raw = {"blocks": []}
+    raw = None
+    if pdftext_rawdict.enabled():
+        # M18, D007: read through PDFium instead of AGPL-licensed MuPDF. Off unless
+        # TRUEDOC_READER=pdftext is set, and it falls back rather than failing a conversion.
+        try:
+            raw = pdftext_rawdict.build(pdf_page.parent.name, number)
+        except Exception:
+            raw = None
+    if raw is None:
+        try:
+            raw = pdf_page.get_text("rawdict", flags=flags)
+        except Exception:
+            raw = {"blocks": []}
 
     lines: list[Line] = []
     chars_all: list[Char] = []
