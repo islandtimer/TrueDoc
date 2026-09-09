@@ -7,7 +7,7 @@ serves the model at `<endpoint>/v1/chat/completions`; that is what the rented
 GPU ran on 3 September 2026, only driven here page by page instead of through
 olmOCR's own batch pipeline.
 
-The page is rendered with PyMuPDF (longest side 1288 pixels, olmOCR's default)
+The page is rendered through `truedoc.extract.render` (longest side 1288 pixels, olmOCR's default)
 so no poppler installation is needed on the caller's machine.
 """
 
@@ -20,6 +20,8 @@ import urllib.error
 import urllib.request
 
 import pymupdf
+
+from truedoc.extract import render
 
 log = logging.getLogger("truedoc")
 
@@ -47,8 +49,7 @@ def render_page_png_base64(pdf_path: str, page_number: int, longest_dim: int = 1
         page = doc[page_number - 1]
         rect = page.rect
         zoom = longest_dim / max(rect.width, rect.height, 1.0)
-        pix = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), alpha=False)
-        return base64.b64encode(pix.tobytes("png")).decode("ascii")
+        return base64.b64encode(render.render_png(page, zoom)).decode("ascii")
     finally:
         doc.close()
 

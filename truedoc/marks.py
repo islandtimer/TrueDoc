@@ -17,6 +17,7 @@ from dataclasses import dataclass
 
 import pymupdf
 
+from truedoc.extract import render
 from truedoc.model import BBox, Page
 
 MARK_TEXT = {"tick": "✓", "cross": "✗", "dot": "●", "circle": "○", "square": "■", "box": "□",
@@ -206,10 +207,10 @@ def _ink(pdf_page, box: BBox, M=None):
     rect = pymupdf.Rect(rect.x0 - pad, rect.y0 - pad, rect.x1 + pad, rect.y1 + pad)
     zoom = _GRID / max(rect.width, rect.height, 1.0)
     try:
-        pix = pdf_page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), clip=rect, alpha=False, colorspace=pymupdf.csRGB)
+        img = render.render_image(pdf_page, zoom, tuple(rect))
     except Exception:
         return None, ""
-    w, h, s = pix.width, pix.height, pix.samples
+    w, h, s = img.width, img.height, img.tobytes()
     if w < 4 or h < 4:
         return None, ""
     px = [[(s[(y * w + x) * 3], s[(y * w + x) * 3 + 1], s[(y * w + x) * 3 + 2]) for x in range(w)] for y in range(h)]

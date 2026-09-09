@@ -14,6 +14,8 @@ import re
 
 import pymupdf
 
+from truedoc.extract import render
+
 ICON_PROMPT = (
     "This image is a small icon or symbol cut out of a document, shown with a little of its surroundings. "
     "Say what it means to a reader of that document, in at most five words and in the document's own language "
@@ -72,8 +74,7 @@ def render_region_png_base64(pdf_path: str, page_number: int, bbox: tuple[float,
         if clip.is_empty or clip.width < 1 or clip.height < 1:
             clip = page.rect
         zoom = LONGEST_DIM.get(kind, 512) / max(clip.width, clip.height, 1.0)
-        pix = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), clip=clip, alpha=False)
-        return base64.b64encode(pix.tobytes("png")).decode("ascii")
+        return base64.b64encode(render.render_png(page, zoom, tuple(clip))).decode("ascii")
     finally:
         doc.close()
 

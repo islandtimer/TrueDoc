@@ -19,7 +19,7 @@ except Exception:
     pass
 
 from truedoc.math.symbols import is_extension_font, is_piece_glyph, latex_for_char, unfold_truncated_surrogate
-from truedoc.extract import pdftext_rawdict
+from truedoc.extract import pdftext_rawdict, render
 from truedoc.model import BBox, Char, Drawing, ImageRef, Line, Page, TextQuality, Word
 
 # Characters that indicate a broken or untrustworthy text layer.
@@ -398,8 +398,7 @@ def _renders_uniform(pdf_page: "pymupdf.Page", box: BBox, M=None) -> bool | None
         rect = pymupdf.Rect(box.x0 - 0.5, box.y0 - 0.5, box.x1 + 0.5, box.y1 + 0.5)
         if rect.is_empty or rect.width < 1 or rect.height < 1:
             return True
-        pix = pdf_page.get_pixmap(clip=rect, dpi=72, colorspace=pymupdf.csGRAY, alpha=False)
-        samples = pix.samples
+        samples = render.render_image(pdf_page, 1.0, tuple(rect), grey=True).tobytes()
         if not samples:
             return None
         return (max(samples) - min(samples)) < 48

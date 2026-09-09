@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 import pymupdf
 
 from truedoc.classify.blocks import _assign_heading_levels, classify_blocks
+from truedoc.extract import render as page_render
 from truedoc.extract.textlayer import extract_page
 from truedoc.layout.fuse import apply_layout
 from truedoc.model import BBox, Block, BlockKind, Document, Page
@@ -76,6 +77,9 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
             doc.pages.append(page)
     finally:
         pdf.close()
+        # The renderer keeps a PDFium document open between calls (marks.py asks for one crop per
+        # candidate shape); let go of it with the MuPDF one so the file is not left held.
+        page_render.close_documents()
     _link_endnotes(doc)
     if opts.vision_endpoint:
         _read_unreadable_pages_with_model(doc, path, opts)

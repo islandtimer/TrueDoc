@@ -16,6 +16,7 @@ from typing import Optional
 import numpy as np
 import pymupdf
 
+from truedoc.extract import render
 from truedoc.model import BBox, Char, Line, Page, Word
 
 _MAX_SIDE = 2000  # pixels on the long side; old scans are stored at huge page sizes
@@ -106,8 +107,7 @@ def ocr_page_turn(pdf_page: "pymupdf.Page", want_turn: bool = True) -> tuple[lis
     rect = pdf_page.rect
     long_side = max(rect.width, rect.height)
     scale = min(300.0 / 72.0, _MAX_SIDE / max(1.0, long_side))
-    pix = pdf_page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), colorspace=pymupdf.csRGB, alpha=False)
-    img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, 3)
+    img = np.asarray(render.render_image(pdf_page, scale))
     engine = _get_engine()
     result, _ = engine(img)
     lines: list[Line] = []
@@ -190,19 +190,18 @@ def ocr_region(pdf_page: "pymupdf.Page", bbox: BBox) -> tuple[list[Line], float,
     """Run OCR on one area of a page (a table drawn as a picture on an otherwise
     digital page). Returns (lines in page points, mean confidence, word-like share).
 
-    `bbox` is in the rendered (rotated) page space; the clip is mapped back to
-    MuPDF's unrotated space and the results mapped forward again.
+    `bbox` is in the rendered (rotated) page space, and stays there: clipping happens in that
+    same space, so the picture that comes back is already the piece of the page that was asked
+    for, and what the engine reads off it needs no turning either. This used to map the clip back
+    into MuPDF's unrotated space and map the results forward again - consistent with itself, and
+    wrong at both ends on a rotated page, because a clip is not text (D022).
     """
-    M = pdf_page.rotation_matrix if pdf_page.rotation else None
     clip = pymupdf.Rect(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
-    if M is not None:
-        clip = clip * ~M
     if clip.is_empty or clip.width < 20 or clip.height < 10:
         return [], 0.0, 0.0
     long_side = max(clip.width, clip.height)
     scale = min(300.0 / 72.0, _MAX_SIDE / max(1.0, long_side))
-    pix = pdf_page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), clip=clip, colorspace=pymupdf.csRGB, alpha=False)
-    img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, 3)
+    img = np.asarray(render.render_image(pdf_page, scale, tuple(clip)))
     result, _ = _get_engine()(img)
     lines: list[Line] = []
     scores: list[float] = []
@@ -215,8 +214,6 @@ def ocr_region(pdf_page: "pymupdf.Page", bbox: BBox) -> tuple[list[Line], float,
         xs = [clip.x0 + p[0] / scale for p in box]
         ys = [clip.y0 + p[1] / scale for p in box]
         rect = pymupdf.Rect(min(xs), min(ys), max(xs), max(ys))
-        if M is not None:
-            rect = rect * M
         line_box = BBox(float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1))
         words = _split_words(text, line_box, score)
         if not words:
