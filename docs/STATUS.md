@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-09, 10:20 (after run 64 and GPU session 4: 84.0 with the vision switch on, held-out 80.9; without a model run 54, 67.4; the icon question measured and closed)_
+_Last updated: 2026-09-09, 21:00 (after run 65: 84.0 with the vision switch on, held-out 80.9, identical to run 64; without a model run 54, 67.4; the icon question measured and closed; the reader swap under way)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -72,7 +72,8 @@ _Last updated: 2026-09-09, 10:20 (after run 64 and GPU session 4: 84.0 with the 
 | TrueDoc run 61 (the eight losses repaired, the units rule), 8 Sept 14:24 | 83.5 (CI 82.6-84.4; tables 88.2, multi-column 80.7; fourteen won, none lost; held-out 80.6; Chandra 83.1) |
 | TrueDoc run 62 (five multi-column repairs), 8 Sept 15:45 | 83.7 (CI 82.7-84.6; multi-column 81.7, tiny text 88.2; fourteen won, four lost; held-out 80.8; Chandra 83.1) |
 | TrueDoc run 63 (run 62's losses repaired, three furniture shapes), 8 Sept 16:57 | 84.0 (CI 83.1-84.8; multi-column 82.9, arXiv 87.4, headers 96.8; twenty-eight won, one lost; held-out 80.9; Chandra 83.1 is now the interval's lower bound) |
-| **TrueDoc run 64 (a subscript arriving in two pieces is joined), 8 Sept 18:05** | **84.0** (CI 83.0-84.8; every section unchanged; one arXiv check won, none lost; held-out 80.9) |
+| TrueDoc run 64 (a subscript arriving in two pieces is joined), 8 Sept 18:05 | 84.0 (CI 83.0-84.8; every section unchanged; one arXiv check won, none lost; held-out 80.9) |
+| **TrueDoc run 65 (a baseline, not a change: the day's arrow marks and invented-text check), 9 Sept 20:35** | **84.0** (CI 82.9-84.9; every category identical to run 64, zero won and zero lost; held-out 80.9) |
 | GPU session 4 (experiment, not a TrueDoc run): the densest pages read a band at a time, 8 Sept 20:52 | 84.2 (CI 83.3-85.1; eleven net checks where 3.0 points were projected; held-out unchanged at 80.9, so none of it generalised; `docs/GPU_PLAN.md` has the breakdown) |
 
 Note on run 1: about 6 points of it were an accident. Pages we could not read at all were written as a file holding one blank line, and the marking script treats a one-character answer as matching any phrase. That is fixed; every number since is honest.
