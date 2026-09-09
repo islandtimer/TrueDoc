@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-08, 21:05 (after run 64 and GPU session 4: 84.0 with the vision switch on, held-out 80.9; without a model run 54, 67.4)_
+_Last updated: 2026-09-09, 10:20 (after run 64 and GPU session 4: 84.0 with the vision switch on, held-out 80.9; without a model run 54, 67.4; the icon question measured and closed)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -145,6 +145,23 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 - **Runs 30 to 37 (4 to 5 September, overnight loop): 64.8 to 65.6.** Formula round 16 (33 items) took the formula section from 82.6 to 86.8: the mathabx symbol font's codes read off a contact sheet of its glyphs, roots and scripts inside limits, italic Times fonts recognised by name, typed "..." told from the LaTeX dots by their spacing, negated relations, text-font terms such as "4k+1" joining their formula. The biggest single step was elsewhere: 89 benchmark pages were coming out empty because the OCR gate rejected confident reads of non-English scans as noise; accepting confident reads whose words look like any Latin-script language filled ten of them and was worth +0.2 on its own (tables 69.6 to 70.3, multi-column 71.9 to 72.7). Four rules were tried and withdrawn after page checks or a run showed losses (symbol-font spaces as negation slashes, fraction rows inside matrices, a respelling of "not in", a fold rule for numerator roots); each is written up in `docs/PROGRESS_LOG.md` so it is not retried blind. Held-out 61.8 to 62.2.
 - **6 September: pages lying on their side are turned before reading (run 38).** A landscape scan of a Spanish decree and a table printed up the page were both coming out empty: every line was filed as a rotated stamp. TrueDoc now notices when most of a page's text runs up or down, works out which way from the OCR engine's own angle classifier (or from the text layer's line directions), turns the page in memory and reads it again; the front matter says which pages were turned. A census of all 1,403 benchmark pages found exactly three such pages (one is a picture table with only its title in the text layer, left for the tables job). The bar for accepting confident non-English or numeric OCR moved from 0.85 to 0.80 on the census evidence (the two pages in that band that were rejected stay rejected). On the affected pages: 0 of 8 to 5 of 8, 0 of 5 to 5 of 5 and 0 of 8 to 5 of 8 checks; three ordinary OCR pages unchanged.
+
+## Icons, answered on your library, 9 September
+
+You asked how TrueDoc could tell which icons carry meaning and then work out what they mean. Measured
+across all 1,176 of your documents rather than guessed: 28% use icons, averaging about seven distinct
+symbols each; only **6% carry a legend page**, but an icon sitting beside its own label somewhere is
+four times more common - so your own observation (if the words already carry the meaning, the icon is
+illustration) is both the filter and the way to learn what a symbol means. All 15,085 icon uses in
+the corpus are only **171 distinct shapes**.
+
+You then ruled on 159 of them in a review page, and overrode the machine on 92 of the 119 it had an
+opinion about. Most of what it had flagged were parts of pictures - a feature on a floor plan, a
+light shade, a car wheel - and most of the "letters" it wanted to discard were words the text layer
+already had anyway. **Verdict: not worth building, and no GPU rental needed.** The one document where
+icons genuinely carried meaning is the Huddle policy below, already fixed. `docs/ICONS_REVIEW.md`
+has the detail. The one thing still open is yours: the directional arrows that tell a reader what to
+read next, which is a reading-order question rather than an icon one.
 
 ## Fixed on your own documents, 8 September (evening)
 

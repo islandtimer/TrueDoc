@@ -4,6 +4,31 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-09 - Icons: measured across the whole library, reviewed by the owner, and not built
+
+**Done**
+- **The question, from the owner: how would TrueDoc know which icons carry meaning, and then what they mean?** His own observation set the frame - if the words beside an icon already carry the meaning, the icon is illustration - and the design turned on using that redundancy twice: as a filter (ignore what the words already say) and as the teacher (the labelled occurrence is what lets an unlabelled one elsewhere be resolved). Written up with the numbers in `docs/ICONS_REVIEW.md`.
+- **The census over all 1,176 documents and 23,870 pages (`bench/tools/icon_census.py`, 251 s).** 326 documents (28%) use icons, averaging **7.6 distinct** each; 171 (15%) have load-bearing ones, averaging 4.7. Only **66 documents (6%) carry a legend**, but a short label beside the icon is available four times more often (314 icons against 77) - so the self-describing occurrence, not the legend page, is the mechanism that would do the work. The architectural result that survived everything: **15,085 occurrences collapse to 171 distinct shapes**, 88 uses per thing, which is why per-page vision is the wrong tool - reason per symbol, not per page.
+- **Three instrument failures caught before they became answers.** Keying icon identity on exact size split one document's six symbols into 339; counting every small shape called a 117-page policy 169 symbols when 67 appeared once and the rest were rules and filled quads; and treating any text beside an icon as its label confused "house Home" (a name) with "tick Loss or damage..." (the statement being marked), which needed the repetition test to separate. Each was found by validating against documents whose answers were already known.
+- **A contact sheet of all 171 shapes, which disproved the number I was about to report.** The plan said about 156 crops would need a model. The sheet showed a large share were letters drawn as outlines - logos, brand names - and my structural filter had promoted every one. Looking is what caught it; 171 crops fit on one page and 24,000 pages do not.
+- **A review dossier put all 159 renderable shapes to the owner (`bench/tools/icon_dossier.py`, the `review-dossier` skill).** Each card carries the icon enlarged *and the band of page it sits in* with the icon outlined - added at his request, and decisive: one card resolved instantly to the "n" in a **coles insurance** logo, another to a fixture in a floor plan that our own mark reader had called a tick. A second request, evidence and decision on screen together, became `bench/tools/dossier_two_column.py`.
+- **The owner drained all 159, and the machine was wrong on 92 of the 119 cards where it proposed anything - 23% agreement.** It proposed "carries meaning" for 71 pictograms and was overridden on 62; "ignore" for 55 letter-shapes and was overridden on 30. **The structural filter must not ship.** In his words, on the two most-used shapes in the corpus: *"this specific occurrence is an icon that denotes a feature on a floor plan. This is not a tick."* Also a red light shade, the hair of a female figure, a broken window, the wheel of a car - the "contrasting set of the same size" test is matching coincidental pairs inside illustrations.
+- **The letters spell words, but words the text layer already has.** 30 were marked as carrying meaning, each named to its word. Checked afterwards: coles insurance, CGU, RACT and the phone number are all already in the text, so the drawn glyphs are duplicates and ignoring them loses nothing. Where the word is genuinely absent - "Allianz" on a 44-character page, "LUCKY YOU'RE WITH AAMI" on the AAMI covers - it is a cover-page logo whose brand name appears elsewhere in the document. A fidelity gap on covers, not a meaning loss.
+- **Verdict: the icon-resolution pipeline is not worth building for this corpus, and no GPU session is needed.** The population is roughly a dozen shapes; the one document where icons genuinely carried meaning (Huddle Black) was already fixed on 8 September; and the 156-crop estimate collapsed the moment a person ruled out the illustration fragments for nothing.
+
+**Learned**
+- **Three findings talked down in one day, every one by evidence.** The vector-drawn-table rule (one page), the drawn-text loss (cover-page logos), and my own icon filter (23% agreement). The alternative was building an elaborate pipeline for a problem that mostly does not exist in this corpus - so a day spent measuring bought more than a day spent building would have.
+- **A person ruling on 159 pictures for twenty minutes replaced a GPU rental and beat it.** Not because they are cheaper, but because they see context a crop cannot carry: every one of the overrides came from recognising what the *picture around the icon* was.
+- **The owner found the one thing the machine could not.** Directional arrows that tell the reader what to read next - not a value symbol at all, but a reading-order instruction. No structural test in this project would have surfaced it, and it came from him reading page 75 rather than from any measurement here.
+- **Put the evidence and the decision on the same screen.** The first dossier made him scroll away from the picture to read what he was deciding about, which is backwards for a page whose whole purpose is judging against evidence.
+
+**Next**
+- **The directional arrows**, as a reading-order question rather than an icon one: three shapes, ~157 uses, `aami-home-building-insurance-pds-a01463_4906c3da.pdf` pages 11 and 75. Reading order still loses real checks on the benchmark, so this is the one thread with somewhere to go.
+- Twelve of the 171 shapes have a zero-width bounding box and cannot be rendered at all. Degenerate geometry has now bitten three times in two days (two contact sheets and the dossier); worth one look at where those boxes come from rather than another guard.
+- The classical tail and M17/M18 are unchanged by any of this; run 64 (84.0) still stands as the last scored run.
+
+---
+
 ## 2026-09-08 - Runs 56 to 64 (82.8 to 84.0): the vision switch proved, the classical tail, the multi-column family, and GPU session 4's negative answer
 
 **Done**
