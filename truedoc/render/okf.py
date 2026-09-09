@@ -157,6 +157,26 @@ def _html_escape(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def _corroboration_summary(doc: Document) -> dict | None:
+    """D008, M6: how much of what a model read we could corroborate from the page itself.
+
+    A count per verdict, and the pages worth an eye. "unchecked" is the honest answer for a bare
+    scan with no witness, and it is the commonest one: saying so beats implying a pass.
+    """
+    import collections
+
+    rows = doc.metadata.get("corroboration") or []
+    if not rows:
+        return None
+    counts = collections.Counter(r["state"] for r in rows)
+    out: dict = {"pages_checked": len(rows)}
+    out.update({state.replace(" ", "_"): n for state, n in sorted(counts.items())})
+    flagged = [r["page"] for r in rows if r["state"] == "low support"]
+    if flagged:
+        out["low_support_pages"] = flagged
+    return out
+
+
 def render_block(block: Block) -> str:
     k = block.kind
     if k == BlockKind.TABLE and block.table is not None:
@@ -401,6 +421,7 @@ def render_frontmatter(doc: Document, body: str = "") -> str:
         "ocr_regions": doc.metadata.get("ocr_regions") or None,
         "pages_with_model": doc.metadata.get("pages_with_model") or None,
         "inferred": doc.metadata.get("inferred") or None,
+        "corroboration": _corroboration_summary(doc) or None,
         "hidden_text": doc.metadata.get("hidden_text") or None,
         "warnings": list(doc.warnings),
     }

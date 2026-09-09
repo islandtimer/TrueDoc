@@ -96,6 +96,37 @@ Two of wave 3's four questions (`docs/LATERAL_ROUND_1.md`) were measured and set
 
 **What remains, and it is a product question rather than a score one:** in the free tier there is no model, so a page our own OCR read confidently but which failed the word-likeness gate is still emitted empty (about six pages on the benchmark). Whether those deserve a visible partial-page note in the no-model configuration is open, and the recommendation is to leave it until the owner's library run shows how often it happens on real documents.
 
+## D021 - The invented-text check reports and never acts (2026-09-09)
+
+D008 says nothing is invented, and on every page a model reads for us (D019) nothing verified it: the
+promise was a policy we stated rather than one we measured. `truedoc/vision/corroborate.py` now checks
+each model-read page against what we can read of it ourselves - the hidden text layer, or our own
+engine's rejected lines, already kept in `page.meta["witness_lines"]` - and puts a verdict per page in
+the front matter under `truedoc.corroboration`.
+
+Four verdicts, because a two-state check would imply a pass where none was earned: **unchecked** (no
+witness at all - a bare scan our OCR could not read), **unverified** (a witness exists but is in a
+different script from the model's text, so its encoding is broken and it can witness nothing),
+**corroborated** (the witness backs at least 55% of the model's words), **low support** (a comparable
+witness backs fewer - worth an eye, nothing more). Over the 281 model-read benchmark pages: 181, 91, 7
+and 2 respectively.
+
+**It never drops or alters the model's text, and that is a measured decision rather than caution.**
+Every low-support page in the corpus had a broken witness rather than an inventing model: a Persian
+page whose text layer is mojibake (`ƶŝ Ĩŝ ƾĭŵźƀƟř`) against the model's correct Persian, and a formula
+our own rebuild mangled. Acting on low support would have destroyed both correct readings. The check
+found no inventions at all, so it is insurance and a disclosure to the reader, not a bug-hunt - and it
+is what would show a future model starting to invent.
+
+Hand-audited before this was recorded (M6's stated condition): every flagged page is a broken
+witness. `7b9b73157809_pg19` - ours `GlOW Tack J and Sponse¢ | Salau'_`, the model "TABLE B-3.
+DETAILED COST BREAKDOWN"; `old_scans/74` - ours `+]The [merican [ssnciatim of the Je Gross.`, the
+model "The American Association of the Red Cross."; `00d8a44d` - ours `7 PDA 7uq dZ 7z] H[oE`, the
+model correct Korean. Zero inventions. Known limit found in the same audit: the script test compares
+the dominant script, so a bilingual page (a Korean paper with an English title) has Latin on both
+sides and its mojibake layer lands in "low support" rather than "unverified" - still flagged, still
+never acted on, but the reason given is wrong.
+
 ## Open: PyMuPDF's licence against D007 (found 2026-09-07, owner's decision pending)
 
 PyMuPDF, which reads every text layer TrueDoc uses, is dual-licensed: GNU AGPL 3.0 or a commercial licence from Artifex (the installed package's metadata says so; Artifex's licensing page, read 7 September: a server-based application or service cannot be deployed without disclosing the application's full source under the AGPL; prices on request, per copy with a quarterly minimum). D007 excludes AGPL components from the product path. The choices are a commercial licence or moving the text-layer stage to a permissive reader. Evidence, 8 September: no leaderboard tool uses PyMuPDF; olmOCR, Marker, Docling and MinerU all read PDFs through PDFium (pypdfium2, pdftext, docling-parse), and MinerU moved off PyMuPDF. Agreed with the owner: decide after a measured census (PyMuPDF against PDFium on every benchmark page, the formula stage's special cases first) and, if the census is clean, a trial run with a PDFium extractor; both after GPU session 3. **Census done 8 September (`bench/tools/engine_census.py`): the characters agree on all but 16 pages once the binding's UTF-16 halves are combined; PDFium reads whole columns PyMuPDF silently drops on a handful of pages; PyMuPDF decodes Type 3 fonts PDFium does not (16 pages) and reports raw codes for unmapped glyphs where PDFium gives U+FFFD; PDFium is 2.4 times faster. Verdict: a PDFium extractor is viable with two bounded gaps; step 2 (the extractor, a full run) is the next decision for the owner.** **Step 2 sized 8 September (discussed with the owner that afternoon):** the swap is worth at most +0.30 points (53 pages where PDFium reads text PyMuPDF drops; 16 of them fail checks today, 28 checks in all, and most of that "extra text" is the binding reporting two-part characters as two rather than text genuinely dropped) against at most -0.38 (the 48 checks that pass today on the 16 Type 3 pages), plus an unmeasured risk to the maths glyph outlines. It is a licence job, not a score job, so the recommended order is after GPU session 4 (worth about 3 points), unless the rental is more than a couple of days away, in which case step 2 is the best use of the wait because it needs no rental. The work itself: characters and boxes, page rendering, and the vector drawings rebuilt from raw path segments through pypdfium2's low-level bindings (every symbol needed is present in 5.13), both readers behind one switch. Buying Artifex's commercial licence removes the need for it entirely. Nothing else in the product path is affected.

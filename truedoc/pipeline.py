@@ -895,6 +895,9 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
     inferred: list[dict] = doc.metadata.setdefault("inferred", [])
     pages_with_model: list[int] = doc.metadata.setdefault("pages_with_model", [])
     from truedoc.vision.witness import strip_lines, strip_lines_from_ocr, strip_running_heads
+    from truedoc.vision import corroborate
+
+    corroboration: list[dict] = doc.metadata.setdefault("corroboration", [])
 
     for page in doc.pages:
         has_text = any(b.kind not in (BlockKind.FIGURE,) and (b.lines or b.table is not None or b.text_override) for b in page.blocks)
@@ -931,6 +934,19 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
             page.meta["vision_dropped"] = dropped
         if not text:
             continue
+        # D008, M6: check the model's reading against what we can read of the page ourselves,
+        # before its own blocks are replaced. This only ever reports - measured over the 281
+        # model-read benchmark pages, every low-support page had a broken witness rather than an
+        # inventing model (a Persian page whose layer is mojibake, a formula our own rebuild
+        # mangled), so acting on it would destroy correct readings.
+        own = " ".join(l.text for l in page.lines) if page.lines else \
+            " ".join(t for t, _y0, _y1 in (page.meta.get("witness_lines") or []))
+        verdict = corroborate.check(text, own)
+        page.meta["corroboration"] = verdict
+        corroboration.append(dict(verdict, page=page.number))
+        if verdict["state"] == "low support":
+            doc.warnings.append(
+                f"page {page.number}: {verdict['reason']}")
         page.meta["vision_replaced"] = page.quality.kind
         page.blocks = [Block(kind=BlockKind.TEXT, bbox=BBox(0.0, 0.0, page.width, page.height), text_override=text, provenance=f"vision:{provider.name}")]
         page.blocks[0].order = 0
