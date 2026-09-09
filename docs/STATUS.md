@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-09, 22:50 (after run 65: 84.0 with the vision switch on, held-out 80.9, identical to run 64; without a model run 54, 67.4; the icon question measured and closed; the reader swap now reads 90/128 on the quick gate against MuPDF's 100, off by default and the shipped path unchanged)_
+_Last updated: 2026-09-10, 08:35 (after run 65: 84.0 with the vision switch on, held-out 80.9, identical to run 64; without a model run 54, 67.4; the icon question measured and closed; the reader swap reads 97/128 on the quick gate against MuPDF's 100 after the font-size fix, off by default and the shipped path unchanged; the gate was checked against 150 unseen pages and found honest at 91.4% against its own 90% - see D022)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 

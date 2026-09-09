@@ -130,3 +130,35 @@ never acted on, but the reason given is wrong.
 ## Open: PyMuPDF's licence against D007 (found 2026-09-07, owner's decision pending)
 
 PyMuPDF, which reads every text layer TrueDoc uses, is dual-licensed: GNU AGPL 3.0 or a commercial licence from Artifex (the installed package's metadata says so; Artifex's licensing page, read 7 September: a server-based application or service cannot be deployed without disclosing the application's full source under the AGPL; prices on request, per copy with a quarterly minimum). D007 excludes AGPL components from the product path. The choices are a commercial licence or moving the text-layer stage to a permissive reader. Evidence, 8 September: no leaderboard tool uses PyMuPDF; olmOCR, Marker, Docling and MinerU all read PDFs through PDFium (pypdfium2, pdftext, docling-parse), and MinerU moved off PyMuPDF. Agreed with the owner: decide after a measured census (PyMuPDF against PDFium on every benchmark page, the formula stage's special cases first) and, if the census is clean, a trial run with a PDFium extractor; both after GPU session 3. **Census done 8 September (`bench/tools/engine_census.py`): the characters agree on all but 16 pages once the binding's UTF-16 halves are combined; PDFium reads whole columns PyMuPDF silently drops on a handful of pages; PyMuPDF decodes Type 3 fonts PDFium does not (16 pages) and reports raw codes for unmapped glyphs where PDFium gives U+FFFD; PDFium is 2.4 times faster. Verdict: a PDFium extractor is viable with two bounded gaps; step 2 (the extractor, a full run) is the next decision for the owner.** **Step 2 sized 8 September (discussed with the owner that afternoon):** the swap is worth at most +0.30 points (53 pages where PDFium reads text PyMuPDF drops; 16 of them fail checks today, 28 checks in all, and most of that "extra text" is the binding reporting two-part characters as two rather than text genuinely dropped) against at most -0.38 (the 48 checks that pass today on the 16 Type 3 pages), plus an unmeasured risk to the maths glyph outlines. It is a licence job, not a score job, so the recommended order is after GPU session 4 (worth about 3 points), unless the rental is more than a couple of days away, in which case step 2 is the best use of the wait because it needs no rental. The work itself: characters and boxes, page rendering, and the vector drawings rebuilt from raw path segments through pypdfium2's low-level bindings (every symbol needed is present in 5.13), both readers behind one switch. Buying Artifex's commercial licence removes the need for it entirely. Nothing else in the product path is affected.
+
+## D022 - Every stage moved off PyMuPDF is proved against a quantity that must be identical, not against the score (2026-09-10)
+
+The reader swap of M18 (D007, getting AGPL out of the product path) has a failure mode the benchmark is
+poor at catching: **it fails silently**. Nothing crashes, no exception is logged, and the page still
+converts - it simply converts wrongly, in a way that looks like a layout bug rather than a reading bug.
+Two live examples, both found by hand rather than by any score:
+
+* PDFium reports a font's *nominal* size, and a PDF may then scale it by its text matrix. On one
+  multi-column page every character came back as size 1.0 where the text is 8pt; on a small-print page
+  the sizes came back around 35pt for 5.9pt text. Nothing failed. The page merely lost every paragraph,
+  because a stage that cannot tell a heading from body text groups nothing.
+* pdftext rotates its coordinates into display space and PyMuPDF does not, so a page that had already
+  been rotated was rotated twice and every box landed a median 210pt away - on the 15 rotated pages of
+  the benchmark, and invisibly on the other 1,388.
+
+So the rule for the rest of the swap: **before a stage is moved, name a quantity the two readers must
+agree on because it describes the same physical page, and measure it.** Character origins and boxes for
+the text reader (now agreeing to a median of 0.000pt, unrotated and rotated); the rendered image itself,
+pixel by pixel, for page rendering; path geometry for the vector drawings. Where such a quantity is
+compared, quote the median *and* the tail - the 0.21 baseline estimate this replaced had a perfectly
+respectable median and was 25.8pt wrong on exactly the glyphs it existed to serve.
+
+**The score is the second check, never the first, and on its own it misleads twice over.** It cannot
+localise a fault (a page reading 0/14 says nothing about which of four stages broke it), and tuning
+against it while a bug is live fits the bug: the 1.5 line-gap threshold was chosen while font sizes were
+wrong, and part of what it was doing was compensating for them.
+
+_Corollary, learned the same day: before recording a component as the hard part of the swap, check who
+wrote it. PyMuPDF's `find_tables` is a port of pdfplumber's, MIT-licensed, and pdfplumber was already
+installed here. The item flagged as the blocker was the one with a permissive original sitting in the
+virtual environment._

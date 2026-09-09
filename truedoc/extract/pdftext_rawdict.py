@@ -129,6 +129,8 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
             il, ir, ib, it = (ctypes.c_double() for _ in range(4))
             fr, fg, fb, fa = (ctypes.c_uint() for _ in range(4))
             loose = raw_api.FS_RECTF()
+            matrix = raw_api.FS_MATRIX()
+            scales: dict[int, float] = {}      # text object -> the scale its matrix applies
             for i in wanted:
                 box = None
                 if raw_api.FPDFText_GetLooseCharBox(tp, i, loose):
@@ -148,6 +150,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
                     "ink": ink,
                     "origin": origin,
                     "color": color,
+                    "size": _drawn_size(raw_api, tp, i, matrix, scales),
                     "generated": raw_api.FPDFText_IsGenerated(tp, i) == 1,
                     "map_error": raw_api.FPDFText_HasUnicodeMapError(tp, i) == 1,
                 }
@@ -156,6 +159,57 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
     finally:
         doc.close()
     return out
+
+
+def _fill_blank_span_sizes(spans: list) -> None:
+    """Give a span of nothing but generated blanks the size of the text either side of it.
+
+    PDFium invents a character wherever it sees a gap, and an invented character has no text
+    object and so no size. When a run of them lands in a span of its own, that span has nothing to
+    measure - 906 such blanks on one small-print page, every one of them a space, all reporting the
+    nominal 1.0pt and dragging the page's body text size down with them. MuPDF has no equivalent
+    problem because its own synthetic spaces sit inside the surrounding span and carry its font, so
+    this does the same thing: take the size of the nearest neighbour that was actually measured.
+    """
+    known = [s["size"] for s in spans]
+    for i, span in enumerate(spans):
+        if span["size"] > 0.0:
+            span.pop("_fallback", None)
+            continue
+        near = 0.0
+        for step in range(1, len(spans)):
+            before = known[i - step] if i - step >= 0 else 0.0
+            after = known[i + step] if i + step < len(spans) else 0.0
+            near = before or after
+            if near:
+                break
+        span["size"] = near or span.get("_fallback", 0.0)
+        span.pop("_fallback", None)
+
+
+def _drawn_size(raw_api, tp, index: int, matrix, scales: dict[int, float]) -> float:
+    """The size the character is actually drawn at, which is not the size PDFium reports.
+
+    `FPDFText_GetFontSize` gives the *nominal* size - the number after `Tf` - and the PDF is then
+    free to scale it by the text matrix. PyMuPDF folds the two together and PDFium does not, so
+    taking the nominal size at face value made an 8pt page report 1.0 and a 5.9pt page report 35.8.
+    The scale is a property of the text object, not the character, so it is cached per object;
+    measured on two benchmark pages there is roughly one object per span.
+
+    Returns 0.0 - not a size - for a character PDFium generated to fill a gap. Those have no text
+    object and so no scale, and reporting the nominal size for them put 906 phantom 1.0pt
+    characters on one small-print page, all of them spaces, which dragged the page's body size
+    down with them. A size we did not measure is better left unstated.
+    """
+    obj = raw_api.FPDFText_GetTextObject(tp, index)
+    if not obj:
+        return 0.0
+    key = ctypes.cast(obj, ctypes.c_void_p).value
+    scale = scales.get(key)
+    if scale is None:
+        scale = math.hypot(matrix.b, matrix.d) if raw_api.FPDFPageObj_GetMatrix(obj, matrix) else 1.0
+        scales[key] = scale
+    return float(raw_api.FPDFText_GetFontSize(tp, index)) * scale
 
 
 def _flip(x0: float, y0: float, x1: float, y1: float, x_off: float, y_top: float) -> tuple:
@@ -220,6 +274,7 @@ def _build(path: str, page_number: int) -> dict | None:
                 size = float(font.get("size") or 0.0)
                 chars = []
                 colors: dict[int, int] = {}
+                sizes: dict[float, int] = {}
                 for ch in span.get("chars") or []:
                     text = str(ch.get("char", ""))
                     if not text:
@@ -235,6 +290,9 @@ def _build(path: str, page_number: int) -> dict | None:
                         origin = (box[0], box[3] - _DESCENDER * (size or (box[3] - box[1])))
                     color = (g or {}).get("color", 0)
                     colors[color] = colors.get(color, 0) + 1
+                    drawn = (g or {}).get("size")
+                    if drawn:
+                        sizes[drawn] = sizes.get(drawn, 0) + 1
                     chars.append({
                         "c": text,
                         "bbox": box,
@@ -247,7 +305,12 @@ def _build(path: str, page_number: int) -> dict | None:
                     continue
                 spans.append({
                     "font": str(font.get("name") or ""),
-                    "size": size,
+                    # The drawn size, not the nominal one pdftext passes on from PDFium. Measured
+                    # over two benchmark pages, no span holds characters of two drawn sizes, so
+                    # one figure per span loses nothing. A span of nothing but generated blanks has
+                    # no drawn size at all and takes 0.0 here, filled in from its neighbours below.
+                    "size": max(sizes.items(), key=lambda kv: kv[1])[0] if sizes else 0.0,
+                    "_fallback": size,
                     "flags": _mupdf_flags(font, bool(span.get("superscript"))),
                     # PyMuPDF reports one colour per span; take the span's most common.
                     "color": max(colors.items(), key=lambda kv: kv[1])[0] if colors else 0,
@@ -255,6 +318,7 @@ def _build(path: str, page_number: int) -> dict | None:
                 })
             if not spans:
                 continue
+            _fill_blank_span_sizes(spans)
             direction = _line_dir(line, rotation)
             for piece in _split_at_gaps(spans, direction):
                 lines.append({
