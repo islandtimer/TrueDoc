@@ -132,6 +132,22 @@ def test_a_rotated_page_still_reads_its_cells(rotate):
         assert text == [["Alpha", "Beta", "Kappa"], ["Gamma", "Delta", "Omega"]], text
 
 
+@pytest.mark.xfail(strict=True, reason=(
+    "Known gap: on a turned page the grid comes out as PyMuPDF's transpose. PyMuPDF builds in the "
+    "rendered space and reads text along its own direction; this builds unrotated and hands raw "
+    "characters to pdfplumber, whose text assembly assumes level text - on a real 90-degree page "
+    "it reads 'Total' as 'l a t o T'. The fix is a rendered-space grid filled from TrueDoc's own "
+    "words, which already follow direction. Strict: when that lands, this must start passing and "
+    "the mark must come off."))
+@pytest.mark.parametrize("rotate", [90, 270])
+def test_a_turned_page_agrees_with_pymupdf_about_rows_and_columns(rotate):
+    for found, mu in _tables(rotate):
+        assert len(found) == len(mu) == 1
+        ours = [len(r) for r in found[0].extract()]
+        theirs = [len(r) for r in mu[0].extract()]
+        assert ours == theirs, (ours, theirs)
+
+
 def test_a_page_with_no_rules_yields_no_tables():
     fd, path = tempfile.mkstemp(suffix=".pdf")
     content = b"BT /F1 10 Tf 110 675 Td (nothing ruled here) Tj ET\n"
