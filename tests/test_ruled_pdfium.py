@@ -148,6 +148,36 @@ def test_a_turned_page_agrees_with_pymupdf_about_rows_and_columns(rotate):
         assert ours == theirs, (ours, theirs)
 
 
+def test_small_type_keeps_its_word_spaces_inside_cells():
+    """Run 67 read "TypeofTask" and "Week8 Term1" in a 9pt table: pdfplumber's extractor breaks
+    words at an absolute 3pt gap, and PDFium supplies fewer synthetic spaces than MuPDF, so a
+    2.5pt word gap was not a break. The threshold is now relative to the size."""
+    import os
+    from truedoc.tables.ruled import find_ruled_tables
+    small = _CONTENT.replace(b"/F1 10 Tf", b"/F1 7 Tf").replace(b"(Alpha)", b"(Type of Task)")
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    body = _pdf().replace(_CONTENT, small).replace(
+        b"/Length " + str(len(_CONTENT)).encode(), b"/Length " + str(len(small)).encode())
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(body)
+    was = os.environ.get("TRUEDOC_OBJECTS")
+    os.environ["TRUEDOC_OBJECTS"] = "pdfium"
+    doc = pymupdf.open(path)
+    try:
+        page = extract_page(doc[0], 1)
+        blocks = find_ruled_tables(doc[0], page)
+        assert blocks and blocks[0].provenance == "pdfium-lines", blocks
+        texts = [c.text for c in blocks[0].table.cells]
+        assert "Type of Task" in texts, texts
+    finally:
+        os.environ.pop("TRUEDOC_OBJECTS", None)
+        if was is not None:
+            os.environ["TRUEDOC_OBJECTS"] = was
+        render.close_documents()
+        doc.close()
+        os.unlink(path)
+
+
 def test_a_page_with_no_rules_yields_no_tables():
     fd, path = tempfile.mkstemp(suffix=".pdf")
     content = b"BT /F1 10 Tf 110 675 Td (nothing ruled here) Tj ET\n"

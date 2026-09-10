@@ -302,7 +302,12 @@ def find_ruled_tables(pdf_page: "pymupdf.Page", page=None) -> list[Block]:
             return blocks
     for t in tables:
         try:
-            rows = t.extract()
+            # pdfplumber's extractor breaks words at an absolute 3pt gap, which is fine when
+            # MuPDF's synthetic spaces are in the characters and wrong when PDFium's fewer spaces
+            # are: a 9pt table's 2.5pt word gap is not a break, and run 67 read "TypeofTask" and
+            # "Week8 Term1". A size-relative gap of 0.15 sits in the measured band between letter
+            # gaps (at most 0.04 x size) and MuPDF's own spaces (from 0.16).
+            rows = t.extract(**({"x_tolerance_ratio": 0.15} if source == "pdfium-lines" else {}))
         except Exception:
             continue
         if not rows:

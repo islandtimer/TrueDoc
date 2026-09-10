@@ -626,6 +626,29 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
     return out or [spans]
 
 
+_WORD_GAP = 0.15        # a gap this share of the font size between glyphs is a word space
+
+
+def _spaced_text(chars: list, size: float) -> str:
+    """The characters as text, with a space wherever the glyphs stand a word's gap apart.
+
+    PDFium invents fewer gap-filling spaces than MuPDF in small type, and a run of characters
+    joined blindly then reads "TypeofTask". The threshold sits in the measured band between letter
+    gaps (at most 0.04 x size at p95) and MuPDF's own spaces (from 0.16); the word builder's rule
+    for the body text is the same shape.
+    """
+    out: list[str] = []
+    prev = None
+    for c in chars:
+        if prev is not None and not c["c"].isspace() and not prev["c"].isspace():
+            scale = max(size, c["bbox"][3] - c["bbox"][1], 0.5)
+            if c["bbox"][0] - prev["bbox"][2] >= _WORD_GAP * scale:
+                out.append(" ")
+        out.append(c["c"])
+        prev = c
+    return "".join(out)
+
+
 def clipped_blocks(path: str, page_number: int, rect) -> list | None:
     """What PyMuPDF's `get_text("dict", clip=rect)` returns, for the ruled-table cell reader.
 
@@ -646,7 +669,7 @@ def clipped_blocks(path: str, page_number: int, rect) -> list | None:
                 inside = [c for c in sp.get("chars", [])
                           if c["bbox"][0] < x1 and c["bbox"][2] > x0 and c["bbox"][1] < y1 and c["bbox"][3] > y0]
                 if inside:
-                    spans.append({"text": "".join(c["c"] for c in inside), "chars": inside})
+                    spans.append({"text": _spaced_text(inside, float(sp.get("size") or 0.0)), "chars": inside})
             if not spans:
                 continue
             xs = [c["bbox"][0] for s in spans for c in s["chars"]]
