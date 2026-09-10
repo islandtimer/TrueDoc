@@ -75,9 +75,26 @@ def test_italic_comes_from_the_italic_bit_or_the_name():
     assert A._mupdf_flags({"flags": 0, "name": "Arial-Oblique", "weight": 400}, False) & 2
 
 
-def test_bold_comes_from_the_weight():
-    assert A._mupdf_flags({"flags": 0, "name": "X", "weight": 700}, False) & 16
-    assert not A._mupdf_flags({"flags": 0, "name": "X", "weight": 400}, False) & 16
+def test_bold_comes_from_the_name_not_the_weight():
+    """PDFium's weight is the descriptor's stem width in disguise: 640-820 on every TeX face, so a
+    weight rule made whole arXiv pages bold and their run-in theorem headings into headings.
+    Measured against MuPDF's flag over 7,469 (page, font) pairs, the name disagrees on 369 and a
+    weight of 600 on 2,265."""
+    assert not A._mupdf_flags({"flags": 0, "name": "CMR12", "weight": 732}, False) & 16
+    assert not A._mupdf_flags({"flags": 0, "name": "CMTI12", "weight": 800}, False) & 16
+    assert A._mupdf_flags({"flags": 0, "name": "Arial-BoldMT", "weight": 400}, False) & 16
+    assert A._mupdf_flags({"flags": 0, "name": "ABCDEF+Frutiger-SemiBold", "weight": 400}, False) & 16
+    assert A._mupdf_flags({"flags": 0x40000, "name": "X", "weight": 400}, False) & 16      # the descriptor's ForceBold
+
+
+def test_texs_bold_faces_are_bold():
+    """MuPDF calls CMBX bold when the embedded program says so, which PDFium cannot report; the
+    name is what can be seen, and it settles more pages than it loses (273 disagreements against
+    369 without it)."""
+    for name in ("CMBX12", "ABCDEF+CMBX10", "CMMIB10", "CMBSY10", "SFBX1200"):
+        assert A._mupdf_flags({"flags": 0, "name": name, "weight": 500}, False) & 16, name
+    for name in ("CMR10", "CMSY10", "MSBM10", "CMTI10", "Stag-Black"):
+        assert not A._mupdf_flags({"flags": 0, "name": name, "weight": 700}, False) & 16, name
 
 
 def test_fixed_pitch_is_mono():
@@ -164,9 +181,12 @@ def test_a_control_code_drawn_as_a_short_bar_is_a_hyphen():
 
 
 def test_other_control_codes_keep_their_shape():
-    assert A._as_mupdf_would("\x02", "X", _glyph(0.30, 0.07, 0.0)) == "\x02"     # on the baseline: an underscore
-    assert A._as_mupdf_would("\x02", "X", _glyph(0.30, 0.60, 0.25)) == "\x02"    # tall: not a bar
-    assert A._as_mupdf_would("\x02", "X", _glyph(0.90, 0.07, 0.25)) == "\x02"    # wide: a rule, not a hyphen
+    """U+0002 is PDFium's hyphen marker and needs no shape; any other control code is a raw
+    glyph code, a hyphen only when it is drawn as one."""
+    assert A._as_mupdf_would("\x03", "X", _glyph(0.30, 0.07, 0.25)) == "-"        # a short bar a quarter em up
+    assert A._as_mupdf_would("\x03", "X", _glyph(0.30, 0.07, 0.0)) == "\x03"     # on the baseline: an underscore
+    assert A._as_mupdf_would("\x03", "X", _glyph(0.30, 0.60, 0.25)) == "\x03"    # tall: not a bar
+    assert A._as_mupdf_would("\x03", "X", _glyph(0.90, 0.07, 0.25)) == "\x03"    # wide: a rule, not a hyphen
     assert A._as_mupdf_would("-", "X", _glyph(0.30, 0.07, 0.25)) == "-"          # a real hyphen is untouched
     assert A._as_mupdf_would(" ", "X", None) == " "
 
@@ -184,3 +204,33 @@ def test_the_reader_is_off_unless_asked_for():
         os.environ.pop("TRUEDOC_READER", None)
         if was is not None:
             os.environ["TRUEDOC_READER"] = was
+
+
+def test_pdfiums_hyphenation_marker_is_a_hyphen():
+    """PDFium hands over U+0002 for a hyphen it recognised at a line end. Measured over the
+    benchmark: MuPDF reads a hyphen at 4,033 of the 4,915 such characters, and a Type 3 font's
+    glyph box defeats the shape test, so the marker itself is the evidence."""
+    assert A._as_mupdf_would("\x02", "T15", {"map_error": False, "ink": None}) == "-"
+    # ... unless PDFium says the character never mapped at all: then the code is a raw glyph code
+    assert A._as_mupdf_would("\x02", "Advt93-r", {"map_error": True, "ink": None}) == "\x02"
+
+
+def test_ams_symbol_font_codes_become_the_symbols_mupdf_reads():
+    """msam's leqslant sits at code 0x36 ("6"), lesssim at 0x2E ("."), msbm's hslash at 0x7E.
+    Measured by position against MuPDF over the 75 benchmark pages that use these fonts."""
+    assert A._tex_symbol("MSAM10", "6") == "⩽"
+    assert A._tex_symbol("MSAM10", ".") == "≲"
+    assert A._tex_symbol("MSAM7", ">") == "⩾"
+    assert A._tex_symbol("MSBM10", "~") == "ℏ"
+    assert A._tex_symbol("MSAM10", "9") is None      # MuPDF leaves this one raw too
+
+
+def test_a_pen_that_jumps_backwards_starts_a_new_line():
+    """A table row drawn right to left - the cells "0.658", "0.77", "0.31" in that order, each
+    to the left of the last - is three lines to MuPDF and was one line, read backwards, here.
+    Kerning pulls a glyph back a fraction of an em; half an em is a jump."""
+    row = [_char("C", 300, 306), _char("B", 200, 206), _char("A", 100, 106)]
+    pieces = A._split_at_gaps([_span(row)])
+    assert ["".join(c["c"] for c in p[0]["chars"]) for p in pieces] == ["C", "B", "A"], pieces
+    kerned = [_char("T", 0, 7), _char("o", 5.5, 11)]        # a kerned pair overlaps, and stays
+    assert len(A._split_at_gaps([_span(kerned)])) == 1

@@ -7,12 +7,13 @@ found", and on one benchmark page PyMuPDF finds two tables where pdfplumber find
 algorithm has to be taken without the reader, and fed the rules and characters TrueDoc already has.
 
 These build a small ruled table by hand and check both halves of that: the grid comes out with the
-right shape, and the cell text comes out of TrueDoc's own characters rather than a third engine's.
+right shape, and the cell text comes out of TrueDoc's own words rather than a third engine's.
 The grid is deliberately not square - two rows by three - because a square one reads the same
 transposed and so cannot catch a table built in the wrong space.
 
-The rotated case matters on its own, because the geometry is in the page's unrotated space while
-TrueDoc holds its characters rotated, and something has to turn them back.
+The rotated case matters on its own: the rules come out of the file in the page's unrotated
+space, and PyMuPDF's finder reports its cells in the rendered one (measured on a 90-degree page),
+so the grid is built in the rendered space and the two must agree there, cell for cell.
 """
 
 import os
@@ -115,36 +116,17 @@ def test_cell_boxes_come_back_for_the_mark_placer():
 
 
 @pytest.mark.parametrize("rotate", [90, 180, 270])
-def test_a_rotated_page_still_reads_its_cells(rotate):
-    """The geometry is unrotated and TrueDoc's characters are not, so they must be turned back;
-    without that the cells come out empty while the grid still looks right.
-
-    Note what this does *not* claim. It asserts the grid as built in the page's unrotated space,
-    which for a turned page is the transpose of what PyMuPDF reports - PyMuPDF reads a real
-    90-degree benchmark page as 8 rows by 7 where this reads 7 by 8. Each cell's text is right;
-    which cell it lands in is not, and that is a known gap rather than a settled answer (about a
-    third of the tables category's remaining shortfall). Building in the rendered space instead
-    was measured and is worse: the glyphs are turned too, so every cell stacks one letter to a
-    line."""
-    for found, _ in _tables(rotate):
-        assert found and len(found) == 1, found
-        text = [[(c or "").strip() for c in r] for r in found[0].extract()]
-        assert text == [["Alpha", "Beta", "Kappa"], ["Gamma", "Delta", "Omega"]], text
-
-
-@pytest.mark.xfail(strict=True, reason=(
-    "Known gap: on a turned page the grid comes out as PyMuPDF's transpose. PyMuPDF builds in the "
-    "rendered space and reads text along its own direction; this builds unrotated and hands raw "
-    "characters to pdfplumber, whose text assembly assumes level text - on a real 90-degree page "
-    "it reads 'Total' as 'l a t o T'. The fix is a rendered-space grid filled from TrueDoc's own "
-    "words, which already follow direction. Strict: when that lands, this must start passing and "
-    "the mark must come off."))
-@pytest.mark.parametrize("rotate", [90, 270])
-def test_a_turned_page_agrees_with_pymupdf_about_rows_and_columns(rotate):
+def test_a_turned_page_reads_as_pymupdf_reads_it(rotate):
+    """Rows are what a reader sees as rows. The grid is built in the rendered space, as PyMuPDF
+    builds it (measured: its first cell on a 90-degree benchmark page holds the word "Table" only
+    once the word is turned by the rotation matrix), and the cells are filled from TrueDoc's
+    words, which already follow their line's direction. Building in the unrotated space read a
+    real 90-degree page as 7 rows by 8 where PyMuPDF reads 8 by 7. The quantity both must agree
+    on (D022): the rows, cell for cell."""
     for found, mu in _tables(rotate):
-        assert len(found) == len(mu) == 1
-        ours = [len(r) for r in found[0].extract()]
-        theirs = [len(r) for r in mu[0].extract()]
+        assert len(found) == len(mu) == 1, (found, mu)
+        ours = [[(c or "").strip() for c in r] for r in found[0].extract()]
+        theirs = [[(c or "").strip() for c in r] for r in mu[0].extract()]
         assert ours == theirs, (ours, theirs)
 
 
@@ -193,3 +175,66 @@ def test_a_page_with_no_rules_yields_no_tables():
         render.close_documents()
         doc.close()
         os.unlink(path)
+
+
+def test_a_table_with_no_left_rule_still_closes_its_left_column():
+    """Rules between the rows, a rule down the middle and one down the right, none on the left:
+    pdfplumber's cell finder needs a crossing at every corner and closed the right column only,
+    4 cells for PyMuPDF's 10 on a benchmark page. The outline of the rules' cluster supplies the
+    missing side, as PyMuPDF's port does. The quantity both must agree on (D022): the grid."""
+    content = (
+        b"0 0 0 RG 1 w\n"
+        b"100 700 m 400 700 l S\n100 650 m 400 650 l S\n100 600 m 400 600 l S\n"
+        b"250 600 m 250 700 l S\n400 600 m 400 700 l S\n"
+        b"BT /F1 10 Tf 110 675 Td (Alpha) Tj ET\nBT /F1 10 Tf 260 675 Td (Beta) Tj ET\n"
+        b"BT /F1 10 Tf 110 625 Td (Gamma) Tj ET\nBT /F1 10 Tf 260 625 Td (Delta) Tj ET\n"
+    )
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    body = _pdf().replace(_CONTENT, content).replace(
+        b"/Length " + str(len(_CONTENT)).encode(), b"/Length " + str(len(content)).encode())
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(body)
+    doc = pymupdf.open(path)
+    try:
+        page = extract_page(doc[0], 1)
+        found = ruled_pdfium.find_tables(doc[0], page)
+        assert found is not None and len(found) == 1, found
+        ours = [[(c or "").strip() for c in r] for r in found[0].extract()]
+        assert ours == [["Alpha", "Beta"], ["Gamma", "Delta"]], ours
+    finally:
+        render.close_documents()
+        doc.close()
+        os.unlink(path)
+
+
+_NO_LEFT_RULE_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs", "tables",
+                                  "3b18f8c75b5f8cae89fa5b0cf094949966d4_pg2_pg1.pdf")
+
+
+@pytest.mark.skipif(not os.path.exists(_NO_LEFT_RULE_PAGE), reason="benchmark page not present")
+def test_the_no_left_rule_benchmark_page_agrees_with_pymupdf():
+    """The page the outline rule was measured on. PyMuPDF's finder answers nothing on the
+    hand-built grid above (its own reasons - it wants more than rules and text), so the
+    agreement is asked for where it can be had: 5 rows by 2 columns, both ways."""
+    doc = pymupdf.open(_NO_LEFT_RULE_PAGE)
+    try:
+        page = extract_page(doc[0], 1)
+        found = ruled_pdfium.find_tables(doc[0], page)
+        mu = list(doc[0].find_tables(strategy="lines_strict").tables)
+        assert found is not None and len(found) == len(mu) == 1, (found, mu)
+        assert [len(r) for r in found[0].extract()] == [len(r) for r in mu[0].extract()] == [2] * 5
+    finally:
+        render.close_documents()
+        doc.close()
+
+
+def test_cell_text_reads_a_visual_row_left_to_right_whatever_the_drawing_order():
+    """A raised "**" drawn before its number, on a line of its own to the reader, must follow the
+    number as it does on the page: words of one visual row go left to right, rows top to bottom."""
+    words = [
+        {"line": 0, "order": 0, "text": "**", "x0": 30.0, "x1": 36.0, "top": 0.0, "bottom": 5.0},
+        {"line": 1, "order": 0, "text": "0.78", "x0": 10.0, "x1": 28.0, "top": 2.0, "bottom": 10.0},
+        {"line": 2, "order": 0, "text": "second", "x0": 10.0, "x1": 40.0, "top": 12.0, "bottom": 20.0},
+        {"line": 2, "order": 1, "text": "row", "x0": 42.0, "x1": 56.0, "top": 12.0, "bottom": 20.0},
+    ]
+    assert ruled_pdfium._cell_text(words, (0.0, 0.0, 60.0, 22.0)) == "0.78 **\nsecond row"

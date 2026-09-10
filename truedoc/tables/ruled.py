@@ -140,7 +140,7 @@ def tall_cell_rows(rows: list, cell_rects: list[list], bounds: list, s: int, ci:
 _SENTENCE = re.compile(r"[^\W\d_]{2,}[.!?] +[A-Z]")
 
 
-def deal_tall_cells(pdf_page: "pymupdf.Page", rows: list, cell_rects: list[list]) -> None:
+def deal_tall_cells(pdf_page: "pymupdf.Page", rows: list, cell_rects: list[list], M=None) -> None:
     """Labels in a cell that spans several ruled rows go to the rows their lines fall in.
 
     A statistical yearbook rules its value cells row by row and leaves the label column as
@@ -172,7 +172,7 @@ def deal_tall_cells(pdf_page: "pymupdf.Page", rows: list, cell_rects: list[list]
                 # M18, D007: read through PDFium instead of AGPL-licensed MuPDF; the page was
                 # already built for the text layer, so this is a filter, not a second reading.
                 try:
-                    blocks = pdftext_rawdict.clipped_blocks(pdf_page.parent.name, pdf_page.number + 1, tuple(rect))
+                    blocks = pdftext_rawdict.clipped_blocks(pdf_page.parent.name, pdf_page.number + 1, tuple(rect), M)
                 except Exception:
                     blocks = None
             if blocks is None:
@@ -302,12 +302,10 @@ def find_ruled_tables(pdf_page: "pymupdf.Page", page=None) -> list[Block]:
             return blocks
     for t in tables:
         try:
-            # pdfplumber's extractor breaks words at an absolute 3pt gap, which is fine when
-            # MuPDF's synthetic spaces are in the characters and wrong when PDFium's fewer spaces
-            # are: a 9pt table's 2.5pt word gap is not a break, and run 67 read "TypeofTask" and
-            # "Week8 Term1". A size-relative gap of 0.15 sits in the measured band between letter
-            # gaps (at most 0.04 x size) and MuPDF's own spaces (from 0.16).
-            rows = t.extract(**({"x_tolerance_ratio": 0.15} if source == "pdfium-lines" else {}))
+            # (The PDFium path fills its cells from TrueDoc's own words - see `ruled_pdfium` -
+            # after pdfplumber's character clustering read "TypeofTask" at one tolerance and
+            # "fr actu res" at another; no single gap fits both tables.)
+            rows = t.extract()
         except Exception:
             continue
         if not rows:
@@ -328,7 +326,12 @@ def find_ruled_tables(pdf_page: "pymupdf.Page", page=None) -> list[Block]:
         except Exception:
             cell_rects = []
         rows = [list(r) for r in rows]
-        deal_tall_cells(pdf_page, rows, cell_rects)
+        # The PDFium path reports its cells in the rendered space, as PyMuPDF's finder does
+        # (measured on a 90-degree page: PyMuPDF's first cell holds the word "Table" only once
+        # the word is turned by the rotation matrix). Its tall-cell reader is told, so it can
+        # turn each cell back to the unrotated space its character boxes are held in.
+        rendered = source == "pdfium-lines"
+        deal_tall_cells(pdf_page, rows, cell_rects, M=(pdf_page.rotation_matrix if rendered and pdf_page.rotation else None))
         spans = column_spans(cell_rects, n_cols) if cell_rects else {}
         # A tall cell left standing (a heading over two heading rows, a paragraph beside its
         # rows, a label centred in its cell) spans the rows beneath it.
@@ -381,7 +384,7 @@ def find_ruled_tables(pdf_page: "pymupdf.Page", page=None) -> list[Block]:
                     cr = pymupdf.Rect(rects[0])
                     for extra in rects[1:]:
                         cr |= pymupdf.Rect(extra)
-                    if pdf_page.rotation:
+                    if pdf_page.rotation and not rendered:
                         cr = cr * pdf_page.rotation_matrix
                     cr.normalize()
                     if slices > 1:
@@ -392,7 +395,7 @@ def find_ruled_tables(pdf_page: "pymupdf.Page", page=None) -> list[Block]:
         if non_empty < min(4, n_rows * n_cols):
             continue
         rect = pymupdf.Rect(t.bbox)
-        if pdf_page.rotation:
+        if pdf_page.rotation and not rendered:
             rect = rect * pdf_page.rotation_matrix
         bbox = BBox(float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1))
         table = Table(n_rows=n_rows, n_cols=n_cols, cells=cells, bbox=bbox, has_merged=has_merged, provenance=source)

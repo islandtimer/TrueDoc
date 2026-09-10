@@ -48,12 +48,13 @@ from __future__ import annotations
 import ctypes
 import math
 import os
+import re
 import unicodedata
 
 from truedoc.extract import pdfium_objects
 
 _DESCENDER = 0.21       # last-resort baseline estimate, used only where PDFium will not give an origin
-_BOLD_WEIGHT = 600.0    # font weight at or above which a face is treated as bold
+_TEX_BOLD = re.compile(r"^(?:[a-z]{6}\+)?(?:cmb|cmbx|cmbsy|cmmib|cmssbx|sfbx|sfbi|eufb)\d")   # TeX's bold faces
 _LINE_GAP = 1.5         # a gap this many times the font size ends a line (see _split_at_gaps)
 
 # One page's built structure is wanted by several stages (the main read, the maths ink pass, the
@@ -85,10 +86,6 @@ def _mupdf_flags(font: dict, superscript: bool) -> int:
     """
     pf = int(font.get("flags") or 0)
     name = str(font.get("name") or "").lower()
-    try:
-        weight = float(font.get("weight") or 0.0)
-    except (TypeError, ValueError):
-        weight = 0.0
     out = 1 if superscript else 0
     if pf & 0x40 or "italic" in name or "oblique" in name:
         out |= 2
@@ -96,7 +93,14 @@ def _mupdf_flags(font: dict, superscript: bool) -> int:
         out |= 4
     if pf & 0x1:
         out |= 8
-    if pf & 0x40000 or weight >= _BOLD_WEIGHT:
+    # Bold is a matter of the name, not of PDFium's weight. The weight comes from the descriptor's
+    # stem width, and on TeX's fonts that reads 640-820 for every face - CMR, CMTI, CMSY alike -
+    # so every line of an arXiv page was bold and its run-in theorem headings became headings.
+    # Measured against MuPDF's own flag over 7,469 (page, font) pairs: a weight of 600 disagrees
+    # on 2,265, "bold" in the name on 369, the name plus TeX's bold faces on 273. MuPDF does not
+    # call "Black" or "Heavy" bold, and calls CMBX bold only when the embedded program says so,
+    # which nothing PDFium reports can tell; the name is the best of what can be seen.
+    if pf & 0x40000 or "bold" in name or _TEX_BOLD.match(name):
         out |= 16
     return out
 
@@ -146,6 +150,18 @@ _OML: dict[int, str] = {
 }
 
 
+# The AMS symbol fonts, measured rather than transcribed: over the 75 benchmark pages that use
+# them, every code PDFium could not map was matched by position against the character MuPDF
+# reads there (bench/out, 10 Sept). Only codes seen at least three times and consistent with the
+# msam/msbm layouts are listed; a code MuPDF itself leaves raw ("9", "K", "[") stays raw.
+_MSAM: dict[int, str] = {
+    0x03: "□", 0x09: "⟲", 0x0d: "⊩", 0x2c: "≜", 0x2e: "≲", 0x36: "⩽", 0x3e: "⩾",
+}
+_MSBM: dict[int, str] = {
+    0x7e: "ℏ",
+}
+
+
 def _tex_symbol(font: str, text: str) -> str | None:
     """The character MuPDF's glyph-name lookup would give for a raw TeX symbol-font code."""
     if len(text) != 1 or ord(text) > 0x7f:
@@ -155,6 +171,10 @@ def _tex_symbol(font: str, text: str) -> str | None:
         return _OMS.get(ord(text))
     if "CMMI" in f:
         return _OML.get(ord(text))
+    if "MSAM" in f:
+        return _MSAM.get(ord(text))
+    if "MSBM" in f:
+        return _MSBM.get(ord(text))
     return None
 
 
@@ -183,6 +203,14 @@ def _as_mupdf_would(text: str, font: str, g: dict | None) -> str:
         mapped = _tex_symbol(font, text)
         if mapped is not None:
             return mapped
+    elif text == "\x02":
+        # PDFium's own mark for a hyphen it recognised at a line end, whatever glyph drew it.
+        # Measured over the benchmark: 4,915 such characters on 691 pages, and MuPDF reads a
+        # hyphen at 4,033 of them (most of the rest it does not see at all). The shape test below
+        # had been the only route, and it fails on a Type 3 font, whose glyph box PDFium reports
+        # from the font matrix: a scanned-era paper's "tech-" then read as "techΘ", the code
+        # taken for the cmr Theta, and no line of it joined its paragraph (09f90a8f).
+        return "-"
     if len(text) == 1 and ord(text) < 0x20 and not text.isspace() and _looks_like_hyphen(g):
         return "-"
     return text
@@ -478,6 +506,12 @@ def _build(path: str, page_number: int) -> dict | None:
                     if not text:
                         continue
                     g = geom.get(ch.get("char_idx"))
+                    if text in ("\r", "\n") and (g or {}).get("generated"):
+                        # PDFium's own line ends, not glyphs. They rode along as characters and
+                        # were harmless until a Type 3 TeX page, where the raw-code recovery took
+                        # the carriage return (0x0D) for cmr's "fl" ligature and an author block
+                        # grew a column of "fl" cells (09f90a8f). A line end is a line end.
+                        continue
                     text = _as_mupdf_would(text, str(font.get("name") or ""), g)
                     box = (g or {}).get("bbox")
                     if len(text) == 1 and unicodedata.category(text) == "Mn":
@@ -540,7 +574,10 @@ def _build(path: str, page_number: int) -> dict | None:
             if not spans:
                 continue
             _fill_blank_span_sizes(spans)
-            runs.append((block_index, _line_dir([c for sp in line.get("spans") or [] for c in sp.get("chars") or []], geom), spans))
+            direction = _line_dir([c for sp in line.get("spans") or [] for c in sp.get("chars") or []], geom)
+            if direction == (1.0, 0.0):
+                _level_type3_boxes(spans)
+            runs.append((block_index, direction, spans))
     blocks = []
     for block_index, direction, spans in _join_broken_lines(runs):
         lines = [{"dir": direction, "bbox": _union(piece), "spans": piece} for piece in _split_at_gaps(spans, direction)]
@@ -555,6 +592,27 @@ def _build(path: str, page_number: int) -> dict | None:
     # The marker tells the stages downstream that the extra per-character keys ("ink",
     # "generated") are present, so they can be read from here instead of from MuPDF.
     return {"blocks": blocks, "source": "pdftext"}
+
+
+def _level_type3_boxes(spans: list) -> None:
+    """Give a line's Type 3 characters one box height, as MuPDF gives them.
+
+    A Type 3 font has no ascender or descender to report, and the two libraries fill the gap
+    differently: MuPDF boxes every character in the font's own height, PDFium each glyph in its
+    own, so an x stands 6.5pt tall and an E 9.7. The text layer takes a Type 3 character's size
+    from its box (the reported size is the matrix scale, 0.12 here), and per-glyph boxes made a
+    scanned-era paper's body text 3.7pt where MuPDF read 8: every line then stood two and a
+    half of its own sizes from the next, and not one joined its paragraph (09f90a8f). The
+    tallest glyph on the line stands in for the font's height; measured on that page it is
+    within 3% of MuPDF's. Level lines only - a turned line's height runs the other way.
+    """
+    small = [c for sp in spans if 0.0 < float(sp.get("size") or 0.0) < 1.0 for c in sp["chars"] if not c["c"].isspace()]
+    if len(small) < 2:
+        return
+    y0 = min(c["bbox"][1] for c in small)
+    y1 = max(c["bbox"][3] for c in small)
+    for c in small:
+        c["bbox"] = (c["bbox"][0], y0, c["bbox"][2], y1)
 
 
 def _join_surrogates(chars: list, geom: dict) -> list:
@@ -778,7 +836,7 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
     dx, dy = direction
     flat = [(si, c) for si, sp in enumerate(spans) for c in sp["chars"]]
     cuts: set[int] = set()
-    prev = None       # (index in flat, end along the line, scale)
+    prev = None       # (index in flat, end along the line, scale, start along the line)
     for i, (si, c) in enumerate(flat):
         if c["c"].isspace():
             continue
@@ -790,7 +848,15 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
         scale = max(float(spans[si]["size"] or 0.0), y1 - y0)
         if prev is not None and scale > 0 and start - prev[1] >= limit * max(scale, prev[2]):
             cuts.add(i)
-        prev = (i, end, scale)
+        # A pen that jumps backwards starts a new line, as it does for MuPDF. pdftext files
+        # every span that overlaps a line's band in that line whatever its order, so a table
+        # row drawn right to left arrived as one line with its characters running backwards -
+        # "0.658", "0.77**", "0.31*" - and the word builder, which measures each gap from the
+        # character before, glued them into one word and one cell (b5c5b866, the quick gate).
+        # Kerning pulls a glyph back a fraction of an em at most; half an em is a jump.
+        elif prev is not None and scale > 0 and start < prev[3] - 0.5 * max(scale, prev[2]):
+            cuts.add(i)
+        prev = (i, end, scale, start)
     if not cuts:
         return [spans]
     pieces, current = [], []
@@ -843,16 +909,27 @@ def _spaced_text(chars: list, size: float) -> str:
     return "".join(out)
 
 
-def clipped_blocks(path: str, page_number: int, rect) -> list | None:
+def clipped_blocks(path: str, page_number: int, rect, M=None) -> list | None:
     """What PyMuPDF's `get_text("dict", clip=rect)` returns, for the ruled-table cell reader.
 
     Only the keys that reader touches are filled: a bbox and a text per line. A character
     counts as inside when its box overlaps the rectangle, which is how MuPDF's clip behaves
     for the cell-sized rectangles this is asked for.
+
+    The characters are held in the unrotated space. A caller working in the rendered space
+    passes the page's rotation matrix `M`: the rectangle is turned back before the test, and
+    the line boxes turned forward before they are returned.
     """
     built = build(path, page_number)
     if built is None:
         return None
+    turn = None
+    if M is not None:
+        import pymupdf
+        turn = pymupdf.Matrix(M)
+        r = pymupdf.Rect(*rect) * ~turn
+        r.normalize()
+        rect = (r.x0, r.y0, r.x1, r.y1)
     x0, y0, x1, y1 = (float(rect[0]), float(rect[1]), float(rect[2]), float(rect[3]))
     blocks = []
     for block in built.get("blocks", []):
@@ -870,7 +947,13 @@ def clipped_blocks(path: str, page_number: int, rect) -> list | None:
             ys = [c["bbox"][1] for s in spans for c in s["chars"]]
             xe = [c["bbox"][2] for s in spans for c in s["chars"]]
             ye = [c["bbox"][3] for s in spans for c in s["chars"]]
-            lines.append({"bbox": (min(xs), min(ys), max(xe), max(ye)), "spans": spans})
+            bbox = (min(xs), min(ys), max(xe), max(ye))
+            if turn is not None:
+                import pymupdf
+                r = pymupdf.Rect(*bbox) * turn
+                r.normalize()
+                bbox = (float(r.x0), float(r.y0), float(r.x1), float(r.y1))
+            lines.append({"bbox": bbox, "spans": spans})
         if lines:
             blocks.append({"lines": lines})
     return blocks
