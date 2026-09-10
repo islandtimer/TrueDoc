@@ -48,6 +48,7 @@ from __future__ import annotations
 import ctypes
 import math
 import os
+import unicodedata
 
 from truedoc.extract import pdfium_objects
 
@@ -117,7 +118,10 @@ _OMS: dict[int, str] = {
     0x24: "↔", 0x25: "↗", 0x26: "↘", 0x27: "≃", 0x28: "⇐", 0x29: "⇒",
     0x2a: "⇑", 0x2b: "⇓", 0x2c: "⇔", 0x2d: "↖", 0x2e: "↙", 0x2f: "∝",
     0x30: "′", 0x31: "∞", 0x32: "∈", 0x33: "∋", 0x34: "△", 0x35: "▽",
-    0x37: "↦", 0x38: "∀", 0x39: "∃", 0x3a: "¬", 0x3b: "∅", 0x3c: "ℜ",
+    # 0x36 is the negation slash, a combining mark that MuPDF hangs on the character before it
+    # ("0̸"); 0x37, the mapsto stem, MuPDF leaves as "7" for the maths stage to join to its arrow
+    # (`reconstruct._merge_mapsto`), so it is deliberately absent here.
+    0x36: "̸", 0x38: "∀", 0x39: "∃", 0x3a: "¬", 0x3b: "∅", 0x3c: "ℜ",
     0x3d: "ℑ", 0x3e: "⊤", 0x3f: "⊥", 0x40: "ℵ",
     0x5b: "∪", 0x5c: "∩", 0x5d: "⊎", 0x5e: "∧", 0x5f: "∨", 0x60: "⊢",
     0x61: "⊣", 0x62: "⌊", 0x63: "⌋", 0x64: "⌈", 0x65: "⌉", 0x66: "{",
@@ -227,6 +231,22 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
             except Exception:
                 handles = {}
             invisible_mode = getattr(raw_api, "FPDF_TEXTRENDERMODE_INVISIBLE", 3)
+            count = raw_api.FPDFText_CountChars(tp)
+            other = raw_api.FS_RECTF()
+
+            def _shares_glyph(raw_api, tp, i, mine, count) -> bool:
+                """True when a neighbouring character has this one's loose box: a ligature.
+
+                PDFium reports one "fi" glyph as two characters with the same box and origin
+                (measured: every shared box on two pages was also a shared origin, and the pairs
+                were fi and ff, plus the rotated arXiv watermark that the level-text test
+                already excludes)."""
+                for j in (i - 1, i + 1):
+                    if 0 <= j < count and raw_api.FPDFText_GetLooseCharBox(tp, j, other):
+                        if abs(other.left - mine.left) < 1e-3 and abs(other.right - mine.right) < 1e-3:
+                            return True
+                return False
+
             for i in wanted:
                 box = None
                 if raw_api.FPDFText_GetLooseCharBox(tp, i, loose):
@@ -238,6 +258,29 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
                 origin = None
                 if raw_api.FPDFText_GetCharOrigin(tp, i, ox, oy):
                     origin = (ox.value - x_off, y_top - oy.value)
+                # The right edge is the glyph's advance, which is what MuPDF reports. PDFium's loose
+                # box is not quite that: on a glyph whose ink overhangs its advance - the letter f
+                # above all - it runs further right, 0.44pt on a 7pt line, and the word builder's
+                # gap rule then reads "of the" as one word. Measured on a small-print page: the
+                # loose box matches MuPDF's right edge to 0.007pt at p95, origin plus advance to
+                # 0.000, and 56 of the 68 glyphs that differ are f. Level text only; a turned
+                # page's advance runs the other way and keeps the loose box.
+                # ... and not on a ligature. One glyph "fi" is reported as two characters sharing
+                # its box and origin; the advance of a lone f is narrower than the ligature, so
+                # taking it opened a gap after the f and "fixtures" read "fi xtures" (12 such glyphs
+                # on that page, 36 on an arXiv one). A character whose neighbour shares its box
+                # keeps the loose box.
+                if (box is not None and origin is not None and raw_api.FPDFText_GetMatrix(tp, i, matrix)
+                        and abs(matrix.b) < 1e-6 and abs(matrix.c) < 1e-6
+                        and not _shares_glyph(raw_api, tp, i, loose, count)):
+                    text_obj = raw_api.FPDFText_GetTextObject(tp, i)
+                    font = raw_api.FPDFTextObj_GetFont(text_obj) if text_obj else None
+                    code = raw_api.FPDFText_GetUnicode(tp, i)
+                    adv_w = ctypes.c_float()
+                    if font and code and raw_api.FPDFFont_GetGlyphWidth(font, code, raw_api.FPDFText_GetFontSize(tp, i), adv_w):
+                        advance = adv_w.value * (math.hypot(matrix.b, matrix.d) or 1.0)
+                        if advance > 0:
+                            box = (box[0], box[1], max(box[0], origin[0] + advance), box[3])
                 color, alpha = 0, 1.0
                 if raw_api.FPDFText_GetFillColor(tp, i, fr, fg, fb, fa):
                     color = (fr.value << 16) | (fg.value << 8) | fb.value
@@ -267,6 +310,32 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
     finally:
         doc.close()
     return out
+
+
+def _divide_shared_boxes(chars: list) -> None:
+    """Box the characters of a ligature the way MuPDF does with ligatures expanded.
+
+    PDFium reports the one "fi" glyph as two characters that both carry the whole glyph's box
+    and origin. MuPDF, asked to expand ligatures as TrueDoc asks it to, gives the *first*
+    character the whole box and every later one a zero-width box at the glyph's right edge -
+    measured on Times at 7pt: f 31.86-35.75, i 35.75-35.75, origin 35.75. (My first version cut
+    the box into equal slices, which is what it looked like from one wrong edge; the direct
+    measurement said otherwise.) Word building is indifferent either way; everything that reads
+    a character's own left edge is not.
+    """
+    i = 0
+    n = len(chars)
+    while i < n:
+        j = i + 1
+        while j < n and chars[j]["bbox"] == chars[i]["bbox"] and not chars[j]["c"].isspace():
+            j += 1
+        if j - i > 1 and not chars[i]["c"].isspace():
+            x0, y0, x1, y1 = chars[i]["bbox"]
+            for c in chars[i + 1:j]:
+                c["bbox"] = (x1, y0, x1, y1)
+                if c.get("origin"):
+                    c["origin"] = (x1, c["origin"][1])
+        i = j
 
 
 def _fill_blank_span_sizes(spans: list) -> None:
@@ -401,6 +470,20 @@ def _build(path: str, page_number: int) -> dict | None:
                     g = geom.get(ch.get("char_idx"))
                     text = _as_mupdf_would(text, str(font.get("name") or ""), g)
                     box = (g or {}).get("bbox")
+                    if len(text) == 1 and unicodedata.category(text) == "Mn":
+                        # A combining mark - cmsy's negation slash - belongs with the character
+                        # before it, which is where MuPDF keeps it ("0̸" then "="); on its own box
+                        # it sat in the gap and attached to whatever followed, "0" then "̸=". It
+                        # stays a character of its own (every stage downstream assumes one code
+                        # point per character) and takes a zero-width box at the previous
+                        # character's right edge, as the later characters of a ligature do, so no
+                        # gap opens before it and the real gap stays after it. The previous
+                        # character is usually in the *previous* span: the 0 is CMR, the slash CMSY.
+                        prev = chars[-1] if chars else (spans[-1]["chars"][-1] if spans and spans[-1].get("chars") else None)
+                        if prev is not None and box is not None:
+                            px1, py0, py1 = prev["bbox"][2], box[1], box[3]
+                            g = dict(g or {}, bbox=(px1, py0, px1, py1), origin=(px1, (g or {}).get("origin", (px1, py1))[1]))
+                            box = g["bbox"]
                     if box is None:
                         b = ch.get("bbox") or [0.0, 0.0, 0.0, 0.0]
                         box = (float(b[0]), float(b[1]), float(b[2]), float(b[3]))
@@ -428,6 +511,7 @@ def _build(path: str, page_number: int) -> dict | None:
                     })
                 if not chars:
                     continue
+                _divide_shared_boxes(chars)
                 spans.append({
                     "font": str(font.get("name") or ""),
                     # The drawn size, not the nominal one pdftext passes on from PDFium. Measured
