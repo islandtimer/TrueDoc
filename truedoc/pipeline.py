@@ -167,7 +167,7 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
     table_blocks: list[Block] = []
     lines = list(page.lines)
     if opts.tables:
-        table_blocks = find_ruled_tables(pdf_page)
+        table_blocks = find_ruled_tables(pdf_page, page)
         if table_blocks:
             table_blocks, lines = _adopt_ruled_headers(table_blocks, lines, page.body_font_size)
             table_blocks = _rebuild_sparse_ruled_tables(table_blocks, lines, page.body_font_size)

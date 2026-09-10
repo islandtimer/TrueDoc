@@ -10,10 +10,11 @@ import re
 
 import pymupdf
 
-from truedoc.extract import pdftext_rawdict
+from truedoc.extract import pdfium_objects, pdftext_rawdict
 from truedoc.model import BBox, Block, BlockKind, Table, TableCell
 from truedoc.tables.aligned import _continues
 from truedoc.tables.cells import clean_cell_text, is_bracketed_statistic
+from truedoc.tables import ruled_pdfium
 
 
 def fold_stacked_statistics(rows: list[list], n_cols: int) -> list[tuple[list, list[int]]]:
@@ -284,13 +285,22 @@ def column_spans(cell_rects: list[list], n_cols: int) -> dict[tuple[int, int], i
     return spans
 
 
-def find_ruled_tables(pdf_page: "pymupdf.Page") -> list[Block]:
+def find_ruled_tables(pdf_page: "pymupdf.Page", page=None) -> list[Block]:
     blocks: list[Block] = []
-    try:
-        found = pdf_page.find_tables(strategy="lines_strict")
-    except Exception:
-        return blocks
-    for t in found.tables:
+    tables = None
+    source = "pymupdf-lines"
+    if pdfium_objects.enabled() and page is not None:
+        # M18, D007: pdfplumber's algorithm - the MIT original PyMuPDF's finder was ported from -
+        # over rules and characters we read ourselves, so no AGPL code and no third PDF engine.
+        tables = ruled_pdfium.find_tables(pdf_page, page)
+        if tables is not None:
+            source = "pdfium-lines"
+    if tables is None:
+        try:
+            tables = pdf_page.find_tables(strategy="lines_strict").tables
+        except Exception:
+            return blocks
+    for t in tables:
         try:
             rows = t.extract()
         except Exception:
@@ -380,6 +390,6 @@ def find_ruled_tables(pdf_page: "pymupdf.Page") -> list[Block]:
         if pdf_page.rotation:
             rect = rect * pdf_page.rotation_matrix
         bbox = BBox(float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1))
-        table = Table(n_rows=n_rows, n_cols=n_cols, cells=cells, bbox=bbox, has_merged=has_merged, provenance="pymupdf-lines")
-        blocks.append(Block(kind=BlockKind.TABLE, bbox=bbox, table=table, provenance="pymupdf-lines", confidence=0.8))
+        table = Table(n_rows=n_rows, n_cols=n_cols, cells=cells, bbox=bbox, has_merged=has_merged, provenance=source)
+        blocks.append(Block(kind=BlockKind.TABLE, bbox=bbox, table=table, provenance=source, confidence=0.8))
     return blocks
