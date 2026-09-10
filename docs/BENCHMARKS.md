@@ -227,4 +227,5 @@ One page in five is held out and never tuned on (`bench/holdout.txt`, `bench/hol
 | Run 65 (baseline re-run: arrows and the corroboration check) | 80.9 | 81.9 | identical to run 64 in both halves. |
 | Run 66 (every PDFium switch on) | 76.9 | 79.1 | both halves down, held-out further (-4.0 against -2.8): the loss is general, not fitted. ArXiv 86.3/83.8, multi-column 72.5/76.1, tables 79.4/81.5, tiny text 86.0/85.5. |
 | Run 67 (every switch on, six reader fixes) | 78.5 | 80.3 | both halves up on run 66 (+1.6 held-out, +1.2 tuned-on); held-out tiny text 93.0 back level with run 65, multi-column 75.8 (run 65: 80.3), tables 79.4 (run 65: 90.3). |
+| Run 68 (every switch on, the night's fixes) | 80.3 | 81.6 | both halves up on run 67 (+1.8 held-out, +1.3 tuned-on); held-out arXiv 88.8, tables 88.6 (run 65: 90.3), multi-column 78.1 (run 65: 80.3), tiny text 93.0. |
 | GPU session 4 (bands, experiment) | 80.9 | 82.1 | held-out identical to run 64 (1058/1255 both times) while tuned-on rose 10 checks: the treatment did not generalise. |
