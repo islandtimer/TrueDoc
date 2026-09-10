@@ -141,7 +141,25 @@ Three things worth knowing:
   wrong part of the page. Measured across all 82 rotated pages in the benchmark and your insurance
   library: 80 unchanged, including every one of your 67 library pages.
 
-Left to do: the hidden-text machinery, then the last 18 table checks. Neither needs a rental.
+**Thursday evening: the first full measurement, and what it found.** Run 66 - every switch on -
+scored **81.4 against 84.0**, and the quick test had read a perfect 97 of 128 for it. Six faults
+traced the same evening, every one silent, none of them where I first looked:
+
+- pages that shrink everything with a graphics-state scale reported text at 4/3 its real size, so
+  small print glued its words together;
+- end-of-line hyphens arrived as an invisible control character, so no broken word was rejoined;
+- the maths symbol fonts arrived as raw codes - `k` for the parallel sign - so the formula
+  rebuild never saw a symbol;
+- the letter **f** overhangs its own width, and PDFium's box included the overhang, so at 7pt a
+  gap that MuPDF read as a word space read as nothing (`ofthe`);
+- fixing that broke the **fi** ligature, one drawn shape carrying two letters, until a character
+  sharing its box with a neighbour was told to keep it;
+- a combining slash attached itself to the character after it instead of the one before.
+
+Each was proved against a direct measurement of what MuPDF does, and each is pinned by a test
+built by hand. Quick test 98 of 128 with every switch on; **run 67 is measuring the whole
+benchmark now.** The hidden-text machinery is done and checked on 120 real pages (117 identical).
+Left to do: the last 18 table checks. Nothing needs a rental.
 
 **Plan agreed 7 September, midday (`docs/LATERAL_ROUND_1.md`):** wave 1 after the compact (punctuation spaces on OCR text, TeX ligatures, formulas as strings on OCR pages, stacked statistics cells, the native-resolution OCR test), then run 49; wave 2 through the week with an hour's test before each build; wave 3 on the owner's decisions. Target 70 without a model; 72.5 is the ceiling; the census pool (`bench/tools/ceiling_census.py`) is the stopping rule. Run 49 is on hold until wave 1 is in. **Wave 1 progress (13:10):** items 1 to 4 are in the code with tests (punctuation spaces on OCR text, TeX ligature codes, formulas as plain strings on OCR pages, stacked statistics folded into their values): 16 checks won and none lost in page checks against run 48; the ligature claim of 13 checks proved wrong (a fidelity fix only). Item 5, OCR at the scan's own resolution, was tested on the fourteen pages the round named and gained nothing (the engine resizes every line it reads, so extra pixels buy nothing); set aside with its numbers in the log. Run 49 launched at 13:16 with wave 1 and the morning's seven rules and **scored 67.1 at 14:15** (held-out 64.7): tables 78.7, tiny text 81.2, headers 96.6, multi-column 73.9, old scans 21.5; 36 checks won, 13 lost (traced next). Wave 2 so far, from an afternoon of hour tests while the run converted: four fixes in the code with tests (a table in the page's head strip, lowercase label rows, a checklist with sparse tick columns, and TeX Gyre text faces no longer counted as maths, which had swallowed ten arXiv pages whole); the content-stream order, native-resolution OCR, the character grid and the running-head rules set aside with their numbers.
 
