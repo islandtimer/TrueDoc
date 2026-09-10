@@ -100,6 +100,90 @@ def _mupdf_flags(font: dict, superscript: bool) -> int:
     return out
 
 
+# TeX's maths symbol fonts have no useful ToUnicode, and the two libraries part company on what to
+# do about it: MuPDF resolves the glyph *name* through the Adobe Glyph List, PDFium hands back the
+# glyph's *code* as if it were a character - "k" for the parallel sign, "h" and "i" for the angle
+# brackets, a backtick for the script ell. Run 66 lost 91 arXiv checks to that: the maths rebuild
+# never saw a single symbol. These are the standard OMS (cmsy) and OML (cmmi) encodings, code to
+# the character the glyph name would have given; only codes that differ from ASCII are listed, and
+# the table is consulted only where PDFium itself reports the mapping broken (`map_error`).
+_OMS: dict[int, str] = {
+    0x00: "−", 0x01: "⋅", 0x02: "×", 0x03: "∗", 0x04: "÷", 0x05: "⋄",
+    0x06: "±", 0x07: "∓", 0x08: "⊕", 0x09: "⊖", 0x0a: "⊗", 0x0b: "⊘",
+    0x0c: "⊙", 0x0d: "◯", 0x0e: "∘", 0x0f: "∙", 0x10: "≍", 0x11: "≡",
+    0x12: "⊆", 0x13: "⊇", 0x14: "≤", 0x15: "≥", 0x16: "≼", 0x17: "≽",
+    0x18: "∼", 0x19: "≈", 0x1a: "⊂", 0x1b: "⊃", 0x1c: "≪", 0x1d: "≫",
+    0x1e: "≺", 0x1f: "≻", 0x20: "←", 0x21: "→", 0x22: "↑", 0x23: "↓",
+    0x24: "↔", 0x25: "↗", 0x26: "↘", 0x27: "≃", 0x28: "⇐", 0x29: "⇒",
+    0x2a: "⇑", 0x2b: "⇓", 0x2c: "⇔", 0x2d: "↖", 0x2e: "↙", 0x2f: "∝",
+    0x30: "′", 0x31: "∞", 0x32: "∈", 0x33: "∋", 0x34: "△", 0x35: "▽",
+    0x37: "↦", 0x38: "∀", 0x39: "∃", 0x3a: "¬", 0x3b: "∅", 0x3c: "ℜ",
+    0x3d: "ℑ", 0x3e: "⊤", 0x3f: "⊥", 0x40: "ℵ",
+    0x5b: "∪", 0x5c: "∩", 0x5d: "⊎", 0x5e: "∧", 0x5f: "∨", 0x60: "⊢",
+    0x61: "⊣", 0x62: "⌊", 0x63: "⌋", 0x64: "⌈", 0x65: "⌉", 0x66: "{",
+    0x67: "}", 0x68: "⟨", 0x69: "⟩", 0x6a: "|", 0x6b: "∥", 0x6c: "↕",
+    0x6d: "⇕", 0x6e: "\\", 0x6f: "≀", 0x70: "√", 0x71: "∐", 0x72: "∇",
+    0x73: "∫", 0x74: "⊔", 0x75: "⊓", 0x76: "⊑", 0x77: "⊒", 0x78: "§",
+    0x79: "†", 0x7a: "‡", 0x7b: "¶", 0x7c: "♣", 0x7d: "♦", 0x7e: "♥",
+    0x7f: "♠",
+}
+_OML: dict[int, str] = {
+    0x00: "Γ", 0x01: "Δ", 0x02: "Θ", 0x03: "Λ", 0x04: "Ξ", 0x05: "Π",
+    0x06: "Σ", 0x07: "Υ", 0x08: "Φ", 0x09: "Ψ", 0x0a: "Ω", 0x0b: "α",
+    0x0c: "β", 0x0d: "γ", 0x0e: "δ", 0x0f: "ϵ", 0x10: "ζ", 0x11: "η",
+    0x12: "θ", 0x13: "ι", 0x14: "κ", 0x15: "λ", 0x16: "μ", 0x17: "ν",
+    0x18: "ξ", 0x19: "π", 0x1a: "ρ", 0x1b: "σ", 0x1c: "τ", 0x1d: "υ",
+    0x1e: "φ", 0x1f: "χ", 0x20: "ψ", 0x21: "ω", 0x22: "ε", 0x23: "ϑ",
+    0x24: "ϖ", 0x25: "ϱ", 0x26: "ς", 0x27: "ϕ", 0x28: "↼", 0x29: "↽",
+    0x2a: "⇀", 0x2b: "⇁", 0x2c: "↪", 0x2d: "↩", 0x2e: "▹", 0x2f: "◃",
+    0x3a: ".", 0x3b: ",", 0x3c: "<", 0x3d: "/", 0x3e: ">", 0x3f: "⋆", 0x40: "∂",
+    0x5b: "♭", 0x5c: "♮", 0x5d: "♯", 0x5e: "⌣", 0x5f: "⌢", 0x60: "ℓ",
+    0x7b: "ı", 0x7c: "ȷ", 0x7d: "℘",
+}
+
+
+def _tex_symbol(font: str, text: str) -> str | None:
+    """The character MuPDF's glyph-name lookup would give for a raw TeX symbol-font code."""
+    if len(text) != 1 or ord(text) > 0x7f:
+        return None
+    f = font.upper()
+    if "CMSY" in f or "CMBSY" in f:
+        return _OMS.get(ord(text))
+    if "CMMI" in f:
+        return _OML.get(ord(text))
+    return None
+
+
+def _looks_like_hyphen(g: dict | None) -> bool:
+    """A control character whose drawn outline is a short flat bar a quarter-em up: a hyphen.
+
+    Some producers' ToUnicode tables map the hyphen glyph to U+0002. MuPDF ignores a mapping into
+    the control range and falls back on the glyph name; PDFium trusts it. Every end-of-line hyphen
+    on such a page then arrives as U+0002, and the hyphenation repair - which looks for "-" - never
+    rejoins a broken word: "Ipsilat\\x02" and "eral" instead of "Ipsilateral". Measured on two
+    fonts (an AdvTT TrueType subset and CMR12): 0.26-0.32 em wide, 0.05-0.08 em tall, centred
+    0.22-0.27 em above the baseline. Nothing else in a text font has that shape.
+    """
+    if not g or not g.get("ink") or not g.get("size") or not g.get("origin"):
+        return False
+    size = float(g["size"])
+    x0, y0, x1, y1 = g["ink"]
+    w, h = (x1 - x0) / size, (y1 - y0) / size
+    rise = (float(g["origin"][1]) - (y0 + y1) / 2.0) / size   # y grows downwards
+    return h <= 0.14 and 0.12 <= w <= 0.7 and 0.1 <= rise <= 0.5
+
+
+def _as_mupdf_would(text: str, font: str, g: dict | None) -> str:
+    """PDFium's reading of a character, corrected to what MuPDF delivers for the same glyph."""
+    if g and g.get("map_error"):
+        mapped = _tex_symbol(font, text)
+        if mapped is not None:
+            return mapped
+    if len(text) == 1 and ord(text) < 0x20 and not text.isspace() and _looks_like_hyphen(g):
+        return "-"
+    return text
+
+
 def _order(path: str, page_number: int) -> dict | None:
     """pdftext's grouping: blocks, lines and spans, each character as its PDFium index."""
     try:
@@ -224,15 +308,26 @@ def _drawn_size(raw_api, tp, index: int, matrix, scales: dict[int, float]) -> fl
     object and so no scale, and reporting the nominal size for them put 906 phantom 1.0pt
     characters on one small-print page, all of them spaces, which dragged the page's body size
     down with them. A size we did not measure is better left unstated.
+
+    The scale comes from `FPDFText_GetMatrix`, the *effective* matrix for the character, and not
+    from the text object's own matrix. The first version read the object's matrix, which was
+    exact on a page that scales through `Tm` and wrong by exactly 4/3 on a page that scales through
+    the graphics state (`0.7492 0 0 0.7492 0 0 cm`): every text object there reports an identity
+    matrix, and 9.30 came back where MuPDF reads 6.97. Small type at 4/3 its real size glues its
+    words together, because the word-gap rule is relative to size. Run 66 lost 13 tiny-text checks
+    to it. The effective matrix reproduces MuPDF on both kinds of page and on an unscaled one.
     """
     obj = raw_api.FPDFText_GetTextObject(tp, index)
     if not obj:
         return 0.0
-    key = ctypes.cast(obj, ctypes.c_void_p).value
-    scale = scales.get(key)
-    if scale is None:
-        scale = math.hypot(matrix.b, matrix.d) if raw_api.FPDFPageObj_GetMatrix(obj, matrix) else 1.0
-        scales[key] = scale
+    if raw_api.FPDFText_GetMatrix(tp, index, matrix):
+        scale = math.hypot(matrix.b, matrix.d) or 1.0
+    else:
+        key = ctypes.cast(obj, ctypes.c_void_p).value
+        scale = scales.get(key)
+        if scale is None:
+            scale = math.hypot(matrix.b, matrix.d) if raw_api.FPDFPageObj_GetMatrix(obj, matrix) else 1.0
+            scales[key] = scale
     return float(raw_api.FPDFText_GetFontSize(tp, index)) * scale
 
 
@@ -304,6 +399,7 @@ def _build(path: str, page_number: int) -> dict | None:
                     if not text:
                         continue
                     g = geom.get(ch.get("char_idx"))
+                    text = _as_mupdf_would(text, str(font.get("name") or ""), g)
                     box = (g or {}).get("bbox")
                     if box is None:
                         b = ch.get("bbox") or [0.0, 0.0, 0.0, 0.0]

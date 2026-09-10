@@ -21,9 +21,14 @@ from truedoc.extract import pdftext_rawdict as A
 pytestmark = pytest.mark.skipif(not A.available(), reason="pdftext/pypdfium2 not installed")
 
 
-def _pdf(nominal: float, scale: float) -> bytes:
-    """A one-page PDF drawing "Hi" at `nominal` points, scaled by `scale` in the text matrix."""
-    content = (f"BT /F1 {nominal:g} Tf {scale:g} 0 0 {scale:g} 20 100 Tm (Hi) Tj ET").encode()
+def _pdf(nominal: float, scale: float, via: str = "tm") -> bytes:
+    """A one-page PDF drawing "Hi" at `nominal` points, scaled by `scale` - in the text matrix
+    (`via="tm"`) or in the graphics state (`via="cm"`), which are different operators and reach
+    PDFium by different routes."""
+    if via == "cm":
+        content = (f"q {scale:g} 0 0 {scale:g} 0 0 cm BT /F1 {nominal:g} Tf 1 0 0 1 20 100 Tm (Hi) Tj ET Q").encode()
+    else:
+        content = (f"BT /F1 {nominal:g} Tf {scale:g} 0 0 {scale:g} 20 100 Tm (Hi) Tj ET").encode()
     objs = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
         b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
@@ -46,11 +51,11 @@ def _pdf(nominal: float, scale: float) -> bytes:
     return bytes(out)
 
 
-def _sizes(nominal: float, scale: float) -> list[float]:
+def _sizes(nominal: float, scale: float, via: str = "tm") -> list[float]:
     fd, path = tempfile.mkstemp(suffix=".pdf")
     try:
         with os.fdopen(fd, "wb") as fh:
-            fh.write(_pdf(nominal, scale))
+            fh.write(_pdf(nominal, scale, via))
         raw = A.build(path, 1)
         assert raw is not None, "the hand-built PDF did not parse"
         return [sp["size"] for b in raw["blocks"] for ln in b["lines"] for sp in ln["spans"]]
@@ -68,6 +73,14 @@ def test_text_scaled_by_the_matrix_reports_the_size_it_is_drawn_at():
 def test_the_same_holds_when_the_scaling_shrinks_the_text():
     """The other direction, which is how a small-print page reported 35pt for 5.9pt text."""
     sizes = _sizes(nominal=36.0, scale=0.25)
+    assert sizes and all(abs(s - 9.0) < 0.1 for s in sizes), sizes
+
+
+def test_a_scale_in_the_graphics_state_counts_too():
+    """The second defect, found by run 66: a page that scales everything with `cm` rather than
+    `Tm` reports an identity matrix on every text object, so reading the object's matrix gave
+    12pt where the text is drawn at 9. Small type at 4/3 its size glues its words together."""
+    sizes = _sizes(nominal=12.0, scale=0.75, via="cm")
     assert sizes and all(abs(s - 9.0) < 0.1 for s in sizes), sizes
 
 

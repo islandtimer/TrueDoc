@@ -112,6 +112,51 @@ def test_the_flip_survives_a_shifted_crop_box():
     assert A._flip(30.0, 700.0, 40.0, 690.0, 20.0, 800.0) == (10.0, 100.0, 20.0, 110.0)
 
 
+# --- what MuPDF would have delivered --------------------------------------------------
+
+def test_tex_symbol_font_codes_become_the_symbols_mupdf_names():
+    """PDFium hands back a cmsy glyph's code as a letter - "k" for the parallel sign - where MuPDF
+    resolves the glyph name. Run 66 lost 91 arXiv checks to the maths rebuild never seeing a symbol."""
+    assert A._tex_symbol("CMSY10", "k") == "∥"
+    assert A._tex_symbol("CMSY10", "h") == "⟨" and A._tex_symbol("CMSY10", "i") == "⟩"
+    assert A._tex_symbol("CMSY7", "\x14") == "≤"
+    assert A._tex_symbol("CMMI10", "`") == "ℓ"
+    assert A._tex_symbol("CMMI10", "\x0b") == "α"
+
+
+def test_real_letters_and_other_fonts_are_left_alone():
+    assert A._tex_symbol("CMMI10", "x") is None          # an italic x is an x
+    assert A._tex_symbol("CMSY10", "A") is None          # calligraphic A arrives as "A" both ways
+    assert A._tex_symbol("Helvetica", "k") is None
+    assert A._as_mupdf_would("k", "Helvetica", {"map_error": True}) == "k"
+
+
+def test_the_table_is_only_consulted_where_pdfium_reports_the_mapping_broken():
+    assert A._as_mupdf_would("k", "CMSY10", {"map_error": False}) == "k"
+    assert A._as_mupdf_would("k", "CMSY10", {"map_error": True}) == "∥"
+
+
+def _glyph(w, h, rise, size=10.0):
+    """A control character whose ink is `w` by `h` em, centred `rise` em above the baseline."""
+    return {"size": size, "origin": (0.0, 100.0), "map_error": False,
+            "ink": (0.0, 100.0 - (rise + h / 2) * size, w * size, 100.0 - (rise - h / 2) * size)}
+
+
+def test_a_control_code_drawn_as_a_short_bar_is_a_hyphen():
+    """Measured on an AdvTT subset and on CMR12: 0.26-0.32 em wide, 0.05-0.08 em tall, a quarter
+    em up. Every end-of-line hyphen on such a page arrives as U+0002 and no broken word rejoins."""
+    assert A._as_mupdf_would("\x02", "AdvTT31ea7dbe", _glyph(0.30, 0.07, 0.25)) == "-"
+    assert A._as_mupdf_would("\x02", "CMR12", _glyph(0.26, 0.05, 0.22)) == "-"
+
+
+def test_other_control_codes_keep_their_shape():
+    assert A._as_mupdf_would("\x02", "X", _glyph(0.30, 0.07, 0.0)) == "\x02"     # on the baseline: an underscore
+    assert A._as_mupdf_would("\x02", "X", _glyph(0.30, 0.60, 0.25)) == "\x02"    # tall: not a bar
+    assert A._as_mupdf_would("\x02", "X", _glyph(0.90, 0.07, 0.25)) == "\x02"    # wide: a rule, not a hyphen
+    assert A._as_mupdf_would("-", "X", _glyph(0.30, 0.07, 0.25)) == "-"          # a real hyphen is untouched
+    assert A._as_mupdf_would(" ", "X", None) == " "
+
+
 # --- the switch -----------------------------------------------------------------------
 
 def test_the_reader_is_off_unless_asked_for():
