@@ -65,6 +65,44 @@ OKF markdown
 - **OCR-layer columns (4 Sept).** On a scanned page with a hidden text layer, `_reassemble_ocr_layer` finds column boundaries as channels that many rows' word gaps vote for. A channel carries the vertical range of the rows that voted, so the vote count and the "no word straddles it" test are judged within that band and only lines in the band are split by it: a page that opens with a full-width abstract over two columns gets its boundary in the lower band instead of nowhere.
 - **Shattered lines.** A line with superscripts often arrives as several segments whose spans interleave, plus separate segments for each bracket piece; `_reassemble_lines` re-joins segments on one baseline (sized by their *main* text, not their scripts), folds bracket-only fragments into the line they touch, and lets script-sized fragments (numerators, denominators, stray subscripts) join the line with the nearest baseline.
 
+## Reading the page without PyMuPDF (M18, D007, D022) - read this before touching geometry
+
+PyMuPDF is AGPL or a paid Artifex licence, and D007 keeps AGPL out of the product path, so each
+stage that reads a PDF has a PDFium twin behind an environment switch. **All three are off by
+default and the shipped path is unchanged.** Each was proved against a quantity the two libraries
+must agree on before it was wired, which is what D022 asks for; the score is the second check.
+
+| switch | what it moves | module | measured |
+|---|---|---|---|
+| `TRUEDOC_READER=pdftext` | characters, boxes, fonts, colours | `extract/pdftext_rawdict.py` | quick gate 97/128 against 100 |
+| `TRUEDOC_RENDERER=pdfium` | every page rendering | `extract/render.py` | 100/128, and identical marks on 82 rotated pages |
+| `TRUEDOC_OBJECTS=pdfium` | drawings, images, ruled tables | `extract/pdfium_objects.py`, `tables/ruled_pdfium.py` | 100/128, but tables 830/1022 against 848 - **not shipped** |
+
+**Coordinate conventions are where this goes wrong, every time.** Four different spaces are in play
+and mixing them fails silently - nothing crashes, the document just comes out wrong.
+
+- **MuPDF reports text, drawings and images in the page's *unrotated* space.** `textlayer._rect`
+  turns them once, into the rendered page's space, and that is where `Page.chars`, `Block.bbox` and
+  the layout model's boxes live.
+- **A clip rectangle is not text.** `get_pixmap` clips in the *rendered* space. Three call sites
+  used to turn a box back before clipping and so photographed the wrong patch of a rotated page;
+  see `tests/test_rotated_page_clip.py`.
+- **PDFium measures up from the bottom left.** Every box is flipped about the crop box on the way
+  in (`_flip` in `pdftext_rawdict.py`, `flip` in `pdfium_objects.py`).
+- **pdftext rotates its own coordinates into display space and PyMuPDF does not**, so the page
+  rotation is taken back out in `pdftext_rawdict._line_dir`.
+- **PDFium object bounds are already through the object's own matrix; its path *segments* are not**,
+  and neither is either through a parent form's matrix. `pdfium_objects._walk` carries the form
+  matrix down and composes the object's own for segments. Missing the first put one page's rules
+  178.5pt out; missing the second put its rectangles at y = -32,000 while the bounding boxes looked
+  perfect.
+
+**Still on PyMuPDF:** `get_texttrace` and `get_bboxlog` inside `_Visibility` (the hidden-text
+machinery of D011), `set_rotation` for pages lying on their side, and `pymupdf.Rect` as a geometry
+type. `_Visibility` is the one real piece of work left; it needs a per-character link to the object
+that drew it, which PDFium gives through `FPDFText_GetTextObject` - the same pointers
+`pdfium_objects` already walks, so the two can be joined on them.
+
 ## Where the benchmark harness lives
 
 `truedoc/bench/olmocr.py` converts the benchmark PDFs in parallel and calls the official scorer through `bench/score_olmocr.py`. `bench/inspect_failures.py` summarises failed tests; `bench/math_check.py` scores formulas on a few pages; `bench/quick_check.py` is the regression guard on 13 fixed pages.

@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-10, 08:35 (after run 65: 84.0 with the vision switch on, held-out 80.9, identical to run 64; without a model run 54, 67.4; the icon question measured and closed; getting off PyMuPDF - the PDFium text reader reads 97/128 on the quick gate against MuPDF's 100 after the font-size fix, and PDFium page rendering reads 100/128, the same as PyMuPDF; both off by default and the shipped path unchanged; the gate was checked against 150 unseen pages and found honest at 91.4% against its own 90% - see D022)_
+_Last updated: 2026-09-10, 15:10 (after run 65: 84.0 with the vision switch on, held-out 80.9, identical to run 64; without a model run 54, 67.4; the icon question measured and closed; getting off PyMuPDF - text 97/128 on the quick gate against MuPDF's 100, page rendering and the drawing reader 100/128 with no difference at all, the table finder built but **not shipped** at 830/1022 against 848 on its own category; every switch off by default and the shipped path unchanged at 100/128; a rotated-page clip bug found and fixed in the shipped product; see D022 and `docs/ARCHITECTURE.md`)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -114,6 +114,33 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 - (Done 7 Sept, evening, recorded as D020 on 8 Sept: partial pages stay closed and small task models stay out. Keeping the shaky reads of pages the OCR gate rejects was worth at most +1.4 against the model's +4.8 on the same pages, and the pages a reader would want are ones the model reads anyway; a formula-image reader and a second OCR engine have no territory left now that every page without a digital text layer goes to a model. One product question remains, in `docs/DECISIONS.md`: whether the free tier, which has no model, should emit a partial-page note instead of an empty file for the handful of pages our own OCR read confidently but the word-likeness gate rejected.)
 
 ## What is being worked on right now
+
+**10 September: getting off PyMuPDF's licence (M18).** Four of the six stages that read a PDF now
+have a PDFium alternative behind a switch, all off by default, and **your shipped product is
+unchanged throughout - the quick gate reads 100 of 128 exactly as before.**
+
+| what moved | switch | where it stands |
+|---|---|---|
+| Characters and fonts | `TRUEDOC_READER=pdftext` | 97 of 128 against PyMuPDF's 100 |
+| Turning pages into pictures | `TRUEDOC_RENDERER=pdfium` | 100 of 128 - no difference at all |
+| Drawings and picture positions | `TRUEDOC_OBJECTS=pdfium` | 100 of 128 - no difference at all |
+| Finding ruled tables | (same switch) | **not shipped**: 830 of 1022 against 848 |
+
+Three things worth knowing:
+
+- **The 13-page quick test cannot be trusted alone, and today proved it.** The table swap reads 100
+  of 128 on it - perfect - and loses 38 checks when the whole category is scored, because the gate
+  samples 188 table pages with three. Tracing that found three real defects, two of them in the
+  drawing reader rather than the table code, and closed the gap to 18. It stays switched off.
+- **The item recorded as the hard part turned out to be the easy one.** MuPDF's log of every mark
+  made on a page has no PDFium equivalent, but TrueDoc only ever took two things from it - where
+  the pictures are and what was painted over what - and PDFium gives both.
+- **One bug was found in the shipped product and fixed** (your instruction: check it where it
+  matters). On pages turned sideways, the hidden-text check and the tick reader were looking at the
+  wrong part of the page. Measured across all 82 rotated pages in the benchmark and your insurance
+  library: 80 unchanged, including every one of your 67 library pages.
+
+Left to do: the hidden-text machinery, then the last 18 table checks. Neither needs a rental.
 
 **Plan agreed 7 September, midday (`docs/LATERAL_ROUND_1.md`):** wave 1 after the compact (punctuation spaces on OCR text, TeX ligatures, formulas as strings on OCR pages, stacked statistics cells, the native-resolution OCR test), then run 49; wave 2 through the week with an hour's test before each build; wave 3 on the owner's decisions. Target 70 without a model; 72.5 is the ceiling; the census pool (`bench/tools/ceiling_census.py`) is the stopping rule. Run 49 is on hold until wave 1 is in. **Wave 1 progress (13:10):** items 1 to 4 are in the code with tests (punctuation spaces on OCR text, TeX ligature codes, formulas as plain strings on OCR pages, stacked statistics folded into their values): 16 checks won and none lost in page checks against run 48; the ligature claim of 13 checks proved wrong (a fidelity fix only). Item 5, OCR at the scan's own resolution, was tested on the fourteen pages the round named and gained nothing (the engine resizes every line it reads, so extra pixels buy nothing); set aside with its numbers in the log. Run 49 launched at 13:16 with wave 1 and the morning's seven rules and **scored 67.1 at 14:15** (held-out 64.7): tables 78.7, tiny text 81.2, headers 96.6, multi-column 73.9, old scans 21.5; 36 checks won, 13 lost (traced next). Wave 2 so far, from an afternoon of hour tests while the run converted: four fixes in the code with tests (a table in the page's head strip, lowercase label rows, a checklist with sparse tick columns, and TeX Gyre text faces no longer counted as maths, which had swallowed ten arXiv pages whole); the content-stream order, native-resolution OCR, the character grid and the running-head rules set aside with their numbers.
 
