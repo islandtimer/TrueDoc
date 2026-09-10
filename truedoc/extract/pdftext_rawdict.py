@@ -417,6 +417,8 @@ def _stamp(path: str) -> tuple:
 
 def build(path: str, page_number: int) -> dict | None:
     """A rawdict-shaped reading of one page (1-based), or None if pdftext cannot read it."""
+    if not path:
+        return None    # a document opened from memory has no file to read; MuPDF takes it
     key = (os.path.abspath(path), page_number, _stamp(path), _gap_limit())
     hit = _CACHE.get(key)
     if hit is not None:

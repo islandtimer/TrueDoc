@@ -250,6 +250,11 @@ _CACHE_MAX = 4
 
 def page_objects(path: str, page_number: int) -> list[PageObject] | None:
     """Everything drawn on one page (1-based), in painting order, or None if PDFium cannot read it."""
+    if not path:
+        # A document opened from memory has no file for PDFium to open; MuPDF reads it instead.
+        # Found by the launcher, which runs the suite with the switches on: a test that builds
+        # its page in memory reached os.stat(None), a TypeError no OSError guard catches.
+        return None
     try:
         import pypdfium2.raw as raw
 
@@ -259,7 +264,7 @@ def page_objects(path: str, page_number: int) -> list[PageObject] | None:
     try:
         st = os.stat(path)
         key = (os.path.abspath(path), page_number, st.st_mtime_ns, st.st_size)
-    except OSError:
+    except (OSError, TypeError):
         key = None
     if key is not None and key in _CACHE:
         return _CACHE[key]
