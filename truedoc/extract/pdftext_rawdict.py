@@ -70,6 +70,9 @@ def _is_blank(c: dict) -> bool:
 _DESCENDER = 0.21       # last-resort baseline estimate, used only where PDFium will not give an origin
 _TEX_BOLD = re.compile(r"^(?:[a-z]{6}\+)?(?:cmb|cmbx|cmbsy|cmmib|cmssbx|sfbx|sfbi|eufb)\d")   # TeX's bold faces
 _LINE_GAP = 1.5         # a gap this many times the font size ends a line (see _split_at_gaps)
+_OBJECT_GAP = 1.0       # ... and this many where the text object changes with it (measured: 0.5, 0.75
+                        # and 1.0 each gain six table checks on the changed pages; 1.0 costs the fewest
+                        # multi-column checks, one; 0 switches it off)
 
 # One page's built structure is wanted by several stages (the main read, the maths ink pass, the
 # ruled-table cell reader), so the last few are kept rather than parsed again. Plain dicts only:
@@ -623,6 +626,7 @@ def _build(path: str, page_number: int) -> dict | None:
             direction = _line_dir([c for sp in line.get("spans") or [] for c in sp.get("chars") or []], geom)
             if direction == (1.0, 0.0):
                 _level_type3_boxes(spans)
+            _drop_tight_blanks(spans, direction)
             runs.append((block_index, direction, spans))
     blocks = []
     for block_index, direction, spans in _join_broken_lines(runs, bars):
@@ -659,6 +663,34 @@ def _level_type3_boxes(spans: list) -> None:
     y1 = max(c["bbox"][3] for c in small)
     for c in small:
         c["bbox"] = (c["bbox"][0], y0, c["bbox"][2], y1)
+
+
+_DASHES = "-–—‐‑‒"
+
+
+def _drop_tight_blanks(spans: list, direction) -> None:
+    """Take out a blank PDFium makes up beside a dash in a run of digits.
+
+    PDFium invents a blank at a tenth of an em - after the en dash of "1726–1728" on a page of
+    references, which then read "1726– 1728" and failed its check; MuPDF's own blanks start at
+    0.16 em. A range of numbers never has a blank at its dash, so that one goes.
+
+    The general rule - drop every invented blank in a gap under a word space - was written and
+    measured, and cost five checks on one quick-gate page (26076dc, "Birthweight2690 g",
+    "Elective forcephalopelvic"): a tightly set page's word gaps measure under 0.15 em between
+    glyph boxes though not between pen positions, and there PDFium's blanks were right. The
+    gap between boxes is not the measure MuPDF uses, so the blanket rule is not safe.
+    """
+    flat = [(sp, c) for sp in spans for c in sp["chars"]]
+    for k, (sp, c) in enumerate(flat):
+        if not (c.get("generated") and c["c"] == " ") or k == 0 or k == len(flat) - 1:
+            continue
+        before, after = flat[k - 1][1]["c"], flat[k + 1][1]["c"]
+        if (before in _DASHES and after.isdigit()) or (after in _DASHES and before.isdigit()):
+            sp["chars"].remove(c)
+    for sp in list(spans):
+        if not sp["chars"]:
+            spans.remove(sp)
 
 
 def _join_surrogates(chars: list, geom: dict) -> list:
@@ -884,6 +916,15 @@ def _gap_limit() -> float:
         return _LINE_GAP
 
 
+def _object_gap() -> float:
+    """How wide a gap ends a line where the text object changes with it, as a multiple of the
+    font size. 0 disables the rule."""
+    try:
+        return float(os.environ.get("TRUEDOC_OBJECT_GAP", _OBJECT_GAP))
+    except (TypeError, ValueError):
+        return _OBJECT_GAP
+
+
 def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> list:
     """Cut a run of text into the pieces the layout stage expects.
 
@@ -913,10 +954,11 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
     limit = _gap_limit()
     if limit <= 0:
         return [spans]
+    object_gap = _object_gap()
     dx, dy = direction
     flat = [(si, c) for si, sp in enumerate(spans) for c in sp["chars"]]
     cuts: set[int] = set()
-    prev = None       # (index in flat, end along the line, scale, start along the line)
+    prev = None       # (index in flat, end along the line, scale, start along the line, text object)
     for i, (si, c) in enumerate(flat):
         if _is_blank(c):
             continue
@@ -936,7 +978,14 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
         # Kerning pulls a glyph back a fraction of an em at most; half an em is a jump.
         elif prev is not None and scale > 0 and start < prev[3] - 0.5 * max(scale, prev[2]):
             cuts.add(i)
-        prev = (i, end, scale, start)
+        # A smaller gap ends a line where the file's own text run ends with it: MuPDF follows
+        # the text-showing runs, and a table row it read as "Listening to speech or lecture"
+        # and "118" (two runs, a 1.1-em gap) arrived from pdftext as one line, and the column
+        # finder then read one cell (5bdc8382, 105e91a0). Off at 0; the threshold is measured.
+        elif (prev is not None and scale > 0 and object_gap > 0 and c.get("order", -1) != prev[4]
+              and start - prev[1] >= object_gap * max(scale, prev[2])):
+            cuts.add(i)
+        prev = (i, end, scale, start, c.get("order", -1))
     if not cuts:
         return [spans]
     pieces, current = [], []

@@ -234,3 +234,36 @@ def test_a_pen_that_jumps_backwards_starts_a_new_line():
     assert ["".join(c["c"] for c in p[0]["chars"]) for p in pieces] == ["C", "B", "A"], pieces
     kerned = [_char("T", 0, 7), _char("o", 5.5, 11)]        # a kerned pair overlaps, and stays
     assert len(A._split_at_gaps([_span(kerned)])) == 1
+
+
+def test_a_gap_at_a_text_object_boundary_ends_the_line_at_a_smaller_width():
+    """MuPDF follows the file's text-showing runs: a table row drawn as two runs with a 1.1-em
+    gap between them ("Listening to speech or lecture" then "118") is two lines to it and one
+    row to pdftext, and the column finder then read one cell (5bdc8382, 105e91a0). A gap at a
+    run boundary ends the line at the object-gap threshold; the same gap inside one run does not."""
+    import os
+    a = dict(_char("A", 0, 10), order=1)
+    b = dict(_char("B", 18, 28), order=2)          # 0.8 em on, in another text object
+    same = dict(_char("B", 18, 28), order=1)       # the same gap inside one object
+    os.environ["TRUEDOC_OBJECT_GAP"] = "0.6"
+    try:
+        assert len(A._split_at_gaps([_span([a, b])])) == 2
+        assert len(A._split_at_gaps([_span([a, same])])) == 1
+        os.environ["TRUEDOC_OBJECT_GAP"] = "0"
+        assert len(A._split_at_gaps([_span([a, b])])) == 1      # off: only the 1.5-em rule
+    finally:
+        del os.environ["TRUEDOC_OBJECT_GAP"]
+
+
+def test_a_blank_pdfium_invents_beside_a_dash_between_digits_is_dropped():
+    """PDFium invents a blank at a tenth of an em after the en dash of "1726–1728", where MuPDF's
+    own blanks start at 0.16 em; the page then read "1726– 1728". A range of numbers has no blank
+    at its dash. Any other invented blank stays: dropping every one in a narrow gap was measured
+    and cost five gate checks on a tightly set page whose word gaps are narrower than that."""
+    dash = [_char("6", 0, 4), _char("–", 4.5, 8), dict(_char(" ", 8.5, 8.5), generated=True), _char("1", 8.8, 12)]
+    words = [_char("t", 0, 4), dict(_char(" ", 4.5, 4.5), generated=True), _char("2", 4.8, 8)]
+    drawn = [_char("6", 0, 4), _char("–", 4.5, 8), _char(" ", 8.5, 8.5), _char("1", 8.8, 12)]
+    for chars, kept in ((dash, "6–1"), (words, "t 2"), (drawn, "6– 1")):
+        spans = [_span(chars)]
+        A._drop_tight_blanks(spans, (1.0, 0.0))
+        assert "".join(c["c"] for sp in spans for c in sp["chars"]) == kept, (chars, kept)
