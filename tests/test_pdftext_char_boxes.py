@@ -28,13 +28,13 @@ pytestmark = pytest.mark.skipif(not A.available(), reason="pdftext/pypdfium2 not
 _CONTENT = b"BT /F1 7 Tf 20 100 Td (one of the finest offers and \\256xtures) Tj ET\n"
 
 
-def _pdf() -> bytes:
+def _pdf(content: bytes = _CONTENT) -> bytes:
     objs = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
         b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
         b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] "
         b"/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-        b"<< /Length " + str(len(_CONTENT)).encode() + b" >>\nstream\n" + _CONTENT + b"\nendstream",
+        b"<< /Length " + str(len(content)).encode() + b" >>\nstream\n" + content + b"\nendstream",
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>",
     ]
     out = bytearray(b"%PDF-1.4\n")
@@ -88,3 +88,90 @@ def test_the_readers_agree_on_every_left_edge():
     pf, mu = _boxes()
     worst = max(abs(a[1] - b[1]) for a, b in zip(pf, mu))
     assert worst < 0.05, f"left edges differ by up to {worst:.3f}pt"
+
+
+def test_a_characters_box_is_the_fonts_ascent_and_descent():
+    """MuPDF boxes every character from the baseline by the font's ascender and descender;
+    PDFium's loose box uses something smaller above the baseline - 1.4pt lower on 8pt Arial -
+    and by an amount that varies with the glyphs, so a table's header line and the "Item"
+    label centred over it changed rows in the rebuild and two columns fused (fa18a15c).
+    `FPDFFont_GetAscent` and `GetDescent` are the metrics MuPDF uses; the box is built from
+    them, level text only. On a hand-built page the two libraries substitute different faces
+    for a font that is not embedded (0.891 against 1.053 em of ascent for Times), so what is
+    pinned here is the construction: one top and one bottom for every character of a size,
+    at the font's ascent and descent. The embedded-font page below pins the agreement."""
+    import ctypes
+
+    import pypdfium2 as pdfium
+    import pypdfium2.raw as raw_api
+    content = b"BT /F1 8 Tf 1 0 0 1 20 100 Tm (Item) Tj ET\nBT /F1 8 Tf 1 0 0 1 60 105 Tm (Aug 21,) Tj ET\nBT /F1 12 Tf 1 0 0 1 20 60 Tm (Big) Tj ET"
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(_pdf(content))
+    try:
+        doc = pdfium.PdfDocument(path)
+        try:
+            page = doc[0]
+            tp = page.get_textpage()
+            font = raw_api.FPDFTextObj_GetFont(raw_api.FPDFText_GetTextObject(tp.raw, 0))
+            asc, desc = ctypes.c_float(), ctypes.c_float()
+            assert raw_api.FPDFFont_GetAscent(font, 8.0, asc) and raw_api.FPDFFont_GetDescent(font, 8.0, desc)
+            ascent8, descent8 = asc.value, desc.value
+            tp.close()
+            page.close()
+        finally:
+            doc.close()
+        raw = A.build(path, 1)
+        assert raw is not None
+        by_size: dict[float, set] = {}
+        for b in raw["blocks"]:
+            for ln in b["lines"]:
+                for sp in ln["spans"]:
+                    for c in sp["chars"]:
+                        if not c["c"].isspace():
+                            by_size.setdefault(round(sp["size"]), set()).add((round(c["bbox"][1] - c["origin"][1], 2), round(c["bbox"][3] - c["origin"][1], 2)))
+        assert len(by_size[8]) == 1 and len(by_size[12]) == 1, by_size      # one box per size, whatever the glyph
+        (top8, bottom8), = by_size[8]
+        assert abs(top8 + ascent8) < 0.05 and abs(bottom8 + descent8) < 0.05, (top8, bottom8, ascent8, descent8)
+        (top12, bottom12), = by_size[12]
+        assert abs(top12 - 1.5 * top8) < 0.05 and abs(bottom12 - 1.5 * bottom8) < 0.05, (top8, top12)
+    finally:
+        os.unlink(path)
+
+
+_ARIAL_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs", "tables",
+                           "fa18a15c1dbbfcb71b1f1ea1b8f116e24b8a_pg2_pg1.pdf")
+
+
+@pytest.mark.skipif(not os.path.exists(_ARIAL_PAGE), reason="benchmark page not present")
+def test_an_embedded_fonts_boxes_agree_with_mupdf_to_the_hundredth():
+    """The page it was measured on (Arial embedded): every level character's top and bottom
+    within a twentieth of a point of MuPDF's."""
+    raw = A.build(_ARIAL_PAGE, 1)
+    assert raw is not None
+    ours = {}
+    for b in raw["blocks"]:
+        for ln in b["lines"]:
+            if ln["dir"] != (1.0, 0.0):
+                continue
+            for sp in ln["spans"]:
+                for c in sp["chars"]:
+                    if not c["c"].isspace() and c.get("origin"):
+                        ours[(c["c"], round(c["origin"][0], 1), round(c["origin"][1], 1))] = (c["bbox"][1], c["bbox"][3])
+    doc = pymupdf.open(_ARIAL_PAGE)
+    try:
+        theirs = {}
+        for b in doc[0].get_text("rawdict")["blocks"]:
+            for ln in b.get("lines", []):
+                if tuple(ln["dir"]) != (1.0, 0.0):
+                    continue
+                for sp in ln["spans"]:
+                    for c in sp["chars"]:
+                        if not c["c"].isspace():
+                            theirs[(c["c"], round(c["origin"][0], 1), round(c["origin"][1], 1))] = (c["bbox"][1], c["bbox"][3])
+    finally:
+        doc.close()
+    matched = [(ours[k], theirs[k]) for k in ours if k in theirs]
+    assert len(matched) > 500, len(matched)
+    off = [k for k in ours if k in theirs and (abs(ours[k][0] - theirs[k][0]) > 0.05 or abs(ours[k][1] - theirs[k][1]) > 0.05)]
+    assert len(off) <= 0.01 * len(matched), (len(off), len(matched), off[:5])

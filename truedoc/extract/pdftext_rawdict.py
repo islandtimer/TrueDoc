@@ -315,6 +315,25 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     origin = (ox.value - x_off, y_top - oy.value)
                 code = raw_api.FPDFText_GetUnicode(tp, i)
                 map_error = raw_api.FPDFText_HasUnicodeMapError(tp, i) == 1
+                drawn = _drawn_size(raw_api, tp, i, matrix, scales)
+                # The top and bottom are the font's ascent and descent from the baseline, which is
+                # the box MuPDF reports for every character of a span. PDFium's loose box stops
+                # short above the baseline - 1.4pt on 8pt Arial - and by an amount that varies
+                # with the glyphs, so a table's header line and the "Item" centred over it swapped
+                # rows in the rebuild and two columns fused (fa18a15c). `FPDFFont_GetAscent` and
+                # `GetDescent`, asked at the drawn size, give the very metrics MuPDF uses (7.276
+                # = 0.905 x 8.04, to the third place). Level text; not a Type 3 font, whose ascent
+                # PDFium reports as 0 - those keep their glyph box and the line rule in `_build`.
+                if (box is not None and origin is not None and drawn >= 1.0
+                        and raw_api.FPDFText_GetMatrix(tp, i, matrix)
+                        and abs(matrix.b) < 1e-6 and abs(matrix.c) < 1e-6):
+                    metric_obj = raw_api.FPDFText_GetTextObject(tp, i)
+                    metric_font = raw_api.FPDFTextObj_GetFont(metric_obj) if metric_obj else None
+                    asc, desc = ctypes.c_float(), ctypes.c_float()
+                    if (metric_font and raw_api.FPDFFont_GetAscent(metric_font, drawn, asc)
+                            and raw_api.FPDFFont_GetDescent(metric_font, drawn, desc)
+                            and 0.0 < asc.value <= 1.5 * drawn and -1.5 * drawn <= desc.value <= 0.0):
+                        box = (box[0], origin[1] - asc.value, box[2], origin[1] - desc.value)
                 # The right edge is the glyph's advance, which is what MuPDF reports. PDFium's loose
                 # box is not quite that: on a glyph whose ink overhangs its advance - the letter f
                 # above all - it runs further right, 0.44pt on a 7pt line, and the word builder's
@@ -365,7 +384,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     "alpha": alpha,
                     "order": order,
                     "invisible": invisible,
-                    "size": _drawn_size(raw_api, tp, i, matrix, scales),
+                    "size": drawn,
                     "generated": raw_api.FPDFText_IsGenerated(tp, i) == 1,
                     "map_error": map_error,
                     "code": code,

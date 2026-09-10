@@ -81,6 +81,7 @@ def _edges_from_objects(objs: list, M=None) -> list[dict]:
     whole - see `_frame_edges`.)
     """
     out: list[dict] = []
+    fills: list[tuple[float, float, float, float]] = []
     for o in objs:
         if o.kind not in ("path", "image"):
             continue
@@ -95,6 +96,39 @@ def _edges_from_objects(objs: list, M=None) -> list[dict]:
                 out.append(_h_edge(source, x0, x1, (y0 + y1) / 2.0))
             elif w <= _MAX_RULE and h >= _MIN_RULE:
                 out.append(_v_edge(source, (x0 + x1) / 2.0, y0, y1))
+            elif o.kind == "path" and o.fill is not None and len(fills) < _MAX_FILLS:
+                fills.append((x0, y0, x1, y1))
+    return out + _shared_sides(fills)
+
+
+_MAX_FILLS = 600        # filled boxes considered for shared sides (the pairing is quadratic)
+_SHARED_SNAP = 3.0      # two fills meet when their sides lie within this
+_MIN_SHARED = 4.0       # ... along at least this much of each other
+
+
+def _shared_sides(fills: list) -> list[dict]:
+    """A rule wherever two filled boxes meet: a table of shaded cells with no lines drawn.
+
+    f1774abd rules its rows by shading alone - sixteen filled cells and not one line - and
+    PyMuPDF's finder reads its 4 rows by 4 from the boundaries between the fills; this read 3
+    by 4 for want of the boundary under the header. The side of a filled box is a rule only
+    where another filled box meets it, so a page's background or a figure's panel, which meet
+    nothing, give none. (Taking every box's four sides had been tried and measured: it invented
+    tables on two pages that matched PyMuPDF cell for cell.)
+    """
+    out: list[dict] = []
+    for i, a in enumerate(fills):
+        for b in fills[i + 1:]:
+            ox0, ox1 = max(a[0], b[0]), min(a[2], b[2])
+            if ox1 - ox0 >= _MIN_SHARED:
+                for ya, yb in ((a[3], b[1]), (a[1], b[3])):
+                    if abs(ya - yb) <= _SHARED_SNAP:
+                        out.append(_h_edge("shared_side", ox0, ox1, (ya + yb) / 2.0))
+            oy0, oy1 = max(a[1], b[1]), min(a[3], b[3])
+            if oy1 - oy0 >= _MIN_SHARED:
+                for xa, xb in ((a[2], b[0]), (a[0], b[2])):
+                    if abs(xa - xb) <= _SHARED_SNAP:
+                        out.append(_v_edge("shared_side", (xa + xb) / 2.0, oy0, oy1))
     return out
 
 

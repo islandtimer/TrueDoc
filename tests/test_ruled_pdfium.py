@@ -238,3 +238,56 @@ def test_cell_text_reads_a_visual_row_left_to_right_whatever_the_drawing_order()
         {"line": 2, "order": 1, "text": "row", "x0": 42.0, "x1": 56.0, "top": 12.0, "bottom": 20.0},
     ]
     assert ruled_pdfium._cell_text(words, (0.0, 0.0, 60.0, 22.0)) == "0.78 **\nsecond row"
+
+
+def test_a_table_of_shaded_cells_with_no_drawn_lines_is_found():
+    """A table whose cells are filled rectangles with no rule drawn between them (f1774abd, a
+    row per shaded band): the boundary where two fills meet is a rule, and PyMuPDF's finder
+    takes it as one on that page. A filled rectangle that meets no other - a page background -
+    gives none. On this hand-built page PyMuPDF's strict strategy sees nothing and its plain
+    "lines" strategy the 2x2; the real page below is where the two must agree."""
+    content = (b"0.9 g\n"
+               b"100 650 150 50 re f\n250 650 150 50 re f\n"
+               b"0.8 g\n"
+               b"100 600 150 50 re f\n250 600 150 50 re f\n"
+               b"0 g\n"
+               b"BT /F1 10 Tf 110 675 Td (Alpha) Tj ET\nBT /F1 10 Tf 260 675 Td (Beta) Tj ET\n"
+               b"BT /F1 10 Tf 110 625 Td (Gamma) Tj ET\nBT /F1 10 Tf 260 625 Td (Delta) Tj ET\n")
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    body = _pdf().replace(_CONTENT, content).replace(
+        b"/Length " + str(len(_CONTENT)).encode(), b"/Length " + str(len(content)).encode())
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(body)
+    doc = pymupdf.open(path)
+    try:
+        page = extract_page(doc[0], 1)
+        found = ruled_pdfium.find_tables(doc[0], page)
+        assert found is not None and len(found) == 1, found
+        ours = [[(c or "").strip() for c in r] for r in found[0].extract()]
+        assert ours == [["Alpha", "Beta"], ["Gamma", "Delta"]], ours
+        mu = list(doc[0].find_tables(strategy="lines").tables)
+        assert len(mu) == 1 and [[(c or "").strip() for c in r] for r in mu[0].extract()] == ours
+    finally:
+        render.close_documents()
+        doc.close()
+        os.unlink(path)
+
+
+_SHADED_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs", "tables",
+                            "f1774abde9c6d1cae0f05bb2c6992e9cca85_pg4.pdf")
+
+
+@pytest.mark.skipif(not os.path.exists(_SHADED_PAGE), reason="benchmark page not present")
+def test_the_shaded_benchmark_page_agrees_with_pymupdf():
+    """The page the rule was measured on: sixteen shaded cells, no drawn lines, and PyMuPDF's
+    strict finder reads 4 rows by 4 from the boundaries between them."""
+    doc = pymupdf.open(_SHADED_PAGE)
+    try:
+        page = extract_page(doc[0], 1)
+        found = ruled_pdfium.find_tables(doc[0], page)
+        mu = list(doc[0].find_tables(strategy="lines_strict").tables)
+        assert found is not None and len(found) == len(mu) == 1, (found, mu)
+        assert [len(r) for r in found[0].extract()] == [len(r) for r in mu[0].extract()] == [4] * 4
+    finally:
+        render.close_documents()
+        doc.close()
