@@ -51,7 +51,21 @@ import os
 import re
 import unicodedata
 
-from truedoc.extract import pdfium_objects
+from truedoc.extract import glyph_names, pdfium_objects
+from truedoc.math.symbols import is_extension_font
+
+
+def _is_blank(c: dict) -> bool:
+    """A blank: whitespace to Python that is a blank on the page as well.
+
+    A code PDFium could not map is a glyph whatever Python calls it: cmex draws a tall bar from
+    pieces on 0x0C, a form feed, and Adobe's fonts keep their ligatures on 0x1C-0x1F, all
+    "whitespace" to `str.isspace`. Taking them for blanks folded five bracket pieces of a
+    display formula into the sentence above it, whose box then reached 60pt into the formula
+    and the maths stage swallowed the sentence (2503.03899); 79 benchmark pages carry such
+    codes.
+    """
+    return c["c"].isspace() and not c.get("map_error")
 
 _DESCENDER = 0.21       # last-resort baseline estimate, used only where PDFium will not give an origin
 _TEX_BOLD = re.compile(r"^(?:[a-z]{6}\+)?(?:cmb|cmbx|cmbsy|cmmib|cmssbx|sfbx|sfbi|eufb)\d")   # TeX's bold faces
@@ -229,12 +243,14 @@ def _order(path: str, page_number: int) -> dict | None:
     return pages[0] if pages else None
 
 
-def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
-    """Every geometric fact PDFium holds for the wanted characters, in PyMuPDF's space."""
+def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, dict], list]:
+    """Every geometric fact PDFium holds for the wanted characters, in PyMuPDF's space, and the
+    page's thin horizontal rules (for the line join)."""
     import pypdfium2 as pdfium
     import pypdfium2.raw as raw_api
 
     out: dict[int, dict] = {}
+    bars: list[tuple[float, float, float, float]] = []
     doc = pdfium.PdfDocument(path)
     try:
         page = doc[page_number - 1]
@@ -255,9 +271,17 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
             # `doc[i]`, and object pointers do not survive a reload. The order numbers do.
             handles: dict[int, int] = {}
             try:
-                pdfium_objects.walk_page(raw_api, page, handles)
+                objects = pdfium_objects.walk_page(raw_api, page, handles)
             except Exception:
-                handles = {}
+                handles, objects = {}, []
+            # The thin horizontal rules - fraction bars among them - from the same walk, for
+            # the line join. (Not through `page_objects`, whose document cache would hold the
+            # file open; a test's temporary page could then not be deleted.)
+            for o in objects or []:
+                if o.kind == "path":
+                    for bx0, by0, bx1, by1 in (o.rects or [o.bbox]):
+                        if by1 - by0 <= _BAR_MAX_HEIGHT and bx1 - bx0 >= 2.0:
+                            bars.append((bx0, by0, bx1, by1))
             invisible_mode = getattr(raw_api, "FPDF_TEXTRENDERMODE_INVISIBLE", 3)
             count = raw_api.FPDFText_CountChars(tp)
             other = raw_api.FS_RECTF()
@@ -350,7 +374,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
             textpage.close()
     finally:
         doc.close()
-    return out
+    return out, bars
 
 
 def _divide_shared_boxes(chars: list) -> None:
@@ -368,9 +392,9 @@ def _divide_shared_boxes(chars: list) -> None:
     n = len(chars)
     while i < n:
         j = i + 1
-        while j < n and chars[j]["bbox"] == chars[i]["bbox"] and not chars[j]["c"].isspace():
+        while j < n and chars[j]["bbox"] == chars[i]["bbox"] and not _is_blank(chars[j]):
             j += 1
-        if j - i > 1 and not chars[i]["c"].isspace():
+        if j - i > 1 and not _is_blank(chars[i]):
             x0, y0, x1, y1 = chars[i]["bbox"]
             for c in chars[i + 1:j]:
                 c["bbox"] = (x1, y0, x1, y1)
@@ -478,6 +502,7 @@ def _build(path: str, page_number: int) -> dict | None:
         return None
     grouped = page.get("blocks") or []
 
+    names: dict | None = None       # the page's glyph-name tables, read only if a code needs them
     wanted: set[int] = set()
     for block in grouped:
         for line in block.get("lines") or []:
@@ -487,7 +512,7 @@ def _build(path: str, page_number: int) -> dict | None:
                     if isinstance(idx, int):
                         wanted.add(idx)
     try:
-        geom = _geometry(path, page_number, wanted) if wanted else {}
+        geom, bars = _geometry(path, page_number, wanted) if wanted else ({}, [])
     except Exception:
         return None
 
@@ -497,6 +522,7 @@ def _build(path: str, page_number: int) -> dict | None:
             spans = []
             for span in line.get("spans") or []:
                 font = span.get("font") or {}
+                font_name = str(font.get("name") or "")
                 size = float(font.get("size") or 0.0)
                 chars = []
                 drawn_sizes: list[float] = []
@@ -512,7 +538,22 @@ def _build(path: str, page_number: int) -> dict | None:
                         # the carriage return (0x0D) for cmr's "fl" ligature and an author block
                         # grew a column of "fl" cells (09f90a8f). A line end is a line end.
                         continue
-                    text = _as_mupdf_would(text, str(font.get("name") or ""), g)
+                    text = _as_mupdf_would(text, font_name, g)
+                    if (g and g.get("map_error") and len(text) == 1 and ord(text) == g.get("code", -1)
+                            and not is_extension_font(font_name)):
+                        # The raw code survived every table: ask the PDF what the glyph is
+                        # called. Adobe's fonts name their ligatures in parts ("f_i", "T_h"),
+                        # which PDFium's glyph list lacks, and a page of Minion and Myriad read
+                        # "non uorescent" and "us" for "Thus" (01ed6dcc). An extension font's
+                        # codes stay raw: the maths stage decodes those itself.
+                        if names is None:
+                            names = glyph_names.page_glyph_names(path, page_number) or {}
+                        adv = None
+                        if (g or {}).get("bbox") and (g or {}).get("size"):
+                            adv = (g["bbox"][2] - g["bbox"][0]) / g["size"] * 1000.0
+                        named = glyph_names.text_for(names, font_name, g["code"], adv)
+                        if named:
+                            text = named
                     box = (g or {}).get("bbox")
                     if len(text) == 1 and unicodedata.category(text) == "Mn":
                         # A combining mark - cmsy's negation slash - belongs with the character
@@ -537,20 +578,25 @@ def _build(path: str, page_number: int) -> dict | None:
                         origin = (box[0], box[3] - _DESCENDER * (size or (box[3] - box[1])))
                     color = (g or {}).get("color", 0)
                     colors[color] = colors.get(color, 0) + 1
-                    drawn_sizes.append(float((g or {}).get("size") or 0.0))
-                    chars.append({
-                        "c": text,
-                        "bbox": box,
-                        "origin": origin,
-                        "ink": (g or {}).get("ink"),
-                        "generated": bool((g or {}).get("generated")),
-                        "map_error": bool((g or {}).get("map_error")),
-                        # for the hidden-text rules: where in the painting order this character's
-                        # object sits, whether it was drawn invisibly, and how opaque it is
-                        "order": int((g or {}).get("order", -1)),
-                        "invisible": bool((g or {}).get("invisible")),
-                        "alpha": float((g or {}).get("alpha", 1.0)),
-                    })
+                    # A name in parts is several characters on one glyph's box - "fi" from
+                    # "f_i" - and they go in as a ligature's characters do, one box shared, for
+                    # `_divide_shared_boxes` to lay out as MuPDF lays an expanded ligature out.
+                    for piece in (list(text) if len(text) > 1 else [text]):
+                        drawn_sizes.append(float((g or {}).get("size") or 0.0))
+                        chars.append({
+                            "c": piece,
+                            "bbox": box,
+                            "origin": origin,
+                            "ink": (g or {}).get("ink"),
+                            "generated": bool((g or {}).get("generated")),
+                            "map_error": bool((g or {}).get("map_error")) and len(text) == 1,
+                            # for the hidden-text rules: where in the painting order this
+                            # character's object sits, whether it was drawn invisibly, and how
+                            # opaque it is
+                            "order": int((g or {}).get("order", -1)),
+                            "invisible": bool((g or {}).get("invisible")),
+                            "alpha": float((g or {}).get("alpha", 1.0)),
+                        })
                 if not chars:
                     continue
                 _divide_shared_boxes(chars)
@@ -579,7 +625,7 @@ def _build(path: str, page_number: int) -> dict | None:
                 _level_type3_boxes(spans)
             runs.append((block_index, direction, spans))
     blocks = []
-    for block_index, direction, spans in _join_broken_lines(runs):
+    for block_index, direction, spans in _join_broken_lines(runs, bars):
         lines = [{"dir": direction, "bbox": _union(piece), "spans": piece} for piece in _split_at_gaps(spans, direction)]
         if not lines:
             continue
@@ -606,7 +652,7 @@ def _level_type3_boxes(spans: list) -> None:
     tallest glyph on the line stands in for the font's height; measured on that page it is
     within 3% of MuPDF's. Level lines only - a turned line's height runs the other way.
     """
-    small = [c for sp in spans if 0.0 < float(sp.get("size") or 0.0) < 1.0 for c in sp["chars"] if not c["c"].isspace()]
+    small = [c for sp in spans if 0.0 < float(sp.get("size") or 0.0) < 1.0 for c in sp["chars"] if not _is_blank(c)]
     if len(small) < 2:
         return
     y0 = min(c["bbox"][1] for c in small)
@@ -684,7 +730,7 @@ def _edge_glyph(spans: list, first: bool) -> tuple[dict, float] | None:
     for sp in order:
         chars = sp["chars"] if first else list(reversed(sp["chars"]))
         for c in chars:
-            if not c["c"].isspace():
+            if not _is_blank(c):
                 return c, float(sp.get("size") or 0.0)
     return None
 
@@ -700,7 +746,7 @@ def _line_main(spans: list, direction) -> tuple[float, float | None]:
             continue
         for c in sp["chars"]:
             o = c.get("origin")
-            if o and not c["c"].isspace():
+            if o and not _is_blank(c):
                 by_size.setdefault(s, []).append(-o[0] * dy + o[1] * dx)
     if not by_size:
         return 0.0, None
@@ -709,11 +755,37 @@ def _line_main(spans: list, direction) -> tuple[float, float | None]:
     return size, bases[len(bases) // 2]
 
 
-def _continues(prev: list, spans: list, direction) -> bool:
+_BAR_MAX_HEIGHT = 1.5   # a fraction bar is a filled rectangle no taller than this, in points
+
+
+def _over_a_bar(spans: list, bars: list, direction) -> bool:
+    """Does this run sit on a fraction bar - a rule just beneath it, spanning most of it?
+
+    A numerator in text style rises 0.39 em, a superscript 0.41: nothing in the baseline tells
+    them apart, and welding the numerator into the text line tore every inline fraction on
+    four sample pages (the denominator, which starts back under it, could not follow). The
+    bar can tell them apart. Level lines only.
+    """
+    if not bars or direction != (1.0, 0.0):
+        return False
+    x0, y0, x1, y1 = _union(spans)
+    width = x1 - x0
+    if width <= 0:
+        return False
+    reach = max(y1 - y0, 1.0)
+    for bx0, by0, bx1, by1 in bars:
+        if y1 - 0.2 * reach <= by0 <= y1 + 0.8 * reach and min(x1, bx1) - max(x0, bx0) >= 0.6 * width:
+            return True
+    return False
+
+
+def _continues(prev: list, spans: list, direction, bars: list | None = None) -> bool:
     """Does this run carry straight on from the last one - the same line, cut by PDFium?"""
     a = _edge_glyph(prev, first=False)
     b = _edge_glyph(spans, first=True)
     if a is None or b is None:
+        return False
+    if bars and _over_a_bar(spans, bars, direction):
         return False
     (ca, sa), (cb, sb) = a, b
     size = max(sa, sb, ca["bbox"][3] - ca["bbox"][1], cb["bbox"][3] - cb["bbox"][1], 1.0)
@@ -721,18 +793,21 @@ def _continues(prev: list, spans: list, direction) -> bool:
     # starts level with it), ...
     if _along(cb["bbox"], direction)[0] < _along(ca["bbox"], direction)[0] - 0.1 * size:
         return False
-    # ... it is a script of the line, or sits on its baseline, or on the last glyph's - the
-    # rows of a matrix are full-size text on baselines of their own, and stay lines of their
-    # own, as the maths stage expects them, ...
+    # ... and its baseline is within half an em of the line's, or of the last glyph's. A
+    # superscript rises a third to a half of an em and stays; a fraction's numerator rises
+    # two thirds and starts a line of its own - as it does for MuPDF - so that the maths stage
+    # can pair it with the bar and the denominator beneath (a "script-sized" clause that
+    # welded any small raised run tore every inline fraction on four sample pages: the
+    # numerator went into the text line and the denominator could not follow). The rows of
+    # a matrix are full-size text on baselines of their own, and stay lines of their own.
     oa, ob = ca.get("origin"), cb.get("origin")
     if oa and ob:
         dx, dy = direction
         a_base, b_base = -oa[0] * dy + oa[1] * dx, -ob[0] * dy + ob[1] * dx
         main_size, main_base = _line_main(prev, direction)
-        script = sb > 0 and main_size > 0 and sb < 0.85 * main_size
         on_line = main_base is not None and abs(b_base - main_base) <= 0.5 * max(main_size, sb)
         on_last = abs(b_base - a_base) <= 0.5 * max(sa, sb, 1.0)
-        if not (script or on_line or on_last):
+        if not (on_line or on_last):
             return False
     # ... and it overlaps the band the line so far occupies.
     lo, hi = _across(_union(prev), direction)
@@ -756,19 +831,23 @@ def _weld(prev: list, spans: list, direction) -> None:
     if not prev or not spans:
         prev.extend(spans)
         return
-    # A word's gap between the two halves keeps a blank, as MuPDF would have put one.
+    # A word's gap between the two halves keeps a blank, as MuPDF would have put one. So does
+    # a run that starts back under the last glyph: a fraction's denominator under its
+    # numerator, which PDFium had already set on the text line ("n-" then "1"). Without the
+    # blank the word builder, which measures gaps forward, read the pair as one word "14"
+    # and the maths stage never saw a fraction (2503.03899). MuPDF puts a blank at any jump.
     if a is not None and b is not None:
         (ca, sa), (cb, sb) = a, b
         size = max(sa, sb, ca["bbox"][3] - ca["bbox"][1], 1.0)
         gap = _along(cb["bbox"], direction)[0] - _along(ca["bbox"], direction)[1]
-        if gap >= _WORD_GAP * size:
+        if gap >= _WORD_GAP * size or gap < -0.1 * size:
             x0, y0, x1, y1 = ca["bbox"]
             prev[-1]["chars"].append(dict(ca, c=" ", bbox=(x1, y0, x1, y1), origin=(x1, (ca.get("origin") or (x1, y1))[1]),
                                           ink=None, generated=True))
     prev.extend(spans)
 
 
-def _join_broken_lines(runs: list) -> list:
+def _join_broken_lines(runs: list, bars: list | None = None) -> list:
     """Rejoin the pieces of one line that PDFium's text page cut at a raised character.
 
     TeX sets R^{2^n} as three text runs on three baselines, and PDFium ends a line at each
@@ -782,6 +861,7 @@ def _join_broken_lines(runs: list) -> list:
     gap cut that follows still parts the cells of a table row, exactly as it does for the rows
     pdftext itself hands over whole.
     """
+    joining = os.environ.get("TRUEDOC_LINE_JOIN", "1").strip() != "0"     # off, for measuring
     out: list[tuple[int, tuple[float, float], list]] = []
     for block_index, direction, spans in runs:
         if out and _edge_glyph(spans, first=True) is None:
@@ -789,7 +869,7 @@ def _join_broken_lines(runs: list) -> list:
             # text, which it files as a level line of its own and so cuts the text at every
             # word. It belongs to the run before it, as the blank it is.
             out[-1][2].extend(spans)
-        elif out and out[-1][1] == direction and _continues(out[-1][2], spans, direction):
+        elif joining and out and out[-1][1] == direction and _continues(out[-1][2], spans, direction, bars):
             _weld(out[-1][2], spans, direction)
         else:
             out.append((block_index, direction, spans))
@@ -838,7 +918,7 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
     cuts: set[int] = set()
     prev = None       # (index in flat, end along the line, scale, start along the line)
     for i, (si, c) in enumerate(flat):
-        if c["c"].isspace():
+        if _is_blank(c):
             continue
         x0, y0, x1, y1 = c["bbox"]
         ends = [x0 * dx + y0 * dy, x1 * dx + y0 * dy, x0 * dx + y1 * dy, x1 * dx + y1 * dy]
@@ -870,9 +950,9 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
     out = []
     for piece in pieces:
         # blanks stranded at either end of a cut belong to the gap, not to the text
-        while piece and piece[0][1]["c"].isspace():
+        while piece and _is_blank(piece[0][1]):
             piece = piece[1:]
-        while piece and piece[-1][1]["c"].isspace():
+        while piece and _is_blank(piece[-1][1]):
             piece = piece[:-1]
         rebuilt: list[tuple[int, list]] = []
         for si, c in piece:
@@ -900,7 +980,7 @@ def _spaced_text(chars: list, size: float) -> str:
     out: list[str] = []
     prev = None
     for c in chars:
-        if prev is not None and not c["c"].isspace() and not prev["c"].isspace():
+        if prev is not None and not _is_blank(c) and not _is_blank(prev):
             scale = max(size, c["bbox"][3] - c["bbox"][1], 0.5)
             if c["bbox"][0] - prev["bbox"][2] >= _WORD_GAP * scale:
                 out.append(" ")
@@ -981,7 +1061,7 @@ def _line_dir(chars: list, geom: dict) -> tuple[float, float]:
     votes: dict[float, list] = {}
     for c in chars:
         g = geom.get(c.get("char_idx")) or {}
-        if str(c.get("char", "")).isspace() or g.get("generated"):
+        if (str(c.get("char", "")).isspace() and not g.get("map_error")) or g.get("generated"):
             continue
         theta = float(g.get("angle") or 0.0)
         votes.setdefault(round(theta, 2), []).append(theta)

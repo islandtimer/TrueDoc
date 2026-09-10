@@ -267,3 +267,42 @@ def test_turned_text_is_not_cut_at_its_word_spaces():
         texts = ["".join(c["c"] for sp in ln["spans"] for c in sp["chars"]).split() for b in raw["blocks"] for ln in b["lines"]]
         assert texts == [["Source:", "Adapted", "from"]], texts
         assert len(_mupdf_dirs(path)) == 1
+
+
+def test_a_fractions_numerator_and_denominator_never_share_a_word():
+    """A text-style fraction: "so", a raised "1" (which PDFium itself keeps on the text line, as
+    it keeps any 0.4-em step), a drawn bar, and "x" starting back under the "1". The
+    denominator's run is welded on - it is the same line to MuPDF too - but with a word break:
+    without one the word builder, which measures gaps forward, read "1x" as one word, and on a
+    benchmark page "14" for a 1/4 that the maths stage then never saw (2503.03899)."""
+    content = (b"BT /F1 10 Tf 1 0 0 1 20 100 Tm (so) Tj ET\n"
+               b"BT /F1 7 Tf 1 0 0 1 34 104 Tm (1) Tj ET\n"
+               b"0 0 0 rg 33.5 102.6 5 0.4 re f\n"
+               b"BT /F1 7 Tf 1 0 0 1 34 96 Tm (x) Tj ET\n"
+               b"BT /F1 10 Tf 1 0 0 1 42 100 Tm (, then) Tj ET\n")
+    with _File(_pdf(content)) as path:
+        raw = A.build(path, 1)
+        assert raw is not None
+        words = [w for t in _line_texts(raw) for w in t.split()]
+        assert "1" in words and "x" in words, words
+        assert not any("1x" in w or "x1" in w for w in words), words
+
+
+def test_a_glyph_on_a_control_code_is_not_a_blank():
+    """cmex draws a tall bar from pieces whose code is 0x0C - a form feed, whitespace to Python.
+    The join took a run of them for the blank PDFium makes up between words and folded five
+    pieces of a display formula's bracket into the sentence above it; the sentence's box then
+    reached into the formula and the maths stage swallowed the sentence (2503.03899). A code
+    PDFium could not map is a glyph, whatever Python calls it."""
+    diffs = b" /Encoding << /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [12 /barextender] >>"
+    content = (b"BT /F1 10 Tf 1 0 0 1 20 150 Tm (By Theorem,) Tj ET\n"
+               b"BT /F1 10 Tf 1 0 0 1 30 120 Tm (\014) Tj ET\n"
+               b"BT /F1 10 Tf 1 0 0 1 30 113 Tm (\014) Tj ET\n"
+               b"BT /F1 10 Tf 1 0 0 1 30 106 Tm (\014) Tj ET\n")
+    with _File(_pdf(content, font_extra=diffs)) as path:
+        raw = A.build(path, 1)
+        assert raw is not None
+        first = _line_texts(raw)[0]
+        assert "\x0c" not in first, repr(first)
+        top = [ln["bbox"] for b in raw["blocks"] for ln in b["lines"]][0]
+        assert top[3] - top[1] < 20, top          # the sentence's own box, not the pieces' too
