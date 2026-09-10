@@ -8,8 +8,11 @@ algorithm has to be taken without the reader, and fed the rules and characters T
 
 These build a small ruled table by hand and check both halves of that: the grid comes out with the
 right shape, and the cell text comes out of TrueDoc's own characters rather than a third engine's.
-The rotated case matters on its own, because the table geometry is in the page's unrotated space
-while TrueDoc holds its characters rotated, and something has to turn them back.
+The grid is deliberately not square - two rows by three - because a square one reads the same
+transposed and so cannot catch a table built in the wrong space.
+
+The rotated case matters on its own, because the geometry is in the page's unrotated space while
+TrueDoc holds its characters rotated, and something has to turn them back.
 """
 
 import os
@@ -24,15 +27,19 @@ from truedoc.tables import ruled_pdfium
 
 pytestmark = pytest.mark.skipif(not ruled_pdfium.available(), reason="pdfplumber/pypdfium2 not installed")
 
-# A 2x2 ruled grid with a letter in each cell, drawn 600..700 up an 800pt page.
+# A 2-row, 3-column ruled grid, drawn 600..700 up an 800pt page. Deliberately not square: a
+# square grid reads the same transposed, so it cannot catch a table built in the wrong space -
+# which is exactly the fault that turned a rotated page into 7 rows by 8 where PyMuPDF read 8 by 7.
 _CONTENT = (
     b"0 0 0 RG 1 w\n"
-    b"100 700 m 300 700 l S\n100 650 m 300 650 l S\n100 600 m 300 600 l S\n"
-    b"100 600 m 100 700 l S\n200 600 m 200 700 l S\n300 600 m 300 700 l S\n"
+    b"100 700 m 400 700 l S\n100 650 m 400 650 l S\n100 600 m 400 600 l S\n"
+    b"100 600 m 100 700 l S\n200 600 m 200 700 l S\n300 600 m 300 700 l S\n400 600 m 400 700 l S\n"
     b"BT /F1 10 Tf 110 675 Td (Alpha) Tj ET\n"
     b"BT /F1 10 Tf 210 675 Td (Beta) Tj ET\n"
+    b"BT /F1 10 Tf 310 675 Td (Kappa) Tj ET\n"
     b"BT /F1 10 Tf 110 625 Td (Gamma) Tj ET\n"
     b"BT /F1 10 Tf 210 625 Td (Delta) Tj ET\n"
+    b"BT /F1 10 Tf 310 625 Td (Omega) Tj ET\n"
 )
 
 
@@ -80,13 +87,13 @@ def test_a_ruled_grid_is_found_with_the_right_shape():
     for found, _ in _tables():
         assert found is not None and len(found) == 1, found
         rows = found[0].extract()
-        assert len(rows) == 2 and all(len(r) == 2 for r in rows), rows
+        assert len(rows) == 2 and all(len(r) == 3 for r in rows), rows
 
 
 def test_cell_text_comes_from_our_own_characters():
     for found, _ in _tables():
         rows = found[0].extract()
-        assert [[(c or "").strip() for c in r] for r in rows] == [["Alpha", "Beta"], ["Gamma", "Delta"]], rows
+        assert [[(c or "").strip() for c in r] for r in rows] == [["Alpha", "Beta", "Kappa"], ["Gamma", "Delta", "Omega"]], rows
 
 
 def test_it_agrees_with_pymupdf_about_the_grid():
@@ -102,7 +109,7 @@ def test_cell_boxes_come_back_for_the_mark_placer():
     """`deal_tall_cells`, `column_spans` and `row_spans` all read `t.rows[].cells`."""
     for found, _ in _tables():
         boxes = [c for row in found[0].rows for c in row.cells]
-        assert len(boxes) == 4 and all(b is not None for b in boxes), boxes
+        assert len(boxes) == 6 and all(b is not None for b in boxes), boxes
         widths = {round(b[2] - b[0]) for b in boxes}
         assert widths == {100}, boxes
 
@@ -110,11 +117,19 @@ def test_cell_boxes_come_back_for_the_mark_placer():
 @pytest.mark.parametrize("rotate", [90, 180, 270])
 def test_a_rotated_page_still_reads_its_cells(rotate):
     """The geometry is unrotated and TrueDoc's characters are not, so they must be turned back;
-    without that the cells come out empty while the grid still looks right."""
+    without that the cells come out empty while the grid still looks right.
+
+    Note what this does *not* claim. It asserts the grid as built in the page's unrotated space,
+    which for a turned page is the transpose of what PyMuPDF reports - PyMuPDF reads a real
+    90-degree benchmark page as 8 rows by 7 where this reads 7 by 8. Each cell's text is right;
+    which cell it lands in is not, and that is a known gap rather than a settled answer (about a
+    third of the tables category's remaining shortfall). Building in the rendered space instead
+    was measured and is worse: the glyphs are turned too, so every cell stacks one letter to a
+    line."""
     for found, _ in _tables(rotate):
         assert found and len(found) == 1, found
         text = [[(c or "").strip() for c in r] for r in found[0].extract()]
-        assert text == [["Alpha", "Beta"], ["Gamma", "Delta"]], text
+        assert text == [["Alpha", "Beta", "Kappa"], ["Gamma", "Delta", "Omega"]], text
 
 
 def test_a_page_with_no_rules_yields_no_tables():

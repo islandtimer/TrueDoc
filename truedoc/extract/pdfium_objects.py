@@ -64,7 +64,34 @@ def _colour(getter, obj) -> tuple[tuple | None, float]:
     return (r.value / 255.0, g.value / 255.0, b.value / 255.0), a.value / 255.0
 
 
-def _rects_of_path(raw, obj, flip) -> list:
+_IDENTITY = (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+
+def _compose(outer: tuple, inner: tuple) -> tuple:
+    """The matrix that applies `inner` and then `outer`."""
+    ai, bi, ci, di, ei, fi = inner
+    ao, bo, co, do, eo, fo = outer
+    return (ao * ai + co * bi, bo * ai + do * bi,
+            ao * ci + co * di, bo * ci + do * di,
+            ao * ei + co * fi + eo, bo * ei + do * fi + fo)
+
+
+def _apply(matrix: tuple, x: float, y: float) -> tuple:
+    a, b, c, d, e, f = matrix
+    return (a * x + c * y + e, b * x + d * y + f)
+
+
+def _box_through(matrix: tuple, x0: float, y0: float, x1: float, y1: float) -> tuple:
+    """A rectangle through a matrix, as the envelope of its corners."""
+    if matrix == _IDENTITY:
+        return (x0, y0, x1, y1)
+    pts = [_apply(matrix, x, y) for x, y in ((x0, y0), (x1, y0), (x0, y1), (x1, y1))]
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    return (min(xs), min(ys), max(xs), max(ys))
+
+
+def _rects_of_path(raw, obj, flip, matrix=_IDENTITY) -> list:
     """The axis-aligned rectangles a path draws.
 
     `_Visibility` needs these rather than the path's bounding box: a box border drawn as a filled
@@ -92,12 +119,13 @@ def _rects_of_path(raw, obj, flip) -> list:
             continue
         if not raw.FPDFPathSegment_GetPoint(seg, x, y):
             continue
+        point = _apply(matrix, x.value, y.value) if matrix != _IDENTITY else (x.value, y.value)
         if kind == raw.FPDF_SEGMENT_MOVETO:
             if len(current) >= 4:
                 subpaths.append(current)
-            current = [(x.value, y.value)]
+            current = [point]
         else:
-            current.append((x.value, y.value))
+            current.append(point)
     if len(current) >= 4:
         subpaths.append(current)
 
@@ -118,11 +146,20 @@ def _rects_of_path(raw, obj, flip) -> list:
     return out
 
 
-def _walk(raw, obj, order: list, out: list, flip, depth: int = 0) -> None:
+def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, depth: int = 0) -> None:
     if len(out) >= _MAX_OBJECTS:
         return
     kind_id = raw.FPDFPageObj_GetType(obj)
     if kind_id == raw.FPDF_PAGEOBJ_FORM and depth < 8:
+        # A form's children are measured in the form's own space, not the page's, so its matrix
+        # has to come down with them. Missed at first, and it cost 38 checks of the tables
+        # category: one page's rules all landed 178.5pt from where they belonged, because that is
+        # what the form's matrix translates by.
+        inner = _IDENTITY
+        fm = raw.FS_MATRIX()
+        if raw.FPDFPageObj_GetMatrix(obj, fm):
+            inner = (fm.a, fm.b, fm.c, fm.d, fm.e, fm.f)
+        combined = _compose(matrix, inner)
         try:
             count = raw.FPDFFormObj_CountObjects(obj)
         except Exception:
@@ -130,13 +167,13 @@ def _walk(raw, obj, order: list, out: list, flip, depth: int = 0) -> None:
         for i in range(count):
             child = raw.FPDFFormObj_GetObject(obj, i)
             if child:
-                _walk(raw, child, order, out, flip, depth + 1)
+                _walk(raw, child, order, out, flip, combined, depth + 1)
         return
 
     left, bottom, right, top = (ctypes.c_float() for _ in range(4))
     if not raw.FPDFPageObj_GetBounds(obj, left, bottom, right, top):
         return
-    box = flip(left.value, bottom.value, right.value, top.value)
+    box = flip(*_box_through(matrix, left.value, bottom.value, right.value, top.value))
 
     kind = {raw.FPDF_PAGEOBJ_PATH: "path", raw.FPDF_PAGEOBJ_IMAGE: "image",
             raw.FPDF_PAGEOBJ_TEXT: "text", raw.FPDF_PAGEOBJ_SHADING: "shading"}.get(kind_id, "other")
@@ -148,12 +185,21 @@ def _walk(raw, obj, order: list, out: list, flip, depth: int = 0) -> None:
         filled = bool(raw.FPDFPath_GetDrawMode(obj, fillmode, stroking)) and fillmode.value != raw.FPDF_FILLMODE_NONE
         if filled:
             fill, fill_alpha = _colour(raw.FPDFPageObj_GetFillColor, obj)
-            rects = _rects_of_path(raw, obj, flip)
+            # `FPDFPageObj_GetBounds` reports a box that already went through the object's own
+            # matrix, but `FPDFPathSegment_GetPoint` hands back the raw points from before it, so
+            # the segments need that matrix as well as any form's. Missing it put one page's
+            # rectangles at y = -32,000 while its bounding boxes were perfectly correct.
+            own = _IDENTITY
+            om = raw.FS_MATRIX()
+            if raw.FPDFPageObj_GetMatrix(obj, om):
+                own = (om.a, om.b, om.c, om.d, om.e, om.f)
+            rects = _rects_of_path(raw, obj, flip, _compose(matrix, own))
         if stroking.value:
             stroke, _ = _colour(raw.FPDFPageObj_GetStrokeColor, obj)
         w = ctypes.c_float()
         if raw.FPDFPageObj_GetStrokeWidth(obj, w):
-            width = float(w.value)
+            # a stroke inside a scaled form is drawn at the scaled width
+            width = float(w.value) * ((abs(matrix[0]) + abs(matrix[3])) / 2.0 if matrix != _IDENTITY else 1.0)
     elif kind == "text":
         try:
             invisible = raw.FPDFTextObj_GetTextRenderMode(obj) == raw.FPDF_TEXTRENDERMODE_INVISIBLE

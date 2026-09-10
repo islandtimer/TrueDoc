@@ -15,12 +15,24 @@ lines and characters TrueDoc already has, they reproduce PyMuPDF: on `b5c5b866..
 35 and 30 cells against PyMuPDF's 5x7 and 6x5.
 
 **Everything here is in the page's unrotated space**, which is what `find_ruled_tables` expects -
-it applies the page rotation itself, at the end, to the cell boxes and the table box. TrueDoc's
-own characters are held rotated, so they are turned back on the way in; that inverts exactly the
-turn `textlayer._rect` applied, rather than approximating it.
+it applies the page rotation itself, at the end. TrueDoc's characters are held rotated, so they are
+turned back on the way in, inverting exactly the turn `textlayer._rect` applied.
+
+Building in the *rendered* space instead was tried, because PyMuPDF's own finder reports its table
+box there - `(66.6, 84.9, 545.4, 304.0)`, landscape, inside a 792x612 rendered rect. It is worse:
+a page turned 90 degrees has its glyphs turned too, so in rendered space the text runs down the
+page one letter at a time, and pdfplumber's extractor - which assumes level text - stacks each cell
+into `K
+a
+p
+p
+a`. Unrotated space at least reads each cell correctly. What it does not fix is
+the row and column assignment on such a page, where PyMuPDF reads 8 rows by 7 and this reads the
+transpose; that is the largest single piece of the remaining gap.
 """
 from __future__ import annotations
 
+import os
 from types import SimpleNamespace
 
 from truedoc.extract import pdfium_objects
@@ -29,6 +41,11 @@ from truedoc.extract import pdfium_objects
 # `textlayer._extract_drawings` uses to call something an "hline" or a "vline".
 _MAX_RULE = 3.0
 _MIN_RULE = 2.0
+_MAX_EDGES = 20000      # a generated page can carry tens of thousands of shapes
+
+
+def _edge_rule() -> str:
+    return os.environ.get("TRUEDOC_TABLE_EDGES", "all").strip().lower()
 
 
 def available() -> bool:
@@ -43,34 +60,56 @@ def _edges_from_objects(objs: list) -> list[dict]:
     """Every thin, long shape on the page, as a pdfplumber edge.
 
     A rule may be drawn as a stroked line, as a very flat filled rectangle, or as a one-pixel
-    image stretched along the row - the third is why `textlayer._extract_drawings` consults
-    MuPDF's bbox log as well as its drawings, and why images are included here.
+    image stretched along a row, so each is tagged with where it came from and `_edge_rule`
+    decides which of them count.
+
+    Only thin shapes become edges. Breaking every *box* into its four sides as well - which is
+    what pdfplumber does with a rectangle - was written and measured, because a page that reads
+    4x2 against PyMuPDF's 5x2 is missing exactly one outer rule. It did not fix that page, and it
+    invented a spurious table on two pages that had been matching PyMuPDF cell for cell, so it
+    came out again.
     """
     out: list[dict] = []
     for o in objs:
         if o.kind not in ("path", "image"):
             continue
+        if len(out) >= _MAX_EDGES:
+            break
+        stroked = o.kind == "path" and o.stroke is not None
+        source = "line" if stroked else ("image" if o.kind == "image" else "rect_edge")
         for x0, y0, x1, y1 in (o.rects or [o.bbox]):
             w, h = x1 - x0, y1 - y0
             if h <= _MAX_RULE and w >= _MIN_RULE:
-                y = (y0 + y1) / 2.0
-                out.append({"object_type": "line", "orientation": "h",
-                            "x0": x0, "x1": x1, "top": y, "bottom": y,
-                            "width": w, "height": 0.0, "doctop": y})
+                out.append(_h_edge(source, x0, x1, (y0 + y1) / 2.0))
             elif w <= _MAX_RULE and h >= _MIN_RULE:
-                x = (x0 + x1) / 2.0
-                out.append({"object_type": "line", "orientation": "v",
-                            "x0": x, "x1": x, "top": y0, "bottom": y1,
-                            "width": 0.0, "height": h, "doctop": y0})
+                out.append(_v_edge(source, (x0 + x1) / 2.0, y0, y1))
     return out
 
 
+def _h_edge(source: str, x0: float, x1: float, y: float) -> dict:
+    return {"object_type": source, "orientation": "h", "x0": x0, "x1": x1,
+            "top": y, "bottom": y, "width": x1 - x0, "height": 0.0, "doctop": y}
+
+
+def _v_edge(source: str, x: float, y0: float, y1: float) -> dict:
+    return {"object_type": source, "orientation": "v", "x0": x, "x1": x,
+            "top": y0, "bottom": y1, "width": 0.0, "height": y1 - y0, "doctop": y0}
+
+
 def _chars_for_pdfplumber(page, M) -> list[dict]:
-    """TrueDoc's own characters as pdfplumber character dicts, in unrotated page space."""
+    """TrueDoc's own characters as pdfplumber character dicts, in unrotated page space.
+
+    Overprinted text is dropped on the way. A document that fakes bold by drawing the same run
+    twice in the same place - 755 characters of one benchmark page - would otherwise read
+    "SSmmiitthh eett aall." in every cell, because nothing downstream of here collapses them.
+    TrueDoc's own word building already does this, which is why the page converts correctly
+    everywhere else; PyMuPDF's cell extractor does it too.
+    """
     import pymupdf
 
     inverse = ~pymupdf.Matrix(M) if M is not None else None
     out: list[dict] = []
+    seen: set[tuple] = set()
     for c in page.chars:
         b = c.bbox
         if inverse is not None:
@@ -79,6 +118,10 @@ def _chars_for_pdfplumber(page, M) -> list[dict]:
             x0, top, x1, bottom = float(r.x0), float(r.y0), float(r.x1), float(r.y1)
         else:
             x0, top, x1, bottom = b.x0, b.y0, b.x1, b.y1
+        stamp = (c.text, round(x0, 1), round(top, 1))
+        if stamp in seen:
+            continue
+        seen.add(stamp)
         out.append({"text": c.text, "x0": x0, "x1": x1, "top": top, "bottom": bottom,
                     "doctop": top, "upright": True, "size": c.size, "fontname": c.font,
                     "width": x1 - x0, "height": bottom - top, "object_type": "char"})
@@ -112,7 +155,15 @@ def find_tables(pdf_page, page) -> list | None:
         edges = _edges_from_objects(objs)
         if not edges:
             return []
-        edges = filter_edges(edges, min_length=settings.edge_min_length_prefilter)
+        # Which shapes count as a rule. "strokes" matches pdfplumber's own lines_strict and is
+        # exact on a table ruled with drawn lines; "all" also takes flat filled rectangles and
+        # image strips, which some documents rule with and which strokes-only loses entirely.
+        # PyMuPDF's finder sits somewhere between the two, so the choice is made on the score.
+        if _edge_rule() == "strokes":
+            edges = (filter_edges(edges, "v", edge_type="line", min_length=settings.edge_min_length_prefilter)
+                     + filter_edges(edges, "h", edge_type="line", min_length=settings.edge_min_length_prefilter))
+        else:
+            edges = filter_edges(edges, min_length=settings.edge_min_length_prefilter)
         edges = merge_edges(edges,
                             snap_x_tolerance=settings.snap_x_tolerance,
                             snap_y_tolerance=settings.snap_y_tolerance,
