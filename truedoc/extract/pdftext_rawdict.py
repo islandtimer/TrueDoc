@@ -258,6 +258,8 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
                 origin = None
                 if raw_api.FPDFText_GetCharOrigin(tp, i, ox, oy):
                     origin = (ox.value - x_off, y_top - oy.value)
+                code = raw_api.FPDFText_GetUnicode(tp, i)
+                map_error = raw_api.FPDFText_HasUnicodeMapError(tp, i) == 1
                 # The right edge is the glyph's advance, which is what MuPDF reports. PDFium's loose
                 # box is not quite that: on a glyph whose ink overhangs its advance - the letter f
                 # above all - it runs further right, 0.44pt on a 7pt line, and the word builder's
@@ -270,12 +272,19 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
                 # taking it opened a gap after the f and "fixtures" read "fi xtures" (12 such glyphs
                 # on that page, 36 on an arXiv one). A character whose neighbour shares its box
                 # keeps the loose box.
-                if (box is not None and origin is not None and raw_api.FPDFText_GetMatrix(tp, i, matrix)
+                # ... and not on a character PDFium could not map to Unicode. The width lookup
+                # goes by Unicode, back to a character code, and for a code with no Unicode it
+                # answers for some other glyph: cmsy's mapstochar (code 0x37, no mapping) was
+                # given the minus sign's advance, its box grew to the minus's box, and the
+                # ligature rule above then took the minus for the second half of a ligature and
+                # zeroed it - so "\longmapsto" lost its shaft (2503.09133). The loose box PDFium
+                # computes from the code itself is right for these.
+                if (box is not None and origin is not None and not map_error
+                        and raw_api.FPDFText_GetMatrix(tp, i, matrix)
                         and abs(matrix.b) < 1e-6 and abs(matrix.c) < 1e-6
                         and not _shares_glyph(raw_api, tp, i, loose, count)):
                     text_obj = raw_api.FPDFText_GetTextObject(tp, i)
                     font = raw_api.FPDFTextObj_GetFont(text_obj) if text_obj else None
-                    code = raw_api.FPDFText_GetUnicode(tp, i)
                     adv_w = ctypes.c_float()
                     if font and code and raw_api.FPDFFont_GetGlyphWidth(font, code, raw_api.FPDFText_GetFontSize(tp, i), adv_w):
                         advance = adv_w.value * (math.hypot(matrix.b, matrix.d) or 1.0)
@@ -303,7 +312,11 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
                     "invisible": invisible,
                     "size": _drawn_size(raw_api, tp, i, matrix, scales),
                     "generated": raw_api.FPDFText_IsGenerated(tp, i) == 1,
-                    "map_error": raw_api.FPDFText_HasUnicodeMapError(tp, i) == 1,
+                    "map_error": map_error,
+                    "code": code,
+                    # the writing direction, as PDFium measures it: radians in the y-down page
+                    # space, so (cos, sin) is MuPDF's direction vector (measured, see _line_dir)
+                    "angle": float(raw_api.FPDFText_GetCharAngle(tp, i)),
                 }
         finally:
             textpage.close()
@@ -436,10 +449,6 @@ def _build(path: str, page_number: int) -> dict | None:
     if page is None:
         return None
     grouped = page.get("blocks") or []
-    try:
-        rotation = int(page.get("rotation") or 0) % 360
-    except (TypeError, ValueError):
-        rotation = 0
 
     wanted: set[int] = set()
     for block in grouped:
@@ -454,18 +463,17 @@ def _build(path: str, page_number: int) -> dict | None:
     except Exception:
         return None
 
-    blocks = []
-    for block in grouped:
-        lines = []
+    runs = []       # (block, direction, spans) per pdftext line, in order, before the joins and the gap cuts
+    for block_index, block in enumerate(grouped):
         for line in block.get("lines") or []:
             spans = []
             for span in line.get("spans") or []:
                 font = span.get("font") or {}
                 size = float(font.get("size") or 0.0)
                 chars = []
+                drawn_sizes: list[float] = []
                 colors: dict[int, int] = {}
-                sizes: dict[float, int] = {}
-                for ch in span.get("chars") or []:
+                for ch in _join_surrogates(span.get("chars") or [], geom):
                     text = str(ch.get("char", ""))
                     if not text:
                         continue
@@ -495,9 +503,7 @@ def _build(path: str, page_number: int) -> dict | None:
                         origin = (box[0], box[3] - _DESCENDER * (size or (box[3] - box[1])))
                     color = (g or {}).get("color", 0)
                     colors[color] = colors.get(color, 0) + 1
-                    drawn = (g or {}).get("size")
-                    if drawn:
-                        sizes[drawn] = sizes.get(drawn, 0) + 1
+                    drawn_sizes.append(float((g or {}).get("size") or 0.0))
                     chars.append({
                         "c": text,
                         "bbox": box,
@@ -514,34 +520,222 @@ def _build(path: str, page_number: int) -> dict | None:
                 if not chars:
                     continue
                 _divide_shared_boxes(chars)
-                spans.append({
-                    "font": str(font.get("name") or ""),
-                    # The drawn size, not the nominal one pdftext passes on from PDFium. Measured
-                    # over two benchmark pages, no span holds characters of two drawn sizes, so
-                    # one figure per span loses nothing. A span of nothing but generated blanks has
-                    # no drawn size at all and takes 0.0 here, filled in from its neighbours below.
-                    "size": max(sizes.items(), key=lambda kv: kv[1])[0] if sizes else 0.0,
-                    "_fallback": size,
-                    "flags": _mupdf_flags(font, bool(span.get("superscript"))),
-                    # PyMuPDF reports one colour per span; take the span's most common.
-                    "color": max(colors.items(), key=lambda kv: kv[1])[0] if colors else 0,
-                    "chars": chars,
-                })
+                # The drawn size, not the nominal one pdftext passes on from PDFium; and one span
+                # per drawn size, as MuPDF cuts them. pdftext cuts spans on the nominal size, so a
+                # page that sets "D_{2k}" as one font at two matrix scales hands over one span
+                # holding a 14pt letter and 9pt subscripts (2503.06102); a single figure for it
+                # made the subscripts full-size and the formula lost its structure. A span of
+                # nothing but generated blanks has no drawn size at all and takes 0.0 here, filled
+                # in from its neighbours below.
+                for run, drawn in _size_runs(chars, drawn_sizes):
+                    spans.append({
+                        "font": str(font.get("name") or ""),
+                        "size": drawn,
+                        "_fallback": size,
+                        "flags": _mupdf_flags(font, bool(span.get("superscript"))),
+                        # PyMuPDF reports one colour per span; take the span's most common.
+                        "color": max(colors.items(), key=lambda kv: kv[1])[0] if colors else 0,
+                        "chars": run,
+                    })
             if not spans:
                 continue
             _fill_blank_span_sizes(spans)
-            direction = _line_dir(line, rotation)
-            for piece in _split_at_gaps(spans, direction):
-                lines.append({
-                    "dir": direction,
-                    "bbox": _union(piece),
-                    "spans": piece,
-                })
-        if lines:
-            blocks.append({"type": 0, "lines": lines})
+            runs.append((block_index, _line_dir([c for sp in line.get("spans") or [] for c in sp.get("chars") or []], geom), spans))
+    blocks = []
+    for block_index, direction, spans in _join_broken_lines(runs):
+        lines = [{"dir": direction, "bbox": _union(piece), "spans": piece} for piece in _split_at_gaps(spans, direction)]
+        if not lines:
+            continue
+        if blocks and blocks[-1]["_block"] == block_index:
+            blocks[-1]["lines"].extend(lines)
+        else:
+            blocks.append({"type": 0, "lines": lines, "_block": block_index})
+    for b in blocks:
+        b.pop("_block")
     # The marker tells the stages downstream that the extra per-character keys ("ink",
     # "generated") are present, so they can be read from here instead of from MuPDF.
     return {"blocks": blocks, "source": "pdftext"}
+
+
+def _join_surrogates(chars: list, geom: dict) -> list:
+    """One character for a code point beyond the basic plane, as MuPDF reports it.
+
+    A maths font's italic letters and Greek live at U+1D400 and up. PDFium's text page holds
+    UTF-16, so each such letter is two entries - a high and a low surrogate on the same box -
+    and pdftext, which cannot write a lone surrogate, turns each into U+FFFD. One arXiv page
+    then read 496 replacement characters, 21.6% of its text, and the quality gate sent it to
+    the model as a broken layer; the census found 14 arXiv pages, a header page and a table
+    page like it. The pair becomes the one character MuPDF gives, on the first entry's box.
+    """
+    out = []
+    i = 0
+    while i < len(chars):
+        ch = chars[i]
+        hi = (geom.get(ch.get("char_idx")) or {}).get("code", 0)
+        if 0xD800 <= hi <= 0xDBFF and i + 1 < len(chars):
+            lo = (geom.get(chars[i + 1].get("char_idx")) or {}).get("code", 0)
+            if 0xDC00 <= lo <= 0xDFFF:
+                out.append(dict(ch, char=chr(0x10000 + ((hi - 0xD800) << 10) + (lo - 0xDC00))))
+                i += 2
+                continue
+        out.append(ch)
+        i += 1
+    return out
+
+
+def _size_runs(chars: list, drawn: list[float]) -> list[tuple[list, float]]:
+    """Cut a span's characters into runs of one drawn size, each with that size.
+
+    A blank has no size of its own and stays with the run it is in; a run of nothing but blanks
+    reports 0.0 and is filled from its neighbours later.
+    """
+    runs: list[tuple[list, float]] = []
+    current: list = []
+    current_size = 0.0
+    for c, d in zip(chars, drawn):
+        if current and d > 0 and current_size > 0 and abs(d - current_size) > 0.05:
+            runs.append((current, current_size))
+            current, current_size = [], 0.0
+        current.append(c)
+        if d > 0 and current_size == 0.0:
+            current_size = d
+    if current:
+        runs.append((current, current_size))
+    return runs
+
+
+def _along(box, direction) -> tuple[float, float]:
+    """Where a box starts and ends along the line's direction."""
+    dx, dy = direction
+    x0, y0, x1, y1 = box
+    ends = [x0 * dx + y0 * dy, x1 * dx + y0 * dy, x0 * dx + y1 * dy, x1 * dx + y1 * dy]
+    return min(ends), max(ends)
+
+
+def _across(box, direction) -> tuple[float, float]:
+    """Where a box starts and ends across the line's direction."""
+    dx, dy = direction
+    x0, y0, x1, y1 = box
+    ends = [-x0 * dy + y0 * dx, -x1 * dy + y0 * dx, -x0 * dy + y1 * dx, -x1 * dy + y1 * dx]
+    return min(ends), max(ends)
+
+
+def _edge_glyph(spans: list, first: bool) -> tuple[dict, float] | None:
+    """The first (or last) character of a run that is not a blank, with its span's size."""
+    order = spans if first else list(reversed(spans))
+    for sp in order:
+        chars = sp["chars"] if first else list(reversed(sp["chars"]))
+        for c in chars:
+            if not c["c"].isspace():
+                return c, float(sp.get("size") or 0.0)
+    return None
+
+
+def _line_main(spans: list, direction) -> tuple[float, float | None]:
+    """The size most of a line is set in, and the baseline of that text (measured across the
+    line's direction)."""
+    dx, dy = direction
+    by_size: dict[float, list[float]] = {}
+    for sp in spans:
+        s = round(float(sp.get("size") or 0.0), 1)
+        if s <= 0:
+            continue
+        for c in sp["chars"]:
+            o = c.get("origin")
+            if o and not c["c"].isspace():
+                by_size.setdefault(s, []).append(-o[0] * dy + o[1] * dx)
+    if not by_size:
+        return 0.0, None
+    size = max(by_size, key=lambda s: len(by_size[s]))
+    bases = sorted(by_size[size])
+    return size, bases[len(bases) // 2]
+
+
+def _continues(prev: list, spans: list, direction) -> bool:
+    """Does this run carry straight on from the last one - the same line, cut by PDFium?"""
+    a = _edge_glyph(prev, first=False)
+    b = _edge_glyph(spans, first=True)
+    if a is None or b is None:
+        return False
+    (ca, sa), (cb, sb) = a, b
+    size = max(sa, sb, ca["bbox"][3] - ca["bbox"][1], cb["bbox"][3] - cb["bbox"][1], 1.0)
+    # It starts no further back than the last glyph (a subscript stacked under a superscript
+    # starts level with it), ...
+    if _along(cb["bbox"], direction)[0] < _along(ca["bbox"], direction)[0] - 0.1 * size:
+        return False
+    # ... it is a script of the line, or sits on its baseline, or on the last glyph's - the
+    # rows of a matrix are full-size text on baselines of their own, and stay lines of their
+    # own, as the maths stage expects them, ...
+    oa, ob = ca.get("origin"), cb.get("origin")
+    if oa and ob:
+        dx, dy = direction
+        a_base, b_base = -oa[0] * dy + oa[1] * dx, -ob[0] * dy + ob[1] * dx
+        main_size, main_base = _line_main(prev, direction)
+        script = sb > 0 and main_size > 0 and sb < 0.85 * main_size
+        on_line = main_base is not None and abs(b_base - main_base) <= 0.5 * max(main_size, sb)
+        on_last = abs(b_base - a_base) <= 0.5 * max(sa, sb, 1.0)
+        if not (script or on_line or on_last):
+            return False
+    # ... and it overlaps the band the line so far occupies.
+    lo, hi = _across(_union(prev), direction)
+    b_lo, b_hi = _across(cb["bbox"], direction)
+    return min(hi, b_hi) - max(lo, b_lo) > 0
+
+
+def _weld(prev: list, spans: list, direction) -> None:
+    """Append a run to the line it continues, without the break PDFium made up."""
+    a = _edge_glyph(prev, first=False)
+    b = _edge_glyph(spans, first=True)
+    # PDFium's own line ends and blanks at the seam go: they were the break.
+    while prev and prev[-1]["chars"] and prev[-1]["chars"][-1]["c"].isspace() and prev[-1]["chars"][-1].get("generated"):
+        prev[-1]["chars"].pop()
+        if not prev[-1]["chars"]:
+            prev.pop()
+    while spans and spans[0]["chars"] and spans[0]["chars"][0]["c"].isspace() and spans[0]["chars"][0].get("generated"):
+        spans[0]["chars"].pop(0)
+        if not spans[0]["chars"]:
+            spans.pop(0)
+    if not prev or not spans:
+        prev.extend(spans)
+        return
+    # A word's gap between the two halves keeps a blank, as MuPDF would have put one.
+    if a is not None and b is not None:
+        (ca, sa), (cb, sb) = a, b
+        size = max(sa, sb, ca["bbox"][3] - ca["bbox"][1], 1.0)
+        gap = _along(cb["bbox"], direction)[0] - _along(ca["bbox"], direction)[1]
+        if gap >= _WORD_GAP * size:
+            x0, y0, x1, y1 = ca["bbox"]
+            prev[-1]["chars"].append(dict(ca, c=" ", bbox=(x1, y0, x1, y1), origin=(x1, (ca.get("origin") or (x1, y1))[1]),
+                                          ink=None, generated=True))
+    prev.extend(spans)
+
+
+def _join_broken_lines(runs: list) -> list:
+    """Rejoin the pieces of one line that PDFium's text page cut at a raised character.
+
+    TeX sets R^{2^n} as three text runs on three baselines, and PDFium ends a line at each
+    step: the page reads "R", "2", "n" and "(by abuse of notation" as four lines where MuPDF
+    reads one. TrueDoc then bridged the strays into whichever neighbouring line their boxes
+    touched, and a formula on the line below gained a superscript it never had (2503.04329:
+    R^{2^n} read as R^2, and a stray n^n appeared two lines down). A run that carries on from
+    where the last one stopped - starting no further back than its last glyph, script-sized or
+    back on a baseline, inside the band the line occupies - is the same line, whichever of
+    pdftext's blocks it was filed in (the words after a superscript land in a new block). The
+    gap cut that follows still parts the cells of a table row, exactly as it does for the rows
+    pdftext itself hands over whole.
+    """
+    out: list[tuple[int, tuple[float, float], list]] = []
+    for block_index, direction, spans in runs:
+        if out and _edge_glyph(spans, first=True) is None:
+            # Nothing but blanks - the space PDFium makes up between two words of turned
+            # text, which it files as a level line of its own and so cuts the text at every
+            # word. It belongs to the run before it, as the blank it is.
+            out[-1][2].extend(spans)
+        elif out and out[-1][1] == direction and _continues(out[-1][2], spans, direction):
+            _weld(out[-1][2], spans, direction)
+        else:
+            out.append((block_index, direction, spans))
+    return out
 
 
 def _gap_limit() -> float:
@@ -682,28 +876,42 @@ def clipped_blocks(path: str, page_number: int, rect) -> list | None:
     return blocks
 
 
-def _line_dir(line: dict, page_rotation: int = 0) -> tuple[float, float]:
-    """PyMuPDF's writing-direction vector from pdftext's char angle.
+def _line_dir(chars: list, geom: dict) -> tuple[float, float]:
+    """PyMuPDF's writing-direction vector for a run of characters, from PDFium's char angle.
 
-    Two steps. pdftext carries `FPDFText_GetCharAngle`, counter-clockwise radians in PDF space; the
-    y flip turns a counter-clockwise angle into a clockwise one, so within pdftext's own display
-    space the direction is (cos, -sin). But pdftext then rotates the whole page into display space
-    and PyMuPDF does not, so that has to be undone: pdftext maps an unrotated (x, y) to
-    (-y, x) at 90 degrees, (-x, -y) at 180 and (y, -x) at 270, and this inverts it. A level line on
-    a 90-degree page reads (0, -1), which is what PyMuPDF reports for it.
+    Measured against MuPDF's own `dir` on four hand-built pages and a benchmark one: text set
+    with the matrix (0 1 -1 0) - running up the page - is angle 4.71 to PDFium and (0, -1) to
+    MuPDF; (0 -1 1 0) is 1.57 and (0, 1); (-1 0 0 -1) is 3.14 and (-1, 0); level text is 0 and
+    (1, 0). So the angle is already in the y-down page space MuPDF reports in, and the vector
+    is (cos, sin). The page's own /Rotate plays no part: MuPDF reports a level line on a
+    90-degree page as (1, 0), the unrotated direction, and PDFium's angle for it is 0.
+
+    (An earlier version read a rotation pdftext was thought to carry per line, and turned the
+    result by the page rotation on the strength of a docstring rather than a measurement.
+    pdftext's dictionary output carries no line rotation at all, so every line read as level,
+    and a page's turned text - a table's vertical headings - was cut into one-word lines and
+    sorted top to bottom, which reads its words backwards.)
+
+    The run's angle is the one most of its characters carry; blanks PDFium makes up are level
+    whatever the text around them is, and do not vote.
     """
-    try:
-        theta = float(line.get("rotation") or 0.0)
-    except (TypeError, ValueError):
-        theta = 0.0
-    a, b = (1.0, 0.0) if not theta else (math.cos(theta), -math.sin(theta))
-    if page_rotation == 90:
-        a, b = b, -a
-    elif page_rotation == 180:
-        a, b = -a, -b
-    elif page_rotation == 270:
-        a, b = -b, a
-    return (round(a, 6) + 0.0, round(b, 6) + 0.0)
+    votes: dict[float, list] = {}
+    for c in chars:
+        g = geom.get(c.get("char_idx")) or {}
+        if str(c.get("char", "")).isspace() or g.get("generated"):
+            continue
+        theta = float(g.get("angle") or 0.0)
+        votes.setdefault(round(theta, 2), []).append(theta)
+    theta = max(votes.values(), key=len)[0] if votes else 0.0
+
+    def snap(v: float) -> float:
+        # MuPDF's vector for text turned by a right angle is exact; a float radian is not.
+        for exact in (-1.0, 0.0, 1.0):
+            if abs(v - exact) < 1e-3:
+                return exact
+        return round(v, 6) + 0.0
+
+    return (snap(math.cos(theta)), snap(math.sin(theta)))
 
 
 def _union(spans: list) -> tuple:

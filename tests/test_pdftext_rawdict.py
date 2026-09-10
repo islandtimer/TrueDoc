@@ -86,21 +86,35 @@ def test_fixed_pitch_is_mono():
 
 # --- direction and coordinates --------------------------------------------------------
 
+def _run(angles, blanks=()):
+    """A run of characters with the given PDFium angles; `blanks` are indices that are
+    made-up spaces (level, whatever the text is)."""
+    chars = [{"char": " " if i in blanks else "x", "char_idx": i} for i in range(len(angles))]
+    geom = {i: {"angle": a, "generated": i in blanks} for i, a in enumerate(angles)}
+    return chars, geom
+
+
 def test_level_text_reads_left_to_right():
-    assert A._line_dir({"rotation": 0.0}, 0) == (1.0, 0.0)
+    assert A._line_dir(*_run([0.0, 0.0, 0.0])) == (1.0, 0.0)
 
 
-def test_a_rotated_page_is_not_rotated_twice():
-    """pdftext turns its coordinates into display space and PyMuPDF does not, so the page
-    rotation has to come back out or every box lands a median 210pt from where it belongs."""
-    assert A._line_dir({"rotation": 0.0}, 90) == (0.0, -1.0)
-    assert A._line_dir({"rotation": 0.0}, 180) == (-1.0, 0.0)
-    assert A._line_dir({"rotation": 0.0}, 270) == (0.0, 1.0)
+def test_the_direction_is_cos_sin_of_pdfiums_angle():
+    """Measured against MuPDF's `dir` (test_pdftext_maths_pages pins the same on real pages):
+    4.71 is text running up the page, (0, -1); 1.57 runs down it; 3.14 is upside down."""
+    dx, dy = A._line_dir(*_run([3 * math.pi / 2] * 4))
+    assert abs(dx) < 1e-6 and abs(dy + 1.0) < 1e-6
+    dx, dy = A._line_dir(*_run([math.pi / 2] * 4))
+    assert abs(dx) < 1e-6 and abs(dy - 1.0) < 1e-6
+    dx, dy = A._line_dir(*_run([math.pi] * 4))
+    assert abs(dx + 1.0) < 1e-6 and abs(dy) < 1e-6
 
 
-def test_text_set_at_an_angle_keeps_its_angle():
-    dx, dy = A._line_dir({"rotation": math.pi / 2}, 0)
-    assert abs(dx - 0.0) < 1e-6 and abs(dy + 1.0) < 1e-6
+def test_made_up_blanks_do_not_vote_on_the_direction():
+    """PDFium's invented spaces are level whatever the text around them is; a turned line with
+    three of them is still a turned line."""
+    chars, geom = _run([3 * math.pi / 2, 0.0, 3 * math.pi / 2, 0.0, 0.0, 3 * math.pi / 2], blanks=(1, 3, 4))
+    dx, dy = A._line_dir(chars, geom)
+    assert abs(dx) < 1e-6 and abs(dy + 1.0) < 1e-6
 
 
 def test_pdf_space_is_flipped_about_the_crop_box():

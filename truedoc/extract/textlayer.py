@@ -1130,6 +1130,13 @@ def _merge_letter_spaced(words: list[Word]) -> list[Word]:
     if not pos:
         return words
     median = pos[len(pos) // 2]
+    # Letter spacing is a fraction of the em; single characters standing more than three
+    # quarters of one apart are a row of cells - a rating scale's "1 2 3 ... 10", 1.35 em
+    # apart, read as one number 12345678910 (MuPDF never showed the rule such a line: it
+    # cuts lines at those gaps itself, and the cells reached it one to a line).
+    size = max((c.size for w in words for c in w.chars), default=0.0)
+    if size > 0 and median > 0.75 * size:
+        return words
     merged: list[Word] = [words[0]]
     for gap, w in zip(gaps, words[1:]):
         if gap <= 1.5 * median:

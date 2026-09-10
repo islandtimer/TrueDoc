@@ -94,3 +94,20 @@ def test_garbled_tokens_are_recognised():
         assert not _looks_garbled(token), token
     for token in ("0Ql.5)')81", "PIOI*Jnlboctenum", "Shi9cllo", "~hlngomonas", "H[oE", "EUE{3", "aBcDeFg"):
         assert _looks_garbled(token), token
+
+
+def test_a_row_of_single_digits_an_em_apart_is_not_letter_spacing():
+    """A rating scale's "1 2 3 ... 10" at 12pt, 16pt apart, read as one number 12345678910
+    through the PDFium reader, which hands the row over as one line; MuPDF cut it into ten
+    lines first, so the merge never saw it. Letter spacing is a fraction of the em."""
+    chars = []
+    x = 10.0
+    for ch in "123456789":
+        chars.append(Char(text=ch, bbox=BBox(x, 90, x + 6.7, 102), font="Arial", size=12.0, origin_y=100))
+        chars.append(Char(text=" ", bbox=BBox(x + 6.7, 90, x + 6.7, 102), font="Arial", size=12.0, origin_y=100))
+        x += 6.7 + 16.2
+    for ch in "10":
+        chars.append(Char(text=ch, bbox=BBox(x, 90, x + 6.7, 102), font="Arial", size=12.0, origin_y=100))
+        x += 6.7
+    words = _chars_to_words(chars)
+    assert [w.text for w in words] == ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"], [w.text for w in words]
