@@ -57,7 +57,7 @@ def _stamp(path: str) -> tuple:
         return (0, 0)
 
 
-def _document(path: str):
+def document(path: str):
     """An open PDFium document, reused across calls.
 
     `marks.py` renders once per candidate shape - hundreds on a busy page - so reopening the file

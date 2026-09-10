@@ -1,0 +1,196 @@
+"""What is drawn on a page, in the order it is drawn, read through PDFium (D007, M18).
+
+Four things in TrueDoc ask MuPDF what a page has on it, and all four want the same answer in
+slightly different clothes: `_extract_drawings` and `_extract_images` in `extract/textlayer.py`
+build the rulings and picture regions, `marks._candidates` hunts for small shapes that might be a
+tick, and `_Visibility` works out what is painted over what so hidden text can be found (D011).
+
+MuPDF offers three separate views of this - `get_drawings`, `get_image_info` and `get_bboxlog` -
+and the last of those looked, from the outside, like the hard part of leaving PyMuPDF: it is a log
+of every drawing operation with its box, and PDFium has nothing called that. Reading what TrueDoc
+actually takes from it dissolved most of the problem. It uses the log for two things only: the
+bounding boxes of images and shadings, and the order they were painted in. PDFium's page objects
+come back in painting order with a type and a bounding box, which is the same information.
+
+**Coordinates are MuPDF's unrotated page space** - the space `get_drawings` and `get_image_info`
+report in, which `textlayer._rect` then turns once. PDFium measures from the bottom left, so each
+box is flipped about the crop box here, exactly as `pdftext_rawdict` does for characters.
+
+**Form XObjects are flattened.** MuPDF reports the shapes inside a form as if they were drawn on
+the page; PDFium reports the form as one object with its own children, so this walks into them and
+keeps the page-order numbering flat.
+"""
+from __future__ import annotations
+
+import ctypes
+import os
+from dataclasses import dataclass, field
+
+_MAX_OBJECTS = 40000     # a runaway generated page should not hang a conversion
+
+
+@dataclass
+class PageObject:
+    """One thing drawn on the page, in MuPDF's unrotated coordinates."""
+    order: int                              # painting order, 0 first
+    kind: str                               # "path" | "image" | "text" | "shading" | "form"
+    bbox: tuple                             # (x0, y0, x1, y1), y down from the top
+    fill: tuple | None = None               # (r, g, b), each 0..1, or None when nothing is filled
+    fill_alpha: float = 1.0
+    stroke: tuple | None = None
+    stroke_width: float = 0.0
+    rects: list = field(default_factory=list)   # axis-aligned rectangles this path fills
+    invisible_text: bool = False            # text drawn in render mode 3
+
+
+def enabled() -> bool:
+    return os.environ.get("TRUEDOC_OBJECTS", "").strip().lower() == "pdfium"
+
+
+def available() -> bool:
+    try:
+        import pypdfium2  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
+def _colour(getter, obj) -> tuple[tuple | None, float]:
+    r, g, b, a = (ctypes.c_uint() for _ in range(4))
+    if not getter(obj, r, g, b, a):
+        return None, 1.0
+    if a.value == 0:
+        return None, 0.0
+    return (r.value / 255.0, g.value / 255.0, b.value / 255.0), a.value / 255.0
+
+
+def _rects_of_path(raw, obj, flip) -> list:
+    """The axis-aligned rectangles a path draws.
+
+    `_Visibility` needs these rather than the path's bounding box: a box border drawn as a filled
+    path spans the whole box while painting only its edges, so its bounds would hide text that is
+    plainly visible inside it. MuPDF hands back the source's own `re` operators; PDFium has already
+    turned them into line segments, so a closed run of straight lines forming four right angles is
+    read back as a rectangle.
+    """
+    try:
+        n = raw.FPDFPath_CountSegments(obj)
+    except Exception:
+        return []
+    if n <= 0:
+        return []
+    x, y = ctypes.c_float(), ctypes.c_float()
+    subpaths: list[list] = []
+    current: list = []
+    for i in range(min(n, 2000)):
+        seg = raw.FPDFPath_GetPathSegment(obj, i)
+        if not seg:
+            continue
+        kind = raw.FPDFPathSegment_GetType(seg)
+        if kind == raw.FPDF_SEGMENT_BEZIERTO:
+            current = []            # a curve is not a rectangle; abandon this subpath
+            continue
+        if not raw.FPDFPathSegment_GetPoint(seg, x, y):
+            continue
+        if kind == raw.FPDF_SEGMENT_MOVETO:
+            if len(current) >= 4:
+                subpaths.append(current)
+            current = [(x.value, y.value)]
+        else:
+            current.append((x.value, y.value))
+    if len(current) >= 4:
+        subpaths.append(current)
+
+    out = []
+    for pts in subpaths:
+        if len(pts) == 5 and abs(pts[0][0] - pts[4][0]) < 0.01 and abs(pts[0][1] - pts[4][1]) < 0.01:
+            pts = pts[:4]
+        if len(pts) != 4:
+            continue
+        xs = sorted(p[0] for p in pts)
+        ys = sorted(p[1] for p in pts)
+        # axis-aligned means the four corners pair up: two distinct x values, two distinct y
+        if abs(xs[0] - xs[1]) > 0.01 or abs(xs[2] - xs[3]) > 0.01:
+            continue
+        if abs(ys[0] - ys[1]) > 0.01 or abs(ys[2] - ys[3]) > 0.01:
+            continue
+        out.append(flip(xs[0], ys[0], xs[3], ys[3]))
+    return out
+
+
+def _walk(raw, obj, order: list, out: list, flip, depth: int = 0) -> None:
+    if len(out) >= _MAX_OBJECTS:
+        return
+    kind_id = raw.FPDFPageObj_GetType(obj)
+    if kind_id == raw.FPDF_PAGEOBJ_FORM and depth < 8:
+        try:
+            count = raw.FPDFFormObj_CountObjects(obj)
+        except Exception:
+            count = 0
+        for i in range(count):
+            child = raw.FPDFFormObj_GetObject(obj, i)
+            if child:
+                _walk(raw, child, order, out, flip, depth + 1)
+        return
+
+    left, bottom, right, top = (ctypes.c_float() for _ in range(4))
+    if not raw.FPDFPageObj_GetBounds(obj, left, bottom, right, top):
+        return
+    box = flip(left.value, bottom.value, right.value, top.value)
+
+    kind = {raw.FPDF_PAGEOBJ_PATH: "path", raw.FPDF_PAGEOBJ_IMAGE: "image",
+            raw.FPDF_PAGEOBJ_TEXT: "text", raw.FPDF_PAGEOBJ_SHADING: "shading"}.get(kind_id, "other")
+
+    fill, fill_alpha = (None, 1.0)
+    stroke, width, rects, invisible = None, 0.0, [], False
+    if kind == "path":
+        fillmode, stroking = ctypes.c_int(), ctypes.c_int()
+        filled = bool(raw.FPDFPath_GetDrawMode(obj, fillmode, stroking)) and fillmode.value != raw.FPDF_FILLMODE_NONE
+        if filled:
+            fill, fill_alpha = _colour(raw.FPDFPageObj_GetFillColor, obj)
+            rects = _rects_of_path(raw, obj, flip)
+        if stroking.value:
+            stroke, _ = _colour(raw.FPDFPageObj_GetStrokeColor, obj)
+        w = ctypes.c_float()
+        if raw.FPDFPageObj_GetStrokeWidth(obj, w):
+            width = float(w.value)
+    elif kind == "text":
+        try:
+            invisible = raw.FPDFTextObj_GetTextRenderMode(obj) == raw.FPDF_TEXTRENDERMODE_INVISIBLE
+        except Exception:
+            invisible = False
+
+    out.append(PageObject(order=order[0], kind=kind, bbox=box, fill=fill, fill_alpha=fill_alpha,
+                          stroke=stroke, stroke_width=width, rects=rects, invisible_text=invisible))
+    order[0] += 1
+
+
+def page_objects(path: str, page_number: int) -> list[PageObject] | None:
+    """Everything drawn on one page (1-based), in painting order, or None if PDFium cannot read it."""
+    try:
+        import pypdfium2.raw as raw
+
+        from truedoc.extract import render
+    except Exception:
+        return None
+    try:
+        page = render.document(path)[page_number - 1]
+        crop = page.get_cropbox()
+        x_off, y_top = float(crop[0]), float(crop[3])
+
+        def flip(x0, y0, x1, y1):
+            ax0, ax1 = x0 - x_off, x1 - x_off
+            ay0, ay1 = y_top - y0, y_top - y1
+            return (min(ax0, ax1), min(ay0, ay1), max(ax0, ax1), max(ay0, ay1))
+
+        handle = page.raw
+        count = raw.FPDFPage_CountObjects(handle)
+        out: list[PageObject] = []
+        order = [0]
+        for i in range(count):
+            obj = raw.FPDFPage_GetObject(handle, i)
+            if obj:
+                _walk(raw, obj, order, out, flip)
+        return out
+    except Exception:
+        return None

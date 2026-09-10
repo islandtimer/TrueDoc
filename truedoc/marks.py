@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 import pymupdf
 
-from truedoc.extract import render
+from truedoc.extract import pdfium_objects, render
 from truedoc.model import BBox, Page
 
 MARK_TEXT = {"tick": "✓", "cross": "✗", "dot": "●", "circle": "○", "square": "■", "box": "□",
@@ -87,26 +87,37 @@ def _small(b: BBox, scale: float = 1.0) -> bool:
 def _candidates(pdf_page: "pymupdf.Page", page: Page, M) -> list[BBox]:
     scale = _page_scale(page)
     boxes: list[BBox] = []
-    try:
-        for p in pdf_page.get_drawings():
-            rect = p.get("rect")
-            if rect is None:
+    objs = pdfium_objects.page_objects(pdf_page.parent.name, pdf_page.number + 1) if pdfium_objects.enabled() else None
+    if objs is not None:
+        for o in objs:
+            if o.kind == "path" and o.fill is None and o.stroke is None:
+                continue    # a path that paints nothing is not a mark
+            if o.kind not in ("path", "image"):
                 continue
-            b = _rect(rect, M)
-            # A stroke or fill so faint it is white on white is not a mark.
-            if p.get("fill") is None and p.get("color") is None:
-                continue
+            b = _rect(o.bbox, M)
             if _small(b, scale):
                 boxes.append(b)
-    except Exception:
-        pass
-    try:
-        for info in pdf_page.get_image_info():
-            b = _rect(info["bbox"], M)
-            if _small(b, scale):
-                boxes.append(b)
-    except Exception:
-        pass
+    else:
+        try:
+            for p in pdf_page.get_drawings():
+                rect = p.get("rect")
+                if rect is None:
+                    continue
+                b = _rect(rect, M)
+                # A stroke or fill so faint it is white on white is not a mark.
+                if p.get("fill") is None and p.get("color") is None:
+                    continue
+                if _small(b, scale):
+                    boxes.append(b)
+        except Exception:
+            pass
+        try:
+            for info in pdf_page.get_image_info():
+                b = _rect(info["bbox"], M)
+                if _small(b, scale):
+                    boxes.append(b)
+        except Exception:
+            pass
     if not boxes:
         return []
     # A ring drawn around a tick is a second path with a nested box: merge
