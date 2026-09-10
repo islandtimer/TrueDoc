@@ -240,7 +240,8 @@ class _Visibility:
     Text over an image is left alone: the background is unknown.
     """
 
-    def __init__(self, pdf_page: "pymupdf.Page", width: float, height: float, M) -> None:
+    def __init__(self, pdf_page: "pymupdf.Page", width: float, height: float, M,
+                 raw: dict | None = None, objects: list | None = None) -> None:
         self.width, self.height = width, height
         self._span_at: dict[tuple[int, int], dict] = {}
         self.cover: list[tuple[int, BBox, str, tuple | None]] = []
@@ -248,6 +249,67 @@ class _Visibility:
         self.hidden: list[tuple[int, Char, str]] = []
         self.total_chars = 0
         self.distrusted = False
+        invisible = total = 0
+        image_area = 0.0
+        page_area = width * height or 1.0
+        if raw is not None and raw.get("source") == "pdftext" and objects is not None:
+            invisible, total, image_area = self._from_pdfium(raw, objects, M, page_area)
+        else:
+            invisible, total, image_area = self._from_mupdf(pdf_page, M, page_area)
+        inv_fraction = invisible / total if total else 0.0
+        coverage = min(1.0, image_area / (width * height or 1.0))
+        # The same rule as the page-quality assessment: an invisible layer over a scan.
+        self.ocr_layer = inv_fraction > 0.5 or (coverage > 0.6 and inv_fraction > 0.1)
+
+    def _from_pdfium(self, raw: dict, objects: list, M, page_area: float) -> tuple[int, int, float]:
+        """The same facts from PDFium: the reader's characters carry their object's painting
+        order, render mode and opacity, and the page's objects supply what was painted where.
+
+        This is the last stage of the reader swap (M18, D022), and the one the benchmark is
+        least able to check: get it wrong and nothing crashes, text a reader cannot see simply
+        lands in the body or visible text is quietly dropped. `tests/test_hidden_text_readers.py`
+        holds the invariant - one word of each kind, and both readers must agree on which are
+        hidden and why.
+        """
+        invisible = total = 0
+        for block in raw.get("blocks", []):
+            if block.get("type") != 0:
+                continue
+            for ln in block.get("lines", []):
+                for span in ln.get("spans", []):
+                    for c in span.get("chars", []):
+                        if not c.get("c", ""):
+                            continue
+                        info = {"type": 3 if c.get("invisible") else 0,
+                                "opacity": float(c.get("alpha", 1.0)),
+                                "seqno": int(c.get("order", -1))}
+                        total += 1
+                        if info["type"] == 3 or info["opacity"] == 0.0:
+                            invisible += 1
+                        x, y = _point(c.get("origin", (0, 0)), M)
+                        self._span_at[(round(x * 2), round(y * 2))] = info
+        image_area = 0.0
+        for o in objects:
+            if o.kind in ("image", "shading"):
+                box = _rect(o.bbox, M)
+                self.under.append((o.order, box))
+                if o.kind == "shading":
+                    continue  # a gradient beneath text: background unknown, never a cover
+                image_area += box.area
+                # A picture covering most of the page is a scan; text under it
+                # is the scan's text layer (D010), not hidden text.
+                if box.area < 0.6 * page_area:
+                    self.cover.append((o.order, box, "image", None))
+            elif o.kind == "path" and o.fill is not None:
+                if o.fill_alpha < 0.9:
+                    continue
+                self.under.append((o.order, _rect(o.bbox, M)))
+                # Only the rectangles a path actually fills can hide text (see _from_mupdf).
+                for r in o.rects:
+                    self.cover.append((o.order, _rect(r, M), "fill", tuple(o.fill)))
+        return invisible, total, image_area
+
+    def _from_mupdf(self, pdf_page: "pymupdf.Page", M, page_area: float) -> tuple[int, int, float]:
         invisible = total = 0
         try:
             for span in pdf_page.get_texttrace():
@@ -261,9 +323,7 @@ class _Visibility:
                     self._span_at[(round(x * 2), round(y * 2))] = info
         except Exception:
             pass
-        inv_fraction = invisible / total if total else 0.0
         image_area = 0.0
-        page_area = width * height or 1.0
         try:
             for i, (kind, rect) in enumerate(pdf_page.get_bboxlog()):
                 if kind in ("fill-image", "fill-imgmask", "fill-shade"):
@@ -296,9 +356,7 @@ class _Visibility:
                         self.cover.append((seq, _rect(item[1], M), "fill", colour))
         except Exception:
             pass
-        coverage = min(1.0, image_area / (width * height or 1.0))
-        # The same rule as the page-quality assessment: an invisible layer over a scan.
-        self.ocr_layer = inv_fraction > 0.5 or (coverage > 0.6 and inv_fraction > 0.1)
+        return invisible, total, image_area
 
     def reason(self, ch: Char, origin: tuple[float, float]) -> str:
         if ch.text.isspace():
@@ -466,7 +524,8 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
     pending: list[tuple[list[Char], tuple[float, float]]] = []
     extension = _page_has_extension_font(pdf_page, raw)
     glyph_origins = _extension_glyph_origins(pdf_page, M, raw) if extension else []
-    visibility = _Visibility(pdf_page, page.width, page.height, M)
+    objects = pdfium_objects.page_objects(pdf_page.parent.name, number) if pdfium_objects.enabled() else None
+    visibility = _Visibility(pdf_page, page.width, page.height, M, raw, objects)
     line_index = 0
     for block in raw.get("blocks", []):
         if block.get("type") != 0:

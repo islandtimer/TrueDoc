@@ -49,6 +49,8 @@ import ctypes
 import math
 import os
 
+from truedoc.extract import pdfium_objects
+
 _DESCENDER = 0.21       # last-resort baseline estimate, used only where PDFium will not give an origin
 _BOLD_WEIGHT = 600.0    # font weight at or above which a face is treated as bold
 _LINE_GAP = 1.5         # a gap this many times the font size ends a line (see _split_at_gaps)
@@ -131,6 +133,16 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
             loose = raw_api.FS_RECTF()
             matrix = raw_api.FS_MATRIX()
             scales: dict[int, float] = {}      # text object -> the scale its matrix applies
+            # Which drawn object each character belongs to, and where that object comes in the
+            # painting order - what the hidden-text rules (D011) used MuPDF's text trace for. The
+            # walk has to happen on this very page load: pypdfium2 reloads the page on every
+            # `doc[i]`, and object pointers do not survive a reload. The order numbers do.
+            handles: dict[int, int] = {}
+            try:
+                pdfium_objects.walk_page(raw_api, page, handles)
+            except Exception:
+                handles = {}
+            invisible_mode = getattr(raw_api, "FPDF_TEXTRENDERMODE_INVISIBLE", 3)
             for i in wanted:
                 box = None
                 if raw_api.FPDFText_GetLooseCharBox(tp, i, loose):
@@ -142,14 +154,26 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> dict[int, dict]:
                 origin = None
                 if raw_api.FPDFText_GetCharOrigin(tp, i, ox, oy):
                     origin = (ox.value - x_off, y_top - oy.value)
-                color = 0
+                color, alpha = 0, 1.0
                 if raw_api.FPDFText_GetFillColor(tp, i, fr, fg, fb, fa):
                     color = (fr.value << 16) | (fg.value << 8) | fb.value
+                    alpha = fa.value / 255.0
+                obj = raw_api.FPDFText_GetTextObject(tp, i)
+                order, invisible = -1, False
+                if obj:
+                    order = handles.get(ctypes.cast(obj, ctypes.c_void_p).value, -1)
+                    try:
+                        invisible = raw_api.FPDFTextObj_GetTextRenderMode(obj) == invisible_mode
+                    except Exception:
+                        invisible = False
                 out[i] = {
                     "bbox": box,
                     "ink": ink,
                     "origin": origin,
                     "color": color,
+                    "alpha": alpha,
+                    "order": order,
+                    "invisible": invisible,
                     "size": _drawn_size(raw_api, tp, i, matrix, scales),
                     "generated": raw_api.FPDFText_IsGenerated(tp, i) == 1,
                     "map_error": raw_api.FPDFText_HasUnicodeMapError(tp, i) == 1,
@@ -300,6 +324,11 @@ def _build(path: str, page_number: int) -> dict | None:
                         "ink": (g or {}).get("ink"),
                         "generated": bool((g or {}).get("generated")),
                         "map_error": bool((g or {}).get("map_error")),
+                        # for the hidden-text rules: where in the painting order this character's
+                        # object sits, whether it was drawn invisibly, and how opaque it is
+                        "order": int((g or {}).get("order", -1)),
+                        "invisible": bool((g or {}).get("invisible")),
+                        "alpha": float((g or {}).get("alpha", 1.0)),
                     })
                 if not chars:
                     continue

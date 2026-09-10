@@ -146,7 +146,8 @@ def _rects_of_path(raw, obj, flip, matrix=_IDENTITY) -> list:
     return out
 
 
-def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, depth: int = 0) -> None:
+def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, depth: int = 0,
+          handles: dict | None = None) -> None:
     if len(out) >= _MAX_OBJECTS:
         return
     kind_id = raw.FPDFPageObj_GetType(obj)
@@ -167,7 +168,7 @@ def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, dep
         for i in range(count):
             child = raw.FPDFFormObj_GetObject(obj, i)
             if child:
-                _walk(raw, child, order, out, flip, combined, depth + 1)
+                _walk(raw, child, order, out, flip, combined, depth + 1, handles)
         return
 
     left, bottom, right, top = (ctypes.c_float() for _ in range(4))
@@ -208,7 +209,43 @@ def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, dep
 
     out.append(PageObject(order=order[0], kind=kind, bbox=box, fill=fill, fill_alpha=fill_alpha,
                           stroke=stroke, stroke_width=width, rects=rects, invisible_text=invisible))
+    if handles is not None:
+        # The object's pointer, valid only for this page load: pypdfium2 calls FPDF_LoadPage on
+        # every `doc[i]`, so a caller that wants to join characters to objects must walk on the
+        # same handle it reads the text from. The order numbers are what carry across loads.
+        handles[ctypes.cast(obj, ctypes.c_void_p).value] = order[0]
     order[0] += 1
+
+
+def walk_page(raw, page, handles: dict | None = None) -> list[PageObject]:
+    """Everything drawn on an already-loaded pypdfium2 page, in painting order.
+
+    `handles`, when given, is filled with object pointer -> order for this load, so the caller
+    can join the text page's characters (`FPDFText_GetTextObject`) to what was drawn.
+    """
+    crop = page.get_cropbox()
+    x_off, y_top = float(crop[0]), float(crop[3])
+
+    def flip(x0, y0, x1, y1):
+        ax0, ax1 = x0 - x_off, x1 - x_off
+        ay0, ay1 = y_top - y0, y_top - y1
+        return (min(ax0, ax1), min(ay0, ay1), max(ax0, ax1), max(ay0, ay1))
+
+    handle = page.raw
+    count = raw.FPDFPage_CountObjects(handle)
+    out: list[PageObject] = []
+    order = [0]
+    for i in range(count):
+        obj = raw.FPDFPage_GetObject(handle, i)
+        if obj:
+            _walk(raw, obj, order, out, flip, handles=handles)
+    return out
+
+
+# Five stages ask for the same page's objects (drawings, images, mark candidates, ruled tables,
+# hidden text), so the last few pages' lists are kept. Plain dataclasses; no handle is held.
+_CACHE: dict[tuple, list] = {}
+_CACHE_MAX = 4
 
 
 def page_objects(path: str, page_number: int) -> list[PageObject] | None:
@@ -220,23 +257,18 @@ def page_objects(path: str, page_number: int) -> list[PageObject] | None:
     except Exception:
         return None
     try:
-        page = render.document(path)[page_number - 1]
-        crop = page.get_cropbox()
-        x_off, y_top = float(crop[0]), float(crop[3])
-
-        def flip(x0, y0, x1, y1):
-            ax0, ax1 = x0 - x_off, x1 - x_off
-            ay0, ay1 = y_top - y0, y_top - y1
-            return (min(ax0, ax1), min(ay0, ay1), max(ax0, ax1), max(ay0, ay1))
-
-        handle = page.raw
-        count = raw.FPDFPage_CountObjects(handle)
-        out: list[PageObject] = []
-        order = [0]
-        for i in range(count):
-            obj = raw.FPDFPage_GetObject(handle, i)
-            if obj:
-                _walk(raw, obj, order, out, flip)
-        return out
+        st = os.stat(path)
+        key = (os.path.abspath(path), page_number, st.st_mtime_ns, st.st_size)
+    except OSError:
+        key = None
+    if key is not None and key in _CACHE:
+        return _CACHE[key]
+    try:
+        out = walk_page(raw, render.document(path)[page_number - 1])
     except Exception:
         return None
+    if key is not None:
+        if len(_CACHE) >= _CACHE_MAX:
+            _CACHE.pop(next(iter(_CACHE)))
+        _CACHE[key] = out
+    return out
