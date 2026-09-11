@@ -306,3 +306,60 @@ def test_a_glyph_on_a_control_code_is_not_a_blank():
         assert "\x0c" not in first, repr(first)
         top = [ln["bbox"] for b in raw["blocks"] for ln in b["lines"]][0]
         assert top[3] - top[1] < 20, top          # the sentence's own box, not the pieces' too
+
+
+def test_a_combining_mark_is_boxed_at_its_own_origin():
+    """MuPDF gives a combining mark a zero-width box at the mark's own origin (measured over the
+    arXiv pages: cmsy's negation slash, cmmi's vector arrow, Libertinus's hat, all at their
+    origin, which usually is the previous glyph's end). MnSymbol draws its tilde *before* the
+    letter it covers, at the letter's start, and snapping it to the previous glyph's end put it
+    at the letter's end, where the maths stage hung it on the symbol after (06329: \tilde{=}
+    for \tilde{L})."""
+    diffs = b" /Encoding << /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [126 /tildecomb] >>"
+    content = (b"BT /F1 12 Tf 1 0 0 1 10 100 Tm (|) Tj ET\n"
+               b"BT /F1 12 Tf 1 0 0 1 20 104 Tm (\176) Tj ET\n"      # the mark, drawn first
+               b"BT /F1 12 Tf 1 0 0 1 20 100 Tm (L) Tj ET\n")
+    with _File(_pdf(content, font_extra=diffs)) as path:
+        raw = A.build(path, 1)
+        assert raw is not None
+        chars = {c["c"]: c for c in _chars(raw) if not c["c"].isspace()}
+        assert "\u0303" in chars, sorted(chars)
+        mark = chars["\u0303"]
+        assert abs(mark["bbox"][0] - 20.0) < 0.05 and abs(mark["bbox"][2] - 20.0) < 0.05, mark["bbox"]
+        assert abs(chars["L"]["bbox"][0] - 20.0) < 0.05
+
+
+def test_an_unmapped_characters_advance_comes_from_the_pdfs_widths():
+    """A character PDFium cannot map gets no advance from PDFium (the lookup goes by Unicode), and
+    its loose box is the glyph's ink. MuPDF's box is the advance from the PDF's own /Widths, and
+    cmex's brace pieces, 4pt of ink on an advance of 10, then stood out of line with each other
+    and a cases brace read as three braces (09472). The width is in the PDF: a zero-advance
+    mapstochar and a half-em bar."""
+    diffs = (b" /Encoding << /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [65 /mapstochar /barextender] >>"
+             b" /FirstChar 65 /LastChar 66 /Widths [0 500]")
+    content = b"BT /F1 10 Tf 1 0 0 1 20 100 Tm (A) Tj ET\nBT /F1 10 Tf 1 0 0 1 40 100 Tm (B) Tj ET"
+    with _File(_pdf(content, font_extra=diffs)) as path:
+        raw = A.build(path, 1)
+        assert raw is not None
+        chars = {c["c"]: c for c in _chars(raw) if not c["c"].isspace()}
+        assert "A" in chars and "B" in chars and chars["A"]["map_error"] and chars["B"]["map_error"], chars
+        assert abs(chars["A"]["bbox"][2] - chars["A"]["bbox"][0]) < 0.05, chars["A"]["bbox"]          # 0 x 10
+        assert abs((chars["B"]["bbox"][2] - chars["B"]["bbox"][0]) - 5.0) < 0.05, chars["B"]["bbox"]  # 500 x 10 / 1000
+
+
+def test_text_clipped_away_by_the_page_is_not_delivered():
+    """A Word-made PDF clips each paragraph to its box, and a dot leader runs on past the box:
+    the dots beyond are drawn and never seen. MuPDF's text leaves them out (one dot of thirteen
+    on fa18a15c) and PDFium's text page ignores clipping, so the leader reached into the next
+    column and the table's columns fused. A character whose ink lies wholly outside its text
+    object's clip box is not delivered - the quantity both readers must agree on (D022): the
+    text that survives the clip."""
+    content = (b"q 10 80 60 40 re W n BT /F1 12 Tf 1 0 0 1 20 100 Tm (Clipped leader ........) Tj ET Q\n"
+               b"BT /F1 12 Tf 1 0 0 1 20 60 Tm (Free text) Tj ET")
+    with _File(_pdf(content)) as path:
+        raw = A.build(path, 1)
+        assert raw is not None
+        ours = "".join(c["c"] for c in _chars(raw) if not c["c"].isspace())
+        theirs = "".join(c for c in _mupdf_chars(path) if not c.isspace())
+        assert ours == theirs, (ours, theirs)
+        assert ours.startswith("Clipped") and "leader" not in ours and ours.endswith("Freetext"), ours

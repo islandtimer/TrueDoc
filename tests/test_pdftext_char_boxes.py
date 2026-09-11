@@ -175,3 +175,93 @@ def test_an_embedded_fonts_boxes_agree_with_mupdf_to_the_hundredth():
     assert len(matched) > 500, len(matched)
     off = [k for k in ours if k in theirs and (abs(ours[k][0] - theirs[k][0]) > 0.05 or abs(ours[k][1] - theirs[k][1]) > 0.05)]
     assert len(off) <= 0.01 * len(matched), (len(off), len(matched), off[:5])
+
+
+_SHEARED_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs", "tables",
+                             "b2a4c508f7839c1fbd2bb29a0d56c46bc00e_pg13_pg1.pdf")
+
+
+@pytest.mark.skipif(not os.path.exists(_SHEARED_PAGE), reason="benchmark page not present")
+def test_sheared_text_starts_at_the_origin_and_ends_where_mupdf_ends_it():
+    """An italic made by slanting an upright face ("et al." on b2a4c508, text matrix c = 2.09).
+    MuPDF's box starts at the glyph's origin and ends where the slanted advance box ends; the
+    loose box starts 0.44pt to the left, and that closed the word gap MuPDF reads between "et"
+    and "al." (the check wants "Montgomery et al."). Every sheared character's left and right
+    edge within a twentieth of a point of MuPDF's."""
+    import ctypes
+    import pypdfium2 as pdfium
+    import pypdfium2.raw as raw_api
+    doc = pdfium.PdfDocument(_SHEARED_PAGE)
+    page = doc[0]
+    tp = page.get_textpage()
+    m = raw_api.FS_MATRIX()
+    ox, oy = ctypes.c_double(), ctypes.c_double()
+    height = page.get_height()
+    sheared = set()
+    for i in range(raw_api.FPDFText_CountChars(tp)):
+        if (raw_api.FPDFText_GetMatrix(tp, i, m) and abs(m.b) < 1e-6 and abs(m.c) > 1e-3
+                and raw_api.FPDFText_GetCharOrigin(tp, i, ox, oy)):
+            sheared.add((round(ox.value, 1), round(height - oy.value, 1)))
+    tp.close()
+    page.close()
+    doc.close()
+    assert len(sheared) > 30, len(sheared)
+    raw = A.build(_SHEARED_PAGE, 1)
+    assert raw is not None
+    ours = {}
+    for b in raw["blocks"]:
+        for ln in b["lines"]:
+            for sp in ln["spans"]:
+                for c in sp["chars"]:
+                    o = c.get("origin")
+                    if o and not c["c"].isspace() and (round(o[0], 1), round(o[1], 1)) in sheared:
+                        ours[(c["c"], round(o[0], 1), round(o[1], 1))] = (c["bbox"][0], c["bbox"][2])
+    mu = pymupdf.open(_SHEARED_PAGE)
+    try:
+        theirs = {}
+        for b in mu[0].get_text("rawdict")["blocks"]:
+            for ln in b.get("lines", []):
+                for sp in ln["spans"]:
+                    for c in sp["chars"]:
+                        if not c["c"].isspace():
+                            theirs[(c["c"], round(c["origin"][0], 1), round(c["origin"][1], 1))] = (c["bbox"][0], c["bbox"][2])
+    finally:
+        mu.close()
+    matched = [k for k in ours if k in theirs]
+    assert len(matched) > 30, len(matched)
+    off = [(k, ours[k], theirs[k]) for k in matched
+           if abs(ours[k][0] - theirs[k][0]) > 0.05 or abs(ours[k][1] - theirs[k][1]) > 0.05]
+    assert len(off) <= 0.01 * len(matched), (len(off), len(matched), off[:5])
+
+
+def test_text_scaled_differently_in_x_and_y_is_sized_and_boxed_as_mupdf_sizes_it():
+    """An OCR layer fits each word to its box by scaling x and y differently. Measured on 73,333
+    such characters over 30 benchmark pages: MuPDF's size is the geometric mean of the two
+    scales (every time), its right edge the origin plus the advance at the x scale (every time),
+    its top and bottom the ascent and descent at the y scale (92%). The y scale alone read 8.40
+    where MuPDF reads 7.28 on 0091c5b2, and the rows of its table fused (three checks). The size
+    and the x edges are pinned here; the top and bottom cannot be on a hand-built page, whose
+    font is not embedded and so is a different face in each library."""
+    content = b"BT /F1 1 Tf 8 0 0 10 20 100 Tm (Immunisation records) Tj ET\n"
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(_pdf(content))
+    try:
+        raw = A.build(path, 1)
+        assert raw is not None
+        ours = [(c["c"], c["bbox"], sp["size"]) for b in raw["blocks"] for ln in b["lines"]
+                for sp in ln["spans"] for c in sp["chars"] if not c["c"].isspace()]
+        doc = pymupdf.open(path)
+        try:
+            theirs = [(c["c"], c["bbox"], sp["size"]) for b in doc[0].get_text("rawdict")["blocks"]
+                      for ln in b.get("lines", []) for sp in ln["spans"] for c in sp["chars"] if not c["c"].isspace()]
+        finally:
+            doc.close()
+    finally:
+        render.close_documents()
+        os.unlink(path)
+    assert [c for c, _, _ in ours] == [c for c, _, _ in theirs]
+    assert ours[0][2] == pytest.approx(theirs[0][2], abs=0.02), (ours[0][2], theirs[0][2])
+    assert theirs[0][2] == pytest.approx((8 * 10) ** 0.5, abs=0.05)
+    for (c, ob, _), (_, tb, _) in zip(ours, theirs):
+        assert ob[0] == pytest.approx(tb[0], abs=0.05) and ob[2] == pytest.approx(tb[2], abs=0.05), (c, ob, tb)

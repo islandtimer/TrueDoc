@@ -152,3 +152,18 @@ def test_the_object_reader_is_off_unless_asked_for():
         os.environ.pop("TRUEDOC_OBJECTS", None)
         if was is not None:
             os.environ["TRUEDOC_OBJECTS"] = was
+
+
+def test_a_stroked_path_hands_back_its_own_segments_not_its_inflated_bounds(drawn):
+    """PDFium's bounds inflate a stroked path by its line width on every side, so a 3pt rule
+    reads as a 6pt-high box and fails a thin test (f1774abd lost the rule under its header,
+    and its table a row). The straight segments the path actually draws come back as well,
+    measured in the page's space, which is what PyMuPDF's table finder reads (D022)."""
+    _, objs = drawn
+    stroke = next(o for o in objs if o.stroke is not None)
+    assert len(stroke.lines) == 1, stroke.lines
+    x0, y0, x1, y1 = stroke.lines[0]
+    assert (x0, x1) == pytest.approx((20.0, 180.0), abs=0.01)
+    assert y0 == pytest.approx(100.0, abs=0.01) and y1 == pytest.approx(100.0, abs=0.01)
+    bx0, by0, bx1, by1 = stroke.bbox
+    assert bx0 < 20.0 and bx1 > 180.0 and by0 < 100.0 < by1, stroke.bbox

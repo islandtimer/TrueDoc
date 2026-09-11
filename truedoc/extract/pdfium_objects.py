@@ -40,6 +40,7 @@ class PageObject:
     stroke: tuple | None = None
     stroke_width: float = 0.0
     rects: list = field(default_factory=list)   # axis-aligned rectangles this path fills
+    lines: list = field(default_factory=list)   # straight segments this path strokes, (x0, y0, x1, y1)
     invisible_text: bool = False            # text drawn in render mode 3
 
 
@@ -146,8 +147,80 @@ def _rects_of_path(raw, obj, flip, matrix=_IDENTITY) -> list:
     return out
 
 
+def _segments_of_path(raw, obj, flip, matrix=_IDENTITY) -> list:
+    """The straight segments a path draws, each as (x0, y0, x1, y1) in the page's space.
+
+    The table finder needs these for a stroked path rather than its bounds: PDFium's bounds
+    inflate a stroked path by its line width on every side, so a 3pt rule comes back as a 6pt
+    box (f1774abd lost the rule under its header that way, and its table a row), where
+    PyMuPDF's finder reads each drawn segment at its own length (D022). A curve gives nothing;
+    the point it ends on begins whatever is drawn next.
+    """
+    try:
+        n = raw.FPDFPath_CountSegments(obj)
+    except Exception:
+        return []
+    if n <= 0:
+        return []
+    x, y = ctypes.c_float(), ctypes.c_float()
+    out: list = []
+    start = prev = None
+    for i in range(min(n, 2000)):
+        seg = raw.FPDFPath_GetPathSegment(obj, i)
+        if not seg or not raw.FPDFPathSegment_GetPoint(seg, x, y):
+            continue
+        kind = raw.FPDFPathSegment_GetType(seg)
+        point = _apply(matrix, x.value, y.value) if matrix != _IDENTITY else (x.value, y.value)
+        if kind == raw.FPDF_SEGMENT_MOVETO:
+            start = prev = point
+        elif kind == raw.FPDF_SEGMENT_LINETO:
+            if prev is not None:
+                out.append(flip(prev[0], prev[1], point[0], point[1]))
+            prev = point
+        else:
+            prev = point
+        if raw.FPDFPathSegment_GetClose(seg) and start is not None and prev is not None and prev != start:
+            out.append(flip(prev[0], prev[1], start[0], start[1]))
+            prev = start
+    return out
+
+
+def _clip_box(raw, obj) -> tuple | None:
+    """The box of an object's clip path in the page's space, or None when it has none.
+
+    Several clip paths on one object apply together, so their boxes are intersected. The
+    points come back in the page's space for an object drawn straight on the page; for one
+    inside a form the space is not settled here, so callers ask only at the top level.
+    """
+    try:
+        clip = raw.FPDFPageObj_GetClipPath(obj)
+        if not clip:
+            return None
+        count = raw.FPDFClipPath_CountPaths(clip)
+    except Exception:
+        return None
+    if count <= 0:
+        return None
+    boxes = []
+    x, y = ctypes.c_float(), ctypes.c_float()
+    for p in range(count):
+        xs, ys = [], []
+        for s in range(raw.FPDFClipPath_CountPathSegments(clip, p)):
+            seg = raw.FPDFClipPath_GetPathSegment(clip, p, s)
+            if seg and raw.FPDFPathSegment_GetPoint(seg, x, y):
+                xs.append(x.value)
+                ys.append(y.value)
+        if xs and ys:
+            boxes.append((min(xs), min(ys), max(xs), max(ys)))
+    if not boxes:
+        return None
+    x0, y0 = max(b[0] for b in boxes), max(b[1] for b in boxes)
+    x1, y1 = min(b[2] for b in boxes), min(b[3] for b in boxes)
+    return (x0, y0, x1, y1) if x1 > x0 and y1 > y0 else (x0, y0, x0, y0)
+
+
 def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, depth: int = 0,
-          handles: dict | None = None) -> None:
+          handles: dict | None = None, clips: dict | None = None) -> None:
     if len(out) >= _MAX_OBJECTS:
         return
     kind_id = raw.FPDFPageObj_GetType(obj)
@@ -168,7 +241,7 @@ def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, dep
         for i in range(count):
             child = raw.FPDFFormObj_GetObject(obj, i)
             if child:
-                _walk(raw, child, order, out, flip, combined, depth + 1, handles)
+                _walk(raw, child, order, out, flip, combined, depth + 1, handles, clips)
         return
 
     left, bottom, right, top = (ctypes.c_float() for _ in range(4))
@@ -180,23 +253,24 @@ def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, dep
             raw.FPDF_PAGEOBJ_TEXT: "text", raw.FPDF_PAGEOBJ_SHADING: "shading"}.get(kind_id, "other")
 
     fill, fill_alpha = (None, 1.0)
-    stroke, width, rects, invisible = None, 0.0, [], False
+    stroke, width, rects, lines, invisible = None, 0.0, [], [], False
     if kind == "path":
         fillmode, stroking = ctypes.c_int(), ctypes.c_int()
         filled = bool(raw.FPDFPath_GetDrawMode(obj, fillmode, stroking)) and fillmode.value != raw.FPDF_FILLMODE_NONE
+        # `FPDFPageObj_GetBounds` reports a box that already went through the object's own
+        # matrix, but `FPDFPathSegment_GetPoint` hands back the raw points from before it, so
+        # the segments need that matrix as well as any form's. Missing it put one page's
+        # rectangles at y = -32,000 while its bounding boxes were perfectly correct.
+        own = _IDENTITY
+        om = raw.FS_MATRIX()
+        if raw.FPDFPageObj_GetMatrix(obj, om):
+            own = (om.a, om.b, om.c, om.d, om.e, om.f)
         if filled:
             fill, fill_alpha = _colour(raw.FPDFPageObj_GetFillColor, obj)
-            # `FPDFPageObj_GetBounds` reports a box that already went through the object's own
-            # matrix, but `FPDFPathSegment_GetPoint` hands back the raw points from before it, so
-            # the segments need that matrix as well as any form's. Missing it put one page's
-            # rectangles at y = -32,000 while its bounding boxes were perfectly correct.
-            own = _IDENTITY
-            om = raw.FS_MATRIX()
-            if raw.FPDFPageObj_GetMatrix(obj, om):
-                own = (om.a, om.b, om.c, om.d, om.e, om.f)
             rects = _rects_of_path(raw, obj, flip, _compose(matrix, own))
         if stroking.value:
             stroke, _ = _colour(raw.FPDFPageObj_GetStrokeColor, obj)
+            lines = _segments_of_path(raw, obj, flip, _compose(matrix, own))
         w = ctypes.c_float()
         if raw.FPDFPageObj_GetStrokeWidth(obj, w):
             # a stroke inside a scaled form is drawn at the scaled width
@@ -208,20 +282,30 @@ def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, dep
             invisible = False
 
     out.append(PageObject(order=order[0], kind=kind, bbox=box, fill=fill, fill_alpha=fill_alpha,
-                          stroke=stroke, stroke_width=width, rects=rects, invisible_text=invisible))
+                          stroke=stroke, stroke_width=width, rects=rects, lines=lines,
+                          invisible_text=invisible))
     if handles is not None:
         # The object's pointer, valid only for this page load: pypdfium2 calls FPDF_LoadPage on
         # every `doc[i]`, so a caller that wants to join characters to objects must walk on the
         # same handle it reads the text from. The order numbers are what carry across loads.
         handles[ctypes.cast(obj, ctypes.c_void_p).value] = order[0]
+    if clips is not None and kind == "text" and depth == 0:
+        # Where the page clips this text (a Word-made PDF boxes every paragraph): the text
+        # page ignores clipping, and the reader drops what was never shown. Top level only -
+        # the space a form's clip paths are reported in is not settled.
+        clip = _clip_box(raw, obj)
+        if clip is not None:
+            clips[ctypes.cast(obj, ctypes.c_void_p).value] = flip(*clip)
     order[0] += 1
 
 
-def walk_page(raw, page, handles: dict | None = None) -> list[PageObject]:
+def walk_page(raw, page, handles: dict | None = None, clips: dict | None = None) -> list[PageObject]:
     """Everything drawn on an already-loaded pypdfium2 page, in painting order.
 
     `handles`, when given, is filled with object pointer -> order for this load, so the caller
-    can join the text page's characters (`FPDFText_GetTextObject`) to what was drawn.
+    can join the text page's characters (`FPDFText_GetTextObject`) to what was drawn; `clips`,
+    when given, with object pointer -> the clip box of each top-level text object that has one,
+    in MuPDF's page space.
     """
     crop = page.get_cropbox()
     x_off, y_top = float(crop[0]), float(crop[3])
@@ -238,7 +322,7 @@ def walk_page(raw, page, handles: dict | None = None) -> list[PageObject]:
     for i in range(count):
         obj = raw.FPDFPage_GetObject(handle, i)
         if obj:
-            _walk(raw, obj, order, out, flip, handles=handles)
+            _walk(raw, obj, order, out, flip, handles=handles, clips=clips)
     return out
 
 

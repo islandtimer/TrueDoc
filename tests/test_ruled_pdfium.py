@@ -240,12 +240,14 @@ def test_cell_text_reads_a_visual_row_left_to_right_whatever_the_drawing_order()
     assert ruled_pdfium._cell_text(words, (0.0, 0.0, 60.0, 22.0)) == "0.78 **\nsecond row"
 
 
-def test_a_table_of_shaded_cells_with_no_drawn_lines_is_found():
-    """A table whose cells are filled rectangles with no rule drawn between them (f1774abd, a
-    row per shaded band): the boundary where two fills meet is a rule, and PyMuPDF's finder
-    takes it as one on that page. A filled rectangle that meets no other - a page background -
-    gives none. On this hand-built page PyMuPDF's strict strategy sees nothing and its plain
-    "lines" strategy the 2x2; the real page below is where the two must agree."""
+def test_shaded_cells_with_no_drawn_lines_give_no_grid_as_pymupdf_strict_reads_none():
+    """A table whose cells are filled rectangles with no rule drawn between them. PyMuPDF's
+    strict strategy - the one the shipped path runs - drops every fill-only box wider and
+    taller than its snap tolerance, so it reads no table here, and this finder mirrors that
+    rule (D022). A rule wherever two fills meet was written for run 70 instead, and it invented
+    tables on a striped page and a newspaper's panels (c2b2651d and 09f801e3, eleven checks);
+    the shaded benchmark page it was written for turned out to be ruled by strokes after all,
+    one of them 3pt wide - see the two tests below."""
     content = (b"0.9 g\n"
                b"100 650 150 50 re f\n250 650 150 50 re f\n"
                b"0.8 g\n"
@@ -261,11 +263,39 @@ def test_a_table_of_shaded_cells_with_no_drawn_lines_is_found():
     doc = pymupdf.open(path)
     try:
         page = extract_page(doc[0], 1)
+        assert ruled_pdfium.find_tables(doc[0], page) == []
+        assert list(doc[0].find_tables(strategy="lines_strict").tables) == []
+    finally:
+        render.close_documents()
+        doc.close()
+        os.unlink(path)
+
+
+def test_a_rule_drawn_as_a_wide_stroke_is_still_a_rule():
+    """f1774abd rules the row under its header with a 3pt stroke. PDFium's bounds inflate a
+    stroked path by its line width on every side, so that rule came back as a 6pt-high box,
+    failed the thin test, and the table read 3 rows by 4 against PyMuPDF's 4 by 4. Rules now
+    come from the stroked path's own segments, at their own length, whatever the stroke width -
+    the quantity PyMuPDF's finder reads (D022)."""
+    content = (b"3 w\n"
+               b"100 700 m 400 700 l S\n100 650 m 400 650 l S\n100 600 m 400 600 l S\n"
+               b"1 w\n"
+               b"100 600 m 100 700 l S\n250 600 m 250 700 l S\n400 600 m 400 700 l S\n"
+               b"BT /F1 10 Tf 110 675 Td (Alpha) Tj ET\nBT /F1 10 Tf 260 675 Td (Beta) Tj ET\n"
+               b"BT /F1 10 Tf 110 625 Td (Gamma) Tj ET\nBT /F1 10 Tf 260 625 Td (Delta) Tj ET\n")
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    body = _pdf().replace(_CONTENT, content).replace(
+        b"/Length " + str(len(_CONTENT)).encode(), b"/Length " + str(len(content)).encode())
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(body)
+    doc = pymupdf.open(path)
+    try:
+        page = extract_page(doc[0], 1)
         found = ruled_pdfium.find_tables(doc[0], page)
         assert found is not None and len(found) == 1, found
         ours = [[(c or "").strip() for c in r] for r in found[0].extract()]
         assert ours == [["Alpha", "Beta"], ["Gamma", "Delta"]], ours
-        mu = list(doc[0].find_tables(strategy="lines").tables)
+        mu = list(doc[0].find_tables(strategy="lines_strict").tables)
         assert len(mu) == 1 and [[(c or "").strip() for c in r] for r in mu[0].extract()] == ours
     finally:
         render.close_documents()
@@ -279,8 +309,8 @@ _SHADED_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs
 
 @pytest.mark.skipif(not os.path.exists(_SHADED_PAGE), reason="benchmark page not present")
 def test_the_shaded_benchmark_page_agrees_with_pymupdf():
-    """The page the rule was measured on: sixteen shaded cells, no drawn lines, and PyMuPDF's
-    strict finder reads 4 rows by 4 from the boundaries between them."""
+    """Sixteen shaded cells and ten stroked rules, one of them 3pt wide under the header; PyMuPDF's
+    strict finder reads 4 rows by 4 from the strokes and ignores the fills."""
     doc = pymupdf.open(_SHADED_PAGE)
     try:
         page = extract_page(doc[0], 1)
@@ -291,3 +321,83 @@ def test_the_shaded_benchmark_page_agrees_with_pymupdf():
     finally:
         render.close_documents()
         doc.close()
+
+
+def test_rows_shaded_across_both_columns_give_no_grid():
+    """A two-column table shaded row by row across its width and ruled by nothing. The rule
+    wherever two fills meet, written for run 70, took the boundaries between the stripes as
+    rules and the one-column grid it built fused each row's two cells into one (c2b2651d, six
+    checks), where the column finder had read the table right. Fills are not rules: no grid."""
+    content = (b"0.9 g\n100 650 300 50 re f\n0.8 g\n100 600 300 50 re f\n0 g\n"
+               b"BT /F1 10 Tf 110 675 Td (ABC News) Tj ET\nBT /F1 10 Tf 300 675 Td (847,517) Tj ET\n"
+               b"BT /F1 10 Tf 110 625 Td (The Age) Tj ET\nBT /F1 10 Tf 300 625 Td (356,255) Tj ET\n")
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    body = _pdf().replace(_CONTENT, content).replace(
+        b"/Length " + str(len(_CONTENT)).encode(), b"/Length " + str(len(content)).encode())
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(body)
+    doc = pymupdf.open(path)
+    try:
+        page = extract_page(doc[0], 1)
+        assert ruled_pdfium.find_tables(doc[0], page) == []
+    finally:
+        render.close_documents()
+        doc.close()
+        os.unlink(path)
+
+
+def test_rules_between_rows_with_ticks_at_their_ends_make_no_table():
+    """A form ruled between its rows and nowhere else: thin filled rules the full width with a
+    short tick at either end of each, the way b2a4c508 and cefac431 are set. PyMuPDF's strict
+    finder reads no table there. The frame that closes a grid's outline used to close these
+    into a table of one column, fusing each row's fields into one cell (three checks); a
+    cluster with no rule of each direction inside its outline gets no frame."""
+    NL = bytes([10])
+    rows = []
+    for y in (700, 650, 600, 550):
+        rows += [b"100 %d 300 1 re f" % y, b"100 %d 1 8 re f" % (y - 8), b"399 %d 1 8 re f" % (y - 8)]
+    text = [b"BT /F1 10 Tf 110 675 Td (Name) Tj ET", b"BT /F1 10 Tf 300 675 Td (847,517) Tj ET",
+            b"BT /F1 10 Tf 110 625 Td (Age) Tj ET", b"BT /F1 10 Tf 300 625 Td (356,255) Tj ET",
+            b"BT /F1 10 Tf 110 575 Td (Town) Tj ET", b"BT /F1 10 Tf 300 575 Td (12,004) Tj ET"]
+    content = NL.join([b"0 g"] + rows + text) + NL
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    body = _pdf().replace(_CONTENT, content).replace(
+        b"/Length " + str(len(_CONTENT)).encode(), b"/Length " + str(len(content)).encode())
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(body)
+    doc = pymupdf.open(path)
+    try:
+        page = extract_page(doc[0], 1)
+        assert ruled_pdfium.find_tables(doc[0], page) == []
+        assert list(doc[0].find_tables(strategy="lines_strict").tables) == []
+    finally:
+        render.close_documents()
+        doc.close()
+        os.unlink(path)
+
+
+def test_a_rule_drawn_off_the_page_does_not_stretch_the_grid():
+    """PyMuPDF's finder clips every rule to the page box. A TV-listings page (20_pg39, tiny text)
+    carries a rule 575pt left of its own edge; kept, it ran the grid from there across the whole
+    page, 2 rows by 8 where PyMuPDF reads 1 by 7, and every listing fused into one cell (six
+    checks). The same grid as always, plus a stroke far off the page: the grid must not change."""
+    NL = bytes([10])
+    content = _CONTENT + b"-500 600 m -500 700 l S" + NL + b"-500 600 m 400 600 l S" + NL
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    body = _pdf().replace(_CONTENT, content).replace(
+        b"/Length " + str(len(_CONTENT)).encode(), b"/Length " + str(len(content)).encode())
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(body)
+    doc = pymupdf.open(path)
+    try:
+        page = extract_page(doc[0], 1)
+        found = ruled_pdfium.find_tables(doc[0], page)
+        mu = list(doc[0].find_tables(strategy="lines_strict").tables)
+        assert found is not None and len(found) == len(mu) == 1, (found, mu)
+        ours = [[(c or "").strip() for c in r] for r in found[0].extract()]
+        assert ours == [["Alpha", "Beta", "Kappa"], ["Gamma", "Delta", "Omega"]], ours
+        assert found[0].bbox[0] >= 0, found[0].bbox
+    finally:
+        render.close_documents()
+        doc.close()
+        os.unlink(path)

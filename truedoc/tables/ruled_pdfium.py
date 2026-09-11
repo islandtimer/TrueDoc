@@ -67,27 +67,41 @@ def _turned(rect, M):
 
 
 def _edges_from_objects(objs: list, M=None) -> list[dict]:
-    """Every thin, long shape on the page, as a pdfplumber edge, in the rendered space.
+    """Every rule drawn on the page, as a pdfplumber edge, in the rendered space.
 
-    A rule may be drawn as a stroked line, as a very flat filled rectangle, or as a one-pixel
-    image stretched along a row, so each is tagged with where it came from and `_edge_rule`
-    decides which of them count.
+    What counts as a rule is what PyMuPDF's strict strategy counts, measured (D022). A stroked
+    path gives every straight, axis-parallel segment it draws, at that segment's own length and
+    whatever its line width - so a stroked rectangle gives its four sides, and a 3pt rule is
+    still a rule. f1774abd rules its rows with ten strokes under sixteen shaded cells, one of
+    them 3pt wide, and PDFium's bounds inflate a stroked path by its width on every side: that
+    rule read as a 6pt box, failed the thin test the bounds were put to, and the table lost a
+    row. A filled rectangle counts only when it is thin enough to be a drawn line, and a
+    one-pixel image stretched along a row counts as one too; each is tagged with where it came
+    from and `_edge_rule` decides which of them count.
 
-    Only thin shapes become edges. Breaking every *box* into its four sides as well - which is
-    what pdfplumber does with a rectangle - was written and measured, because a page that reads
-    4x2 against PyMuPDF's 5x2 is missing exactly one outer rule. It did not fix that page, and it
-    invented a spurious table on two pages that had been matching PyMuPDF cell for cell, so it
-    came out again. (What that page was missing turned out to be the outline of its rules as a
-    whole - see `_frame_edges`.)
+    A wide filled box is never a rule. Breaking every box into its four sides was measured and
+    invented tables on pages that had matched PyMuPDF cell for cell; a rule wherever two fills
+    met, written for run 70, invented them on a page striped row by row, on a newspaper's panels
+    and on three thin-ruled forms where PyMuPDF reads no table at all (c2b2651d, 09f801e3,
+    8a1262ef, b2a4c508, cefac431 - eighteen checks between them). PyMuPDF drops every fill-only
+    box wider and taller than its snap tolerance, and so does this.
     """
     out: list[dict] = []
-    fills: list[tuple[float, float, float, float]] = []
     for o in objs:
         if o.kind not in ("path", "image"):
             continue
         if len(out) >= _MAX_EDGES:
             break
         stroked = o.kind == "path" and o.stroke is not None
+        if stroked and o.lines:
+            for seg in o.lines:
+                x0, y0, x1, y1 = _turned(seg, M)
+                w, h = x1 - x0, y1 - y0
+                if h <= _MAX_RULE and w >= _MIN_RULE:
+                    out.append(_h_edge("line", x0, x1, (y0 + y1) / 2.0))
+                elif w <= _MAX_RULE and h >= _MIN_RULE:
+                    out.append(_v_edge("line", (x0 + x1) / 2.0, y0, y1))
+            continue
         source = "line" if stroked else ("image" if o.kind == "image" else "rect_edge")
         for rect in (o.rects or [o.bbox]):
             x0, y0, x1, y1 = _turned(rect, M)
@@ -96,39 +110,6 @@ def _edges_from_objects(objs: list, M=None) -> list[dict]:
                 out.append(_h_edge(source, x0, x1, (y0 + y1) / 2.0))
             elif w <= _MAX_RULE and h >= _MIN_RULE:
                 out.append(_v_edge(source, (x0 + x1) / 2.0, y0, y1))
-            elif o.kind == "path" and o.fill is not None and len(fills) < _MAX_FILLS:
-                fills.append((x0, y0, x1, y1))
-    return out + _shared_sides(fills)
-
-
-_MAX_FILLS = 600        # filled boxes considered for shared sides (the pairing is quadratic)
-_SHARED_SNAP = 3.0      # two fills meet when their sides lie within this
-_MIN_SHARED = 4.0       # ... along at least this much of each other
-
-
-def _shared_sides(fills: list) -> list[dict]:
-    """A rule wherever two filled boxes meet: a table of shaded cells with no lines drawn.
-
-    f1774abd rules its rows by shading alone - sixteen filled cells and not one line - and
-    PyMuPDF's finder reads its 4 rows by 4 from the boundaries between the fills; this read 3
-    by 4 for want of the boundary under the header. The side of a filled box is a rule only
-    where another filled box meets it, so a page's background or a figure's panel, which meet
-    nothing, give none. (Taking every box's four sides had been tried and measured: it invented
-    tables on two pages that matched PyMuPDF cell for cell.)
-    """
-    out: list[dict] = []
-    for i, a in enumerate(fills):
-        for b in fills[i + 1:]:
-            ox0, ox1 = max(a[0], b[0]), min(a[2], b[2])
-            if ox1 - ox0 >= _MIN_SHARED:
-                for ya, yb in ((a[3], b[1]), (a[1], b[3])):
-                    if abs(ya - yb) <= _SHARED_SNAP:
-                        out.append(_h_edge("shared_side", ox0, ox1, (ya + yb) / 2.0))
-            oy0, oy1 = max(a[1], b[1]), min(a[3], b[3])
-            if oy1 - oy0 >= _MIN_SHARED:
-                for xa, xb in ((a[2], b[0]), (a[0], b[2])):
-                    if abs(xa - xb) <= _SHARED_SNAP:
-                        out.append(_v_edge("shared_side", (xa + xb) / 2.0, oy0, oy1))
     return out
 
 
@@ -142,8 +123,14 @@ def _frame_edges(edges: list[dict], words: list[dict], snap: float = 3.0) -> lis
     first joins rules that stand within a snap tolerance of each other into one box and, where
     the box holds text, takes its four sides as rules too. Measured on that page, the missing
     rule is exactly that box's left side. This does the same over the same edges.
+
+    Only a grid gets a frame: the cluster must hold a rule of each direction inside its outline,
+    not just along it. A form ruled between its rows and nowhere else - horizontal rules the
+    full width, a tick at either end of each - is closed by a frame into a table of one column,
+    and PyMuPDF reads no table there at all: b2a4c508 (two checks) and cefac431 rule that way,
+    and the one-column tables made from them fused each row's fields into one cell.
     """
-    rects = [(e["x0"], e["top"], e["x1"], e["bottom"]) for e in edges]
+    rects = [((e["x0"], e["top"], e["x1"], e["bottom"]), e.get("orientation"), bool(e.get("clipped"))) for e in edges]
     if not rects:
         return []
 
@@ -156,29 +143,85 @@ def _frame_edges(edges: list[dict], words: list[dict], snap: float = 3.0) -> lis
                   or ay0 - snap <= by0 <= ay1 + snap or ay0 - snap <= by1 <= ay1 + snap)
         return near_x and near_y
 
-    boxes: list[tuple[float, float, float, float]] = []
-    pending = sorted(set(rects), key=lambda r: (r[3], r[0]))
+    boxes: list[tuple[tuple, list]] = []
+    pending = sorted(set(rects), key=lambda r: (r[0][3], r[0][0]))
     while pending:
-        box = pending.pop(0)
+        box, orientation, cut = pending.pop(0)
+        members = [(box, orientation, cut)]
         grew = True
         while grew:
             grew = False
             for i in range(len(pending) - 1, -1, -1):
-                if neighbours(box, pending[i]):
-                    r = pending.pop(i)
+                if neighbours(box, pending[i][0]):
+                    r, o, c = pending.pop(i)
+                    members.append((r, o, c))
                     box = (min(box[0], r[0]), min(box[1], r[1]), max(box[2], r[2]), max(box[3], r[3]))
                     grew = True
-        boxes.append(box)
+        boxes.append((box, members))
     out: list[dict] = []
-    for x0, y0, x1, y1 in boxes:
+    for (bx0, by0, bx1, by1), members in boxes:
+        if bx1 - bx0 < _MIN_RULE or by1 - by0 < _MIN_RULE:
+            continue
+        # A rule cut at the page's edge does not set the frame: its cut end is not an end. A
+        # TV-listings page (20_pg39, tiny text) draws one rule from 575pt outside its left edge,
+        # and the frame that ran out to the cut pulled an empty column against it - 2 by 8 where
+        # PyMuPDF reads 1 by 7, every listing fused into one cell, six checks. The other rules
+        # still set the frame; only if every rule is cut do the cut ones count.
+        whole = [(r, o) for r, o, c in members if not c] or [(r, o) for r, o, c in members]
+        x0, y0 = min(r[0] for r, _ in whole), min(r[1] for r, _ in whole)
+        x1, y1 = max(r[2] for r, _ in whole), max(r[3] for r, _ in whole)
         if x1 - x0 < _MIN_RULE or y1 - y0 < _MIN_RULE:
+            continue
+        inner_v = any(o == "v" and x0 + snap < r[0] < x1 - snap for r, o, _ in members)
+        inner_h = any(o == "h" and y0 + snap < r[1] < y1 - snap for r, o, _ in members)
+        if not (inner_v and inner_h):
             continue
         if not any(x0 <= (w["x0"] + w["x1"]) / 2.0 <= x1 and y0 <= (w["top"] + w["bottom"]) / 2.0 <= y1 for w in words):
             continue
-        out.append(_h_edge("rect_edge", x0, x1, y0))
-        out.append(_h_edge("rect_edge", x0, x1, y1))
-        out.append(_v_edge("rect_edge", x0, y0, y1))
-        out.append(_v_edge("rect_edge", x1, y0, y1))
+        # A side goes in only where at least two rules of the other direction end: the table's
+        # rows all start at its left edge, which is what the missing left rule of 3b18f8c looks
+        # like. A cluster's extreme that one rule alone reaches - a page's margin rule running
+        # up past the listings table on 20_pg39 - gets no side, since a side there would close
+        # a row of cells above the table where PyMuPDF, which draws no frame, reads none.
+        hs = [r for r, o, c in members if o == "h" and not c]
+        vs = [r for r, o, c in members if o == "v" and not c]
+
+        def supported(values: list[float], at: float) -> bool:
+            return sum(1 for v in values if abs(v - at) <= snap) >= 2
+
+        if supported([r[1] for r in vs], y0):
+            out.append(_h_edge("rect_edge", x0, x1, y0))
+        if supported([r[3] for r in vs], y1):
+            out.append(_h_edge("rect_edge", x0, x1, y1))
+        if supported([r[0] for r in hs], x0):
+            out.append(_v_edge("rect_edge", x0, y0, y1))
+        if supported([r[2] for r in hs], x1):
+            out.append(_v_edge("rect_edge", x1, y0, y1))
+    return out
+
+
+def _clip_to_page(edges: list[dict], page: tuple) -> list[dict]:
+    """Rules kept to the page: one drawn outside it goes, one crossing its edge is cut there.
+
+    PyMuPDF's finder clips every rule to the page box before it looks for a grid. A TV-listings
+    page (20_pg39, tiny text) carries a rule 575pt to the left of its own edge; with it, the
+    grid ran from there across the whole page, 2 rows by 8 where PyMuPDF reads 1 by 7, and every
+    listing fused into one cell (six checks).
+    """
+    px0, py0, px1, py1 = page
+    out: list[dict] = []
+    for e in edges:
+        x0, x1, y0, y1 = e["x0"], e["x1"], e["top"], e["bottom"]
+        if x1 < px0 or x0 > px1 or y1 < py0 or y0 > py1:
+            continue
+        x0, x1 = max(x0, px0), min(x1, px1)
+        y0, y1 = max(y0, py0), min(y1, py1)
+        if x1 - x0 <= 0 and y1 - y0 <= 0:
+            continue
+        if (x0, x1, y0, y1) != (e["x0"], e["x1"], e["top"], e["bottom"]):
+            # ... and remembered as cut, so the frame does not take the cut for an end
+            e = dict(e, x0=x0, x1=x1, top=y0, bottom=y1, width=x1 - x0, height=y1 - y0, doctop=y0, clipped=True)
+        out.append(e)
     return out
 
 
@@ -282,6 +325,7 @@ def find_tables(pdf_page, page) -> list | None:
         M = pdf_page.rotation_matrix if pdf_page.rotation else None
         words = _words_for_cells(page)
         edges = _edges_from_objects(objs, M)
+        edges = _clip_to_page(edges, (0.0, 0.0, float(pdf_page.rect.width), float(pdf_page.rect.height)))
         if not edges:
             return []
         edges = edges + _frame_edges(edges, words)

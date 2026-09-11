@@ -273,8 +273,11 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
             # walk has to happen on this very page load: pypdfium2 reloads the page on every
             # `doc[i]`, and object pointers do not survive a reload. The order numbers do.
             handles: dict[int, int] = {}
+            clips: dict[int, tuple] = {}       # text object -> its clip box, where it has one
+            widths_tables: dict | None = None  # the page's /Widths, read only if a code needs them
+            font_buf, font_flags = ctypes.create_string_buffer(256), ctypes.c_int()
             try:
-                objects = pdfium_objects.walk_page(raw_api, page, handles)
+                objects = pdfium_objects.walk_page(raw_api, page, handles, clips)
             except Exception:
                 handles, objects = {}, []
             # The thin horizontal rules - fraction bars among them - from the same walk, for
@@ -288,18 +291,31 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
             invisible_mode = getattr(raw_api, "FPDF_TEXTRENDERMODE_INVISIBLE", 3)
             count = raw_api.FPDFText_CountChars(tp)
             other = raw_api.FS_RECTF()
+            ox2, oy2 = ctypes.c_double(), ctypes.c_double()
 
-            def _shares_glyph(raw_api, tp, i, mine, count) -> bool:
-                """True when a neighbouring character has this one's loose box: a ligature.
+            def _shares_glyph(raw_api, tp, i, mine, mine_origin, count) -> bool:
+                """True when a neighbouring character has this one's loose box or its origin: a
+                ligature, one glyph that PDFium reports as two characters.
 
-                PDFium reports one "fi" glyph as two characters with the same box and origin
-                (measured: every shared box on two pages was also a shared origin, and the pairs
-                were fi and ff, plus the rotated arXiv watermark that the level-text test
-                already excludes)."""
+                Most share the box and the origin both (measured: every shared box on two pages
+                was also a shared origin, and the pairs were fi and ff, plus the rotated arXiv
+                watermark that the level-text test already excludes). Some share the origin
+                only, the ink divided between the two: cefac431's "firmware" has its f from 82.8
+                to 85.2 and its i from 85.2 to 87.6, both drawn at 82.7, and the advance of a
+                lone i, laid from that origin, ended the i before the f - a zero-width box 3pt
+                short of the r, which the word builder read as "fi rmware"."""
                 for j in (i - 1, i + 1):
                     if 0 <= j < count and raw_api.FPDFText_GetLooseCharBox(tp, j, other):
                         if abs(other.left - mine.left) < 1e-3 and abs(other.right - mine.right) < 1e-3:
                             return True
+                    # A blank PDFium makes up stands at the origin of the glyph after it, and is
+                    # no ligature piece: taking it for one kept "al." on its loose box and the
+                    # word gap before it closed (b2a4c508).
+                    if (0 <= j < count and mine_origin is not None
+                            and not raw_api.FPDFText_IsGenerated(tp, j)
+                            and raw_api.FPDFText_GetCharOrigin(tp, j, ox2, oy2)
+                            and abs(ox2.value - mine_origin[0]) < 1e-3 and abs(oy2.value - mine_origin[1]) < 1e-3):
+                        return True
                 return False
 
             for i in wanted:
@@ -330,9 +346,14 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     metric_obj = raw_api.FPDFText_GetTextObject(tp, i)
                     metric_font = raw_api.FPDFTextObj_GetFont(metric_obj) if metric_obj else None
                     asc, desc = ctypes.c_float(), ctypes.c_float()
-                    if (metric_font and raw_api.FPDFFont_GetAscent(metric_font, drawn, asc)
-                            and raw_api.FPDFFont_GetDescent(metric_font, drawn, desc)
-                            and 0.0 < asc.value <= 1.5 * drawn and -1.5 * drawn <= desc.value <= 0.0):
+                    # ... at the y scale of the text matrix, not the overall size: where a page
+                    # scales x and y differently (an OCR layer fitting words to their boxes) MuPDF's
+                    # top and bottom follow the y scale on 92% of 73,318 such characters, the
+                    # geometric mean on 17% (where the two coincide).
+                    ysize = float(raw_api.FPDFText_GetFontSize(tp, i)) * abs(matrix.d) or drawn
+                    if (metric_font and raw_api.FPDFFont_GetAscent(metric_font, ysize, asc)
+                            and raw_api.FPDFFont_GetDescent(metric_font, ysize, desc)
+                            and 0.0 < asc.value <= 1.5 * ysize and -1.5 * ysize <= desc.value <= 0.0):
                         box = (box[0], origin[1] - asc.value, box[2], origin[1] - desc.value)
                 # The right edge is the glyph's advance, which is what MuPDF reports. PDFium's loose
                 # box is not quite that: on a glyph whose ink overhangs its advance - the letter f
@@ -355,27 +376,71 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                 # computes from the code itself is right for these.
                 if (box is not None and origin is not None and not map_error
                         and raw_api.FPDFText_GetMatrix(tp, i, matrix)
-                        and abs(matrix.b) < 1e-6 and abs(matrix.c) < 1e-6
-                        and not _shares_glyph(raw_api, tp, i, loose, count)):
-                    text_obj = raw_api.FPDFText_GetTextObject(tp, i)
-                    font = raw_api.FPDFTextObj_GetFont(text_obj) if text_obj else None
-                    adv_w = ctypes.c_float()
-                    if font and code and raw_api.FPDFFont_GetGlyphWidth(font, code, raw_api.FPDFText_GetFontSize(tp, i), adv_w):
-                        advance = adv_w.value * (math.hypot(matrix.b, matrix.d) or 1.0)
-                        if advance > 0:
-                            box = (box[0], box[1], max(box[0], origin[0] + advance), box[3])
+                        and abs(matrix.b) < 1e-6
+                        and not _shares_glyph(raw_api, tp, i, loose, (ox.value, oy.value), count)):
+                    if abs(matrix.c) >= 1e-6:
+                        # Sheared text - an italic made by slanting an upright face - keeps the
+                        # loose box's right edge: MuPDF's box there ends where the slanted advance
+                        # box ends, which is what the loose box reports (123.5 both ways for the
+                        # "a" of "al." on b2a4c508), and the origin plus the advance would stop
+                        # 1.5pt short. Its left edge is the origin, as for every other glyph.
+                        box = (origin[0], box[1], max(origin[0], box[2]), box[3])
+                    else:
+                        text_obj = raw_api.FPDFText_GetTextObject(tp, i)
+                        font = raw_api.FPDFTextObj_GetFont(text_obj) if text_obj else None
+                        adv_w = ctypes.c_float()
+                        if font and code and raw_api.FPDFFont_GetGlyphWidth(font, code, raw_api.FPDFText_GetFontSize(tp, i), adv_w):
+                            # ... at the x scale of the matrix: MuPDF's right edge is the origin
+                            # plus the advance times the x scale on every one of 73,316 characters
+                            # whose matrix scales x and y differently (the y scale on 8%).
+                            advance = adv_w.value * (abs(matrix.a) or 1.0)
+                            if advance > 0:
+                                # The left edge is the origin as well: MuPDF's box runs from the
+                                # glyph's origin to its advance, and the origin agrees with MuPDF's
+                                # left edge on 99.7% of 316,152 matched characters against the
+                                # loose box's 99.2% (level text, 120 pages). Where they differ the
+                                # loose box starts a fraction left of the origin, and at 7pt that
+                                # fraction closed the word gap MuPDF reads between "et" and "al."
+                                # (b2a4c508, whose "et al." is sheared - see above).
+                                box = (origin[0], box[1], origin[0] + advance, box[3])
+                # A character PDFium could not map gets no advance from it either (the lookup
+                # goes by Unicode), and its loose box is the glyph's ink. MuPDF's box is the
+                # origin plus the advance in the PDF's own /Widths: cmex's brace pieces, 4pt of
+                # ink on an advance of 10, stood out of line with each other and a cases brace
+                # read as three braces (2503.09472); cmsy's mapstochar, advance 0, is a zero-width
+                # box to MuPDF and was a 1.3pt one here.
+                if (map_error and box is not None and origin is not None and drawn > 0
+                        and raw_api.FPDFText_GetMatrix(tp, i, matrix)
+                        and abs(matrix.b) < 1e-6 and abs(matrix.c) < 1e-6):
+                    if widths_tables is None:
+                        widths_tables = glyph_names.page_glyph_names(path, page_number) or {}
+                    if widths_tables and raw_api.FPDFText_GetFontInfo(tp, i, font_buf, 256, font_flags):
+                        w = glyph_names.advance_for(widths_tables, font_buf.value.decode("latin-1", "replace"), code)
+                        if w is not None:
+                            xsize = float(raw_api.FPDFText_GetFontSize(tp, i)) * abs(matrix.a) or drawn
+                            box = (origin[0], box[1], origin[0] + w * xsize / 1000.0, box[3])
                 color, alpha = 0, 1.0
                 if raw_api.FPDFText_GetFillColor(tp, i, fr, fg, fb, fa):
                     color = (fr.value << 16) | (fg.value << 8) | fb.value
                     alpha = fa.value / 255.0
                 obj = raw_api.FPDFText_GetTextObject(tp, i)
-                order, invisible = -1, False
+                order, invisible, clipped = -1, False, False
                 if obj:
-                    order = handles.get(ctypes.cast(obj, ctypes.c_void_p).value, -1)
+                    pointer = ctypes.cast(obj, ctypes.c_void_p).value
+                    order = handles.get(pointer, -1)
                     try:
                         invisible = raw_api.FPDFTextObj_GetTextRenderMode(obj) == invisible_mode
                     except Exception:
                         invisible = False
+                    # Text clipped away by the page is text no reader sees. A Word-made PDF clips
+                    # each paragraph to its box and a dot leader runs on past it: MuPDF's text
+                    # leaves the rest out (one dot of thirteen on fa18a15c), PDFium's text page
+                    # ignores clipping, and the leader reached into the next column. A character
+                    # whose ink lies wholly outside its text object's clip box is not delivered.
+                    clip = clips.get(pointer)
+                    seen = ink or box
+                    if clip is not None and seen is not None:
+                        clipped = not (seen[0] < clip[2] and seen[2] > clip[0] and seen[1] < clip[3] and seen[3] > clip[1])
                 out[i] = {
                     "bbox": box,
                     "ink": ink,
@@ -387,6 +452,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     "size": drawn,
                     "generated": raw_api.FPDFText_IsGenerated(tp, i) == 1,
                     "map_error": map_error,
+                    "clipped": clipped,
                     "code": code,
                     # the writing direction, as PDFium measures it: radians in the y-down page
                     # space, so (cos, sin) is MuPDF's direction vector (measured, see _line_dir)
@@ -472,19 +538,32 @@ def _drawn_size(raw_api, tp, index: int, matrix, scales: dict[int, float]) -> fl
     matrix, and 9.30 came back where MuPDF reads 6.97. Small type at 4/3 its real size glues its
     words together, because the word-gap rule is relative to size. Run 66 lost 13 tiny-text checks
     to it. The effective matrix reproduces MuPDF on both kinds of page and on an unscaled one.
+
+    The scale is the square root of the matrix's determinant, not the length of its y axis. An
+    OCR layer fits each word to its box by scaling x and y differently (`8.4 0 0 7.3 ... Tm`, or
+    a `Tz`), and on 73,333 such characters over 30 benchmark pages - the tiny-text family among
+    them - MuPDF's size is the geometric mean of the two scales every time, the y scale a fifth of
+    the time (when it happens to be the mean). The y scale alone read 8.40 where MuPDF reads 7.28
+    on 0091c5b2, and the rows of its table fused. For text turned or slanted the determinant is
+    the same measure: 6.97 for the slanted "et al." of b2a4c508, as MuPDF reports.
     """
     obj = raw_api.FPDFText_GetTextObject(tp, index)
     if not obj:
         return 0.0
     if raw_api.FPDFText_GetMatrix(tp, index, matrix):
-        scale = math.hypot(matrix.b, matrix.d) or 1.0
+        scale = _det_scale(matrix)
     else:
         key = ctypes.cast(obj, ctypes.c_void_p).value
         scale = scales.get(key)
         if scale is None:
-            scale = math.hypot(matrix.b, matrix.d) if raw_api.FPDFPageObj_GetMatrix(obj, matrix) else 1.0
+            scale = _det_scale(matrix) if raw_api.FPDFPageObj_GetMatrix(obj, matrix) else 1.0
             scales[key] = scale
     return float(raw_api.FPDFText_GetFontSize(tp, index)) * scale
+
+
+def _det_scale(matrix) -> float:
+    """The overall scale of a text matrix: the square root of its determinant's magnitude."""
+    return math.sqrt(abs(matrix.a * matrix.d - matrix.b * matrix.c)) or 1.0
 
 
 def _flip(x0: float, y0: float, x1: float, y1: float, x_off: float, y_top: float) -> tuple:
@@ -554,6 +633,8 @@ def _build(path: str, page_number: int) -> dict | None:
                     if not text:
                         continue
                     g = geom.get(ch.get("char_idx"))
+                    if (g or {}).get("clipped"):
+                        continue        # drawn outside its clip box: never on the page (see _geometry)
                     if text in ("\r", "\n") and (g or {}).get("generated"):
                         # PDFium's own line ends, not glyphs. They rode along as characters and
                         # were harmless until a Type 3 TeX page, where the raw-code recovery took
@@ -578,18 +659,23 @@ def _build(path: str, page_number: int) -> dict | None:
                             text = named
                     box = (g or {}).get("bbox")
                     if len(text) == 1 and unicodedata.category(text) == "Mn":
-                        # A combining mark - cmsy's negation slash - belongs with the character
-                        # before it, which is where MuPDF keeps it ("0̸" then "="); on its own box
-                        # it sat in the gap and attached to whatever followed, "0" then "̸=". It
+                        # A combining mark - cmsy's negation slash, cmmi's vector arrow, a hat -
                         # stays a character of its own (every stage downstream assumes one code
-                        # point per character) and takes a zero-width box at the previous
-                        # character's right edge, as the later characters of a ligature do, so no
-                        # gap opens before it and the real gap stays after it. The previous
-                        # character is usually in the *previous* span: the 0 is CMR, the slash CMSY.
+                        # point per character) and takes a zero-width box at its own origin, which
+                        # is where MuPDF boxes it (measured over the arXiv pages: at the origin
+                        # every time, and the origin is usually the previous glyph's end - "0̸"
+                        # then "="). Usually, not always: MnSymbol draws its tilde *before* the
+                        # letter it covers, at the letter's start, and a box snapped to the
+                        # previous glyph's end put it at the letter's end, where the maths stage
+                        # hung it on the symbol after (06329: \tilde{=} for \tilde{L}). On PDFium's
+                        # loose box it sat in the gap and attached to whatever followed.
                         prev = chars[-1] if chars else (spans[-1]["chars"][-1] if spans and spans[-1].get("chars") else None)
-                        if prev is not None and box is not None:
-                            px1, py0, py1 = prev["bbox"][2], box[1], box[3]
-                            g = dict(g or {}, bbox=(px1, py0, px1, py1), origin=(px1, (g or {}).get("origin", (px1, py1))[1]))
+                        anchor = ((g or {}).get("origin") or (None,))[0]
+                        if anchor is None and prev is not None:
+                            anchor = prev["bbox"][2]
+                        if anchor is not None and box is not None:
+                            py0, py1 = box[1], box[3]
+                            g = dict(g or {}, bbox=(anchor, py0, anchor, py1), origin=(anchor, (g or {}).get("origin", (anchor, py1))[1]))
                             box = g["bbox"]
                     if box is None:
                         b = ch.get("bbox") or [0.0, 0.0, 0.0, 0.0]

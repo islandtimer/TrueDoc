@@ -66,10 +66,18 @@ def _differences(path: str, page_number: int) -> dict[str, list[tuple[dict[int, 
                     else:
                         names[code] = str(item).lstrip("/")
                         code += 1
-            if not names:
-                continue
             widths = [float(w) for w in (f.get("/Widths") or [])]
             first = int(f.get("/FirstChar", 0) or 0)
+            if not names and not widths:
+                continue
+            # A Type 3 font's widths are in its own glyph space, which its /FontMatrix maps to
+            # text space; every other font's are thousandths of an em. Kept as thousandths
+            # either way, so a width reads the same whatever the font.
+            scale = 1.0
+            if str(f.get("/Subtype", "")) == "/Type3":
+                fm = [float(v) for v in (f.get("/FontMatrix") or [0.001, 0, 0, 0.001, 0, 0])]
+                scale = (abs(fm[0]) + abs(fm[1])) * 1000.0 if len(fm) >= 2 else 1.0
+                widths = [w * scale for w in widths]
             out[base].append((names, widths, first))
         except Exception:
             continue
@@ -97,13 +105,32 @@ def page_glyph_names(path: str, page_number: int) -> dict | None:
     return tables
 
 
+def advance_for(tables: dict | None, font: str, code: int) -> float | None:
+    """A glyph's advance from the PDF's own /Widths, in thousandths of an em, or None.
+
+    MuPDF's box for a character is its origin plus this advance. PDFium's is too, except for a
+    character it could not map to Unicode, whose advance it looks up by Unicode and so cannot
+    find: its loose box is then the glyph's ink, and cmex's brace pieces - 4pt of ink on an
+    advance of 10 - stood out of line with each other and a cases brace read as three braces.
+    """
+    if not tables or not font:
+        # A font with no name cannot be told from another with none: a TeX page set in seven
+        # Type 3 fonts, none with a /BaseFont, matched the first of them for every glyph.
+        return None
+    for _names, widths, first in tables.get(_SUBSET.sub("", font), []):
+        i = code - first
+        if 0 <= i < len(widths):
+            return widths[i]
+    return None
+
+
 def text_for(tables: dict | None, font: str, code: int, advance_per_em: float | None = None) -> str | None:
     """The text a glyph's name gives, or None when the page has no name for it.
 
     `advance_per_em` is the character's advance in thousandths of an em, used to choose
     between resources of the same name that both define the code.
     """
-    if not tables:
+    if not tables or not font:
         return None
     from fontTools import agl
 

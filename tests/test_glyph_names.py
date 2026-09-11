@@ -120,3 +120,35 @@ def test_the_reader_reads_the_named_glyphs_as_their_letters():
         assert h["bbox"][0] == h["bbox"][2] == t["bbox"][2], (t["bbox"], h["bbox"])
     finally:
         os.unlink(path)
+
+
+def test_a_type3_fonts_widths_are_scaled_by_its_font_matrix():
+    """A Type 3 font's /Widths are in its own glyph space, mapped to text space by /FontMatrix;
+    every other font's are thousandths of an em. Read as thousandths either way: a width of 60
+    under a matrix of 0.01 is an advance of 0.6 em, so 600."""
+    t3 = (b"<< /Type /Font /Subtype /Type3 /Name /T9 /BaseFont /T9 /FontMatrix [0.01 0 0 0.01 0 0] "
+          b"/FontBBox [0 0 100 100] /CharProcs << >> /Encoding << /Type /Encoding /Differences [97 /a /m] >> "
+          b"/FirstChar 97 /Widths [50 60] >>")
+    path = _with(_pdf([t3], b"BT /F1 1 Tf 10 100 Td (am) Tj ET\n"))
+    try:
+        tables = G.page_glyph_names(path, 1)
+        assert G.advance_for(tables, "T9", 97) == pytest.approx(500.0)
+        assert G.advance_for(tables, "T9", 98) == pytest.approx(600.0)
+    finally:
+        os.unlink(path)
+
+
+def test_a_font_with_no_name_answers_nothing():
+    """A TeX page set in seven Type 3 fonts, none with a /BaseFont, matched the first of them for
+    every glyph, and a 'm' 8pt wide was boxed 0.007pt wide: PDFium names the font "" and so did
+    the table. No name, no answer - the glyph keeps the box PDFium gives it (09f90a8f, seven
+    checks over three pages)."""
+    t3 = (b"<< /Type /Font /Subtype /Type3 /FontMatrix [1 0 0 -1 0 0] /FontBBox [0 0 10 10] /CharProcs << >> "
+          b"/Encoding << /Type /Encoding /Differences [109 /m] >> /FirstChar 109 /Widths [60] >>")
+    path = _with(_pdf([t3], b"BT /F1 1 Tf 10 100 Td (m) Tj ET\n"))
+    try:
+        tables = G.page_glyph_names(path, 1)
+        assert G.advance_for(tables, "", 109) is None
+        assert G.text_for(tables, "", 109) is None
+    finally:
+        os.unlink(path)

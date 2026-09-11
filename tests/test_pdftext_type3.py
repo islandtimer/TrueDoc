@@ -110,3 +110,27 @@ def test_the_text_layer_sizes_type3_text_alike_under_both_readers():
         assert abs(sizes["pdfium"][0] - sizes["mupdf"][0]) <= 0.1 * sizes["mupdf"][0], sizes
     finally:
         os.unlink(path)
+
+
+_TEX_TYPE3_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs", "multi_column",
+                               "09f90a8fad0997f7cf454cbcbe79cab3bc0f_page_7_pg1.pdf")
+
+
+@pytest.mark.skipif(not os.path.exists(_TEX_TYPE3_PAGE), reason="benchmark page not present")
+def test_a_tex_page_in_unnamed_type3_fonts_keeps_its_words_whole():
+    """Seven Type 3 fonts with no /BaseFont: the /Widths advance rule for unmapped glyphs took the
+    first font's table for every glyph and, with the drawn size PDFium reports for Type 3 text
+    (0.12), boxed every letter 0.007pt wide - the word builder then read "m ethods" and "w hen"
+    and the page lost every check. A font with no name gets no advance from the tables."""
+    raw = A.build(_TEX_TYPE3_PAGE, 1)
+    assert raw is not None
+    from truedoc.extract.textlayer import extract_page
+    import pymupdf
+    doc = pymupdf.open(_TEX_TYPE3_PAGE)
+    try:
+        page = extract_page(doc[0], 1)
+        words = [w.text for ln in page.lines for w in ln.words]
+    finally:
+        doc.close()
+    assert "methods" in words and "Quantitatively," in words, words[:40]
+    assert "m" not in words[:200] or "ethods" not in words, [w for w in words if w in ("m", "ethods", "w", "hen")]
