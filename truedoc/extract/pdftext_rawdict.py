@@ -629,6 +629,81 @@ def build(path: str, page_number: int) -> dict | None:
     return built
 
 
+# The free-standing accents the text layer composes with the letter beside them: the same table as
+# `textlayer._SPACING_ACCENTS`, kept here because that module imports this one.
+_SPACING_ACCENTS = {"ˆ": "̂", "˜": "̃", "´": "́", "¨": "̈", "¸": "̧", "˚": "̊",
+                    "¯": "̄", "ˇ": "̌", "˘": "̆", "˙": "̇", "˝": "̋"}
+
+
+def _rehome_accents(grouped: list, geom: dict) -> None:
+    """Put each free-standing accent PDFium strands away from its letter back just before it.
+
+    TeX's accent command draws an accent as a glyph of its own. MuPDF orders it just before the
+    letter it covers ("Radioˇzurn´al"), and the text layer composes the pair
+    (`textlayer._compose_spacing_accents` joins an accent to the letter just before or just after
+    it in its line). PDFium usually puts the accent just after its letter, which the composer
+    joins too; but 153 times over the benchmark it emits it somewhere else - after the next word,
+    or at the end of the line - and on 031a888e "Český" and "Radiožurnál" never formed, while the
+    line splitter cut each stray accent off as a backwards jump. Measured before it was written.
+
+    An accent moves only on the composer's own terms - the same font as the letter, its centre
+    over the letter, the letter's baseline level with the accent's or up to 0.6 em below it (an
+    accent over a capital is raised), and a precomposed form - so every accent moved is one the
+    composer then joins. One already next to its letter in the line stays where it is.
+    """
+    flat = []
+    for bi, block in enumerate(grouped):
+        for li, line in enumerate(block.get("lines") or []):
+            for span in line.get("spans") or []:
+                font = _SUBSET_TAG.sub("", str((span.get("font") or {}).get("name") or ""))
+                chars = span.get("chars") or []
+                for ch in chars:
+                    flat.append(((bi, li), chars, ch, font))
+    accents = [r for r in flat if str(r[2].get("char", "")) in _SPACING_ACCENTS]
+    if not accents:
+        return
+    position = {id(r[2]): k for k, r in enumerate(flat)}
+    letters: dict[str, list] = {}
+    for key, chars, ch, font in flat:
+        t = str(ch.get("char", ""))
+        g = geom.get(ch.get("char_idx")) or {}
+        if len(t) == 1 and t.isalpha() and g.get("bbox") and g.get("origin"):
+            letters.setdefault(font, []).append((key, chars, ch, g))
+    taken: set[int] = set()
+    for key, chars, ch, font in accents:
+        g = geom.get(ch.get("char_idx")) or {}
+        if g.get("generated") or not g.get("bbox") or not g.get("origin"):
+            continue
+        ax0, ay0, ax1, ay1 = g["bbox"]
+        cx, base = (ax0 + ax1) / 2.0, g["origin"][1]
+        size = max(float(g.get("size") or 0.0), ay1 - ay0, 1.0)
+        comb = _SPACING_ACCENTS[str(ch.get("char"))]
+        best = None
+        for key2, chars2, b, gb in letters.get(font, ()):
+            if id(b) in taken:
+                continue
+            bx0, _by0, bx1, _by1 = gb["bbox"]
+            tol = 0.15 * max(float(gb.get("size") or 0.0), 1.0)
+            if not (bx0 - tol <= cx <= bx1 + tol):
+                continue
+            dy = gb["origin"][1] - base
+            if not (-0.15 * size <= dy <= 0.6 * size):
+                continue
+            if len(unicodedata.normalize("NFC", str(b.get("char")) + comb)) != 1:
+                continue
+            score = abs(dy) + abs((bx0 + bx1) / 2.0 - cx)
+            if best is None or score < best[0]:
+                best = (score, key2, chars2, b)
+        if best is None:
+            continue
+        _, key2, chars2, b = best
+        taken.add(id(b))
+        if key2 == key and abs(position[id(ch)] - position[id(b)]) == 1:
+            continue          # beside its letter already: the composer joins them where they stand
+        del chars[next(i for i, x in enumerate(chars) if x is ch)]
+        chars2.insert(next(i for i, x in enumerate(chars2) if x is b), ch)
+
+
 def _build(path: str, page_number: int) -> dict | None:
     page = _order(path, page_number)
     if page is None:
@@ -648,6 +723,7 @@ def _build(path: str, page_number: int) -> dict | None:
         geom, bars = _geometry(path, page_number, wanted) if wanted else ({}, [])
     except Exception:
         return None
+    _rehome_accents(grouped, geom)
 
     runs = []       # (block, direction, spans) per pdftext line, in order, before the joins and the gap cuts
     for block_index, block in enumerate(grouped):

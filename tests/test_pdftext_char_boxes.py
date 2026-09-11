@@ -349,3 +349,52 @@ def test_font_names_carry_no_subset_tag_as_mupdf_names_them():
     finally:
         doc.close()
     assert ours == theirs, (ours, theirs)
+
+
+_ACCENT_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs", "multi_column",
+                            "031a888e402c82517f213222ae97147dd7dc_page_3_pg1.pdf")
+
+
+def _accented_words(reader: str) -> set:
+    """The words holding a letter beyond ASCII, read through one library or the other."""
+    from truedoc.extract.textlayer import extract_page
+    keys = ("TRUEDOC_READER", "TRUEDOC_RENDERER", "TRUEDOC_OBJECTS")
+    was = {k: os.environ.get(k) for k in keys}
+    os.environ.update({"TRUEDOC_READER": "pdftext" if reader == "pdfium" else "mupdf",
+                       "TRUEDOC_RENDERER": reader, "TRUEDOC_OBJECTS": reader})
+    doc = pymupdf.open(_ACCENT_PAGE)
+    try:
+        page = extract_page(doc[0], 1)
+        words = {w.text.strip(".,;:()") for ln in page.lines for w in ln.words}
+    finally:
+        render.close_documents()
+        doc.close()
+        for k, v in was.items():
+            os.environ.pop(k, None)
+            if v is not None:
+                os.environ[k] = v
+    return words
+
+
+def _accent_words(words: set) -> tuple[set, set]:
+    """(words holding an accented Latin letter - one with a canonical decomposition, so not a
+    Greek letter of the maths - , words holding a spacing accent left on its own)."""
+    import unicodedata
+    accented = {w for w in words if any(ch.isalpha() and unicodedata.decomposition(ch) for ch in w)}
+    stranded = {w for w in words if any(ch in "ˆ˜´¨¸˚¯ˇ˘˙˝" for ch in w)}
+    return accented, stranded
+
+
+@pytest.mark.skipif(not os.path.exists(_ACCENT_PAGE), reason="benchmark page not present")
+def test_a_loose_accent_pdfium_strands_goes_back_before_its_letter():
+    """TeX's accent command draws an accent as a glyph of its own. MuPDF orders it just before
+    the letter it covers ("Radioˇzurn´al") and the text layer composes the pair; PDFium emits
+    it several characters later - after "Radio", or at the end of the line - so the line
+    splitter cut it off as a line of its own and "Radiožurnál" and "Český" never formed
+    (031a888e, one check; 153 such accents over the benchmark). The accented words both
+    readers produce on that page are the same words."""
+    ours, ours_left = _accent_words(_accented_words("pdfium"))
+    theirs, theirs_left = _accent_words(_accented_words("mupdf"))
+    assert {"Radiožurnál", "Český"} <= theirs, theirs
+    assert ours == theirs, (sorted(ours - theirs), sorted(theirs - ours))
+    assert ours_left <= theirs_left, sorted(ours_left - theirs_left)
