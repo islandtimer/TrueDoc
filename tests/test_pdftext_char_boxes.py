@@ -323,3 +323,29 @@ def test_a_crop_box_wider_than_the_media_box_measures_from_their_intersection():
     finally:
         render.close_documents()
         os.unlink(path)
+
+
+_SUBSET_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs", "tables",
+                            "6767787c7d1b64b777ddab83e3e88569ae24_pg1.pdf")
+
+
+@pytest.mark.skipif(not os.path.exists(_SUBSET_PAGE), reason="benchmark page not present")
+def test_font_names_carry_no_subset_tag_as_mupdf_names_them():
+    """PDFium reports an embedded subset's tag in the font's name ("ABCDEE+Calibri", 214
+    characters of 6767787c) beside the plain "Calibri" of the rest; MuPDF folds the tag away
+    and sees one font. Two fonts where MuPDF sees one turned two side-by-side course tables
+    into a single six-column one downstream (one check). The names the reader reports are the
+    set MuPDF reports."""
+    raw = A.build(_SUBSET_PAGE, 1)
+    assert raw is not None
+    # spans that hold text: a span of made-up blanks has no font of its own in either reader
+    ours = {sp["font"] for b in raw["blocks"] for ln in b["lines"] for sp in ln["spans"]
+            if any(not c["c"].isspace() for c in sp["chars"])}
+    assert not any("+" in name for name in ours), ours
+    doc = pymupdf.open(_SUBSET_PAGE)
+    try:
+        theirs = {sp["font"] for b in doc[0].get_text("rawdict")["blocks"] for ln in b.get("lines", []) for sp in ln["spans"]
+                  if any(not c["c"].isspace() for c in sp["chars"])}
+    finally:
+        doc.close()
+    assert ours == theirs, (ours, theirs)

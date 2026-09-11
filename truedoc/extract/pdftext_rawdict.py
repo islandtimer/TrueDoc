@@ -70,6 +70,7 @@ def _is_blank(c: dict) -> bool:
 _DESCENDER = 0.21       # last-resort baseline estimate, used only where PDFium will not give an origin
 _TEX_BOLD = re.compile(r"^(?:[a-z]{6}\+)?(?:cmb|cmbx|cmbsy|cmmib|cmssbx|sfbx|sfbi|eufb)\d")   # TeX's bold faces
 _LINE_GAP = 1.5         # a gap this many times the font size ends a line (see _split_at_gaps)
+_SUBSET_TAG = re.compile(r"^[A-Z]{6}\+")   # "ABCDEE+Calibri": the subset tag MuPDF folds away
 _BASELINE_STEP = 1.0    # a baseline this many ems from the last glyph's starts a line (a drop cap)
 _OBJECT_GAP = 1.0       # ... and this many where the text object changes with it (measured: 0.5, 0.75
                         # and 1.0 each gain six table checks on the changed pages; 1.0 costs the fewest
@@ -655,7 +656,10 @@ def _build(path: str, page_number: int) -> dict | None:
             last_added: dict | None = None      # the last character kept, across spans
             for span in line.get("spans") or []:
                 font = span.get("font") or {}
-                font_name = str(font.get("name") or "")
+                # Without the subset tag, as MuPDF names it: PDFium reports "ABCDEE+Calibri"
+                # beside "Calibri" on 6767787c, and the two fonts where MuPDF sees one turned
+                # two side-by-side course tables into a single six-column one downstream.
+                font_name = _SUBSET_TAG.sub("", str(font.get("name") or ""))
                 size = float(font.get("size") or 0.0)
                 chars = []
                 drawn_sizes: list[float] = []
@@ -764,7 +768,7 @@ def _build(path: str, page_number: int) -> dict | None:
                 # in from its neighbours below.
                 for run, drawn in _size_runs(chars, drawn_sizes):
                     spans.append({
-                        "font": str(font.get("name") or ""),
+                        "font": font_name,
                         "size": drawn,
                         "_fallback": size,
                         "flags": _mupdf_flags(font, bool(span.get("superscript"))),
