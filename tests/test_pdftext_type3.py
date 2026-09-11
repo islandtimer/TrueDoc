@@ -97,6 +97,9 @@ def test_the_text_layer_sizes_type3_text_alike_under_both_readers():
                 os.environ.pop(k, None)
             if reader == "pdfium":
                 os.environ.update({"TRUEDOC_READER": "pdftext", "TRUEDOC_RENDERER": "pdfium", "TRUEDOC_OBJECTS": "pdfium"})
+            else:
+                # PDFium is the default since run 71 (D023); MuPDF has to be asked for by name.
+                os.environ.update({"TRUEDOC_READER": "mupdf", "TRUEDOC_RENDERER": "mupdf", "TRUEDOC_OBJECTS": "mupdf"})
             doc = pymupdf.open(path)
             try:
                 page = extract_page(doc[0], 1)

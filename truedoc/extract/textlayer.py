@@ -507,8 +507,9 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
     flags |= pymupdf.TEXT_MEDIABOX_CLIP
     raw = None
     if pdftext_rawdict.enabled():
-        # M18, D007: read through PDFium instead of AGPL-licensed MuPDF. Off unless
-        # TRUEDOC_READER=pdftext is set, and it falls back rather than failing a conversion.
+        # M18, D007, D023: read through PDFium instead of AGPL-licensed MuPDF. The default since
+        # run 71 (TRUEDOC_READER=mupdf reads the old way), and it falls back rather than failing
+        # a conversion.
         try:
             raw = pdftext_rawdict.build(pdf_page.parent.name, number)
         except Exception:

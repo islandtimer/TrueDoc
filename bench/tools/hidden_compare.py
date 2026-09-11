@@ -39,6 +39,9 @@ def _hidden(path: str, pdfium: bool) -> tuple[set, bool] | None:
         os.environ.pop(k, None)
     if pdfium:
         os.environ.update(SWITCHES)
+    else:
+        # PDFium is the default since run 71 (D023): MuPDF has to be asked for by name.
+        os.environ.update({k: "mupdf" for k in SWITCHES})
     try:
         doc = pymupdf.open(path)
         try:

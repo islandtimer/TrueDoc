@@ -141,13 +141,16 @@ def test_things_come_back_in_the_order_they_were_painted(drawn):
     assert objs[0].stroke is not None, "the stroked line is drawn first"
 
 
-def test_the_object_reader_is_off_unless_asked_for():
+def test_the_object_reader_is_on_unless_asked_off():
+    """The default since run 71 (D023); `TRUEDOC_OBJECTS=mupdf` reads drawings the old way."""
     from truedoc.extract import pdfium_objects
     was = os.environ.pop("TRUEDOC_OBJECTS", None)
     try:
-        assert not pdfium_objects.enabled()
+        assert pdfium_objects.enabled()
         os.environ["TRUEDOC_OBJECTS"] = "pdfium"
         assert pdfium_objects.enabled()
+        os.environ["TRUEDOC_OBJECTS"] = "mupdf"
+        assert not pdfium_objects.enabled()
     finally:
         os.environ.pop("TRUEDOC_OBJECTS", None)
         if was is not None:

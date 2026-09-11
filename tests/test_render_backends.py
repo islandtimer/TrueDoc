@@ -56,7 +56,7 @@ def _both(rotate: int, scale: float = 1.0, clip=None, grey: bool = False):
     was = os.environ.get("TRUEDOC_RENDERER")
     try:
         page = doc[0]
-        os.environ.pop("TRUEDOC_RENDERER", None)
+        os.environ["TRUEDOC_RENDERER"] = "mupdf"
         a = np.asarray(render.render_image(page, scale, clip, grey))
         os.environ["TRUEDOC_RENDERER"] = "pdfium"
         render.close_documents()
@@ -128,12 +128,15 @@ def test_a_scaled_rendering_agrees():
     assert _ink_box(a) == pytest.approx(_ink_box(b), abs=3)
 
 
-def test_the_renderer_is_off_unless_asked_for():
+def test_the_renderer_is_on_unless_asked_off():
+    """The default since run 71 (D023); `TRUEDOC_RENDERER=mupdf` draws with MuPDF instead."""
     was = os.environ.pop("TRUEDOC_RENDERER", None)
     try:
-        assert not render.enabled()
+        assert render.enabled()
         os.environ["TRUEDOC_RENDERER"] = "pdfium"
         assert render.enabled()
+        os.environ["TRUEDOC_RENDERER"] = "mupdf"
+        assert not render.enabled()
     finally:
         os.environ.pop("TRUEDOC_RENDERER", None)
         if was is not None:

@@ -193,13 +193,17 @@ def test_other_control_codes_keep_their_shape():
 
 # --- the switch -----------------------------------------------------------------------
 
-def test_the_reader_is_off_unless_asked_for():
+def test_the_reader_is_on_unless_asked_off():
+    """The default since run 71 (D023): 84.0 with every PDFium switch on, level with the MuPDF
+    run overall and above it on the held-out fifth. `TRUEDOC_READER=mupdf` reads the old way."""
     import os
     was = os.environ.pop("TRUEDOC_READER", None)
     try:
-        assert not A.enabled()
+        assert A.enabled()
         os.environ["TRUEDOC_READER"] = "pdftext"
         assert A.enabled()
+        os.environ["TRUEDOC_READER"] = "mupdf"
+        assert not A.enabled()
     finally:
         os.environ.pop("TRUEDOC_READER", None)
         if was is not None:

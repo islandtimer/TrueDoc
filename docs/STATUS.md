@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-10, 15:10 (after run 65: 84.0 with the vision switch on, held-out 80.9, identical to run 64; without a model run 54, 67.4; the icon question measured and closed; getting off PyMuPDF - text 97/128 on the quick gate against MuPDF's 100, page rendering and the drawing reader 100/128 with no difference at all, the table finder built but **not shipped** at 830/1022 against 848 on its own category; every switch off by default and the shipped path unchanged at 100/128; a rotated-page clip bug found and fixed in the shipped product; see D022 and `docs/ARCHITECTURE.md`)_
+_Last updated: 2026-09-11, 15:05 (after run 71: 84.0 with every PDFium switch on, held-out 81.1 - the best yet - and tuned-on 81.9; level with the MuPDF run's 84.0 and nine checks above it; the PDFium readers are now the default, D023, and MuPDF is reachable by name for measurement only; without a model the tables category reads 850 against MuPDF's 848, multi-column 678 against 678, tiny text 364 against 361; run 54 without any model was 67.4; the icon question measured and closed)._
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -79,6 +79,7 @@ _Last updated: 2026-09-10, 15:10 (after run 65: 84.0 with the vision switch on, 
 | TrueDoc run 68 (every PDFium switch on, the night's twelve reader and table fixes; not shipped), 11 Sept 07:37 | 83.6 (CI 82.7-84.6; held-out 80.3; against run 65: 51 won, 77 lost - arXiv -1 from -78, tables -15 from -69, multi-column -9 from -25; 0.4 short of the MuPDF run overall, 0.6 on the held-out fifth) |
 | TrueDoc run 69 (every PDFium switch on, run 68's fixes plus fractions, whitespace codes, glyph names and the text-object cut; not shipped yet), 11 Sept 09:38 | 83.9 (CI 83.0-84.8; **held-out 80.9, level with the MuPDF run on five more checks**; against run 65: 51 won, 57 lost - arXiv +3, tables -7, multi-column -1; 0.1 short overall) |
 | TrueDoc run 70 (every PDFium switch on, font-metric character boxes, shaded cells as rules; not shipped yet), 11 Sept 11:01 | 83.7 (CI 82.8-84.6; **held-out 81.0, above the MuPDF run's 80.9**; against run 69: 14 won, 26 lost, thirteen of them on two pages the new shaded-cell rule turned into wrong tables - fixed for run 71) |
+| TrueDoc run 71 (every PDFium switch on; the table finder and the reader corrected against whole benchmark categories), 11 Sept 14:43 | 84.0 (CI 83.2-84.9; **held-out 81.1, the best yet; tuned-on 81.9**; against the MuPDF baseline run 65: 53 won, 44 lost, +9; against run 70: 30 won, 3 lost). The PDFium path is level with MuPDF's overall and above it on the held-out fifth, and becomes the default (D023). |
 | GPU session 4 (experiment, not a TrueDoc run): the densest pages read a band at a time, 8 Sept 20:52 | 84.2 (CI 83.3-85.1; eleven net checks where 3.0 points were projected; held-out unchanged at 80.9, so none of it generalised; `docs/GPU_PLAN.md` has the breakdown) |
 
 Note on run 1: about 6 points of it were an accident. Pages we could not read at all were written as a file holding one blank line, and the marking script treats a one-character answer as matching any phrase. That is fixed; every number since is honest.
@@ -120,16 +121,21 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## What is being worked on right now
 
-**10 September: getting off PyMuPDF's licence (M18).** Four of the six stages that read a PDF now
-have a PDFium alternative behind a switch, all off by default, and **your shipped product is
-unchanged throughout - the quick gate reads 100 of 128 exactly as before.**
+**11 September: off PyMuPDF's licence (M18, D023).** Every stage that reads a PDF now goes through
+PDFium by default, and **the product scores what it scored on MuPDF: run 71 reads 84.0 with every
+switch on, level with the MuPDF run's 84.0, and above it on the fifth of the pages never tuned on
+(81.1 against 80.9).** MuPDF is still installed and reachable by name (`TRUEDOC_READER=mupdf` and the
+two like it) so that every future change can be measured against it, but no page is read through it.
 
-| what moved | switch | where it stands |
+| what moved | switch | where it stands (no model, whole category, against MuPDF) |
 |---|---|---|
-| Characters and fonts | `TRUEDOC_READER=pdftext` | 97 of 128 against PyMuPDF's 100 |
-| Turning pages into pictures | `TRUEDOC_RENDERER=pdfium` | 100 of 128 - no difference at all |
-| Drawings and picture positions | `TRUEDOC_OBJECTS=pdfium` | 100 of 128 - no difference at all |
-| Finding ruled tables | (same switch) | **not shipped**: 830 of 1022 against 848 |
+| Characters and fonts | `TRUEDOC_READER=pdftext` (default) | tiny text 364 against 361 of 442; quick gate 100 of 128 |
+| Turning pages into pictures | `TRUEDOC_RENDERER=pdfium` (default) | 100 of 128 - no difference at all |
+| Drawings and picture positions | `TRUEDOC_OBJECTS=pdfium` (default) | multi-column 678 against 678 of 884 |
+| Finding ruled tables | (same switch) | tables 850 against 848 of 1,022 (was 830 when first built) |
+
+What is left of M18 is housekeeping, not reading: the document handle, two geometry types and a
+rotation call still come from the PyMuPDF package, so it cannot be uninstalled yet.
 
 Three things worth knowing:
 

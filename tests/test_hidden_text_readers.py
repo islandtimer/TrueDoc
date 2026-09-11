@@ -65,6 +65,9 @@ def _reasons(pdfium: bool) -> tuple[dict, list]:
     if pdfium:
         os.environ.update({"TRUEDOC_READER": "pdftext", "TRUEDOC_RENDERER": "pdfium",
                            "TRUEDOC_OBJECTS": "pdfium"})
+    else:
+        # PDFium is the default since run 71 (D023); MuPDF has to be asked for by name.
+        os.environ.update({k: "mupdf" for k in _SWITCHES})
     fd, path = tempfile.mkstemp(suffix=".pdf")
     with os.fdopen(fd, "wb") as fh:
         fh.write(_pdf())

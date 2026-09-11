@@ -39,9 +39,9 @@ PyMuPDF's 0x2 is italic. `_mupdf_flags` maps between them, and takes bold from t
 * Reading order can differ where two engines group a page differently - about 70 characters of
   1,141 on the rotated timetable, all of them present in both, ordered differently.
 
-Switched on with the environment variable `TRUEDOC_READER=pdftext`, and off by default. That is
-deliberately a blunt switch for an experiment rather than a settled option: the question it exists
-to answer is what the benchmark score does, and only a scored run can answer it.
+The default reader since run 71 (D023): 84.0 on olmOCR-bench with every PDFium switch on,
+level with the MuPDF run's 84.0 and above it on the held-out fifth (81.1 against 80.9), nine
+checks up over 1,403 pages. `TRUEDOC_READER=mupdf` reads through MuPDF instead, for measurement.
 """
 from __future__ import annotations
 
@@ -82,7 +82,8 @@ _CACHE_MAX = 4
 
 
 def enabled() -> bool:
-    return os.environ.get("TRUEDOC_READER", "").strip().lower() == "pdftext"
+    """On by default since run 71 (D023); `TRUEDOC_READER=mupdf` reads through MuPDF instead."""
+    return os.environ.get("TRUEDOC_READER", "pdftext").strip().lower() not in ("mupdf", "off", "0", "")
 
 
 def available() -> bool:

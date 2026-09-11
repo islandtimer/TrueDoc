@@ -127,7 +127,7 @@ the dominant script, so a bilingual page (a Korean paper with an English title) 
 sides and its mojibake layer lands in "low support" rather than "unverified" - still flagged, still
 never acted on, but the reason given is wrong.
 
-## Open: PyMuPDF's licence against D007 (found 2026-09-07, owner's decision pending)
+## Closed by D023: PyMuPDF's licence against D007 (found 2026-09-07; closed 2026-09-11)
 
 PyMuPDF, which reads every text layer TrueDoc uses, is dual-licensed: GNU AGPL 3.0 or a commercial licence from Artifex (the installed package's metadata says so; Artifex's licensing page, read 7 September: a server-based application or service cannot be deployed without disclosing the application's full source under the AGPL; prices on request, per copy with a quarterly minimum). D007 excludes AGPL components from the product path. The choices are a commercial licence or moving the text-layer stage to a permissive reader. Evidence, 8 September: no leaderboard tool uses PyMuPDF; olmOCR, Marker, Docling and MinerU all read PDFs through PDFium (pypdfium2, pdftext, docling-parse), and MinerU moved off PyMuPDF. Agreed with the owner: decide after a measured census (PyMuPDF against PDFium on every benchmark page, the formula stage's special cases first) and, if the census is clean, a trial run with a PDFium extractor; both after GPU session 3. **Census done 8 September (`bench/tools/engine_census.py`): the characters agree on all but 16 pages once the binding's UTF-16 halves are combined; PDFium reads whole columns PyMuPDF silently drops on a handful of pages; PyMuPDF decodes Type 3 fonts PDFium does not (16 pages) and reports raw codes for unmapped glyphs where PDFium gives U+FFFD; PDFium is 2.4 times faster. Verdict: a PDFium extractor is viable with two bounded gaps; step 2 (the extractor, a full run) is the next decision for the owner.** **Step 2 sized 8 September (discussed with the owner that afternoon):** the swap is worth at most +0.30 points (53 pages where PDFium reads text PyMuPDF drops; 16 of them fail checks today, 28 checks in all, and most of that "extra text" is the binding reporting two-part characters as two rather than text genuinely dropped) against at most -0.38 (the 48 checks that pass today on the 16 Type 3 pages), plus an unmeasured risk to the maths glyph outlines. It is a licence job, not a score job, so the recommended order is after GPU session 4 (worth about 3 points), unless the rental is more than a couple of days away, in which case step 2 is the best use of the wait because it needs no rental. The work itself: characters and boxes, page rendering, and the vector drawings rebuilt from raw path segments through pypdfium2's low-level bindings (every symbol needed is present in 5.13), both readers behind one switch. Buying Artifex's commercial licence removes the need for it entirely. Nothing else in the product path is affected.
 
@@ -162,3 +162,39 @@ _Corollary, learned the same day: before recording a component as the hard part 
 wrote it. PyMuPDF's `find_tables` is a port of pdfplumber's, MIT-licensed, and pdfplumber was already
 installed here. The item flagged as the blocker was the one with a permissive original sitting in the
 virtual environment._
+
+## D023 - The PDFium readers are the default; PyMuPDF leaves the product path (2026-09-11)
+
+The four stages that read a page - text, rendering, drawings and images, ruled tables - go through
+PDFium (pypdfium2, Apache-2.0/BSD) and pdftext (Apache-2.0) by default from run 71 on. MuPDF stays
+reachable for measurement only: `TRUEDOC_READER=mupdf`, `TRUEDOC_RENDERER=mupdf`,
+`TRUEDOC_OBJECTS=mupdf`.
+
+**Why now.** The condition set when the swap began was a run holding about 84.0 with the held-out
+fifth level. Run 71, every switch on: 84.0 (CI 83.2-84.9), held-out 81.1 against the MuPDF run's 80.9,
+tuned-on 81.9 against 81.9; nine checks up over the 1,403 pages of run 65 (53 won, 44 lost: arXiv +6,
+tables +3, tiny text +1, multi-column level, headers -1). Without a model, scored category by category
+against the MuPDF path on the same code: tables 850 against 848 of 1,022, multi-column 678 against 678
+of 884, tiny text 364 against 361 of 442, the arXiv pages that ever differed 627 against 622 of 738.
+
+**How it got there, and the rule that made it work (D022).** Every difference was traced to a
+quantity both libraries describe and measured before a line was written: character boxes (origins to
+0.000pt; the font's ascent and descent; the origin as the left edge on 99.7% of 316,152 characters;
+the size as the root of the text matrix's determinant on 73,333 non-uniformly scaled characters), the
+segments a stroked path draws (PDFium's bounds inflate them by the line width), what PyMuPDF's strict
+table strategy counts (stroked segments and thin fills, never a wide fill), and the PDF's own tables
+where PDFium has none to give (glyph names and widths from /Differences and /Widths, Type 3 widths
+through the font matrix). Every rule written without such a quantity - a rule where two fills meet, a
+frame around every cluster of rules, an advance from a font with no name - invented tables or lost
+words somewhere in the population, and was found only by scoring whole categories.
+
+**What is still PyMuPDF's.** The document handle and `Page` objects, `pymupdf.Rect`/`Matrix` used as
+plain geometry types (about 27 sites), `set_rotation` (2 sites), and the MuPDF path itself, kept for
+measurement. Removing the dependency altogether is the remaining M18 work; the product path no longer
+reads a page through it.
+
+**Known losses against the MuPDF path, all small and all traced** (`docs/PROGRESS_LOG.md`, 11 Sept):
+a Type 3 page with unnamed fonts that PDFium cannot map (it falls back to OCR, one check); a 44pt drop
+cap whose column line our line join welds to the next column (one check); three table singles; three
+arXiv pages (matrices in brackets, a cases brace read as three pieces, tilde accents) worth seven
+checks the MuPDF path also loses in part.

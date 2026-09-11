@@ -68,15 +68,20 @@ OKF markdown
 ## Reading the page without PyMuPDF (M18, D007, D022) - read this before touching geometry
 
 PyMuPDF is AGPL or a paid Artifex licence, and D007 keeps AGPL out of the product path, so each
-stage that reads a PDF has a PDFium twin behind an environment switch. **All three are off by
-default and the shipped path is unchanged.** Each was proved against a quantity the two libraries
-must agree on before it was wired, which is what D022 asks for; the score is the second check.
+stage that reads a PDF goes through PDFium. **Since run 71 the PDFium readers are the default
+(D023)**; MuPDF stays reachable by name for measurement. Each stage was proved against a quantity
+the two libraries must agree on before it was wired, which is what D022 asks for; the score is the
+second check - run 71 with every switch on reads 84.0, level with the MuPDF run and above it on the
+held-out fifth (81.1 against 80.9).
 
-| switch | what it moves | module | measured |
+| switch (default first) | what it moves | module | measured, no model, whole category |
 |---|---|---|---|
-| `TRUEDOC_READER=pdftext` | characters, boxes, fonts, colours | `extract/pdftext_rawdict.py` | quick gate 97/128 against 100 |
-| `TRUEDOC_RENDERER=pdfium` | every page rendering | `extract/render.py` | 100/128, and identical marks on 82 rotated pages |
-| `TRUEDOC_OBJECTS=pdfium` | drawings, images, ruled tables | `extract/pdfium_objects.py`, `tables/ruled_pdfium.py` | 100/128, but tables 830/1022 against 848 - **not shipped** |
+| `TRUEDOC_READER=pdftext` / `mupdf` | characters, boxes, fonts, colours | `extract/pdftext_rawdict.py`, `extract/glyph_names.py` | quick gate 100/128 either way; tiny text 364 against MuPDF's 361 of 442 |
+| `TRUEDOC_RENDERER=pdfium` / `mupdf` | every page rendering | `extract/render.py` | 100/128, and identical marks on 82 rotated pages |
+| `TRUEDOC_OBJECTS=pdfium` / `mupdf` | drawings, images, ruled tables | `extract/pdfium_objects.py`, `tables/ruled_pdfium.py` | tables 850 against 848 of 1,022; multi-column 678 against 678 of 884 |
+
+What the swap does not yet remove: the document handle and `Page` objects, `pymupdf.Rect`/`Matrix`
+as plain geometry types (about 27 sites), `set_rotation` (2 sites), and the MuPDF path itself.
 
 **Coordinate conventions are where this goes wrong, every time.** Four different spaces are in play
 and mixing them fails silently - nothing crashes, the document just comes out wrong.

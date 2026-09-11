@@ -1,8 +1,8 @@
 """Render PDF pages to images (for layout models, OCR, marks and the vision endpoints).
 
 Every part of TrueDoc that looks at pixels rather than text comes through here, so the choice of
-drawing library is made once. PyMuPDF draws by default; PDFium draws when `TRUEDOC_RENDERER=pdfium`
-is set, which is the licence path of D007 and M18.
+drawing library is made once. PDFium draws by default since run 71 (D023, the licence path of D007
+and M18); PyMuPDF draws when `TRUEDOC_RENDERER=mupdf` is set, for measurement.
 
 **Clip rectangles are in the rendered page's own space** - the space a reader sees, and the space
 the layout model's boxes live in. Both libraries clip there, but they say it differently: PyMuPDF
@@ -38,7 +38,8 @@ _DOCS_MAX = 2
 
 
 def enabled() -> bool:
-    return os.environ.get("TRUEDOC_RENDERER", "").strip().lower() == "pdfium"
+    """On by default since run 71 (D023); `TRUEDOC_RENDERER=mupdf` draws with MuPDF instead."""
+    return os.environ.get("TRUEDOC_RENDERER", "pdfium").strip().lower() not in ("mupdf", "off", "0", "")
 
 
 def available() -> bool:

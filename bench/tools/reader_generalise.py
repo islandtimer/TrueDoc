@@ -67,8 +67,8 @@ def score(pages: list, reader: str, gap: str | None) -> dict:
     env = dict(os.environ)
     env.pop("TRUEDOC_READER", None)
     env.pop("TRUEDOC_LINE_GAP", None)
-    if reader:
-        env["TRUEDOC_READER"] = reader
+    # PDFium is the default since run 71 (D023): MuPDF has to be asked for by name.
+    env["TRUEDOC_READER"] = reader or "mupdf"
     if gap:
         env["TRUEDOC_LINE_GAP"] = gap
     env["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"

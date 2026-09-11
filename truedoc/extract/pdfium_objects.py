@@ -45,7 +45,8 @@ class PageObject:
 
 
 def enabled() -> bool:
-    return os.environ.get("TRUEDOC_OBJECTS", "").strip().lower() == "pdfium"
+    """On by default since run 71 (D023); `TRUEDOC_OBJECTS=mupdf` reads drawings with MuPDF instead."""
+    return os.environ.get("TRUEDOC_OBJECTS", "pdfium").strip().lower() not in ("mupdf", "off", "0", "")
 
 
 def available() -> bool:
