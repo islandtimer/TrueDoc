@@ -198,3 +198,23 @@ a Type 3 page with unnamed fonts that PDFium cannot map (it falls back to OCR, o
 cap whose column line our line join welds to the next column (one check); three table singles; three
 arXiv pages (matrices in brackets, a cases brace read as three pieces, tilde accents) worth seven
 checks the MuPDF path also loses in part.
+
+## Open - Literal dollar signs in prose (found 2026-09-12; the owner's to decide)
+TrueDoc writes formulas as `$...$` and `$$...$$` (`docs/OKF_SPEC.md`) and writes a dollar sign in prose
+as it stands: a hand-built page reading "The excess is $100 and the benefit limit is $2,000 per claim"
+comes out exactly so. A maths-aware markdown viewer - GitHub's among them - then reads "100 and the
+benefit limit is " as a formula, and so does the benchmark's own parser: on 2503.05329 one stray dollar
+sign paired with every later one and cost the page its check. The owner's insurance documents are full
+of prices. Three ways out, measured where they can be:
+1. Escape every prose dollar sign as `\$` - what the format implies, and safe in every viewer. It costs
+   the benchmark: on the 15 pages that carry a check with a dollar sign in it, run 80's markdown with its
+   prose dollars escaped passes 57 of their 98 checks against 73 as written - sixteen checks lost,
+   fourteen on tables - because the benchmark's expected text holds bare dollar signs and its scorer
+   does not undo markdown escapes.
+2. Leave prose dollar signs bare and write formulas as `\(...\)` and `\[...\]`, which the benchmark's
+   maths checks also accept: a stray dollar sign could then never break a formula and the dollar checks
+   keep passing, but a viewer that reads `$...$` as maths would still read prices as formulas. Not yet
+   measured.
+3. Leave both as they are.
+The xy-pic arrow tip behind 2503.05329's stray dollar sign is fixed separately - it was never a dollar
+sign. The choice between 1, 2 and 3 trades benchmark checks against how the output reads in a viewer.

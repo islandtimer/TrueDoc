@@ -187,6 +187,15 @@ _MSBM: dict[int, str] = {
 }
 
 
+# xy-pic's diagram fonts: arrow tips, dashes, line pieces, circles. Their glyphs are drawing, not text.
+_XYPIC_FONTS = ("XYATIP", "XYBTIP", "XYBSQL", "XYCIRC", "XYCMAT", "XYCMBT", "XYDASH", "XYEUAT", "XYEUBT",
+                "XYLINE", "XYQC")
+
+
+def _is_xypic(font_name) -> bool:
+    return str(font_name or "").split("+")[-1].upper().startswith(_XYPIC_FONTS)
+
+
 def _tex_symbol(font: str, text: str) -> str | None:
     """The character MuPDF's glyph-name lookup would give for a raw TeX symbol-font code."""
     if len(text) != 1 or ord(text) > 0x7f:
@@ -874,6 +883,12 @@ def _build(path: str, page_number: int) -> dict | None:
                         target = chars[-1] if chars else last_added
                         if target is not None:
                             target["line_end"] = True
+                        continue
+                    if _is_xypic(font_name):
+                        # A commutative diagram's arrows. xy-pic names its glyphs a1, a41, ... - Zapf
+                        # Dingbats' names in the Adobe list - so they read as dingbats, and one arrow
+                        # tip with no name came through as its bare code "$" (2503.05329), which opened
+                        # a formula in the markdown that paired with every later one.
                         continue
                     named = None
                     if (g and g.get("map_error") and len(text) == 1 and ord(text) == g.get("code", -1)
