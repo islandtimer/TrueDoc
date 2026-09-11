@@ -879,14 +879,18 @@ def _build(path: str, page_number: int) -> dict | None:
                     if len(text) == 1 and unicodedata.category(text) == "Mn":
                         # A combining mark - cmsy's negation slash, cmmi's vector arrow, a hat -
                         # stays a character of its own (every stage downstream assumes one code
-                        # point per character) and takes a zero-width box at its own origin, which
-                        # is where MuPDF boxes it (measured over the arXiv pages: at the origin
-                        # every time, and the origin is usually the previous glyph's end - "0̸"
-                        # then "="). Usually, not always: MnSymbol draws its tilde *before* the
-                        # letter it covers, at the letter's start, and a box snapped to the
-                        # previous glyph's end put it at the letter's end, where the maths stage
-                        # hung it on the symbol after (06329: \tilde{=} for \tilde{L}). On PDFium's
-                        # loose box it sat in the gap and attached to whatever followed.
+                        # point per character) and takes a zero-width box at its own origin, where
+                        # PDFium says it is drawn. MnSymbol draws its tilde as a text object of its
+                        # own, raised over the letter it covers, and a box snapped to the previous
+                        # glyph's end put it at the letter's end, where the maths stage hung it on
+                        # the symbol after (06329: \tilde{=} for \tilde{L}). On PDFium's loose box
+                        # it sat in the gap and attached to whatever followed.
+                        # (Correction, 11 Sept: this said the origin is where MuPDF boxes a mark, "at
+                        # the origin every time". MuPDF's text reports 230 of 265 combining marks over
+                        # five categories away from the origin PDFium gives; on 06329 MuPDF's own
+                        # glyph trace draws the tilde over the R at 273.6, 248.0 and its text puts it
+                        # at the times sign's end, 271.2, 250.8. The maths stage finds the base from
+                        # either place: see `_accent_base`.)
                         prev = chars[-1] if chars else (spans[-1]["chars"][-1] if spans and spans[-1].get("chars") else None)
                         anchor = ((g or {}).get("origin") or (None,))[0]
                         if anchor is None and prev is not None:

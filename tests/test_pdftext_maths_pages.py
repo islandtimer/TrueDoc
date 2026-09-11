@@ -309,12 +309,12 @@ def test_a_glyph_on_a_control_code_is_not_a_blank():
 
 
 def test_a_combining_mark_is_boxed_at_its_own_origin():
-    """MuPDF gives a combining mark a zero-width box at the mark's own origin (measured over the
-    arXiv pages: cmsy's negation slash, cmmi's vector arrow, Libertinus's hat, all at their
-    origin, which usually is the previous glyph's end). MnSymbol draws its tilde *before* the
-    letter it covers, at the letter's start, and snapping it to the previous glyph's end put it
-    at the letter's end, where the maths stage hung it on the symbol after (06329: \tilde{=}
-    for \tilde{L})."""
+    """A combining mark takes a zero-width box at its own origin, where PDFium says it is drawn.
+    MnSymbol draws its tilde *before* the letter it covers, at the letter's start, and snapping it
+    to the previous glyph's end put it at the letter's end, where the maths stage hung it on the
+    symbol after (06329: \tilde{=} for \tilde{L}). (Correction, 11 Sept: this said MuPDF boxes a
+    combining mark at its own origin; MuPDF's text reports 230 of 265 marks over five categories
+    away from the origin PDFium gives, and the maths stage finds the base from either place.)"""
     diffs = b" /Encoding << /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [126 /tildecomb] >>"
     content = (b"BT /F1 12 Tf 1 0 0 1 10 100 Tm (|) Tj ET\n"
                b"BT /F1 12 Tf 1 0 0 1 20 104 Tm (\176) Tj ET\n"      # the mark, drawn first

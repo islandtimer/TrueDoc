@@ -1033,9 +1033,19 @@ def _accent_base(g: Glyph, gs: list[Glyph]) -> Glyph | None:
         return b is not g and _accent_name(b) is None and not b.ch.isspace() and 0.85 * g.size <= b.size <= 1.25 * g.size
 
     if g.bbox.width < 0.1 * g.size:
-        # A combining mark has no advance width: it precedes its base in the text
-        # stream, and the text layer reports it where the previous glyph ended
-        # (even across a wide space), so its base is the next glyph to the right.
+        # A combining mark has no advance width. Where the reader reports it where it
+        # is drawn - PDFium does: MnSymbol's tilde is a text object of its own, raised
+        # over the letter it covers - the letter under it is its base. The tilde over
+        # the italic R of 2503.06329 starts 1.7pt inside the R, and the rule below
+        # refused the R and hung the tilde on the "=" after the R's subscript.
+        over = [b for b in gs if candidate(b)
+                and b.bbox.x0 - 0.15 * g.size <= g.bbox.x0 < b.bbox.x1 - 0.15 * g.size
+                and 0.1 * g.size <= b.oy - g.oy <= 1.3 * g.size]
+        if over:
+            return min(over, key=lambda b: (b.bbox.x0 > g.bbox.x0, abs(b.cx - g.bbox.x0)))
+        # MuPDF's text layer moves the mark to where the previous glyph ended, on that
+        # glyph's baseline (even across a wide space), so its base is the next glyph
+        # to the right.
         right = [b for b in gs if candidate(b) and -0.15 * g.size <= b.bbox.x0 - g.bbox.x0 <= 2.5 * g.size and abs(b.oy - g.oy) <= 0.5 * g.size]
         return min(right, key=lambda b: b.bbox.x0) if right else None
     # 1. The glyph directly below with the best horizontal overlap (a raised
