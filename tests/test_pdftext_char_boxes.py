@@ -398,3 +398,36 @@ def test_a_loose_accent_pdfium_strands_goes_back_before_its_letter():
     assert {"Radiožurnál", "Český"} <= theirs, theirs
     assert ours == theirs, (sorted(ours - theirs), sorted(theirs - ours))
     assert ours_left <= theirs_left, sorted(ours_left - theirs_left)
+
+
+_STYLE_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs", "multi_column",
+                           "0be9ba925bc2e3164ce649b02e3e29a07239_page_5_pg1.pdf")
+
+
+@pytest.mark.skipif(not os.path.exists(_STYLE_PAGE), reason="benchmark page not present")
+def test_a_fonts_bold_and_italic_match_mupdf_when_its_name_says_nothing():
+    """0be9ba92 page 5 sets its heading in "CIDFont+F2" and "CIDFont+F3" and its species names in
+    "CIDFont+F5": names that say nothing and descriptors with no style bits. MuPDF reads F2 as bold,
+    F3 as bold italic and F5 as italic from the fonts' own programs; the reader read all three
+    plain, the heading lost its bold and the page's column order changed (one check)."""
+    import collections
+
+    def styles(spans_by_block):
+        out = collections.defaultdict(set)
+        for b in spans_by_block:
+            for ln in b.get("lines", []):
+                for sp in ln["spans"]:
+                    if any(not c["c"].isspace() for c in sp["chars"]):
+                        out[sp["font"]].add((bool(sp["flags"] & 16), bool(sp["flags"] & 2)))
+        return out
+
+    raw = A.build(_STYLE_PAGE, 1)
+    assert raw is not None
+    ours = styles(raw["blocks"])
+    doc = pymupdf.open(_STYLE_PAGE)
+    try:
+        theirs = styles(doc[0].get_text("rawdict")["blocks"])
+    finally:
+        doc.close()
+    for font in ("CIDFont+F2", "CIDFont+F3", "CIDFont+F5"):
+        assert ours[font] == theirs[font], (font, ours[font], theirs[font])

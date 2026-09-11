@@ -249,6 +249,86 @@ def _order(path: str, page_number: int) -> dict | None:
     return pages[0] if pages else None
 
 
+_BOLD_WEIGHTS = {"bold", "semibold", "black"}
+_PROGRAM_STYLES: dict[bytes, tuple[bool, bool]] = {}     # a font program's digest -> (bold, italic)
+
+
+def _program_style(data: bytes) -> tuple[bool, bool]:
+    """A font's bold and italic, read from its embedded program the way MuPDF reads them.
+
+    A font named "CIDFont+F2" with no style bits in its descriptor says nothing to the name and
+    descriptor rule of `_mupdf_flags`, yet MuPDF reads it bold: 0be9ba92's heading lost its bold
+    that way and the page's column order changed. Measured over 3,390 page-and-font pairs against
+    MuPDF's span flags: a TrueType weight class of 600 or 700 is bold every time (465 of 465) and
+    900 never (4 of 4); a CFF or Type 1 weight of Bold, Semibold or Black is bold every time (225 of
+    225) and Heavy and Medium never; a non-zero italic angle in the program is italic. Taken with
+    the name and descriptor rule, that fixes 31 bold and 10 italic flags and breaks none. The style
+    bits in fsSelection and macStyle were mixed (10 fixed, 7 broken) and are not used, and the
+    italic angle in the PDF's font descriptor fixed nothing. On forty of the insurance library's
+    documents the name rule already agreed with MuPDF on every flag, and this changes none.
+    """
+    if not data:
+        return False, False
+    import hashlib
+    key = hashlib.blake2b(data, digest_size=16).digest()
+    hit = _PROGRAM_STYLES.get(key)
+    if hit is not None:
+        return hit
+    style = (False, False)
+    try:
+        head = data[:4]
+        if head in (b"\x00\x01\x00\x00", b"OTTO", b"true", b"ttcf"):
+            import io
+            from fontTools.ttLib import TTFont
+            prog = TTFont(io.BytesIO(data), lazy=True, fontNumber=0)
+            bold = "OS/2" in prog and int(getattr(prog["OS/2"], "usWeightClass", 0) or 0) in (600, 700)
+            italic = "post" in prog and abs(float(prog["post"].italicAngle or 0)) > 0.5
+            style = (bool(bold), bool(italic))
+        elif data[:1] == b"\x01" and len(data) > 4:
+            import io
+            from fontTools.cffLib import CFFFontSet
+            cff = CFFFontSet()
+            cff.decompile(io.BytesIO(data), None)
+            top = cff[cff.fontNames[0]]
+            weight = str(getattr(top, "Weight", "") or "").strip().lower()
+            style = (weight in _BOLD_WEIGHTS, abs(float(getattr(top, "ItalicAngle", 0) or 0)) > 0.5)
+        else:
+            text = data[:6000].decode("latin-1", "replace")
+            if "%!" in text[:60] or "/FontName" in text:
+                m = re.search(r"/Weight\s*\(([^)]*)\)", text)
+                a = re.search(r"/ItalicAngle\s+(-?[\d.]+)", text)
+                style = (bool(m) and m.group(1).strip().lower() in _BOLD_WEIGHTS,
+                         bool(a) and abs(float(a.group(1))) > 0.5)
+    except Exception:
+        style = (False, False)
+    if len(_PROGRAM_STYLES) >= 512:
+        _PROGRAM_STYLES.pop(next(iter(_PROGRAM_STYLES)))
+    _PROGRAM_STYLES[key] = style
+    return style
+
+
+def _style_of(raw_api, tp, index: int, cache: dict) -> tuple[bool, bool]:
+    """(bold, italic) of a character's font from its embedded program, cached per font on the page."""
+    obj = raw_api.FPDFText_GetTextObject(tp, index)
+    font = raw_api.FPDFTextObj_GetFont(obj) if obj else None
+    if not font:
+        return False, False
+    key = ctypes.cast(font, ctypes.c_void_p).value
+    hit = cache.get(key)
+    if hit is None:
+        data = b""
+        try:
+            size = ctypes.c_size_t()
+            if raw_api.FPDFFont_GetFontData(font, None, 0, ctypes.byref(size)) and size.value:
+                buf = (ctypes.c_uint8 * size.value)()
+                if raw_api.FPDFFont_GetFontData(font, buf, size.value, ctypes.byref(size)):
+                    data = bytes(buf)
+        except Exception:
+            data = b""
+        hit = cache[key] = _program_style(data)
+    return hit
+
+
 def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, dict], list]:
     """Every geometric fact PDFium holds for the wanted characters, in PyMuPDF's space, and the
     page's thin horizontal rules (for the line join)."""
@@ -270,6 +350,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
             loose = raw_api.FS_RECTF()
             matrix = raw_api.FS_MATRIX()
             scales: dict[int, float] = {}      # text object -> the scale its matrix applies
+            styles: dict[int, tuple[bool, bool]] = {}   # font -> (bold, italic) from its program
             # Which drawn object each character belongs to, and where that object comes in the
             # painting order - what the hidden-text rules (D011) used MuPDF's text trace for. The
             # walk has to happen on this very page load: pypdfium2 reloads the page on every
@@ -478,6 +559,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     "clipped": clipped,
                     "code": code,
                     "probe": probe,         # an unnamed Type 3 font's fingerprint (see the widths rule)
+                    "style": _style_of(raw_api, tp, i, styles),   # (bold, italic) from the font program
                     # the writing direction, as PDFium measures it: radians in the y-down page
                     # space, so (cos, sin) is MuPDF's direction vector (measured, see _line_dir).
                     # A negative font size turns the glyphs back round: a tax form (8e953483)
@@ -740,11 +822,14 @@ def _build(path: str, page_number: int) -> dict | None:
                 chars = []
                 drawn_sizes: list[float] = []
                 colors: dict[int, int] = {}
+                span_style = (False, False)     # bold, italic from the font program (see _program_style)
                 for ch in _join_surrogates(span.get("chars") or [], geom):
                     text = str(ch.get("char", ""))
                     if not text:
                         continue
                     g = geom.get(ch.get("char_idx"))
+                    if g and g.get("style"):
+                        span_style = (span_style[0] or g["style"][0], span_style[1] or g["style"][1])
                     if (g or {}).get("clipped"):
                         continue        # drawn outside its clip box: never on the page (see _geometry)
                     if text in ("\r", "\n") and (g or {}).get("generated"):
@@ -847,7 +932,8 @@ def _build(path: str, page_number: int) -> dict | None:
                         "font": font_name,
                         "size": drawn,
                         "_fallback": size,
-                        "flags": _mupdf_flags(font, bool(span.get("superscript"))),
+                        "flags": (_mupdf_flags(font, bool(span.get("superscript")))
+                                  | (16 if span_style[0] else 0) | (2 if span_style[1] else 0)),
                         # PyMuPDF reports one colour per span; take the span's most common.
                         "color": max(colors.items(), key=lambda kv: kv[1])[0] if colors else 0,
                         "chars": run,
