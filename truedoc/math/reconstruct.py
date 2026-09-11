@@ -1065,13 +1065,16 @@ def _accent_base(g: Glyph, gs: list[Glyph]) -> Glyph | None:
     if best is not None:
         return best
     # 2. Baselines: the accent's origin sits a little above the base's origin and
-    #    its centre lies over the base (boxes from font metrics can mislead).
-    for b in sorted(gs, key=lambda b: -b.size):
-        if not candidate(b):
-            continue
-        raise_ = b.oy - g.oy
-        if 0.15 * b.size <= raise_ <= 1.3 * b.size and b.bbox.x0 - 0.35 * b.size <= g.cx <= b.bbox.x1 + 0.35 * b.size:
-            return b
+    #    its centre lies over the base (boxes from font metrics can mislead). Of the
+    #    glyphs that qualify, the largest, and of those the one whose centre is nearest
+    #    the accent's. PDFium's metric boxes keep 2503.05183's lambda below the middle of
+    #    the hat over it, so rule 1 finds nothing, and the "2" before the lambda, the
+    #    first glyph that qualified, took the hat: "(\hat{2}\lambda_4(1-p))".
+    under = [b for b in gs if candidate(b)
+             and 0.15 * b.size <= b.oy - g.oy <= 1.3 * b.size
+             and b.bbox.x0 - 0.35 * b.size <= g.cx <= b.bbox.x1 + 0.35 * b.size]
+    if under:
+        return min(under, key=lambda b: (-round(b.size, 1), abs(b.cx - g.cx)))
     # 3. TeX sets accents over x-height letters at the *same* baseline, with the
     #    raise built into the glyph outline; the boxes then simply overlap.
     for b in gs:

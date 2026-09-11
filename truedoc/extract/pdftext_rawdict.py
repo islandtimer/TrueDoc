@@ -173,12 +173,17 @@ _OML: dict[int, str] = {
 # The AMS symbol fonts, measured rather than transcribed: over the 75 benchmark pages that use
 # them, every code PDFium could not map was matched by position against the character MuPDF
 # reads there (bench/out, 10 Sept). Only codes seen at least three times and consistent with the
-# msam/msbm layouts are listed; a code MuPDF itself leaves raw ("9", "K", "[") stays raw.
+# msam/msbm layouts are listed; a code MuPDF itself leaves raw ("9", "K", "[") stays raw. Three
+# more from a census of 12 Sept over five categories (ams_census.py), each seen once or twice but
+# read the same way by MuPDF and by the published layout: msbm 0x28 subsetneq (2503.07281, where
+# the raw "(" had been read as cmsy's Leftarrow), msbm 0x79 curvearrowright, msam 0x08
+# circlearrowright. msam 0x02, which MuPDF reads as a registered sign where the layout has
+# boxtimes, stays raw.
 _MSAM: dict[int, str] = {
-    0x03: "□", 0x09: "⟲", 0x0d: "⊩", 0x2c: "≜", 0x2e: "≲", 0x36: "⩽", 0x3e: "⩾",
+    0x03: "□", 0x08: "⟳", 0x09: "⟲", 0x0d: "⊩", 0x2c: "≜", 0x2e: "≲", 0x36: "⩽", 0x3e: "⩾",
 }
 _MSBM: dict[int, str] = {
-    0x7e: "ℏ",
+    0x28: "⊊", 0x79: "↷", 0x7e: "ℏ",
 }
 
 
@@ -1037,6 +1042,29 @@ def _drop_tight_blanks(spans: list, direction) -> None:
         before, after = flat[k - 1][1]["c"], flat[k + 1][1]["c"]
         if (before in _DASHES and after.isdigit()) or (after in _DASHES and before.isdigit()):
             sp["chars"].remove(c)
+    # ... and one between a script-sized glyph and a full-size one, in a gap under 0.16 em of the
+    # larger size. PDFium measures such a gap against the smaller size: after the 7pt subscript of
+    # 2503.09195's "(S, D_S)-connected" it put a blank in a 0.98pt gap - 0.14 em of the subscript,
+    # 0.10 em of the parenthesis - and the maths span ended at it. MuPDF's own blanks start at
+    # 0.16 em. Only across a change of size: between glyphs of one size the box gaps of a tightly
+    # set page understate the pen gaps, and there PDFium's blanks were right (above).
+    if direction == (1.0, 0.0):
+        flat = [(sp, c) for sp in spans for c in sp["chars"]]
+        gone = []
+        for k in range(1, len(flat) - 1):
+            sp, c = flat[k]
+            if not (c.get("generated") and c["c"] == " "):
+                continue
+            (sa, a), (sb, b) = flat[k - 1], flat[k + 1]
+            if a["c"].isspace() or b["c"].isspace():
+                continue
+            za, zb = float(sa.get("size") or 0.0), float(sb.get("size") or 0.0)
+            if za <= 0 or zb <= 0 or min(za, zb) >= 0.8 * max(za, zb):
+                continue
+            if b["bbox"][0] - a["bbox"][2] < 0.16 * max(za, zb):
+                gone.append((sp, c))
+        for sp, c in gone:
+            sp["chars"].remove(c)
     for sp in list(spans):
         if not sp["chars"]:
             spans.remove(sp)
@@ -1444,6 +1472,14 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0), sil
             piece_start = i
             piece_glyphs = []
         piece_glyphs.append((start, end, base, scale))
+        # ... and an accent left standing there does not move the pen: the next glyph's gap is
+        # measured from the glyph before it. PDFium emits the bars of 2503.07532's "e c d c-bar
+        # d-bar e-bar a b a-bar b-bar e" out of order; the bar of e-bar, standing back over the e,
+        # became the last glyph, the bar of a-bar 30pt on read as a jump of 2.9 em, and the gap
+        # rule cut the word there.
+        if (i not in cuts and prev is not None and scale > 0 and start < prev[3] - 0.5 * max(scale, prev[2])
+                and _accent_over(c, start, end, base, scale, piece_glyphs[:-1])):
+            continue
         prev = (i, end, scale, start, c.get("order", -1), bool(c.get("line_end")), base)
     if cuts and silent and direction == (1.0, 0.0):
         cuts = _drop_filled_cuts(flat, spans, cuts, silent)

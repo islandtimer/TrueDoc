@@ -1465,7 +1465,11 @@ def _reassemble_lines(lines: list[Line], gutters: list[tuple[float, float]] | No
                 # word between two segments (a dictionary's entry word) is a line
                 # of its own and must not be swallowed.
                 m_chars = [c for w in m.words for c in w.chars if not c.text.isspace()]
-                if not m_chars:
+                # A mark of punctuation alone is no filler: PDFium hands 2503.06630's comma between
+                # two fractions over as a segment of its own, and taken for a filler it welded the two
+                # denominators into one segment that no fraction bar covers, so neither fraction
+                # formed (MuPDF keeps the comma with the numerator after it).
+                if not m_chars or all(c.text in ",.;:" for c in m_chars):
                     continue
                 # A text-size glyph in the filler is fine when it is set in a maths
                 # font: the coefficient between a text-style sum's limits and the
