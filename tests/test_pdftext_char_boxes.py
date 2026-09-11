@@ -265,3 +265,61 @@ def test_text_scaled_differently_in_x_and_y_is_sized_and_boxed_as_mupdf_sizes_it
     assert theirs[0][2] == pytest.approx((8 * 10) ** 0.5, abs=0.05)
     for (c, ob, _), (_, tb, _) in zip(ours, theirs):
         assert ob[0] == pytest.approx(tb[0], abs=0.05) and ob[2] == pytest.approx(tb[2], abs=0.05), (c, ob, tb)
+
+
+def test_a_negative_font_size_under_a_flipped_matrix_reads_left_to_right():
+    """A tax form (8e953483, headers) draws its text with the matrix -1.333 0 0 -1.333 and a
+    font size of -4.43: two negations, so the glyphs stand upright and run left to right,
+    but PDFium's angle for them is pi, the reader voted right-to-left, every step was a
+    backwards jump and the page shattered into 1,290 one-character lines. The sign of the
+    size is part of the direction; MuPDF reads one line running (1, 0)."""
+    content = b"BT /F1 -10 Tf -1 0 0 -1 40 100 Tm (Hello there) Tj ET\n"
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(_pdf(content))
+    try:
+        raw = A.build(path, 1)
+        assert raw is not None
+        lines = [ln for b in raw["blocks"] for ln in b["lines"]]
+        assert len(lines) == 1, [("".join(c["c"] for sp in ln["spans"] for c in sp["chars"])) for ln in lines]
+        assert lines[0]["dir"] == (1.0, 0.0), lines[0]["dir"]
+        text = "".join(c["c"] for sp in lines[0]["spans"] for c in sp["chars"])
+        assert text.replace(" ", "") == "Hellothere", text
+        assert all(sp["size"] > 0 for sp in lines[0]["spans"]), [sp["size"] for sp in lines[0]["spans"]]
+        doc = pymupdf.open(path)
+        try:
+            mu = [ln for b in doc[0].get_text("rawdict")["blocks"] for ln in b.get("lines", [])]
+            assert len(mu) == 1 and tuple(mu[0]["dir"]) == (1.0, 0.0)
+        finally:
+            doc.close()
+    finally:
+        render.close_documents()
+        os.unlink(path)
+
+
+def test_a_crop_box_wider_than_the_media_box_measures_from_their_intersection():
+    """b2ca8e00 (headers) has a CropBox of 595 by 842 around a MediaBox of 430 by 660. MuPDF
+    measures every coordinate from the top-left of the two boxes' intersection (its page
+    rect); PDFium's crop box call gives the raw box, and measuring from it put every
+    character 82.5pt right and 92pt down of where MuPDF has it - the running head sat at
+    y = 121 instead of 28, outside the page-edge band, and was kept."""
+    content = b"BT /F1 10 Tf 124.3 715 Td (Running head) Tj ET\n"
+    body = _pdf(content).replace(b"/MediaBox [0 0 300 200]", b"/MediaBox [82.5 90 512.5 750] /CropBox [0 0 595 842]")
+    fd, path = tempfile.mkstemp(suffix=".pdf")
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(body)
+    try:
+        raw = A.build(path, 1)
+        assert raw is not None
+        ours = next(c for b in raw["blocks"] for ln in b["lines"] for sp in ln["spans"] for c in sp["chars"] if c["c"] == "R")
+        doc = pymupdf.open(path)
+        try:
+            theirs = next(c for b in doc[0].get_text("rawdict")["blocks"] for ln in b.get("lines", [])
+                          for sp in ln["spans"] for c in sp["chars"] if c["c"] == "R")
+        finally:
+            doc.close()
+        assert ours["origin"][0] == pytest.approx(theirs["origin"][0], abs=0.05), (ours["origin"], theirs["origin"])
+        assert ours["origin"][1] == pytest.approx(theirs["origin"][1], abs=0.05), (ours["origin"], theirs["origin"])
+    finally:
+        render.close_documents()
+        os.unlink(path)

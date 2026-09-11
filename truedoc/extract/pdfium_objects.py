@@ -300,6 +300,23 @@ def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, dep
     order[0] += 1
 
 
+def page_box(page) -> tuple[float, float, float, float]:
+    """The box a page's coordinates are measured from: the crop box within the media box.
+
+    MuPDF's page rect is the intersection of the two, with its top-left as the origin of
+    everything it reports. pypdfium2's `get_cropbox` hands back the /CropBox as written, and a
+    journal page (b2ca8e00, headers) writes an A4 crop box around a 430 by 660 media box:
+    measured from the raw crop box every character sat 82.5pt right and 92pt down of where
+    MuPDF has it, the running head fell out of the page-edge band and stayed in the text.
+    `get_size` already reports the intersection's width and height; this is its origin too.
+    """
+    c, m = page.get_cropbox(), page.get_mediabox()
+    box = (max(c[0], m[0]), max(c[1], m[1]), min(c[2], m[2]), min(c[3], m[3]))
+    if box[2] <= box[0] or box[3] <= box[1]:
+        box = tuple(float(v) for v in c)
+    return tuple(float(v) for v in box)
+
+
 def walk_page(raw, page, handles: dict | None = None, clips: dict | None = None) -> list[PageObject]:
     """Everything drawn on an already-loaded pypdfium2 page, in painting order.
 
@@ -308,8 +325,7 @@ def walk_page(raw, page, handles: dict | None = None, clips: dict | None = None)
     when given, with object pointer -> the clip box of each top-level text object that has one,
     in MuPDF's page space.
     """
-    crop = page.get_cropbox()
-    x_off, y_top = float(crop[0]), float(crop[3])
+    x_off, _y0, _x1, y_top = page_box(page)
 
     def flip(x0, y0, x1, y1):
         ax0, ax1 = x0 - x_off, x1 - x_off

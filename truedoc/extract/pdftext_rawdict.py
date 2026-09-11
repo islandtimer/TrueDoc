@@ -259,8 +259,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
     doc = pdfium.PdfDocument(path)
     try:
         page = doc[page_number - 1]
-        crop = page.get_cropbox()
-        x_off, y_top = float(crop[0]), float(crop[3])
+        x_off, _y0, _x1, y_top = pdfium_objects.page_box(page)
         textpage = page.get_textpage()
         try:
             tp = textpage.raw
@@ -356,7 +355,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     # scales x and y differently (an OCR layer fitting words to their boxes) MuPDF's
                     # top and bottom follow the y scale on 92% of 73,318 such characters, the
                     # geometric mean on 17% (where the two coincide).
-                    ysize = float(raw_api.FPDFText_GetFontSize(tp, i)) * abs(matrix.d) or drawn
+                    ysize = abs(float(raw_api.FPDFText_GetFontSize(tp, i))) * abs(matrix.d) or drawn
                     if (metric_font and raw_api.FPDFFont_GetAscent(metric_font, ysize, asc)
                             and raw_api.FPDFFont_GetDescent(metric_font, ysize, desc)
                             and 0.0 < asc.value <= 1.5 * ysize and -1.5 * ysize <= desc.value <= 0.0):
@@ -395,7 +394,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                         text_obj = raw_api.FPDFText_GetTextObject(tp, i)
                         font = raw_api.FPDFTextObj_GetFont(text_obj) if text_obj else None
                         adv_w = ctypes.c_float()
-                        if font and code and raw_api.FPDFFont_GetGlyphWidth(font, code, raw_api.FPDFText_GetFontSize(tp, i), adv_w):
+                        if font and code and raw_api.FPDFFont_GetGlyphWidth(font, code, abs(raw_api.FPDFText_GetFontSize(tp, i)), adv_w):
                             # ... at the x scale of the matrix: MuPDF's right edge is the origin
                             # plus the advance times the x scale on every one of 73,316 characters
                             # whose matrix scales x and y differently (the y scale on 8%).
@@ -440,7 +439,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                             tables = glyph_names.narrow(widths_tables, font_name, probe) or widths_tables
                         w = glyph_names.advance_for(tables, font_name, code)
                         if w is not None:
-                            xsize = float(raw_api.FPDFText_GetFontSize(tp, i)) * abs(matrix.a) or drawn
+                            xsize = abs(float(raw_api.FPDFText_GetFontSize(tp, i))) * abs(matrix.a) or drawn
                             box = (origin[0], box[1], origin[0] + w * xsize / 1000.0, box[3])
                 color, alpha = 0, 1.0
                 if raw_api.FPDFText_GetFillColor(tp, i, fr, fg, fb, fa):
@@ -479,8 +478,14 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     "code": code,
                     "probe": probe,         # an unnamed Type 3 font's fingerprint (see the widths rule)
                     # the writing direction, as PDFium measures it: radians in the y-down page
-                    # space, so (cos, sin) is MuPDF's direction vector (measured, see _line_dir)
-                    "angle": float(raw_api.FPDFText_GetCharAngle(tp, i)),
+                    # space, so (cos, sin) is MuPDF's direction vector (measured, see _line_dir).
+                    # A negative font size turns the glyphs back round: a tax form (8e953483)
+                    # sets its text with the matrix -1.333 0 0 -1.333 and a size of -4.43, so it
+                    # reads upright and left to right, where PDFium's angle for it is pi; the
+                    # line then voted right-to-left, every glyph was a backwards jump, and the
+                    # page shattered into 1,290 one-character lines.
+                    "angle": (float(raw_api.FPDFText_GetCharAngle(tp, i))
+                              + (math.pi if raw_api.FPDFText_GetFontSize(tp, i) < 0 else 0.0)) % (2.0 * math.pi),
                 }
         finally:
             textpage.close()
@@ -582,7 +587,9 @@ def _drawn_size(raw_api, tp, index: int, matrix, scales: dict[int, float]) -> fl
         if scale is None:
             scale = _det_scale(matrix) if raw_api.FPDFPageObj_GetMatrix(obj, matrix) else 1.0
             scales[key] = scale
-    return float(raw_api.FPDFText_GetFontSize(tp, index)) * scale
+    # The size's magnitude: a negative size mirrors the glyphs and turns their advance round,
+    # which the angle above takes into account; a size below zero is no size for any rule.
+    return abs(float(raw_api.FPDFText_GetFontSize(tp, index))) * scale
 
 
 def _det_scale(matrix) -> float:
