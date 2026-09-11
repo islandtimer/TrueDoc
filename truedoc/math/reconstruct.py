@@ -93,13 +93,15 @@ def glyph(ch: str, font: str, size: float, bbox: BBox, oy: float, ink: BBox | No
         # words (the text layer recodes a real bracket on code 0x20 before it
         # gets here, by checking the drawn glyphs), so it stays a blank.
         if ink is not None and ink.height > 0.3:
-            box = ink
+            # The outline measures the height; the width stays the metric box's (see
+            # textlayer._extension_box: a brace's middle piece starts left of the rest).
+            box = BBox(bbox.x0, ink.y0, bbox.x1, ink.y1)
         else:
             ext = CMEX_EXTENT.get(cmex_code(ch))
             if ext is not None:
                 box = BBox(bbox.x0, oy - ext[0] * size, bbox.x1, oy + ext[1] * size)
     elif ink is not None and ink.height > 0.3 and any(h in f for h in _EXTENSION_FONT_HINTS):
-        box = ink
+        box = BBox(bbox.x0, ink.y0, bbox.x1, ink.y1)
     latex = latex_for_char(ch, font)
     # An accent from a symbol font that reports a full-height box (mathabx's
     # dot on code "9") would never sit "above" its base: keep its top third.
@@ -232,9 +234,10 @@ def _merge_mapsto(gs: list[Glyph]) -> list[Glyph]:
             if b.latex not in arrows:
                 continue
             f = a.font.upper()
-            # cmmi's slot 0x2C is the left hook of \hookrightarrow, which the text
-            # layer reports as a comma; a comma never touches an arrow otherwise.
-            if a.ch == "," and "CMMI" in f and shaft is None and b.bbox.x0 - a.bbox.x1 <= 0.1 * max(a.size, 1.0) and abs(a.oy - b.oy) <= 0.3 * max(a.size, 1.0):
+            # cmmi's slot 0x2C is the left hook of \hookrightarrow, which MuPDF's text
+            # reports as a comma and PDFium's, which names the glyph, as U+21AA; neither
+            # touches an arrow otherwise (2503.06194 read "\mathbb{Z}^d ↪ \rightarrow").
+            if a.ch in (",", "↪") and "CMMI" in f and shaft is None and b.bbox.x0 - a.bbox.x1 <= 0.1 * max(a.size, 1.0) and abs(a.oy - b.oy) <= 0.3 * max(a.size, 1.0):
                 drop.add(id(a))
                 b.latex = r"\hookrightarrow"
                 b.bbox = a.bbox.union(b.bbox)

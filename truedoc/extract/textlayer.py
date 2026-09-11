@@ -470,10 +470,18 @@ def _same_colour(color: int, rgb: tuple) -> bool:
 
 
 def _extension_box(c: Char) -> BBox:
-    """A box that reflects a maths-extension glyph: the measured outline when
-    MuPDF provides one, else the cmex design metrics, else the font box."""
+    """A box that reflects a maths-extension glyph: the measured outline's height
+    when the reader provides one (PDFium does), else the cmex design metrics, else
+    the font box.
+
+    The width stays the metric box's, as MuPDF's design box keeps it. The outline's
+    left edge follows the shape: the middle piece of a brace has its point 3pt left
+    of the other pieces, and the maths stage, which stacks an extensible bracket's
+    pieces only where they start within 0.15 em of each other, read one brace as
+    three - a brace per row where MuPDF builds one cases environment (2503.03905,
+    2503.05177, 2503.05062, 2503.09472)."""
     if c.ink is not None and c.ink.height > 0.3:
-        return c.ink
+        return BBox(c.bbox.x0, c.ink.y0, c.bbox.x1, c.ink.y1)
     if is_extension_font(c.font) and len(c.text) == 1:
         from truedoc.math.symbols import CMEX_EXTENT, cmex_code
 
