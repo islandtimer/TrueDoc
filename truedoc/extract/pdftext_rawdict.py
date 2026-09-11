@@ -329,7 +329,7 @@ def _style_of(raw_api, tp, index: int, cache: dict) -> tuple[bool, bool]:
     return hit
 
 
-def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, dict], list]:
+def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, dict], list, list]:
     """Every geometric fact PDFium holds for the wanted characters, in PyMuPDF's space, and the
     page's thin horizontal rules (for the line join)."""
     import pypdfium2 as pdfium
@@ -337,6 +337,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
 
     out: dict[int, dict] = {}
     bars: list[tuple[float, float, float, float]] = []
+    silent: list[tuple] = []   # text objects the text page reports no character for: (order, x0, y0, x1, y1)
     doc = pdfium.PdfDocument(path)
     try:
         page = doc[page_number - 1]
@@ -577,11 +578,30 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     "angle": (float(raw_api.FPDFText_GetCharAngle(tp, i))
                               + (math.pi if raw_api.FPDFText_GetFontSize(tp, i) < 0 else 0.0)) % (2.0 * math.pi),
                 }
+            # Text objects the text page reports no character for. 00f6c2ee page 10's "where |
+            # refers to" gap holds a Cambria Math glyph and a zero-width Times object whose object
+            # text PDFium never reports; MuPDF traces them, its pen crosses the gap, and it keeps
+            # the sentence whole (see `_drop_filled_cuts`). A failure here costs the line rule its
+            # silent objects, not the page.
+            try:
+                reported = set()
+                for k in range(raw_api.FPDFText_CountChars(tp)):
+                    obj_k = raw_api.FPDFText_GetTextObject(tp, k)
+                    if obj_k:
+                        reported.add(handles.get(ctypes.cast(obj_k, ctypes.c_void_p).value, -1))
+                for o in objects or []:
+                    if o.kind != "text" or o.order in reported or o.invisible_text:
+                        continue
+                    sx0, sy0, sx1, sy1 = o.bbox
+                    if sx0 <= sx1 and sy0 < sy1 and sx1 - sx0 <= 200.0:     # a glyph's box, not a paragraph's
+                        silent.append((o.order, sx0, sy0, sx1, sy1))
+            except Exception:
+                silent = []
         finally:
             textpage.close()
     finally:
         doc.close()
-    return out, bars
+    return out, bars, silent
 
 
 def _divide_shared_boxes(chars: list) -> None:
@@ -809,7 +829,7 @@ def _build(path: str, page_number: int) -> dict | None:
                     if isinstance(idx, int):
                         wanted.add(idx)
     try:
-        geom, bars = _geometry(path, page_number, wanted) if wanted else ({}, [])
+        geom, bars, silent = _geometry(path, page_number, wanted) if wanted else ({}, [], [])
     except Exception:
         return None
     _rehome_accents(grouped, geom)
@@ -959,7 +979,7 @@ def _build(path: str, page_number: int) -> dict | None:
             runs.append((block_index, direction, spans))
     blocks = []
     for block_index, direction, spans in _join_broken_lines(runs, bars):
-        lines = [{"dir": direction, "bbox": _union(piece), "spans": piece} for piece in _split_at_gaps(spans, direction)]
+        lines = [{"dir": direction, "bbox": _union(piece), "spans": piece} for piece in _split_at_gaps(spans, direction, silent)]
         if not lines:
             continue
         if blocks and blocks[-1]["_block"] == block_index:
@@ -1280,7 +1300,49 @@ def _is_list_marker(flat: list, start: int, end: int) -> bool:
     return 0 < len(text) <= 4 and bool(_LIST_MARKER.match(text))
 
 
-def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> list:
+# Spacing accents a maths accent is drawn with: hat, tilde, macron, dot, dieresis, caron, breve,
+# ring, acute.
+_ACCENT_MARKS = frozenset(chr(c) for c in (0x02C6, 0x02DC, 0x00AF, 0x02D9, 0x00A8, 0x02C7, 0x02D8, 0x02DA, 0x00B4))
+
+
+def _accent_over(c: dict, start: float, end: float, base: float, scale: float, piece: list) -> bool:
+    """A spacing accent whose box lies over a glyph already in the piece being built."""
+    return c["c"] in _ACCENT_MARKS and any(
+        start < g[1] and end > g[0] and abs(base - g[2]) <= 0.5 * max(scale, g[3]) for g in piece)
+
+
+# MuPDF starts a new line where its pen jumps 0.8 em (pen_gap_census.py); a silent object that
+# closes a gap to under that keeps the line, as it does for MuPDF.
+_PEN_GAP = 0.8
+
+
+def _drop_filled_cuts(flat: list, spans: list, cuts: set, silent) -> set:
+    """The cuts left once those whose gap silent text objects fill are dropped: objects drawn between
+    the two glyphs, in the line's band, each step under 0.8 em, the last one within 0.8 em of the glyph."""
+    kept = set(cuts)
+    prev = None   # (end, scale, text object) of the last glyph
+    for i, (si, c) in enumerate(flat):
+        if _is_blank(c):
+            continue
+        x0, y0, x1, y1 = c["bbox"]
+        scale = max(float(spans[si]["size"] or 0.0), y1 - y0)
+        order = c.get("order", -1)
+        if i in kept and prev is not None:
+            em = max(scale, prev[1])
+            end, used, moved = prev[0], False, True
+            while moved:
+                moved = False
+                for s_order, sx0, sy0, sx1, sy1 in silent:
+                    if (prev[2] <= s_order <= order and sy0 < y1 and sy1 > y0
+                            and sx1 > end + 1e-6 and sx0 < x0 and sx0 - end < _PEN_GAP * em):
+                        end, used, moved = sx1, True, True
+            if used and x0 - end < _PEN_GAP * em:
+                kept.discard(i)
+        prev = (x1, scale, order)
+    return kept
+
+
+def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0), silent=()) -> list:
     """Cut a run of text into the pieces the layout stage expects.
 
     pdftext reports one line per visual row: a table row arrives as
@@ -1322,6 +1384,7 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
     line_size = sizes[(3 * len(sizes)) // 4] if sizes else 0.0
     cuts: set[int] = set()
     piece_start = 0   # where the piece being built began: the last cut, or the line's start
+    piece_glyphs: list[tuple] = []   # (start, end, baseline, scale) of the glyphs in that piece
     prev = None       # (index in flat, end along the line, scale, start along the line, text object)
     for i, (si, c) in enumerate(flat):
         if _is_blank(c):
@@ -1354,7 +1417,12 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
         # "0.658", "0.77**", "0.31*" - and the word builder, which measures each gap from the
         # character before, glued them into one word and one cell (b5c5b866, the quick gate).
         # Kerning pulls a glyph back a fraction of an em at most; half an em is a jump.
-        elif prev is not None and scale > 0 and start < prev[3] - 0.5 * max(scale, prev[2]):
+        # ... unless the glyph is a spacing accent landing on a glyph already in the piece. TeX
+        # draws the hat of \hat{v} before the v; PDFium's text page sometimes emits it after later
+        # glyphs (2503.04407: after the theta that follows), and the cut put the rest of the
+        # sentence on a line of its own. MuPDF, reading in the stream's order, never sees a jump.
+        elif (prev is not None and scale > 0 and start < prev[3] - 0.5 * max(scale, prev[2])
+              and not _accent_over(c, start, end, base, scale, piece_glyphs)):
             cuts.add(i)
         # A smaller gap ends a line where the file's own text run ends with it: MuPDF follows
         # the text-showing runs, and a table row it read as "Listening to speech or lecture"
@@ -1374,7 +1442,11 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
             cuts.add(i)
         if i in cuts:
             piece_start = i
+            piece_glyphs = []
+        piece_glyphs.append((start, end, base, scale))
         prev = (i, end, scale, start, c.get("order", -1), bool(c.get("line_end")), base)
+    if cuts and silent and direction == (1.0, 0.0):
+        cuts = _drop_filled_cuts(flat, spans, cuts, silent)
     if not cuts:
         return [spans]
     pieces, current = [], []
