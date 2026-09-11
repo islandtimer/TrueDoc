@@ -15,6 +15,8 @@ import re
 import pymupdf
 
 from truedoc.extract import render
+from truedoc.extract.handle import open_pdf
+from truedoc.geometry import Rect
 
 ICON_PROMPT = (
     "This image is a small icon or symbol cut out of a document, shown with a little of its surroundings. "
@@ -63,14 +65,14 @@ def render_region_png_base64(pdf_path: str, page_number: int, bbox: tuple[float,
     on its side (`pipeline._turn_page`); the file itself still holds the page
     sideways, so the same turn is applied here before cropping.
     """
-    doc = pymupdf.open(pdf_path)
+    doc = open_pdf(pdf_path)
     try:
         page = doc[page_number - 1]
         if turn:
             page.set_rotation((int(page.rotation) + int(turn)) % 360)
         x0, y0, x1, y1 = bbox
         pad = PADDING.get(kind, 0.1) * max(x1 - x0, y1 - y0, 1.0)
-        clip = pymupdf.Rect(x0 - pad, y0 - pad, x1 + pad, y1 + pad) & page.rect
+        clip = Rect(x0 - pad, y0 - pad, x1 + pad, y1 + pad) & page.rect
         if clip.is_empty or clip.width < 1 or clip.height < 1:
             clip = page.rect
         zoom = LONGEST_DIM.get(kind, 512) / max(clip.width, clip.height, 1.0)

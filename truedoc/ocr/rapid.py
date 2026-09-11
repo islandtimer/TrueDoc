@@ -17,6 +17,7 @@ import numpy as np
 import pymupdf
 
 from truedoc.extract import render
+from truedoc.geometry import Rect
 from truedoc.model import BBox, Char, Line, Page, Word
 
 _MAX_SIDE = 2000  # pixels on the long side; old scans are stored at huge page sizes
@@ -196,7 +197,7 @@ def ocr_region(pdf_page: "pymupdf.Page", bbox: BBox) -> tuple[list[Line], float,
     into MuPDF's unrotated space and map the results forward again - consistent with itself, and
     wrong at both ends on a rotated page, because a clip is not text (D022).
     """
-    clip = pymupdf.Rect(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
+    clip = Rect(bbox.x0, bbox.y0, bbox.x1, bbox.y1)
     if clip.is_empty or clip.width < 20 or clip.height < 10:
         return [], 0.0, 0.0
     long_side = max(clip.width, clip.height)
@@ -213,7 +214,7 @@ def ocr_region(pdf_page: "pymupdf.Page", bbox: BBox) -> tuple[list[Line], float,
             continue
         xs = [clip.x0 + p[0] / scale for p in box]
         ys = [clip.y0 + p[1] / scale for p in box]
-        rect = pymupdf.Rect(min(xs), min(ys), max(xs), max(ys))
+        rect = Rect(min(xs), min(ys), max(xs), max(ys))
         line_box = BBox(float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1))
         words = _split_words(text, line_box, score)
         if not words:

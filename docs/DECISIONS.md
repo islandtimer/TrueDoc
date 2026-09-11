@@ -170,6 +170,8 @@ PDFium (pypdfium2, Apache-2.0/BSD) and pdftext (Apache-2.0) by default from run 
 reachable for measurement only: `TRUEDOC_READER=mupdf`, `TRUEDOC_RENDERER=mupdf`,
 `TRUEDOC_OBJECTS=mupdf`.
 
+_Correction (12 Sept): the rendering stage was not in effect from 10 Sept 10:43 until run 83. Commit 905f456 renamed the renderer's document function and left the one call in `_render_pdfium` on the old name, so every PDFium render raised a NameError, the fallback caught it without a word, and MuPDF drew every page image in runs 66 to 81. The text and object readers were in effect throughout. See the progress log, 12 Sept._
+
 **Why now.** The condition set when the swap began was a run holding about 84.0 with the held-out
 fifth level. Run 71, every switch on: 84.0 (CI 83.2-84.9), held-out 81.1 against the MuPDF run's 80.9,
 tuned-on 81.9 against 81.9; nine checks up over the 1,403 pages of run 65 (53 won, 44 lost: arXiv +6,

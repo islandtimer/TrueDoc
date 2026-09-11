@@ -36,13 +36,13 @@ _CONTENT = (
 )
 
 
-def _pdf() -> bytes:
+def _pdf(content: bytes = _CONTENT) -> bytes:
     objs = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
         b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
         b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 800] "
         b"/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
-        b"<< /Length " + str(len(_CONTENT)).encode() + b" >>\nstream\n" + _CONTENT + b"\nendstream",
+        b"<< /Length " + str(len(content)).encode() + b" >>\nstream\n" + content + b"\nendstream",
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
     ]
     out = bytearray(b"%PDF-1.4\n")
@@ -61,6 +61,13 @@ def _pdf() -> bytes:
 
 def _reasons(pdfium: bool) -> tuple[dict, list]:
     """{hidden run text: reason} and the visible words, read one way or the other."""
+    page = _read(pdfium)
+    hidden = {h["text"].strip(): h["reason"] for h in page.hidden_text}
+    return hidden, sorted(w.text for w in page.words)
+
+
+def _read(pdfium: bool, content: bytes = _CONTENT):
+    """A test page, extracted one way or the other."""
     was = {k: os.environ.pop(k, None) for k in _SWITCHES}
     if pdfium:
         os.environ.update({"TRUEDOC_READER": "pdftext", "TRUEDOC_RENDERER": "pdfium",
@@ -70,13 +77,10 @@ def _reasons(pdfium: bool) -> tuple[dict, list]:
         os.environ.update({k: "mupdf" for k in _SWITCHES})
     fd, path = tempfile.mkstemp(suffix=".pdf")
     with os.fdopen(fd, "wb") as fh:
-        fh.write(_pdf())
+        fh.write(_pdf(content))
     doc = pymupdf.open(path)
     try:
-        page = extract_page(doc[0], 1)
-        hidden = {h["text"].strip(): h["reason"] for h in page.hidden_text}
-        visible = sorted(w.text for w in page.words)
-        return hidden, visible
+        return extract_page(doc[0], 1)
     finally:
         render.close_documents()
         doc.close()
@@ -102,3 +106,25 @@ def test_pdfium_finds_the_same_hidden_text_for_the_same_reasons():
     pf_hidden, pf_visible = _reasons(pdfium=True)
     assert pf_visible == mu_visible, (pf_visible, mu_visible)
     assert pf_hidden == mu_hidden, (pf_hidden, mu_hidden)
+
+
+# A line PDFium reads with a blank it generated itself ("Visible" and "words" are drawn a few
+# points apart, with no space between them), and a word drawn invisibly on the next line.
+_GAPPED = (
+    b"BT /F1 12 Tf 0 Tr 0 0 0 rg 50 700 Td (Visible) Tj 45 0 Td (words) Tj ET\n"
+    b"BT /F1 12 Tf 3 Tr 0 0 0 rg 50 650 Td (Ghost) Tj ET\n"
+)
+
+
+def test_the_quality_check_counts_the_letters_drawn_invisibly():
+    """'Ghost' is 5 of the 17 letters drawn. A page drawn mostly invisibly is a scan's OCR layer, and
+    the page-quality check routes pages by this fraction."""
+    assert _read(pdfium=False, content=_GAPPED).quality.invisible_fraction == 5 / 17
+
+
+@pytest.mark.skipif(not render.available(), reason="pypdfium2 not installed")
+def test_pdfium_counts_invisible_text_as_the_trace_does():
+    """Stage B of taking PyMuPDF out (M18, D022): the count comes from the characters as the page is
+    read, not from a second trace of the drawing. PDFium also reports the blank it generated between
+    "Visible" and "words"; a trace never sees it, so it is left out (counted, the fraction reads 5/18)."""
+    assert _read(pdfium=True, content=_GAPPED).quality.invisible_fraction == 5 / 17

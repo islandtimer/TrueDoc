@@ -20,6 +20,7 @@ except Exception:
 
 from truedoc.math.symbols import is_extension_font, is_piece_glyph, latex_for_char, unfold_truncated_surrogate
 from truedoc.extract import pdfium_objects, pdftext_rawdict, render
+from truedoc.geometry import Rect, transform_point
 from truedoc.model import BBox, Char, Drawing, ImageRef, Line, Page, TextQuality, Word
 
 # Characters that indicate a broken or untrustworthy text layer.
@@ -45,15 +46,14 @@ def _rect(b, M=None) -> BBox:
     rotated space, so everything is transformed once here.
     """
     if M is not None:
-        r = pymupdf.Rect(b) * M
+        r = Rect(b) * M
         return BBox(float(r.x0), float(r.y0), float(r.x1), float(r.y1))
     return BBox(float(b[0]), float(b[1]), float(b[2]), float(b[3]))
 
 
 def _point(pt, M=None) -> tuple[float, float]:
     if M is not None:
-        q = pymupdf.Point(pt) * M
-        return float(q.x), float(q.y)
+        return transform_point(pt, M)
     return float(pt[0]), float(pt[1])
 
 
@@ -249,6 +249,10 @@ class _Visibility:
         self.hidden: list[tuple[int, Char, str]] = []
         self.total_chars = 0
         self.distrusted = False
+        # The page-quality check's measure (`_assess_quality`): the characters the page draws and
+        # how many of them are drawn invisibly, leaving out the blanks PDFium generates to fill gaps
+        # (a trace of the drawing never sees those).
+        self.drawn_invisible = self.drawn_total = 0
         invisible = total = 0
         image_area = 0.0
         page_area = width * height or 1.0
@@ -256,6 +260,7 @@ class _Visibility:
             invisible, total, image_area = self._from_pdfium(raw, objects, M, page_area)
         else:
             invisible, total, image_area = self._from_mupdf(pdf_page, M, page_area)
+            self.drawn_invisible, self.drawn_total = invisible, total
         inv_fraction = invisible / total if total else 0.0
         coverage = min(1.0, image_area / (width * height or 1.0))
         # The same rule as the page-quality assessment: an invisible layer over a scan.
@@ -283,9 +288,12 @@ class _Visibility:
                         info = {"type": 3 if c.get("invisible") else 0,
                                 "opacity": float(c.get("alpha", 1.0)),
                                 "seqno": int(c.get("order", -1))}
+                        drawn_invisibly = info["type"] == 3 or info["opacity"] == 0.0
                         total += 1
-                        if info["type"] == 3 or info["opacity"] == 0.0:
-                            invisible += 1
+                        invisible += int(drawn_invisibly)
+                        if not c.get("generated"):
+                            self.drawn_total += 1
+                            self.drawn_invisible += int(drawn_invisibly)
                         x, y = _point(c.get("origin", (0, 0)), M)
                         self._span_at[(round(x * 2), round(y * 2))] = info
         image_area = 0.0
@@ -453,7 +461,7 @@ def _renders_uniform(pdf_page: "pymupdf.Page", box: BBox, M=None) -> bool | None
     differently shaped region elsewhere. `M` is accepted and ignored, so callers need not care.
     """
     try:
-        rect = pymupdf.Rect(box.x0 - 0.5, box.y0 - 0.5, box.x1 + 0.5, box.y1 + 0.5)
+        rect = Rect(box.x0 - 0.5, box.y0 - 0.5, box.x1 + 0.5, box.y1 + 0.5)
         if rect.is_empty or rect.width < 1 or rect.height < 1:
             return True
         samples = render.render_image(pdf_page, 1.0, tuple(rect), grey=True).tobytes()
@@ -649,7 +657,7 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
     page.words = [w for l in lines for w in l.words]
     page.lines = lines
     page.images = _extract_images(pdf_page, M)
-    page.quality = _assess_quality(pdf_page, page)
+    page.quality = _assess_quality(page, visibility)
     if page.quality.kind == "ocr":
         # Hidden OCR layers (archive.org, scanners) emit a text object per phrase or
         # word; rebuild lines by geometry, since their font sizes are meaningless.
@@ -2198,7 +2206,7 @@ def _garbage_fraction(page: Page) -> tuple[float, int]:
     return sum(1 for t in tokens if _looks_garbled(t)) / len(tokens), len(tokens)
 
 
-def _assess_quality(pdf_page: "pymupdf.Page", page: Page) -> TextQuality:
+def _assess_quality(page: Page, visibility: _Visibility) -> TextQuality:
     q = TextQuality()
     q.n_chars = sum(1 for c in page.chars if not c.text.isspace())
     q.n_alnum = sum(1 for c in page.chars if c.text.isalnum())
@@ -2211,17 +2219,9 @@ def _assess_quality(pdf_page: "pymupdf.Page", page: Page) -> TextQuality:
     cov = sum(i.bbox.area for i in page.images) / area
     q.image_coverage = min(1.0, cov)
 
-    # Invisible text (render mode 3 / zero opacity) is the signature of an OCR layer.
-    invisible = 0
-    total = 0
-    try:
-        for span in pdf_page.get_texttrace():
-            n = len(span.get("chars", []))
-            total += n
-            if span.get("type") == 3 or span.get("opacity", 1.0) == 0.0:
-                invisible += n
-    except Exception:
-        pass
+    # Invisible text (render mode 3 / zero opacity) is the signature of an OCR layer. Counted as the
+    # page is read (`_Visibility`): PDFium's characters, or MuPDF's text trace on the old reader.
+    invisible, total = visibility.drawn_invisible, visibility.drawn_total
     q.invisible_fraction = invisible / total if total else 0.0
 
     if q.n_alnum < 20:

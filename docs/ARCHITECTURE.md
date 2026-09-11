@@ -77,7 +77,7 @@ held-out fifth (81.1 against 80.9).
 | switch (default first) | what it moves | module | measured, no model, whole category |
 |---|---|---|---|
 | `TRUEDOC_READER=pdftext` / `mupdf` | characters, boxes, fonts, colours | `extract/pdftext_rawdict.py`, `extract/glyph_names.py` | quick gate 100/128 either way; tiny text 364 against MuPDF's 361 of 442 |
-| `TRUEDOC_RENDERER=pdfium` / `mupdf` | every page rendering | `extract/render.py` | 100/128, and identical marks on 82 rotated pages |
+| `TRUEDOC_RENDERER=pdfium` / `mupdf` | every page rendering | `extract/render.py` | 100/128, and identical marks on 82 rotated pages - measured at commit 3fb9e5b; from 905f456 (10 Sept 10:43) until run 83 a call left on a renamed function made every PDFium render fail and MuPDF drew every page, unnoticed because the fallback is silent |
 | `TRUEDOC_OBJECTS=pdfium` / `mupdf` | drawings, images, ruled tables | `extract/pdfium_objects.py`, `tables/ruled_pdfium.py` | tables 850 against 848 of 1,022; multi-column 678 against 678 of 884 |
 
 What the swap does not yet remove: the document handle and `Page` objects, `pymupdf.Rect`/`Matrix`

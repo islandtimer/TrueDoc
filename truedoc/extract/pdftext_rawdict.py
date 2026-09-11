@@ -1566,9 +1566,9 @@ def clipped_blocks(path: str, page_number: int, rect, M=None) -> list | None:
         return None
     turn = None
     if M is not None:
-        import pymupdf
-        turn = pymupdf.Matrix(M)
-        r = pymupdf.Rect(*rect) * ~turn
+        from truedoc.geometry import Matrix, Rect
+        turn = Matrix(M)
+        r = Rect(*rect) * ~turn
         r.normalize()
         rect = (r.x0, r.y0, r.x1, r.y1)
     x0, y0, x1, y1 = (float(rect[0]), float(rect[1]), float(rect[2]), float(rect[3]))
@@ -1590,8 +1590,8 @@ def clipped_blocks(path: str, page_number: int, rect, M=None) -> list | None:
             ye = [c["bbox"][3] for s in spans for c in s["chars"]]
             bbox = (min(xs), min(ys), max(xe), max(ye))
             if turn is not None:
-                import pymupdf
-                r = pymupdf.Rect(*bbox) * turn
+                from truedoc.geometry import Rect
+                r = Rect(*bbox) * turn
                 r.normalize()
                 bbox = (float(r.x0), float(r.y0), float(r.x1), float(r.y1))
             lines.append({"bbox": bbox, "spans": spans})

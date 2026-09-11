@@ -60,8 +60,8 @@ def _turned(rect, M):
     """A rectangle turned into the rendered space by the page's rotation matrix."""
     if M is None:
         return rect
-    import pymupdf
-    r = pymupdf.Rect(*rect) * pymupdf.Matrix(M)
+    from truedoc.geometry import Matrix, Rect
+    r = Rect(*rect) * Matrix(M)
     r.normalize()
     return (float(r.x0), float(r.y0), float(r.x1), float(r.y1))
 

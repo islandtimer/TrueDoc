@@ -18,6 +18,7 @@ from dataclasses import dataclass
 import pymupdf
 
 from truedoc.extract import pdfium_objects, render
+from truedoc.geometry import Rect
 from truedoc.model import BBox, Page
 
 MARK_TEXT = {"tick": "✓", "cross": "✗", "dot": "●", "circle": "○", "square": "■", "box": "□",
@@ -55,7 +56,7 @@ def find_marks(pdf_page: "pymupdf.Page", page: Page, M=None) -> list[Mark]:
 # ---------------------------------------------------------------- candidates
 
 def _rect(r, M) -> BBox:
-    rect = pymupdf.Rect(r)
+    rect = Rect(r)
     if M is not None:
         rect = rect * M
     rect.normalize()
@@ -212,10 +213,10 @@ def _ink(pdf_page, box: BBox, M=None):
     being done here - photographed the wrong patch of a rotated page and read its marks from it.
     `M` is accepted and ignored, so callers need not care.
     """
-    rect = pymupdf.Rect(box.x0, box.y0, box.x1, box.y1)
+    rect = Rect(box.x0, box.y0, box.x1, box.y1)
     rect.normalize()
     pad = 0.08 * max(rect.width, rect.height)
-    rect = pymupdf.Rect(rect.x0 - pad, rect.y0 - pad, rect.x1 + pad, rect.y1 + pad)
+    rect = Rect(rect.x0 - pad, rect.y0 - pad, rect.x1 + pad, rect.y1 + pad)
     zoom = _GRID / max(rect.width, rect.height, 1.0)
     try:
         img = render.render_image(pdf_page, zoom, tuple(rect))

@@ -22,6 +22,7 @@ import urllib.request
 import pymupdf
 
 from truedoc.extract import render
+from truedoc.extract.handle import open_pdf
 
 log = logging.getLogger("truedoc")
 
@@ -44,7 +45,7 @@ def _prompt() -> str:
 
 def render_page_png_base64(pdf_path: str, page_number: int, longest_dim: int = 1288) -> str:
     """The page as a PNG, longest side `longest_dim` pixels, base64-encoded."""
-    doc = pymupdf.open(pdf_path)
+    doc = open_pdf(pdf_path)
     try:
         page = doc[page_number - 1]
         rect = page.rect

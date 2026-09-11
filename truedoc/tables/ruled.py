@@ -11,6 +11,7 @@ import re
 import pymupdf
 
 from truedoc.extract import pdfium_objects, pdftext_rawdict
+from truedoc.geometry import Rect
 from truedoc.model import BBox, Block, BlockKind, Table, TableCell
 from truedoc.tables.aligned import _continues
 from truedoc.tables.cells import clean_cell_text, is_bracketed_statistic
@@ -128,7 +129,7 @@ def tall_cell_rows(rows: list, cell_rects: list[list], bounds: list, s: int, ci:
     column the extractor left out (None) because the tall cell covers them."""
     if ci >= len(cell_rects[s]) or cell_rects[s][ci] is None:
         return [s]
-    rect = pymupdf.Rect(cell_rects[s][ci])
+    rect = Rect(cell_rects[s][ci])
     spanned = [s]
     r = s + 1
     while r < len(rows) and ci < len(cell_rects[r]) and cell_rects[r][ci] is None and (rows[r][ci] if ci < len(rows[r]) else None) is None and bounds[r] is not None and bounds[r][1] <= rect.y1 + 2.0:
@@ -163,7 +164,7 @@ def deal_tall_cells(pdf_page: "pymupdf.Page", rows: list, cell_rects: list[list]
         for ci, val in enumerate(row):
             if not isinstance(val, str) or "\n" not in val or ci >= len(cell_rects[s]) or cell_rects[s][ci] is None:
                 continue
-            rect = pymupdf.Rect(cell_rects[s][ci])
+            rect = Rect(cell_rects[s][ci])
             spanned = tall_cell_rows(rows, cell_rects, bounds, s, ci)
             if len(spanned) < 2:
                 continue
@@ -177,7 +178,7 @@ def deal_tall_cells(pdf_page: "pymupdf.Page", rows: list, cell_rects: list[list]
                     blocks = None
             if blocks is None:
                 try:
-                    blocks = pdf_page.get_text("dict", clip=rect).get("blocks", [])
+                    blocks = pdf_page.get_text("dict", clip=pymupdf.Rect(*rect)).get("blocks", [])
                 except Exception:
                     continue
             texts: dict[int, list[str]] = {}
@@ -203,7 +204,7 @@ def deal_tall_cells(pdf_page: "pymupdf.Page", rows: list, cell_rects: list[list]
                 while len(rows[rr]) <= ci:
                     rows[rr].append(None)
                 rows[rr][ci] = "\n".join(texts.get(rr, [])) or ""
-                cell_rects[rr][ci] = pymupdf.Rect(rect.x0, bounds[rr][0], rect.x1, bounds[rr][1])
+                cell_rects[rr][ci] = Rect(rect.x0, bounds[rr][0], rect.x1, bounds[rr][1])
 
 
 def row_spans(rows: list, cell_rects: list[list]) -> dict[tuple[int, int], int]:
@@ -381,20 +382,20 @@ def find_ruled_tables(pdf_page: "pymupdf.Page", page=None) -> list[Block]:
                 cbox = None
                 rects = [cell_rects[s][ci] for s in srcs if s < len(cell_rects) and ci < len(cell_rects[s]) and cell_rects[s][ci] is not None]
                 if rects:
-                    cr = pymupdf.Rect(rects[0])
+                    cr = Rect(rects[0])
                     for extra in rects[1:]:
-                        cr |= pymupdf.Rect(extra)
+                        cr |= Rect(extra)
                     if pdf_page.rotation and not rendered:
                         cr = cr * pdf_page.rotation_matrix
                     cr.normalize()
                     if slices > 1:
                         h = (cr.y1 - cr.y0) / slices
-                        cr = pymupdf.Rect(cr.x0, cr.y0 + k * h, cr.x1, cr.y0 + (k + 1) * h)
+                        cr = Rect(cr.x0, cr.y0 + k * h, cr.x1, cr.y0 + (k + 1) * h)
                     cbox = BBox(float(cr.x0), float(cr.y0), float(cr.x1), float(cr.y1))
                 cells.append(TableCell(text=clean_cell_text(text), row=ri, col=ci, rowspan=down, colspan=span, is_header=(ri in headers or sub_heading), bbox=cbox))
         if non_empty < min(4, n_rows * n_cols):
             continue
-        rect = pymupdf.Rect(t.bbox)
+        rect = Rect(t.bbox)
         if pdf_page.rotation and not rendered:
             rect = rect * pdf_page.rotation_matrix
         bbox = BBox(float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1))

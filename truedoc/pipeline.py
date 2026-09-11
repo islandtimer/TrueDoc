@@ -13,6 +13,7 @@ import pymupdf
 
 from truedoc.classify.blocks import _assign_heading_levels, classify_blocks
 from truedoc.extract import render as page_render
+from truedoc.extract.handle import open_pdf
 from truedoc.extract.textlayer import extract_page
 from truedoc.layout.fuse import apply_layout
 from truedoc.model import BBox, Block, BlockKind, Document, Page
@@ -63,7 +64,7 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
         doc.metadata["last_modified"] = _dt.datetime.fromtimestamp(mtime, _dt.timezone.utc).replace(microsecond=0).isoformat()
     except OSError:
         pass
-    pdf = pymupdf.open(path)
+    pdf = open_pdf(path)
     try:
         md = pdf.metadata or {}
         if md.get("title"):
@@ -922,7 +923,7 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
             # A layer that covers only part of the page (a download stamp at the foot of a bare
             # scan) leaves a strip without a witness: our engine reads that strip.
             try:
-                pdf = pymupdf.open(path)
+                pdf = open_pdf(path)
                 try:
                     pdf_page = pdf[page.number - 1]
                     if page.meta.get("turned"):
