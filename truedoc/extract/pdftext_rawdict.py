@@ -476,7 +476,14 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                         text_obj = raw_api.FPDFText_GetTextObject(tp, i)
                         font = raw_api.FPDFTextObj_GetFont(text_obj) if text_obj else None
                         adv_w = ctypes.c_float()
-                        if font and code and raw_api.FPDFFont_GetGlyphWidth(font, code, abs(raw_api.FPDFText_GetFontSize(tp, i)), adv_w):
+                        # PDFium marks a hyphen it recognises at a line end with U+0002, and the
+                        # width lookup goes by Unicode: asked for code 2 it answers with the font's
+                        # width for a code it does not have - a full em on 0be9ba92 (11.02pt against
+                        # the hyphen's 3.67) - and the line ran 7pt into the gutter, the column
+                        # finder saw no gutter, and the right column's first paragraph was read
+                        # before the left column's heading. The width asked for is the hyphen's.
+                        width_code = 0x2D if code == 2 else code
+                        if font and code and raw_api.FPDFFont_GetGlyphWidth(font, width_code, abs(raw_api.FPDFText_GetFontSize(tp, i)), adv_w):
                             # ... at the x scale of the matrix: MuPDF's right edge is the origin
                             # plus the advance times the x scale on every one of 73,316 characters
                             # whose matrix scales x and y differently (the y scale on 8%).

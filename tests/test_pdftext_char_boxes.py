@@ -431,3 +431,36 @@ def test_a_fonts_bold_and_italic_match_mupdf_when_its_name_says_nothing():
         doc.close()
     for font in ("CIDFont+F2", "CIDFont+F3", "CIDFont+F5"):
         assert ours[font] == theirs[font], (font, ours[font], theirs[font])
+
+
+@pytest.mark.skipif(not os.path.exists(_STYLE_PAGE), reason="benchmark page not present")
+def test_a_line_end_hyphen_is_boxed_at_the_hyphens_own_width():
+    """PDFium marks a hyphen it recognises at a line end with U+0002, and the reader asked the
+    font for the width of code 2 - a full em on 0be9ba92 page 5, 11.02pt against the hyphen's
+    3.67 - so "anti-" ran 7pt into the gutter, the column finder saw no gutter, and the right
+    column's first paragraph was read before the left column's heading (one check). Every such
+    hyphen is boxed at the width MuPDF gives it, to a fifth of a point."""
+    raw = A.build(_STYLE_PAGE, 1)
+    assert raw is not None
+    ours = {}
+    for b in raw["blocks"]:
+        for ln in b["lines"]:
+            for sp in ln["spans"]:
+                for c in sp["chars"]:
+                    if c["c"] == "-" and c.get("origin"):
+                        ours[(round(c["origin"][0], 1), round(c["origin"][1], 1))] = c["bbox"][2] - c["bbox"][0]
+    doc = pymupdf.open(_STYLE_PAGE)
+    try:
+        theirs = {}
+        for b in doc[0].get_text("rawdict")["blocks"]:
+            for ln in b.get("lines", []):
+                for sp in ln["spans"]:
+                    for c in sp["chars"]:
+                        if c["c"] == "-":
+                            theirs[(round(c["origin"][0], 1), round(c["origin"][1], 1))] = c["bbox"][2] - c["bbox"][0]
+    finally:
+        doc.close()
+    matched = [k for k in ours if k in theirs]
+    assert matched, (sorted(ours), sorted(theirs))
+    off = [(k, round(ours[k], 2), round(theirs[k], 2)) for k in matched if abs(ours[k] - theirs[k]) > 0.2]
+    assert not off, off

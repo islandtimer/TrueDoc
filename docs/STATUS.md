@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-11, 15:05 (after run 71: 84.0 with every PDFium switch on, held-out 81.1 - the best yet - and tuned-on 81.9; level with the MuPDF run's 84.0 and nine checks above it; the PDFium readers are now the default, D023, and MuPDF is reachable by name for measurement only; without a model the tables category reads 850 against MuPDF's 848, multi-column 678 against 678, tiny text 364 against 361; run 54 without any model was 67.4; the icon question measured and closed)._
+_Last updated: 2026-09-11, 23:10 (after run 75: 84.1 with the PDFium readers as the default, held-out 81.2 and tuned-on 82.0 - both the best yet - and fifteen checks above the MuPDF run of the same code; a line-end hyphen fix measured and committed for run 76; without a model the tables category reads 852 against MuPDF's 848, multi-column 681 against 678, tiny text 364 against 361, headers 738 against 738; run 54 without any model was 67.4; the icon question measured and closed)._
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -135,8 +135,10 @@ two like it) so that every future change can be measured against it, but no page
 |---|---|---|
 | Characters and fonts | `TRUEDOC_READER=pdftext` (default) | tiny text 364 against 361 of 442; quick gate 100 of 128 |
 | Turning pages into pictures | `TRUEDOC_RENDERER=pdfium` (default) | 100 of 128 - no difference at all |
-| Drawings and picture positions | `TRUEDOC_OBJECTS=pdfium` (default) | multi-column 678 against 678 of 884 |
-| Finding ruled tables | (same switch) | tables 850 against 848 of 1,022 (was 830 when first built) |
+| Drawings and picture positions | `TRUEDOC_OBJECTS=pdfium` (default) | multi-column 681 against 678 of 884 |
+| Finding ruled tables | (same switch) | tables 852 against 848 of 1,022 (was 830 when first built) |
+
+**Since run 71: the PDFium path fixed by points.** Runs 72 to 75 took it from 84.0 to 84.1, with held-out 81.2 and tuned-on 82.0, both the best yet. Each change was proved against what MuPDF does before it was written: the line join, a negative font size read the right way round, the crop box, a list's marker kept with its item, a stranded accent put back before its letter, and bold and italic read from the font program when the name says nothing. The latest: PDFium marks a hyphen at a line end with a control code, and the reader asked the font for that code's width - a full em - so a two-column page lost its gutter and read a paragraph out of order. On 4,058 such hyphens the width now agrees with MuPDF's on all but two, and the whole categories moved by exactly that page. Run 76 measures it. Next: a tilde drawn over its letter, which PDFium reports where it is drawn and the maths stage expected where MuPDF moves it (an arXiv page, two checks); then MuPDF's line-break rule, now measured - a new line wherever the pen jumps forward 0.8 em or more - which the reader does not yet follow.
 
 What is left of M18 is housekeeping, not reading: the document handle, two geometry types and a
 rotation call still come from the PyMuPDF package, so it cannot be uninstalled yet.
