@@ -138,17 +138,31 @@ def test_a_type3_fonts_widths_are_scaled_by_its_font_matrix():
         os.unlink(path)
 
 
-def test_a_font_with_no_name_answers_nothing():
+def test_fonts_with_no_name_are_told_apart_by_the_first_width_pdfium_reports():
     """A TeX page set in seven Type 3 fonts, none with a /BaseFont, matched the first of them for
-    every glyph, and a 'm' 8pt wide was boxed 0.007pt wide: PDFium names the font "" and so did
-    the table. No name, no answer - the glyph keeps the box PDFium gives it (09f90a8f, seven
-    checks over three pages)."""
-    t3 = (b"<< /Type /Font /Subtype /Type3 /FontMatrix [1 0 0 -1 0 0] /FontBBox [0 0 10 10] /CharProcs << >> "
-          b"/Encoding << /Type /Encoding /Differences [109 /m] >> /FirstChar 109 /Widths [60] >>")
-    path = _with(_pdf([t3], b"BT /F1 1 Tf 10 100 Td (m) Tj ET\n"))
+    every glyph, and a 'm' 8pt wide was boxed 0.007pt wide (09f90a8f, seven checks over three
+    pages). PDFium names such a font "" - and answers the width of any of its glyphs with the
+    font's first /Widths entry, which is the one thing that tells them apart (0b65b6a5: 0.770,
+    0.718 and 0.437 for its three). Two unnamed fonts: no answer by name alone; the probe picks
+    one out and its own /Differences name the glyph. One unnamed font: no ambiguity, an answer."""
+    def t3(first_width, name_for_109):
+        return (b"<< /Type /Font /Subtype /Type3 /FontMatrix [0.01 0 0 0.01 0 0] /FontBBox [0 0 100 100] /CharProcs << >> "
+                b"/Encoding << /Type /Encoding /Differences [108 /l /" + name_for_109 + b"] >> /FirstChar 108 /Widths [" + first_width + b" 60] >>")
+    path = _with(_pdf([t3(b"77", b"m"), t3(b"43", b"n")], b"BT /F1 1 Tf 10 100 Td (lm) Tj ET\n"))
     try:
         tables = G.page_glyph_names(path, 1)
         assert G.advance_for(tables, "", 109) is None
         assert G.text_for(tables, "", 109) is None
+        picked = G.narrow(tables, "", 430.0)           # PDFium reported 0.43 at size 1: the second font
+        assert picked is not None
+        assert G.text_for(picked, "", 109) == "n"
+        assert G.advance_for(picked, "", 109) == pytest.approx(600.0)
+        assert G.narrow(tables, "", 500.0) is None
+    finally:
+        os.unlink(path)
+    path = _with(_pdf([t3(b"77", b"m")], b"BT /F1 1 Tf 10 100 Td (lm) Tj ET\n"))
+    try:
+        tables = G.page_glyph_names(path, 1)
+        assert G.text_for(tables, "", 109) == "m"
     finally:
         os.unlink(path)

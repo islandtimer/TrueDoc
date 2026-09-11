@@ -137,3 +137,28 @@ def test_a_tex_page_in_unnamed_type3_fonts_keeps_its_words_whole():
         doc.close()
     assert "methods" in words and "Quantitatively," in words, words[:40]
     assert "m" not in words[:200] or "ethods" not in words, [w for w in words if w in ("m", "ethods", "w", "hen")]
+
+
+_DVIPS_PAGE = os.path.join("bench", "data", "olmocr-bench", "bench_data", "pdfs", "multi_column",
+                           "0b65b6a5c9e4533f7c7859dcbb1eede86907_page_4_pg1.pdf")
+
+
+@pytest.mark.skipif(not os.path.exists(_DVIPS_PAGE), reason="benchmark page not present")
+def test_a_dvips_page_with_unnamed_type3_fonts_reads_its_words():
+    """Three Type 3 fonts with no /BaseFont, glyphs numbered from 0 and named by their decimal
+    codes ("/76" for L). PDFium hands back the codes (and U+0000 for code 0, with no error
+    reported), the page read as 95% bad characters and fell back to OCR. Told apart by the first
+    width PDFium reports for each font, and read through their own /Differences with a decimal
+    name as its code, the page reads "Lobo RA, Kletzky OA" as MuPDF does."""
+    from truedoc.extract import render
+    from truedoc.extract.textlayer import extract_page
+    import pymupdf
+    doc = pymupdf.open(_DVIPS_PAGE)
+    try:
+        page = extract_page(doc[0], 1)
+        text = " ".join(w.text for ln in page.lines for w in ln.words)
+    finally:
+        render.close_documents()
+        doc.close()
+    assert "Lobo RA, Kletzky OA" in text, text[:200]
+    assert "\x00" not in text and "Γ" not in text

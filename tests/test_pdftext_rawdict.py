@@ -43,10 +43,14 @@ def test_a_type_3_font_reporting_size_one_does_not_shatter_the_line():
 
 
 def test_the_gap_is_measured_along_the_line_not_across_the_page():
-    """On a rotated page text runs down the page, so a sideways rule would never find the gap."""
+    """On a rotated page text runs down the page, so a sideways rule would never find the gap.
+    (The level case sits the second glyph a third of an em lower, not nine ems: nine ems down
+    is another line by the baseline rule, whatever the direction.)"""
+    near = [{"c": "A", "bbox": (0, 0, 10, 10), "origin": (0, 10), "ink": None, "generated": False, "map_error": False},
+            {"c": "B", "bbox": (0, 3, 10, 13), "origin": (0, 13), "ink": None, "generated": False, "map_error": False}]
     down = [{"c": "A", "bbox": (0, 0, 10, 10), "origin": (0, 10), "ink": None, "generated": False, "map_error": False},
             {"c": "B", "bbox": (0, 90, 10, 100), "origin": (0, 100), "ink": None, "generated": False, "map_error": False}]
-    assert len(A._split_at_gaps([_span(down)], (1.0, 0.0))) == 1      # nothing apart sideways
+    assert len(A._split_at_gaps([_span(near)], (1.0, 0.0))) == 1      # nothing apart sideways
     assert len(A._split_at_gaps([_span(down)], (0.0, 1.0))) == 2      # far apart along the line
 
 
@@ -271,3 +275,67 @@ def test_a_blank_pdfium_invents_beside_a_dash_between_digits_is_dropped():
         spans = [_span(chars)]
         A._drop_tight_blanks(spans, (1.0, 0.0))
         assert "".join(c["c"] for sp in spans for c in sp["chars"]) == kept, (chars, kept)
+
+
+def test_the_join_refuses_a_run_that_starts_an_em_past_the_line():
+    """PDFium ends a line where the next run starts far to the right. On a page with a 44pt drop
+    cap (0e5f0c34) the first line of column one and the line of column two, on the same baseline
+    1.44 em apart across the gutter, were welded into one line and the column finder lost the
+    page. A run within an em of the line's end still joins (a word torn at a superscript); one
+    beyond it is the next thing on the page. Off with the object-gap knob at 0."""
+    import os
+    prev = [_span([_char("i", 0, 4), _char("s", 4, 8)])]
+    near = [_span([_char("m", 11, 18)])]           # 0.3 em on, the same baseline
+    far = [_span([_char("m", 22, 29)])]            # 1.4 em on, the same baseline
+    level = (1.0, 0.0)
+    was = os.environ.pop("TRUEDOC_OBJECT_GAP", None)
+    try:
+        assert A._continues(prev, near, level)
+        assert not A._continues(prev, far, level)
+        os.environ["TRUEDOC_OBJECT_GAP"] = "0"
+        assert A._continues(prev, far, level)
+    finally:
+        os.environ.pop("TRUEDOC_OBJECT_GAP", None)
+        if was is not None:
+            os.environ["TRUEDOC_OBJECT_GAP"] = was
+
+
+def test_where_pdfium_ended_the_line_an_em_of_space_is_a_cut():
+    """pdftext regroups characters by the band they overlap, so a 44pt drop cap's band took in the
+    first line of column one and the line of column two beside it (0e5f0c34), 1.44 em apart -
+    under the 1.5-em rule, and in one text object, so the run rule could not see it. PDFium had
+    ended its own line at the gutter (a generated CR LF, remembered on the character before it);
+    where it stopped and an em of space follows, the line is cut. The same gap with no line end
+    stays, as before."""
+    import os
+    a = dict(_char("s", 0, 10), line_end=True)
+    b = _char("m", 24, 34)                          # 1.4 em on, one text object
+    plain = _char("s", 0, 10)
+    was = os.environ.pop("TRUEDOC_OBJECT_GAP", None)
+    try:
+        assert len(A._split_at_gaps([_span([a, b])])) == 2
+        assert len(A._split_at_gaps([_span([plain, b])])) == 1
+        os.environ["TRUEDOC_OBJECT_GAP"] = "0"
+        assert len(A._split_at_gaps([_span([a, b])])) == 1
+    finally:
+        os.environ.pop("TRUEDOC_OBJECT_GAP", None)
+        if was is not None:
+            os.environ["TRUEDOC_OBJECT_GAP"] = was
+
+
+def test_a_baseline_an_em_away_starts_a_line_as_it_does_for_mupdf():
+    """pdftext groups characters by the band they overlap, so a 44pt drop cap whose baseline
+    sits 24pt below the text's went into the first line of its column (0e5f0c34): the line stood
+    45pt tall, overlapped the neighbouring column's line, the two were joined downstream and the
+    page's columns were lost. MuPDF sets the drop cap on a line of its own. A script steps a
+    third to a half of an em and stays."""
+    cap = {"c": "H", "bbox": (0, 0, 36, 45), "origin": (0, 34), "ink": None, "generated": False, "map_error": False}
+    text = [_char(ch, 40 + 5 * k, 45 + 5 * k, 12, 22) for k, ch in enumerate("yperkal")]   # baseline 22, 12pt below
+    assert len(A._split_at_gaps([_span([cap] + text)])) == 2
+    script = [_char("x", 0, 10), dict(_char("2", 10, 15, -4, 6))]        # a superscript, 0.4 em up
+    assert len(A._split_at_gaps([_span(script)])) == 1
+    # a wrapped tail of six glyphs, four of them scripts (2503.06293): the text's size is the
+    # yardstick, not the scripts', and the 0.7-em swing from a superscript to a subscript stays
+    tail = [_char("χ", 0, 6), _char("-", 6, 9, -4, 6), _char("2", 9, 12, 3, 13), _char(",", 12, 14, 3, 13),
+            _char("5", 14, 17, 3, 13), _char(".", 17, 20)]
+    assert len(A._split_at_gaps([_span(tail)])) == 1

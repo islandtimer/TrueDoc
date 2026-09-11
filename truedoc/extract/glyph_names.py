@@ -74,11 +74,17 @@ def _differences(path: str, page_number: int) -> dict[str, list[tuple[dict[int, 
             # text space; every other font's are thousandths of an em. Kept as thousandths
             # either way, so a width reads the same whatever the font.
             scale = 1.0
+            probe = None
             if str(f.get("/Subtype", "")) == "/Type3":
                 fm = [float(v) for v in (f.get("/FontMatrix") or [0.001, 0, 0, 0.001, 0, 0])]
                 scale = (abs(fm[0]) + abs(fm[1])) * 1000.0 if len(fm) >= 2 else 1.0
                 widths = [w * scale for w in widths]
-            out[base].append((names, widths, first))
+                # PDFium answers `FPDFFont_GetGlyphWidth` for every code of a Type 3 font with
+                # its first /Widths entry (measured on 0b65b6a5: 0.770, 0.718 and 0.437 for its
+                # three unnamed fonts, each the first width times the font matrix). A quirk,
+                # and the one thing that tells three fonts with no name apart.
+                probe = widths[0] if widths else None
+            out[base].append((names, widths, first, probe))
         except Exception:
             continue
     return out
@@ -113,15 +119,36 @@ def advance_for(tables: dict | None, font: str, code: int) -> float | None:
     find: its loose box is then the glyph's ink, and cmex's brace pieces - 4pt of ink on an
     advance of 10 - stood out of line with each other and a cases brace read as three braces.
     """
-    if not tables or not font:
-        # A font with no name cannot be told from another with none: a TeX page set in seven
-        # Type 3 fonts, none with a /BaseFont, matched the first of them for every glyph.
+    if not tables or not _named(tables, font):
         return None
-    for _names, widths, first in tables.get(_SUBSET.sub("", font), []):
+    for _names, widths, first, *_ in tables.get(_SUBSET.sub("", font), []):
         i = code - first
         if 0 <= i < len(widths):
             return widths[i]
     return None
+
+
+def _named(tables: dict, font: str) -> bool:
+    """A font with no name cannot be told from another with none - a TeX page set in seven
+    Type 3 fonts, none with a /BaseFont, matched the first of them for every glyph - unless
+    the tables hold exactly one such font, or `narrow` has already picked it out."""
+    return bool(font) or len(tables.get("", [])) == 1
+
+
+def narrow(tables: dict | None, font: str, probe: float | None) -> dict | None:
+    """The one resource of this name whose first width is `probe` (thousandths of an em), as a
+    table of its own, or None when none or several match.
+
+    PDFium reports a Type 3 font's first /Widths entry as the width of every glyph, which is
+    useless as an advance and decisive as a fingerprint: with it, a page's unnamed fonts can be
+    told apart and each glyph read from its own font's /Differences and /Widths."""
+    if not tables or probe is None:
+        return None
+    key = _SUBSET.sub("", font)
+    hits = [entry for entry in tables.get(key, []) if entry[3] is not None and abs(entry[3] - probe) <= 0.01 * max(abs(probe), 1.0)]
+    if len(hits) != 1:
+        return None
+    return {key: hits}
 
 
 def text_for(tables: dict | None, font: str, code: int, advance_per_em: float | None = None) -> str | None:
@@ -130,7 +157,7 @@ def text_for(tables: dict | None, font: str, code: int, advance_per_em: float | 
     `advance_per_em` is the character's advance in thousandths of an em, used to choose
     between resources of the same name that both define the code.
     """
-    if not tables or not font:
+    if not tables or not _named(tables, font):
         return None
     from fontTools import agl
 
@@ -139,12 +166,22 @@ def text_for(tables: dict | None, font: str, code: int, advance_per_em: float | 
         return None
     if len(candidates) > 1 and advance_per_em is not None:
         def distance(c) -> float:
-            names, widths, first = c
+            names, widths, first = c[0], c[1], c[2]
             i = code - first
             return abs(widths[i] - advance_per_em) if 0 <= i < len(widths) else 1e9
         candidates.sort(key=distance)
     name = candidates[0][0][code]
     text = agl.toUnicode(name)
+    if not text and name.isdigit():
+        # A name that is nothing but a decimal number is the character's code: dvips names
+        # a Type 3 font's glyphs that way ("/76" for L, "/111" for o on 0b65b6a5), the glyph
+        # list knows no such name, and MuPDF reads the page. Measured against MuPDF's text of
+        # that page: the decimal reading gives its words.
+        try:
+            value = int(name)
+            text = chr(value) if 0x20 <= value < 0x110000 else ""
+        except (ValueError, OverflowError):
+            text = ""
     if not text:
         return None
     # The glyph list's Ohm sign for "Omega" and its one-character ligatures for "fi" and "fl"

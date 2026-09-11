@@ -70,6 +70,7 @@ def _is_blank(c: dict) -> bool:
 _DESCENDER = 0.21       # last-resort baseline estimate, used only where PDFium will not give an origin
 _TEX_BOLD = re.compile(r"^(?:[a-z]{6}\+)?(?:cmb|cmbx|cmbsy|cmmib|cmssbx|sfbx|sfbi|eufb)\d")   # TeX's bold faces
 _LINE_GAP = 1.5         # a gap this many times the font size ends a line (see _split_at_gaps)
+_BASELINE_STEP = 1.0    # a baseline this many ems from the last glyph's starts a line (a drop cap)
 _OBJECT_GAP = 1.0       # ... and this many where the text object changes with it (measured: 0.5, 0.75
                         # and 1.0 each gain six table checks on the changed pages; 1.0 costs the fewest
                         # multi-column checks, one; 0 switches it off)
@@ -321,6 +322,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
 
             for i in wanted:
                 box = None
+                probe = None
                 if raw_api.FPDFText_GetLooseCharBox(tp, i, loose):
                     box = _flip(loose.left, loose.top, loose.right, loose.bottom, x_off, y_top)
                 ink = None
@@ -331,7 +333,10 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                 if raw_api.FPDFText_GetCharOrigin(tp, i, ox, oy):
                     origin = (ox.value - x_off, y_top - oy.value)
                 code = raw_api.FPDFText_GetUnicode(tp, i)
-                map_error = raw_api.FPDFText_HasUnicodeMapError(tp, i) == 1
+                # A NUL is never a character: PDFium maps a dvips Type 3 font's code 0 (its
+                # first glyph, the capital A on 0b65b6a5) to U+0000 and reports no error, and
+                # the line read "Lobo R\x00". An unmapped code, like any other.
+                map_error = raw_api.FPDFText_HasUnicodeMapError(tp, i) == 1 or code == 0
                 drawn = _drawn_size(raw_api, tp, i, matrix, scales)
                 # The top and bottom are the font's ascent and descent from the baseline, which is
                 # the box MuPDF reports for every character of a span. PDFium's loose box stops
@@ -416,7 +421,24 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     if widths_tables is None:
                         widths_tables = glyph_names.page_glyph_names(path, page_number) or {}
                     if widths_tables and raw_api.FPDFText_GetFontInfo(tp, i, font_buf, 256, font_flags):
-                        w = glyph_names.advance_for(widths_tables, font_buf.value.decode("latin-1", "replace"), code)
+                        font_name = font_buf.value.decode("latin-1", "replace")
+                        tables = widths_tables
+                        if not font_name:
+                            # No name to look the font up by. PDFium answers the width of any
+                            # glyph of a Type 3 font with the font's first /Widths entry, which
+                            # picks the resource out (0b65b6a5: three unnamed fonts, three
+                            # first widths); the same fingerprint names the glyph in `_build`.
+                            probe_obj = raw_api.FPDFText_GetTextObject(tp, i)
+                            probe_font = raw_api.FPDFTextObj_GetFont(probe_obj) if probe_obj else None
+                            probe_w = ctypes.c_float()
+                            # any code gives the same answer, but code 0 - dvips's first glyph,
+                            # the capital A of 0b65b6a5 - gets no answer at all, so ask by a few
+                            for probe_code in (code, 1, 32, 65):
+                                if probe_font and raw_api.FPDFFont_GetGlyphWidth(probe_font, probe_code, 1.0, probe_w) and probe_w.value > 0:
+                                    probe = probe_w.value * 1000.0
+                                    break
+                            tables = glyph_names.narrow(widths_tables, font_name, probe) or widths_tables
+                        w = glyph_names.advance_for(tables, font_name, code)
                         if w is not None:
                             xsize = float(raw_api.FPDFText_GetFontSize(tp, i)) * abs(matrix.a) or drawn
                             box = (origin[0], box[1], origin[0] + w * xsize / 1000.0, box[3])
@@ -455,6 +477,7 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                     "map_error": map_error,
                     "clipped": clipped,
                     "code": code,
+                    "probe": probe,         # an unnamed Type 3 font's fingerprint (see the widths rule)
                     # the writing direction, as PDFium measures it: radians in the y-down page
                     # space, so (cos, sin) is MuPDF's direction vector (measured, see _line_dir)
                     "angle": float(raw_api.FPDFText_GetCharAngle(tp, i)),
@@ -622,6 +645,7 @@ def _build(path: str, page_number: int) -> dict | None:
     for block_index, block in enumerate(grouped):
         for line in block.get("lines") or []:
             spans = []
+            last_added: dict | None = None      # the last character kept, across spans
             for span in line.get("spans") or []:
                 font = span.get("font") or {}
                 font_name = str(font.get("name") or "")
@@ -640,24 +664,38 @@ def _build(path: str, page_number: int) -> dict | None:
                         # PDFium's own line ends, not glyphs. They rode along as characters and
                         # were harmless until a Type 3 TeX page, where the raw-code recovery took
                         # the carriage return (0x0D) for cmr's "fl" ligature and an author block
-                        # grew a column of "fl" cells (09f90a8f). A line end is a line end.
+                        # grew a column of "fl" cells (09f90a8f). A line end is a line end - and
+                        # it is remembered on the character before it, because pdftext regroups
+                        # by band and `_split_at_gaps` wants to know where PDFium stopped.
+                        target = chars[-1] if chars else last_added
+                        if target is not None:
+                            target["line_end"] = True
                         continue
-                    text = _as_mupdf_would(text, font_name, g)
+                    named = None
                     if (g and g.get("map_error") and len(text) == 1 and ord(text) == g.get("code", -1)
                             and not is_extension_font(font_name)):
-                        # The raw code survived every table: ask the PDF what the glyph is
-                        # called. Adobe's fonts name their ligatures in parts ("f_i", "T_h"),
-                        # which PDFium's glyph list lacks, and a page of Minion and Myriad read
-                        # "non uorescent" and "us" for "Thus" (01ed6dcc). An extension font's
-                        # codes stay raw: the maths stage decodes those itself.
+                        # PDFium handed back the bare code: ask the PDF what the glyph is called
+                        # before guessing from a TeX table. Adobe's fonts name their ligatures in
+                        # parts ("f_i", "T_h"), which PDFium's glyph list lacks, and a page of
+                        # Minion and Myriad read "non uorescent" and "us" for "Thus" (01ed6dcc);
+                        # a dvips Type 3 font numbers its glyphs from 0 and names them by their
+                        # codes, and the TeX guess had read its code 0 as cmr's Gamma ("Lobo RΓ",
+                        # 0b65b6a5). The PDF's own name wins; the guess serves what has none.
+                        # An extension font's codes stay raw: the maths stage decodes those itself.
                         if names is None:
                             names = glyph_names.page_glyph_names(path, page_number) or {}
                         adv = None
                         if (g or {}).get("bbox") and (g or {}).get("size"):
                             adv = (g["bbox"][2] - g["bbox"][0]) / g["size"] * 1000.0
-                        named = glyph_names.text_for(names, font_name, g["code"], adv)
+                        # A font with no name is told from the others with none by the first
+                        # width PDFium reports for it (see `_geometry`); with the resource picked
+                        # out, its own /Differences name the glyph.
+                        tables = (glyph_names.narrow(names, font_name, g.get("probe")) or names) if not font_name else names
+                        named = glyph_names.text_for(tables, font_name, g["code"], adv)
                         if named:
                             text = named
+                    if not named:
+                        text = _as_mupdf_would(text, font_name, g)
                     box = (g or {}).get("bbox")
                     if len(text) == 1 and unicodedata.category(text) == "Mn":
                         # A combining mark - cmsy's negation slash, cmmi's vector arrow, a hat -
@@ -706,6 +744,7 @@ def _build(path: str, page_number: int) -> dict | None:
                             "invisible": bool((g or {}).get("invisible")),
                             "alpha": float((g or {}).get("alpha", 1.0)),
                         })
+                    last_added = chars[-1]
                 if not chars:
                     continue
                 _divide_shared_boxes(chars)
@@ -931,6 +970,14 @@ def _continues(prev: list, spans: list, direction, bars: list | None = None) -> 
     # starts level with it), ...
     if _along(cb["bbox"], direction)[0] < _along(ca["bbox"], direction)[0] - 0.1 * size:
         return False
+    # ... and no further on than an em beyond the line's end. PDFium ended the line there for
+    # a reason: on a page with a 44pt drop cap (0e5f0c34) the first line of column one and the
+    # line of column two on the same baseline, 1.44 em apart across the gutter, were welded
+    # into one line and the column finder lost the page. A superscript or a torn fraction
+    # starts within the line; a run that begins an em past it is the next thing on the page.
+    gap = _object_gap()
+    if gap > 0 and _along(cb["bbox"], direction)[0] - _along(ca["bbox"], direction)[1] > gap * size:
+        return False
     # ... and its baseline is within half an em of the line's, or of the last glyph's. A
     # superscript rises a third to a half of an em and stays; a fraction's numerator rises
     # two thirds and starts a line of its own - as it does for MuPDF - so that the maths stage
@@ -1063,6 +1110,14 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
     object_gap = _object_gap()
     dx, dy = direction
     flat = [(si, c) for si, sp in enumerate(spans) for c in sp["chars"]]
+    sizes = sorted(max(float(spans[si]["size"] or 0.0), c["bbox"][3] - c["bbox"][1])
+                   for si, c in flat if not _is_blank(c))
+    # The line's own size, for the baseline rule below: the upper quartile of its glyphs. The
+    # median failed on a wrapped tail of six glyphs, four of them scripts ("χ⁻₂,₅." on
+    # 2503.06293), where it fell to the script size and a script's step looked like a line;
+    # the upper quartile is the text's size there, and still the text's on a line that holds
+    # one 44pt drop cap among twenty letters.
+    line_size = sizes[(3 * len(sizes)) // 4] if sizes else 0.0
     cuts: set[int] = set()
     prev = None       # (index in flat, end along the line, scale, start along the line, text object)
     for i, (si, c) in enumerate(flat):
@@ -1074,7 +1129,21 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
         # Not the reported size: a Type 3 font reports its matrix scale instead (1.0 here,
         # which would make every gap look enormous), so take the taller of the two.
         scale = max(float(spans[si]["size"] or 0.0), y1 - y0)
+        ox, oy = c.get("origin") or (x0, y1)
+        base = -ox * dy + oy * dx
         if prev is not None and scale > 0 and start - prev[1] >= limit * max(scale, prev[2]):
+            cuts.add(i)
+        # A baseline a whole em away is another line, as it is for MuPDF. pdftext groups by the
+        # band a character overlaps, so a 44pt drop cap, its baseline 24pt below the text's,
+        # went into the first line of its column (0e5f0c34): the line stood 45pt tall, overlapped
+        # the neighbouring column's line, and the two were joined downstream and the page's
+        # columns lost. MuPDF sets the drop cap on a line of its own. Scripts step a third to
+        # a half of an em and stay (a step rule at 0.3 to 0.6 was measured and moved nothing);
+        # an em is beyond any script. Measured in ems of the line's own size - the median of its
+        # glyphs - not of either glyph at the step: the drop cap's 44pt would hide a 24pt step
+        # that is nearly three ems of the text beside it, and a 5pt superscript's own size would
+        # make the 7pt return to the 10pt text look like a line of its own.
+        elif prev is not None and line_size > 0 and abs(base - prev[6]) > _BASELINE_STEP * line_size:
             cuts.add(i)
         # A pen that jumps backwards starts a new line, as it does for MuPDF. pdftext files
         # every span that overlaps a line's band in that line whatever its order, so a table
@@ -1088,10 +1157,16 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
         # the text-showing runs, and a table row it read as "Listening to speech or lecture"
         # and "118" (two runs, a 1.1-em gap) arrived from pdftext as one line, and the column
         # finder then read one cell (5bdc8382, 105e91a0). Off at 0; the threshold is measured.
-        elif (prev is not None and scale > 0 and object_gap > 0 and c.get("order", -1) != prev[4]
+        # ... or where PDFium's own text page ended a line. pdftext regroups characters by the
+        # band they overlap, so a 44pt drop cap's band took in the first line of column one and
+        # the line of column two beside it (0e5f0c34), 1.44 em apart - under the 1.5-em rule,
+        # and in one text object, so the run rule could not see it either. PDFium had stopped
+        # the line at the gutter; where it stopped and an em of space follows, so does this.
+        elif (prev is not None and scale > 0 and object_gap > 0
+              and (c.get("order", -1) != prev[4] or prev[5])
               and start - prev[1] >= object_gap * max(scale, prev[2])):
             cuts.add(i)
-        prev = (i, end, scale, start, c.get("order", -1))
+        prev = (i, end, scale, start, c.get("order", -1), bool(c.get("line_end")), base)
     if not cuts:
         return [spans]
     pieces, current = [], []
