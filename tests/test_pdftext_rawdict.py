@@ -339,3 +339,24 @@ def test_a_baseline_an_em_away_starts_a_line_as_it_does_for_mupdf():
     tail = [_char("χ", 0, 6), _char("-", 6, 9, -4, 6), _char("2", 9, 12, 3, 13), _char(",", 12, 14, 3, 13),
             _char("5", 14, 17, 3, 13), _char(".", 17, 20)]
     assert len(A._split_at_gaps([_span(tail)])) == 1
+
+
+def test_a_list_marker_keeps_its_item_across_the_object_gap():
+    """Word sets a numbered list's marker as a text object of its own, an em before its text
+    ("1." then "Specific program requirements", 6767787c). The object-gap rule cut the marker
+    off, the markers then stood as a column of their own, and the whitespace-table finder grew
+    one eight-column table over the whole section. MuPDF keeps each item as one line. A short
+    marker - a number or letter with its dot or bracket, or a bullet - stays with the text
+    that follows within the general gap limit; a table row's first cell is not a marker."""
+    import os
+    marker = dict(_char("1", 0, 5), order=1); dot = dict(_char(".", 5, 8), order=1)
+    text = [dict(_char(ch, 18 + 5 * k, 23 + 5 * k), order=2) for k, ch in enumerate("Specific")]
+    cell = [dict(_char(ch, 0 + 5 * k, 5 + 5 * k), order=1) for k, ch in enumerate("Listening")]
+    number = [dict(_char(ch, 56 + 5 * k, 61 + 5 * k), order=2) for k, ch in enumerate("118")]
+    was = os.environ.pop("TRUEDOC_OBJECT_GAP", None)
+    try:
+        assert len(A._split_at_gaps([_span([marker, dot] + text)])) == 1
+        assert len(A._split_at_gaps([_span(cell + number)])) == 2
+    finally:
+        if was is not None:
+            os.environ["TRUEDOC_OBJECT_GAP"] = was

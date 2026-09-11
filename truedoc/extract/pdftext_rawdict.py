@@ -1089,6 +1089,24 @@ def _object_gap() -> float:
         return _OBJECT_GAP
 
 
+# A number or letter with its dot or bracket, or a bullet. Not a dash or an asterisk: a table
+# puts those in a cell of their own (an empty value, a significance mark), and the column finder
+# needs that cell apart from the next.
+_LIST_MARKER = re.compile(r"^(\(?\d{1,3}[.)]|\(?[A-Za-z][.)]|[•·▪◦‣])$")
+
+
+def _is_list_marker(flat: list, start: int, end: int) -> bool:
+    """Is the run from `start` to `end` a list's marker - "1.", "a)", a bullet - and nothing else?
+
+    Word sets a numbered list's marker as a text object of its own, an em before its text
+    ("1." then "Specific program requirements" on 6767787c), and the object-gap rule cut the
+    marker off; the markers then stood as a column of their own, and the whitespace-table
+    finder grew one eight-column table over the whole section. MuPDF keeps each item as one
+    line. A marker stays with the text that follows it; a table row's first cell is not one."""
+    text = "".join(c["c"] for _, c in flat[start:end] if not _is_blank(c)).strip()
+    return 0 < len(text) <= 4 and bool(_LIST_MARKER.match(text))
+
+
 def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> list:
     """Cut a run of text into the pieces the layout stage expects.
 
@@ -1130,6 +1148,7 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
     # one 44pt drop cap among twenty letters.
     line_size = sizes[(3 * len(sizes)) // 4] if sizes else 0.0
     cuts: set[int] = set()
+    piece_start = 0   # where the piece being built began: the last cut, or the line's start
     prev = None       # (index in flat, end along the line, scale, start along the line, text object)
     for i, (si, c) in enumerate(flat):
         if _is_blank(c):
@@ -1173,10 +1192,15 @@ def _split_at_gaps(spans: list, direction: tuple[float, float] = (1.0, 0.0)) -> 
         # the line of column two beside it (0e5f0c34), 1.44 em apart - under the 1.5-em rule,
         # and in one text object, so the run rule could not see it either. PDFium had stopped
         # the line at the gutter; where it stopped and an em of space follows, so does this.
+        # A list's marker is the exception: "1." set as a text object of its own, an em before
+        # its item, stays with it (see `_is_list_marker`; the general limit above still cuts).
         elif (prev is not None and scale > 0 and object_gap > 0
               and (c.get("order", -1) != prev[4] or prev[5])
-              and start - prev[1] >= object_gap * max(scale, prev[2])):
+              and start - prev[1] >= object_gap * max(scale, prev[2])
+              and not _is_list_marker(flat, piece_start, i)):
             cuts.add(i)
+        if i in cuts:
+            piece_start = i
         prev = (i, end, scale, start, c.get("order", -1), bool(c.get("line_end")), base)
     if not cuts:
         return [spans]
