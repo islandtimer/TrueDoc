@@ -730,6 +730,22 @@ def _header_row_count(grid: list[list[str]]) -> int:
                 break
     if first_data is None:
         return 1
+    # The first long cell is weak evidence. It says this row has more words than
+    # the rows above it, not that those rows are a heading: when a row above has
+    # the same shape - the same cells filled, the same cells opening with a
+    # number, and a label in the first column - it is another body row, and
+    # counting it as heading merges two rows into one. The fees table
+    # (tables/937a90b2 page 7) lost two courses and their fees that way: its
+    # third row names a course in seven words, its first two in five.
+    if by_long_cell and first_data:
+        def shape(row: list[str]) -> list[tuple[bool, bool]]:
+            return [(bool(c), bool(c) and c.strip()[:1].isdigit()) for c in row]
+
+        here = shape(grid[first_data])
+        while (first_data >= 1 and grid[first_data][0] and grid[first_data - 1][0]
+               and any(digit for _, digit in here[1:]) and shape(grid[first_data - 1]) == here):
+            first_data -= 1
+            here = shape(grid[first_data])
     # A label alone in the first column right above the data is a group label of
     # the body ("Topsoil" over its rows), not part of the heading.
     while first_data >= 2:
