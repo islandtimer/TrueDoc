@@ -366,6 +366,10 @@ def apply_ocr(page: Page, pdf_page: "pymupdf.Page", allow_turn: bool = True) -> 
         page.meta["ocr_turn"] = turn
         return False
     if not lines:
+        # Recorded, because "our engine found nothing at all here" is evidence about the page and not
+        # merely an absence: it is the hardest kind of scan, and the deep reader is chosen on it
+        # (`pipeline._needs_a_deeper_read`).
+        page.meta["ocr_empty"] = True
         return False
     wordlike = _looks_like_text(lines)
     page.meta["ocr_confidence"] = conf

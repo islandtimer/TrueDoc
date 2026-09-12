@@ -39,6 +39,16 @@ class ConvertOptions:
     vision_endpoint: str | None = None   # optional vision stage (D014): endpoint of a served olmOCR-style model
     vision_model: str = "olmocr"         # model name the endpoint expects
     vision_regions: bool = True          # with the vision stage on, also read icons in table cells and describe figures (D015)
+    # A second, more expensive reader for the pages the first one cannot manage. Measured over the
+    # benchmark's 98 old-scan pages (12 September): on pages olmOCR reads well the two are level to the
+    # check, and on the hardest third a frontier model roughly doubles the score. So it is spent only
+    # where it pays. Off unless an endpoint is given; the ordinary run stays open-weight.
+    vision_deep: str | None = None       # endpoint for the deep reader (e.g. "anthropic")
+    vision_deep_model: str = ""          # model name it expects, if not its own default
+    # A page goes to the deep reader when it has no text layer and our own OCR of it comes back with
+    # nothing word-like. `_looks_like_text` scores real text 0.6 to 0.9 and handwriting noise under 0.3;
+    # measured medians on those pages were 0.84 where olmOCR coped and 0.36 where it did not.
+    vision_deep_wordlike: float = 0.6
     render: RenderOptions = field(default_factory=RenderOptions)
 
 
@@ -879,6 +889,31 @@ def _insert_before_line(cell, page: Page, m) -> str:
     return m.text + " " + cell.text
 
 
+def _needs_a_deeper_read(page: Page, opts: ConvertOptions) -> bool:
+    """Is this a page the ordinary reader will struggle with?
+
+    The signal is one the converter already computes: our own OCR of a page with no text layer, scored
+    for how word-like it is (`truedoc.ocr.rapid._looks_like_text`, which reads real text at 0.6 to 0.9
+    and handwriting noise under 0.3). Measured over the benchmark's 98 old-scan pages on 12 September,
+    the median was 0.84 on the pages olmOCR read well and 0.36 on the ones it did not, and a line drawn
+    at 0.6 caught every hard page in the sample while sending three easy ones as well. That is the cheap
+    direction to be wrong in: on an easy page the deep reader is merely equal, so a wasted call costs a
+    fraction of a penny and no accuracy.
+
+    A page whose OCR produced nothing at all is the hardest case of all, not the easiest, so it counts.
+    A page we never OCR'd leaves no signal, and without evidence nothing expensive is spent.
+    """
+    if page.quality.kind == "digital":
+        return False
+    if not opts.ocr:
+        return False
+    meta = page.meta
+    if "ocr_wordlike" in meta:
+        return float(meta["ocr_wordlike"]) < opts.vision_deep_wordlike
+    # OCR ran and found no lines worth recording: nothing legible to our own engine.
+    return bool(meta.get("ocr_empty"))
+
+
 def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOptions) -> None:
     """The vision stage (D014, D019): every page without a digital text layer is
     read from its image by the model (a hidden OCR layer, or our own engine's
@@ -895,6 +930,13 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
     except Exception as exc:
         doc.warnings.append(f"vision stage unavailable: {exc}")
         return
+    deep = None
+    if opts.vision_deep:
+        try:
+            deep = make_provider(opts.vision_deep, opts.vision_deep_model or "olmocr")
+        except Exception as exc:
+            # The ordinary reader still works; say so and carry on rather than losing the page.
+            doc.warnings.append(f"the deep reader is unavailable, the ordinary one is reading every page: {exc}")
     inferred: list[dict] = doc.metadata.setdefault("inferred", [])
     pages_with_model: list[int] = doc.metadata.setdefault("pages_with_model", [])
     from truedoc.vision.witness import strip_lines, strip_lines_from_ocr, strip_running_heads
@@ -906,9 +948,19 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
         has_text = any(b.kind not in (BlockKind.FIGURE,) and (b.lines or b.table is not None or b.text_override) for b in page.blocks)
         if page.quality.kind == "digital" and has_text:
             continue
-        text = provider.read_page(path, page.number)
+        reader, why = provider, ""
+        if deep is not None and _needs_a_deeper_read(page, opts):
+            reader, why = deep, "our own reading of it found nothing word-like"
+        text = reader.read_page(path, page.number)
+        if not text and reader is deep:
+            # The expensive reader had its turn and came back empty; the ordinary one still tries.
+            doc.warnings.append(f"page {page.number}: the deep reader returned nothing; the ordinary reader read it")
+            reader, why = provider, ""
+            text = reader.read_page(path, page.number)
         if not text:
             continue
+        if why:
+            page.meta["deep_read"] = {"model": reader.name, "because": why}
         if _model_reading_is_partial(page, text):
             # The model returned far less text than the page demonstrably holds (a table it gave
             # up on, a dense page cut short): the page's own reading stays, and the file says so.
@@ -951,12 +1003,12 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
             doc.warnings.append(
                 f"page {page.number}: {verdict['reason']}")
         page.meta["vision_replaced"] = page.quality.kind
-        page.blocks = [Block(kind=BlockKind.TEXT, bbox=BBox(0.0, 0.0, page.width, page.height), text_override=text, provenance=f"vision:{provider.name}")]
+        page.blocks = [Block(kind=BlockKind.TEXT, bbox=BBox(0.0, 0.0, page.width, page.height), text_override=text, provenance=f"vision:{reader.name}")]
         page.blocks[0].order = 0
-        page.meta["vision_model"] = provider.name
+        page.meta["vision_model"] = reader.name
         page.quality.kind = "vision"
         pages_with_model.append(page.number)
-        inferred.append({"page": page.number, "kind": "page", "model": provider.name})
+        inferred.append({"page": page.number, "kind": "page", "model": reader.name})
     if opts.vision_regions:
         _read_regions_with_model(doc, path, provider, inferred)
 

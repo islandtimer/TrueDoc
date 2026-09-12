@@ -24,6 +24,7 @@ def convert(
     ocr_pictures: bool = typer.Option(False, "--ocr-pictures", help="Also OCR text kept as pictures on digital pages (experimental)"),
     doc_type: str = typer.Option("Document", "--type", help="OKF `type` for the front matter (e.g. Document, Reference, Playbook)"),
     vision_endpoint: Optional[str] = typer.Option(None, "--vision-endpoint", help="Optional vision stage: endpoint of a served olmOCR-style model, used only for pages with no usable text"),
+    vision_deep: Optional[str] = typer.Option(None, "--vision-deep", help="A second, more expensive reader (e.g. 'anthropic') used only for pages the first one cannot manage: no text layer, and our own OCR of them finds nothing word-like"),
     vision_model: str = typer.Option("olmocr", "--vision-model", help="Model name the vision endpoint expects"),
     vision_pages_only: bool = typer.Option(False, "--vision-pages-only", help="With the vision stage on, read only unreadable pages; do not ask about icons and figures"),
 ):
@@ -31,7 +32,7 @@ def convert(
 
     page_list = _parse_pages(pages) if pages else None
     opts = ConvertOptions(frontmatter=frontmatter, page_markers=page_markers, pages=page_list, layout=layout, math=math, ocr=ocr, ocr_pictures=ocr_pictures,
-                          doc_type=doc_type, vision_endpoint=vision_endpoint, vision_model=vision_model, vision_regions=not vision_pages_only)
+                          doc_type=doc_type, vision_endpoint=vision_endpoint, vision_model=vision_model, vision_regions=not vision_pages_only, vision_deep=vision_deep)
     text = _convert(str(pdf), opts)
     if out is None:
         sys.stdout.write(text)
