@@ -70,7 +70,7 @@ def clean_regions(regions: list[Region], page_height: float = 0.0) -> list[Regio
         if r.score < _MIN_SCORE.get(r.kind, 0.5):
             continue
         dup = False
-        for k in keep:
+        for i, k in enumerate(keep):
             if {r.kind, k.kind} == {RegionKind.TABLE, RegionKind.FIGURE}:
                 continue  # a table inside a figure is a table too (matrices, panels of numbers)
             inter = r.bbox.intersection(k.bbox)
@@ -78,6 +78,12 @@ def clean_regions(regions: list[Region], page_height: float = 0.0) -> list[Regio
                 continue
             smaller = min(r.bbox.area, k.bbox.area) or 1.0
             if inter.area / smaller > 0.85:
+                # One inside another of the same kind is the same thing seen smaller, and the bigger one
+                # holds more of it: a table region over a table's right-hand column alone scored higher
+                # than the one over the whole table, won here, and left the rows as prose (the fees page
+                # tables/937a90b2 page 7, five checks, run 83).
+                if r.kind == k.kind and r.bbox.area > k.bbox.area:
+                    keep[i] = r
                 dup = True
                 break
         if not dup:
