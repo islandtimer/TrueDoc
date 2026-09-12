@@ -43,14 +43,26 @@ def make_provider(endpoint: str, model: str = "olmocr") -> VisionProvider:
 
     `http://host:port` (any OpenAI-style chat endpoint) -> OlmocrEndpoint;
     `anthropic` or `anthropic:claude-sonnet-5` -> AnthropicVision.
+
+    A frontier provider may be asked to read a page in overlapping slices rather than whole, at one
+    call a slice, by adding `/bands=2` to the name (`anthropic/bands=2`,
+    `anthropic:claude-sonnet-5/bands=3`). That is for a page an ordinary read struggles with; on a page
+    it does not, the extra calls buy nothing.
     """
     spec = (endpoint or "").strip()
+    bands = 1
+    if "/bands=" in spec:
+        spec, _, count = spec.partition("/bands=")
+        try:
+            bands = max(1, int(count.strip()))
+        except ValueError:
+            bands = 1
     if spec.lower().startswith("anthropic"):
         from truedoc.vision.anthropic_api import DEFAULT_MODEL, AnthropicVision
 
         _, _, named = spec.partition(":")
         chosen = named.strip() or (model if model and model != "olmocr" else DEFAULT_MODEL)
-        return AnthropicVision(model=chosen)
+        return AnthropicVision(model=chosen, bands=bands)
     if spec.lower().startswith("file:"):
         from truedoc.vision.file_readings import FileReadings
 

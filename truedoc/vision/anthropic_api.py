@@ -12,6 +12,7 @@ block per message, `max_tokens` sized to the question.
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import os
@@ -66,6 +67,23 @@ _FAITHFUL = (
 _FRONT_MATTER_ASK = ", with a front matter section on top specifying values for the primary_language, is_rotation_valid, rotation_correction, is_table, and is_diagram parameters."
 
 
+def _band_prompt(index: int, total: int) -> str:
+    """The page question, told that this is a horizontal slice of a page and not the whole of it.
+
+    Without this a model writes a heading for the fragment, or apologises for the cut line at the edge;
+    with it the slices read as what they are and weld cleanly.
+    """
+    where = "the top" if index == 1 else ("the bottom" if index == total else f"part {index}")
+    return (
+        f"Attached is {where} of one page of a document, a horizontal slice of it ({index} of {total},"
+        " and the slices overlap). Return the plain text representation of this slice as if you were"
+        " reading it naturally, converting equations to LaTeX and tables to markdown. Do not write a"
+        " heading, a note, or any remark about the slice; a line cut by the edge should simply be"
+        " written as much of it as you can read."
+        + _OMIT + _FAITHFUL
+    )
+
+
 def page_prompt() -> str:
     """The page question for a general model: olmOCR's, without the front matter, plus what to omit."""
     from truedoc.vision.olmocr_endpoint import _prompt
@@ -77,7 +95,11 @@ def page_prompt() -> str:
 
 
 class AnthropicVision:
-    def __init__(self, model: str = DEFAULT_MODEL, api_key: str | None = None, api_url: str = API_URL, timeout: float = 180.0):
+    def __init__(self, model: str = DEFAULT_MODEL, api_key: str | None = None, api_url: str = API_URL,
+                 timeout: float = 180.0, bands: int = 1):
+        # `bands` > 1 reads a page as that many overlapping slices, at one call each: worth it on a
+        # page the ordinary read struggles with, wasted on one it does not.
+        self.bands = max(1, int(bands))
         self.model = model or DEFAULT_MODEL
         self.name = self.model
         self.api_url = api_url
@@ -126,6 +148,12 @@ class AnthropicVision:
     def read_page(self, pdf_path: str, page_number: int) -> str | None:
         from truedoc.vision.olmocr_endpoint import parse_response, render_page_png_base64
 
+        if self.bands > 1:
+            banded = self._read_in_bands(pdf_path, page_number)
+            if banded:
+                return banded
+            log.warning("vision: reading page %s of %s in bands gave nothing; reading it whole",
+                        page_number, pdf_path)
         try:
             image_b64 = render_page_png_base64(pdf_path, page_number, longest_dim=_PAGE_LONGEST_DIM)
         except Exception as exc:
@@ -136,6 +164,44 @@ class AnthropicVision:
             return None
         _, text = parse_response(answer)
         return text if text.strip() else None
+
+    def _read_in_bands(self, pdf_path: str, page_number: int) -> str | None:
+        """The page read as overlapping bands and welded back together (`truedoc/vision/bands.py`).
+
+        One call a band rather than one a page, for the hard tail: each band arrives with about 1.3
+        times the ink per letter that a whole page does, and every line is looked at twice.
+        """
+        from truedoc.extract import render
+        from truedoc.extract.handle import open_pdf
+        from truedoc.vision.bands import band_boxes, splice_all
+        from truedoc.vision.olmocr_endpoint import parse_response
+
+        try:
+            doc = open_pdf(pdf_path)
+        except Exception as exc:
+            log.warning("vision: could not open %s: %s", pdf_path, exc)
+            return None
+        try:
+            page = doc[page_number - 1]
+            rect = page.rect
+            boxes = band_boxes(rect.width, rect.height, count=self.bands)
+            readings = []
+            for i, clip in enumerate(boxes, 1):
+                zoom = _PAGE_LONGEST_DIM / max(clip[2] - clip[0], clip[3] - clip[1], 1.0)
+                try:
+                    image_b64 = base64.b64encode(render.render_png(page, zoom, clip)).decode("ascii")
+                except Exception as exc:
+                    log.warning("vision: could not render band %s of page %s: %s", i, page_number, exc)
+                    return None
+                answer = self._ask(_band_prompt(i, len(boxes)), image_b64, _PAGE_MAX_TOKENS)
+                if not answer:
+                    return None
+                _, text = parse_response(answer)
+                readings.append(text)
+        finally:
+            doc.close()
+        welded = splice_all([r for r in readings if r and r.strip()])
+        return welded if welded.strip() else None
 
     def read_region(self, pdf_path: str, page_number: int, bbox: tuple[float, float, float, float], kind: str, turn: int = 0) -> str | None:
         try:
