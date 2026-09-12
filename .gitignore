@@ -40,3 +40,6 @@ bench/gpu/bands/
 # four paid GPU sessions, under two megabytes in all, and every run since 55 replays them from
 # disk through --vision-endpoint file:. Losing them would make every score since unreproducible
 # without renting a GPU again, and the repository has no remote to fall back on.
+
+# The OmniDocBench evaluation toolkit (cloned, Apache-2.0, not our code)
+bench/omnidocbench/
