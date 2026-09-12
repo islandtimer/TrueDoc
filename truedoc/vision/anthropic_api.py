@@ -26,6 +26,43 @@ DEFAULT_MODEL = "claude-sonnet-5"
 API_URL = "https://api.anthropic.com/v1/messages"
 _PAGE_MAX_TOKENS = 8000
 
+# olmOCR 2 is asked for a page at 1288 px on its longest side, which is the size it was trained at.
+# A general model has no such training size; the API scales anything larger than about 1568 px down
+# to it, so that is the useful maximum. Measured 12 September on the 98 old-scan pages: reading them
+# larger is part of why a frontier model read the handwriting better than olmOCR did.
+_PAGE_LONGEST_DIM = 1568
+
+# What to leave out. olmOCR 2 was trained to drop a page's furniture and says nothing about it in its
+# prompt; a general model transcribes whatever it sees unless told, and on the benchmark's old scans
+# that cost 35 of 68 "this text must not appear" checks - dockets, catalogue numbers, letterhead and
+# running heads, not one of them a misreading. Adding this paragraph recovered every one of them and
+# changed nothing else (12 September).
+_OMIT = (
+    " Transcribe the document, not the page's furniture: leave out running heads and feet, page and"
+    " folio numbers, printed letterhead and cable addresses, and anything a later hand added to file"
+    " or catalogue the document (a docket date written sideways, a clerk's acknowledgement, an"
+    " archivist's note, a form number, a collection number). The document's own dateline, salutation,"
+    " signature and address panel are part of it and stay."
+)
+
+
+# olmOCR's prompt ends by asking for a front matter block of five parameters. olmOCR 2 answers with
+# "---" front matter, which `parse_response` strips; a general model answers with a fenced yaml block
+# instead, which nothing strips, so five lines of metadata land in the reader's document (seen on the
+# first API page, 12 September). Nothing reads those fields - `read_page` throws the parsed metadata
+# away - so a general model is not asked for them.
+_FRONT_MATTER_ASK = ", with a front matter section on top specifying values for the primary_language, is_rotation_valid, rotation_correction, is_table, and is_diagram parameters."
+
+
+def page_prompt() -> str:
+    """The page question for a general model: olmOCR's, without the front matter, plus what to omit."""
+    from truedoc.vision.olmocr_endpoint import _prompt
+
+    base = _prompt()
+    if base.endswith(_FRONT_MATTER_ASK):
+        base = base[: -len(_FRONT_MATTER_ASK)] + "."
+    return base + _OMIT
+
 
 class AnthropicVision:
     def __init__(self, model: str = DEFAULT_MODEL, api_key: str | None = None, api_url: str = API_URL, timeout: float = 180.0):
@@ -75,14 +112,14 @@ class AnthropicVision:
             return None
 
     def read_page(self, pdf_path: str, page_number: int) -> str | None:
-        from truedoc.vision.olmocr_endpoint import _prompt, parse_response, render_page_png_base64
+        from truedoc.vision.olmocr_endpoint import parse_response, render_page_png_base64
 
         try:
-            image_b64 = render_page_png_base64(pdf_path, page_number)
+            image_b64 = render_page_png_base64(pdf_path, page_number, longest_dim=_PAGE_LONGEST_DIM)
         except Exception as exc:
             log.warning("vision: could not render page %s of %s: %s", page_number, pdf_path, exc)
             return None
-        answer = self._ask(_prompt(), image_b64, _PAGE_MAX_TOKENS)
+        answer = self._ask(page_prompt(), image_b64, _PAGE_MAX_TOKENS)
         if not answer:
             return None
         _, text = parse_response(answer)

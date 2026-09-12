@@ -16,6 +16,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import re
 import urllib.error
 import urllib.request
 
@@ -53,10 +54,26 @@ def render_page_png_base64(pdf_path: str, page_number: int, longest_dim: int = 1
         doc.close()
 
 
+_FENCED_FRONT_MATTER = re.compile(r"\A\s*```(?:yaml|yml)?\s*\n(.*?)\n```\s*\n?", re.S | re.I)
+
+
 def parse_response(content: str) -> tuple[dict, str]:
-    """Split olmOCR's answer into its front matter (as a dict) and the page text."""
+    """Split a model's answer into its front matter (as a dict) and the page text.
+
+    olmOCR 2 answers with "---" front matter. A general model asked the same question answers with a
+    fenced yaml block instead, and without this those five lines of metadata reach the reader as part
+    of the document (seen on the first page read through the Anthropic path, 12 September). Both
+    shapes are stripped; nothing else changes, since olmOCR never opens with a fence.
+    """
     meta: dict = {}
     text = content
+    fenced = _FENCED_FRONT_MATTER.match(content)
+    if fenced and ":" in fenced.group(1) and len(fenced.group(1).splitlines()) <= 8:
+        for line in fenced.group(1).splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                meta[k.strip()] = v.strip()
+        return meta, content[fenced.end():].strip("\n")
     if content.startswith("---"):
         parts = content.split("---", 2)
         if len(parts) == 3:

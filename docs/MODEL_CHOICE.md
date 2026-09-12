@@ -218,16 +218,55 @@ figure:
 - They were given transcription guidance where olmOCR gets its terse prompt.
 - The page was rendered at 2,200 px against olmOCR's 1,288, which is olmOCR's training size, not a limit.
 
-### One page was refused outright
+### One page was refused to an agent, but not to the API - a correction
 
-old_scans/64 was stopped twice by the API's content filter, on output, once inside a batch and once
-alone. It carries 9 of the 526 checks and is excluded from both sides of the table. These are American
-archival documents of the 1860s and some carry the language of their period. **A frontier API will refuse
-some historical material, and an open-weight model on our own hardware will not.** That is an operational
-difference no benchmark score records, and for an archive customer it is the difference between a
-converter that works and one that stops.
+While the pages were being hand-read, old_scans/64 was stopped twice by a content filter, on output,
+once inside a batch and once alone. I recorded that as an operational difference: that a frontier API
+would refuse some historical material where an open model on our own hardware would not.
 
-## The cheapest way to settle it
+**The production run contradicts it.** The same page, read through the product's own path with one
+ordinary API call, came back with 922 words and no complaint, and all 98 pages read without a single
+failure. So the refusal was a property of the agent harness that was doing the hand-reading, not of the
+Messages API as the converter uses it. The claim as I first made it was wrong and is withdrawn.
+
+What survives is narrower and still worth knowing: an assistant product wrapped around a model can
+refuse material that the raw interface reads happily, so anyone building on a chat-shaped frontier
+service should test with their own worst documents rather than assume.
+
+## Measured, 12 September, second pass: what one ordinary API call delivers
+
+The hand read could only put a ceiling on this, because it was Opus 5 able to look twice at a hard
+patch. The production question is what a shipped TrueDoc would get from one call a page. Run through
+the converter's own frontier path (`--vision-endpoint anthropic`, which defaults to Sonnet 5), four
+processes, 98 pages, no failures, about fifteen minutes:
+
+| reading | present | order | absent | total |
+|---|---|---|---|---|
+| olmOCR-2, what we run today | 124 | 55 | 68 | 247 (47.0%) |
+| **Sonnet 5, one API call a page** | 145 | 62 | 67 | **274 (52.1%)** |
+| Opus 5 by hand, able to zoom | 157 | 66 | 66 | 289 (54.9%, and short 9 checks) |
+
+Counting only the checks the API and olmOCR-2 read differently: **+21 on present, +7 on order, -1 on
+absent, net +27 over 71 disagreements** where noise is about 8.
+
+**So one ordinary call is worth +5.1 points on the old-scans category and +0.64 on the overall score**,
+84.1 to about 84.7. The hand read's ceiling was +8.9. A single cheap call therefore recovers around
+three fifths of what careful reading with a zoom can get, which says the remaining gap is method -
+cropping a hard page and asking again - rather than model class.
+
+**The furniture instruction held in production**: the absent row is 67 against olmOCR's 68, level, where
+the first hand read without that paragraph had scored 31 of 68. The prompt change carried straight over.
+
+Two defects the run itself turned up, both fixed and tested:
+
+- **olmOCR's prompt asks for a front matter block.** olmOCR 2 answers with `---` delimiters, which the
+  parser strips; a general model answers with a fenced yaml block, which it did not, so five lines of
+  `primary_language: en` reached the reader's document on the first page tried. A general model is no
+  longer asked for those fields (nothing reads them) and the parser now strips a fence too.
+- **The converter is not thread-safe.** Four readers through PDFium, the layout model and the OCR
+  engine in threads crashed the interpreter outright. It runs in processes now.
+
+## The cheapest way to settle it## The cheapest way to settle it
 
 One rental, several models, one small page set. The 98 old-scan pages are the concentrated pool: 526 checks, 280 of our failures, and the category score is exactly the pass rate on them, so a candidate can be judged in minutes without a full conversion run. Shape of the experiment:
 

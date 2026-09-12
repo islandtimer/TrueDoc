@@ -304,3 +304,57 @@ def test_picture_holding_a_table_is_transcribed_as_the_figure_content(tmp_path):
     assert [c["kind"] for c in _Fake.calls] == ["picture-text"]
     fm, _ = _split(md)
     assert fm["truedoc"]["inferred"][0]["kind"] == "picture-text"
+
+
+def test_a_general_model_is_told_what_to_leave_out():
+    """olmOCR 2 drops a page's furniture because it was trained to; a general model has to be told.
+
+    Measured on the benchmark's 98 old-scan pages (12 September): without this paragraph the frontier
+    read failed 35 of the 68 "this text must not appear" checks, and every one of them was furniture -
+    a docket date, a catalogue number, letterhead, a running head - not a misreading. Adding it
+    recovered all 35 and changed nothing else.
+    """
+    from truedoc.vision.anthropic_api import page_prompt
+    from truedoc.vision.olmocr_endpoint import _prompt
+
+    prompt = page_prompt()
+    # the same transcription question olmOCR is asked...
+    assert prompt.startswith(_prompt().split(", with a front matter section")[0])
+    # ...but not its front matter block, which nothing reads and which a general model answers with a
+    # fenced yaml block that would land in the reader's document
+    assert "is_rotation_valid" not in prompt
+    for wanted in ("running heads", "page and folio numbers", "letterhead", "catalogue"):
+        assert wanted in prompt, wanted
+    # and the document's own parts are explicitly kept
+    for kept in ("dateline", "salutation", "signature", "address panel"):
+        assert kept in prompt, kept
+
+
+def test_the_page_a_general_model_sees_is_not_capped_at_olmocrs_training_size():
+    from truedoc.vision import anthropic_api
+
+    assert anthropic_api._PAGE_LONGEST_DIM > 1288
+
+
+def test_a_fenced_front_matter_block_is_stripped_like_a_dashed_one():
+    """A general model answers the front-matter question with a fence, not with dashes.
+
+    Seen on the first page read through the Anthropic path (12 September): five lines of
+    `primary_language: en` and friends landed in the reader's document because only "---" front
+    matter was stripped. olmOCR never opens with a fence, so nothing about its path changes.
+    """
+    from truedoc.vision.olmocr_endpoint import parse_response
+
+    fenced = "```yaml\nprimary_language: en\nis_table: false\n```\n\nBangor. Pa. May 22nd 1914.\n"
+    meta, text = parse_response(fenced)
+    assert meta["primary_language"] == "en" and meta["is_table"] == "false"
+    assert text.startswith("Bangor.") and "primary_language" not in text
+
+    dashed = "---\nprimary_language: en\n---\n\nBangor. Pa.\n"
+    meta, text = parse_response(dashed)
+    assert meta["primary_language"] == "en" and text.strip() == "Bangor. Pa."
+
+    # a page that simply opens with a code block keeps it: it is the document, not metadata
+    code = "```\n10 PRINT \"HELLO\"\n20 GOTO 10\n```\n\nThe listing above.\n"
+    meta, text = parse_response(code)
+    assert meta == {} and text == code.strip(chr(10))
