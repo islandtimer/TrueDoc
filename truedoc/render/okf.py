@@ -124,6 +124,10 @@ def render_table(table: Table) -> str:
     return "\n".join(lines)
 
 
+# Blocks that can be two halves of one paragraph: prose, and the list items a reference list is
+# made of (a reference running over the column break has its last word split at a hyphen).
+_JOINABLE = (BlockKind.TEXT, BlockKind.LIST_ITEM)
+
 _DOLLAR = re.compile(r"(?<!\\)\$")
 # What must not be touched: TrueDoc's own formulas, and only those. A span between two dollar signs is
 # never spared, however TeX-looking, because the stretch between two prices can hold one: "about $5 and
@@ -133,18 +137,36 @@ _DOLLAR = re.compile(r"(?<!\\)\$")
 _FORMULA_SPAN = re.compile(r"\\\[.*?\\\]|\\\(.*?\\\)", re.S)
 
 
+_BARE_AMP = re.compile(r"(?<!\\)&")
+
+
+def _escape_formula_ampersands(span: str) -> str:
+    """A bare `&` inside a formula written `\\&`: LaTeX reads it as an alignment character.
+
+    A model transcribing an old textbook writes a series as "1 - 3x + 6x^2 + &c." - the
+    nineteenth-century abbreviation for "etc." - and that one character stops the whole formula
+    rendering, so the reader is shown raw TeX. The benchmark's own references write it escaped.
+    A span that opens an environment keeps its ampersands: there they are the alignment the
+    environment is built from, and escaping them would break the formula this is meant to save.
+    """
+    if "\\begin{" in span:
+        return span
+    return _BARE_AMP.sub(r"\\&", span)
+
+
 def _escape_dollars(text: str) -> str:
-    """A literal dollar sign written as `\\$` (D024).
+    """A literal dollar sign written as `\\$` (D024), and a bare `&` inside a formula as `\\&`.
 
     TrueDoc writes formulas between `\\(` and `\\)`, so nothing of ours depends on dollar signs any
     more; a reader's viewer, though, may read the stretch between any two of them as a formula, and
     an insurance document is full of prices. Escaping is markdown's own answer and shows a dollar
-    sign in every viewer. Formulas are left alone.
+    sign in every viewer. A formula keeps its dollar signs, and has its stray ampersands escaped so
+    that it renders at all.
     """
     out, pos = [], 0
     for m in _FORMULA_SPAN.finditer(text):
         out.append(_DOLLAR.sub(r"\\$", text[pos:m.start()]))
-        out.append(m.group(0))
+        out.append(_escape_formula_ampersands(m.group(0)))
         pos = m.end()
     out.append(_DOLLAR.sub(r"\\$", text[pos:]))
     return "".join(out)
@@ -328,8 +350,15 @@ def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
                 prev_block is not None
                 and figures_since
                 and 0 <= prev_index < len(parts)
-                and block.kind == BlockKind.TEXT
-                and prev_block.kind == BlockKind.TEXT
+                and block.kind in _JOINABLE
+                and prev_block.kind in _JOINABLE
+                and (
+                    (block.kind == BlockKind.TEXT and prev_block.kind == BlockKind.TEXT)
+                    # A list item the column break cut in two is one item, not two: a hyphen at the
+                    # end of one block and the other half of the word at the start of the next.
+                    # A journal's reference list is list items, so the rule below never saw them.
+                    or (parts[prev_index].rstrip().endswith("-") and text[:1].islower())
+                )
                 and _continues(parts[prev_index], text)
                 and (
                     prev_block.meta.get("page") != page.number

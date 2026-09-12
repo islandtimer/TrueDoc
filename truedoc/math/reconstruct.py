@@ -527,6 +527,84 @@ def _join_scripts(latex: str) -> str:
     return latex
 
 
+# Sized delimiters as drawn ("\big(") say which glyph TeX chose; a matched pair is what the
+# author wrote ("\left( ... \right)"), which is how the references spell it and how the formula
+# was typed. Only a pair this scanner can match is rewritten: a lone bar (which opens and closes
+# with the same glyph), a delimiter whose partner is missing, and a pair that does not sit in one
+# group stay as drawn, so a formula can never be left with a \left that has no \right. Measured on
+# run 87's output: 7 failed maths checks pass, 3 passing ones fail (their references spell the size
+# themselves), over 444 of 19,561 formulas.
+_SIZED_DELIM = re.compile(
+    r"\\(?:Bigg|bigg|Big|big)[lr]?\s*(?:\\\{|\\\}|\\lfloor|\\rfloor|\\lceil|\\rceil|\\langle|\\rangle|[\(\)\[\]])")
+_SIZED_CLOSER = {"(": ")", "[": "]", r"\{": r"\}", r"\lfloor": r"\rfloor", r"\lceil": r"\rceil", r"\langle": r"\rangle"}
+
+
+def _delim_of(token: str) -> str:
+    """The delimiter a sized token draws, without its size or its l/r suffix."""
+    rest = token[1:]
+    for size in ("Bigg", "bigg", "Big", "big"):
+        if rest.startswith(size):
+            rest = rest[len(size):]
+            break
+    rest = rest.strip()
+    if rest[:1] in ("l", "r"):
+        rest = rest[1:].strip()
+    return rest
+
+
+def _brace_depths(latex: str) -> list[int]:
+    """Brace depth before each character, so a pair can be kept inside one group."""
+    depths, depth, escaped = [], 0, False
+    for ch in latex:
+        depths.append(depth)
+        if escaped:
+            escaped = False
+            continue
+        if ch == "\\":
+            escaped = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth = max(0, depth - 1)
+    depths.append(depth)
+    return depths
+
+
+def _pair_sized_delimiters(latex: str) -> str:
+    spots = [(m.start(), m.end(), _delim_of(m.group(0))) for m in _SIZED_DELIM.finditer(latex)]
+    if not spots:
+        return latex
+    depths = _brace_depths(latex)
+    stack: list[tuple[int, str]] = []
+    sides: dict[int, str] = {}
+    for i, (a, _b, delim) in enumerate(spots):
+        if delim in _SIZED_CLOSER:
+            stack.append((i, _SIZED_CLOSER[delim]))
+        elif stack and delim == stack[-1][1]:
+            j, _closer = stack.pop()
+            between = latex[spots[j][1]:a]
+            # A row break or an alignment mark between them means they are not one group, and a
+            # \left must not cross either. Nor may the pair straddle a brace group: "{...\big(...}"
+            # with its partner outside would leave a \left with no \right inside the braces.
+            if "\\\\" in between or "&" in between:
+                continue
+            here = depths[spots[j][0]]
+            if depths[a] != here or min(depths[spots[j][0]:a + 1], default=here) < here:
+                continue
+            sides[j], sides[i] = "left", "right"
+    if not sides:
+        return latex
+    out, last = [], 0
+    for i, (a, b, delim) in enumerate(spots):
+        if i not in sides:
+            continue
+        out.append(latex[last:a])
+        out.append("\\" + sides[i] + delim)
+        last = b
+    out.append(latex[last:])
+    return "".join(out)
+
+
 def _polish(latex: str) -> str:
     latex = re.sub(r"\s+", " ", latex).strip()
     latex = latex.replace(r"\cdot\cdot\cdot", r"\cdots ").replace(r"\cdot \cdot \cdot", r"\cdots ")
@@ -574,7 +652,7 @@ def _polish(latex: str) -> str:
         (r"\sim_{=}", r"\cong"), (r"\sim_{-}", r"\simeq"),
     ):
         latex = latex.replace(pair, single + " ")
-    return _join_scripts(re.sub(r"\s+", " ", latex).strip())
+    return _pair_sized_delimiters(_join_scripts(re.sub(r"\s+", " ", latex).strip()))
 
 
 def _attach_core_scripts(core: str, right: list[Glyph], base_oy: float, base_x1: float, size: float, depth: int) -> tuple[str, list[Glyph]]:
