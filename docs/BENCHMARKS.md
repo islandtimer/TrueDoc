@@ -34,6 +34,14 @@ Not yet found on olmOCR-bench: Docling, Adobe Extract, OvisOCR2 (a third-party b
 
 ### OmniDocBench v1.6 (overall, higher is better)
 
+**TrueDoc is not on this table and will not be, by decision (D026, 13 September).** Every page in
+OmniDocBench is an image: the current release ships no PDFs, and the ones on the old v1.0 branch hold no
+text. So our text reader, formula rebuilder and both table builders never run, and a score here would be
+a score for whichever model reads the pages - measured at 27 of 35 output lines being the model's words
+verbatim. Its headline is also a string-similarity measure rather than a meaning one. The table below
+stays as competitor context; the evaluation toolkit is cloned and working under `bench/omnidocbench/`
+should a narrow question ever need it.
+
 Source: `opendatalab/OmniDocBench` README, fetched 2026-09-02. Overall = mean of ((1 - text edit distance) x 100, table TEDS, formula CDM).
 
 | Tool | Type | Overall | Text edit (lower better) | Formula CDM | Table TEDS | Reading order edit (lower better) |

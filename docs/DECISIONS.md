@@ -310,3 +310,45 @@ tested.
 
 _Decided 13 Sept, the owner: proceed with the deep read, with the open-weight score kept as its own
 column._
+
+## D026 - OmniDocBench investigated and declined as a measure of TrueDoc (2026-09-13, owner's decision)
+
+**Context.** M7 asked for a score above every published tool on *both* public benchmarks. olmOCR-bench
+has been run ninety-one times. OmniDocBench had never been run once, and the milestone had sat at "half
+met" since the beginning on that account. Before running it, the benchmark was taken apart.
+
+**What it turned out to be.** Every page in OmniDocBench is a picture. The current release ships page
+images and no PDFs at all; the older v1.0 branch ships PDFs, and six of those, sampled across six
+document families, contain **zero characters of text**. So the stage TrueDoc is built around - reading
+the document's own text exactly - never runs, and neither does the formula rebuilder (it works from
+glyph positions) nor either table builder (they work from text-layer lines). When the vision stage
+reads a page it replaces the page's blocks entirely. Measured on one page: **27 of the 35 output lines
+were the model's words verbatim**, the rest being our note, our footnote and some formatting.
+
+A score there would therefore be a score for whichever model we plug in, wearing TrueDoc's coat. That is
+worth knowing about the model and says almost nothing about the converter.
+
+**And the metric measures a different thing from the goal.** The headline is
+`((1 - text edit distance) x 100 + table TEDS + formula CDM) / 3` - how close our string is to theirs.
+That is transcription fidelity. olmOCR-bench at least asks questions shaped like meaning: is this text
+present, is it in the right order, is this text *absent*, does this cell sit beside that one. Neither is
+the same as "retains meaning for the reader", but one is nearer.
+
+**The decision.** OmniDocBench is not run as a headline measure. M7 is closed on the strength of
+olmOCR-bench, with this investigation recorded rather than the milestone left quietly half-done. The
+cost avoided: 1,651 model calls, a Docker image for the formula metric, and a number that mostly belongs
+to someone else's model.
+
+**What was kept.** The evaluation toolkit is cloned and works (`bench/omnidocbench/`, Apache-2.0, runs on
+our Python once the dependency pins are dropped; the demo scores end to end). If the question ever
+becomes "how does a candidate reader handle Chinese, Japanese, newspapers or exam papers", none of which
+we test anywhere, a 200-page sample is half an hour's work from here. The formula metric needs TeX Live,
+ImageMagick and Ghostscript, so it needs the Docker image; without them CDM returns 0.0 for every
+formula, which was confirmed on their own demo.
+
+**Where the effort goes instead**, in the owner's order: the insurance documents, which have never been
+scored and which have already found a meaning-inverting defect no benchmark showed; then the model for
+the hard tail; then the remaining grind on the benchmark we do use.
+
+_Decided 13 Sept, the owner: close the milestone, then the insurance docs, then the hard tail, then the
+remaining grind._
