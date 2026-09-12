@@ -83,6 +83,11 @@ def clean_regions(regions: list[Region], page_height: float = 0.0) -> list[Regio
                 # than the one over the whole table, won here, and left the rows as prose (the fees page
                 # tables/937a90b2 page 7, five checks, run 83).
                 if r.kind == k.kind and r.bbox.area > k.bbox.area:
+                    # The bigger box says where the thing is; the better score says how sure the model is
+                    # that it is one, and the stages downstream read that score as confidence - the table
+                    # stage builds only from 0.7 up, where the fees page's whole-table region scores 0.593
+                    # against its fee column's 0.775.
+                    r.score = max(r.score, k.score)
                     keep[i] = r
                 dup = True
                 break
