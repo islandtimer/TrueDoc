@@ -358,3 +358,17 @@ def test_a_fenced_front_matter_block_is_stripped_like_a_dashed_one():
     code = "```\n10 PRINT \"HELLO\"\n20 GOTO 10\n```\n\nThe listing above.\n"
     meta, text = parse_response(code)
     assert meta == {} and text == code.strip(chr(10))
+
+
+def test_a_general_model_is_told_to_transcribe_faithfully():
+    """A specialist reader keeps the writer's spelling because it was trained to; a general one tidies.
+
+    Measured over the benchmark's 98 old-scan pages (12 September): one Sonnet call scored 267 of 517
+    checks, and 273 with this paragraph added. Moving up to Opus at several times the cost scored 271.
+    The paragraph beat the bigger model, so it ships and the bigger model does not.
+    """
+    from truedoc.vision.anthropic_api import page_prompt
+
+    prompt = page_prompt()
+    for wanted in ("spelling", "capitalisation", "punctuation", "Do not correct grammar", "illegible"):
+        assert wanted in prompt, wanted

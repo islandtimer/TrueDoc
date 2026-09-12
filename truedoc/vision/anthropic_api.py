@@ -45,6 +45,18 @@ _OMIT = (
     " signature and address panel are part of it and stay."
 )
 
+# What a specialist reader does by training and a general one has to be told. Measured over the
+# benchmark's 98 old-scan pages (12 September): adding this paragraph took one Sonnet call from 267 of
+# 517 checks to 273, where moving up to Opus and paying several times as much bought 271. A paragraph
+# beat a bigger model.
+_FAITHFUL = (
+    " Write exactly what the document says: keep the writer's spelling, including mistakes, their"
+    " capitalisation, including mid-sentence capitals, and their punctuation, including the dashes and"
+    " ampersands they wrote. Do not correct grammar, modernise spelling, expand abbreviations or tidy"
+    " anything. Where a word is illegible, write your best single reading of it rather than a"
+    " placeholder, and do not add anything that is not on the page."
+)
+
 
 # olmOCR's prompt ends by asking for a front matter block of five parameters. olmOCR 2 answers with
 # "---" front matter, which `parse_response` strips; a general model answers with a fenced yaml block
@@ -61,7 +73,7 @@ def page_prompt() -> str:
     base = _prompt()
     if base.endswith(_FRONT_MATTER_ASK):
         base = base[: -len(_FRONT_MATTER_ASK)] + "."
-    return base + _OMIT
+    return base + _OMIT + _FAITHFUL
 
 
 class AnthropicVision:
