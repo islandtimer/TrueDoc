@@ -21,10 +21,26 @@ import struct
 from truedoc.geometry import Matrix, Rect
 
 _F32 = struct.Struct("f")
+_QUIET = False  # PyMuPDF's advert, silenced once the package is imported
 
 
 def open_pdf(path: str) -> "PdfDocument":
     return PdfDocument(path)
+
+
+def pymupdf_module():
+    """PyMuPDF itself, for the old reader's paths only (TRUEDOC_READER=mupdf and the fallbacks):
+    imported on first use, so the default path runs without the package installed (M18, D007)."""
+    global _QUIET
+    import pymupdf
+
+    if not _QUIET:
+        try:  # silence PyMuPDF's one-off advert for its AGPL layout package
+            pymupdf.no_recommend_layout()
+        except Exception:
+            pass
+        _QUIET = True
+    return pymupdf
 
 
 class PdfDocument:
@@ -59,9 +75,7 @@ class PdfDocument:
     def mupdf(self):
         """The same file opened by PyMuPDF, for the old reader's paths only; opened on first use."""
         if self._mu is None:
-            import pymupdf
-
-            self._mu = pymupdf.open(self.name)
+            self._mu = pymupdf_module().open(self.name)
         return self._mu
 
     def close(self) -> None:

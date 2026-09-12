@@ -11,15 +11,9 @@ import dataclasses
 import os
 import unicodedata
 
-import pymupdf
-
-try:  # silence PyMuPDF's one-off advert for its AGPL layout package
-    pymupdf.no_recommend_layout()
-except Exception:
-    pass
-
 from truedoc.math.symbols import is_extension_font, is_piece_glyph, latex_for_char, unfold_truncated_surrogate
 from truedoc.extract import pdfium_objects, pdftext_rawdict, render
+from truedoc.extract.handle import pymupdf_module
 from truedoc.geometry import Rect, transform_point
 from truedoc.model import BBox, Char, Drawing, ImageRef, Line, Page, TextQuality, Word
 
@@ -124,7 +118,13 @@ def _is_real_glyph(origin: tuple[float, float], origins: list[tuple[float, float
     return any(abs(origin[0] - x) <= 0.3 and abs(origin[1] - y) <= 0.3 for x, y in origins)
 
 
-def _attach_ink_boxes(pdf_page: "pymupdf.Page", chars: list[Char], flags: int, M, raw: dict | None = None) -> None:
+def _mupdf_text_flags() -> int:
+    """The text flags the old reader reads MuPDF with (TRUEDOC_READER=mupdf and the fallbacks)."""
+    pymupdf = pymupdf_module()
+    return (pymupdf.TEXTFLAGS_RAWDICT & ~pymupdf.TEXT_PRESERVE_LIGATURES) | pymupdf.TEXT_MEDIABOX_CLIP
+
+
+def _attach_ink_boxes(pdf_page: "pymupdf.Page", chars: list[Char], M, raw: dict | None = None) -> None:
     """Measure the drawn outline of maths-extension glyphs, and recover their codes.
 
     Their font boxes are meaningless: the glyph hangs below its origin and the
@@ -154,6 +154,8 @@ def _attach_ink_boxes(pdf_page: "pymupdf.Page", chars: list[Char], flags: int, M
                         measured.append((c["c"], _rect(ink or c["bbox"], M)))
         _apply_ink_boxes(chars, measured)
         return
+    pymupdf = pymupdf_module()
+    flags = _mupdf_text_flags()
     accurate = getattr(pymupdf, "TEXT_ACCURATE_BBOXES", 0)
     cid = getattr(pymupdf, "TEXT_CID_FOR_UNKNOWN_UNICODE", 0)
     if not accurate and not cid:
@@ -519,8 +521,6 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
     page = Page(number=number, width=float(rect.width), height=float(rect.height), rotation=int(pdf_page.rotation))
     M = pdf_page.rotation_matrix if pdf_page.rotation else None
 
-    flags = pymupdf.TEXTFLAGS_RAWDICT & ~pymupdf.TEXT_PRESERVE_LIGATURES
-    flags |= pymupdf.TEXT_MEDIABOX_CLIP
     raw = None
     if pdftext_rawdict.enabled():
         # M18, D007, D023: read through PDFium instead of AGPL-licensed MuPDF. The default since
@@ -532,7 +532,7 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
             raw = None
     if raw is None:
         try:
-            raw = pdf_page.get_text("rawdict", flags=flags)
+            raw = pdf_page.get_text("rawdict", flags=_mupdf_text_flags())
         except Exception:
             raw = {"blocks": []}
 
@@ -601,7 +601,7 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
     # any line is built: their font boxes span several lines and would drag a
     # lone bracket into the wrong line.
     if extension and any(_needs_ink(c.font) for c in chars_all):
-        _attach_ink_boxes(pdf_page, chars_all, flags, M, raw)
+        _attach_ink_boxes(pdf_page, chars_all, M, raw)
         for c in chars_all:
             if _needs_ink(c.font):
                 c.bbox = _extension_box(c)

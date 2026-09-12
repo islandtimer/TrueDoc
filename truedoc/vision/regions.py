@@ -12,8 +12,6 @@ from __future__ import annotations
 import base64
 import re
 
-import pymupdf
-
 from truedoc.extract import render
 from truedoc.extract.handle import open_pdf
 from truedoc.geometry import Rect

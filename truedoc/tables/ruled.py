@@ -8,9 +8,8 @@ from __future__ import annotations
 
 import re
 
-import pymupdf
-
 from truedoc.extract import pdfium_objects, pdftext_rawdict
+from truedoc.extract.handle import pymupdf_module
 from truedoc.geometry import Rect
 from truedoc.model import BBox, Block, BlockKind, Table, TableCell
 from truedoc.tables.aligned import _continues
@@ -178,7 +177,7 @@ def deal_tall_cells(pdf_page: "pymupdf.Page", rows: list, cell_rects: list[list]
                     blocks = None
             if blocks is None:
                 try:
-                    blocks = pdf_page.get_text("dict", clip=pymupdf.Rect(*rect)).get("blocks", [])
+                    blocks = pdf_page.get_text("dict", clip=pymupdf_module().Rect(*rect)).get("blocks", [])
                 except Exception:
                     continue
             texts: dict[int, list[str]] = {}

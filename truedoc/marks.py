@@ -15,8 +15,6 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-import pymupdf
-
 from truedoc.extract import pdfium_objects, render
 from truedoc.geometry import Rect
 from truedoc.model import BBox, Page

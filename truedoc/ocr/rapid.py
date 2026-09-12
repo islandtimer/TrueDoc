@@ -14,7 +14,6 @@ import threading
 from typing import Optional
 
 import numpy as np
-import pymupdf
 
 from truedoc.extract import render
 from truedoc.geometry import Rect

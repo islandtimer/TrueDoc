@@ -34,6 +34,32 @@ Scanned books from archive.org and similar carry an invisible text layer with me
 ## D007 - No AGPL components in the product path (2026-09-02)
 PyMuPDF's own layout add-on (`pymupdf-layout`) and DocLayout-YOLO are AGPL or commercial-licensed. TrueDoc only uses permissively licensed models and libraries (Apache-2.0, MIT, BSD) in the conversion path, so it can be used commercially without a licence purchase. AGPL tools may still be run as *competitors* in benchmarks.
 
+**Evidence, 12 September 2026 (run 85).** With stage E of M18 the product path no longer imports PyMuPDF at
+all: `tests/test_no_pymupdf.py` converts a three-page document - prose with a ruled box, a page filed on
+its side, and a page carrying a hidden OCR layer - in an interpreter where `import pymupdf` raises. The
+package left the core dependencies for two extras (`mupdf`, for `TRUEDOC_READER=mupdf` and the other old
+readers, and `bench`, for the measurement tools). Every package the product path does import, with the
+licence its installed metadata states:
+
+| Package | What it does on the product path | Licence |
+|---|---|---|
+| `pypdfium2` | reads and draws every page (PDFium) | BSD-3-Clause and Apache-2.0 |
+| `pdftext` | the text layer over PDFium | Apache-2.0 |
+| `pdfplumber` | the ruled-table geometry | MIT |
+| `pypdf` | glyph names PDFium cannot map | BSD-3-Clause |
+| `fonttools` | the Adobe Glyph List and font tables | MIT |
+| `torch`, `transformers` | the layout model | Apache-2.0 (with BSD and MIT parts in torch) |
+| `huggingface_hub` | fetches the models on first use | Apache-2.0 |
+| `rapidocr_onnxruntime`, `onnxruntime` | OCR for pages with no text layer | Apache-2.0, MIT |
+| `numpy`, `pillow`, `opencv-python-headless` | images and arrays | BSD-3-Clause, MIT-CMU, Apache-2.0 |
+| `pyyaml`, `pydantic`, `lxml`, `rich`, `typer`, `rapidfuzz` | front matter, models, output, CLI | MIT and BSD-3-Clause |
+| `wordninja` | splits glued words in OCR layers | MIT by its repository; the installed metadata states none |
+
+**Not yet checked, and the owner's to settle before a product ships:** the licences of the two sets of
+model *weights* the pipeline downloads at run time - `ds4sd/docling-layout-heron` for layout and
+`SWHL/RapidOCR` for the English recogniser. Those are data, not packages, and their terms are not in any
+installed metadata.
+
 ## D011 - Text a reader cannot see stays out of the body, and is recorded in the front matter (2026-09-03, owner's decision)
 
 **Context.** The goal is fidelity to what a document means when a human reads it. PDFs can carry text that no reader sees: white or background-coloured text, zero-size fonts, text painted under an image or a filled shape, text clipped away by a clipping path, text beyond the page edge. Keyword-stuffed CVs and papers with hidden instructions aimed at automated reviewers are the everyday examples.

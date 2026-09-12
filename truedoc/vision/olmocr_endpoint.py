@@ -19,8 +19,6 @@ import logging
 import urllib.error
 import urllib.request
 
-import pymupdf
-
 from truedoc.extract import render
 from truedoc.extract.handle import open_pdf
 

@@ -26,13 +26,9 @@ import io
 import math
 import os
 
-import pymupdf
 from PIL import Image
 
-try:  # silence PyMuPDF's one-off advert for its AGPL layout package
-    pymupdf.no_recommend_layout()
-except Exception:
-    pass
+from truedoc.extract.handle import pymupdf_module
 
 _DOCS: dict[str, tuple] = {}     # path -> (stamp, PdfDocument); a handful kept open
 _DOCS_MAX = 2
@@ -88,21 +84,26 @@ def document(path: str):
     return doc
 
 
-def _crop(clip, scale: float, width: float, height: float) -> tuple:
-    """A clip rectangle as the four edge insets PDFium wants - left, bottom, right, top - selecting exactly
-    the pixels MuPDF would have drawn.
-
-    PDFium draws the whole page at `scale` and cuts whole pixels off each edge, rounding each inset up;
-    MuPDF grows the clip to whole pixels of the same grid (`fz_round_rect`, with its own thousandth of a
-    pixel of slack). So the box is taken to pixels here, and each inset given half a pixel inside its edge,
-    which is what makes PDFium's rounding land on the row MuPDF drew. A crop one pixel short turns a
-    chevron in a disc into a dot (`tests/test_marks_arrows.py`).
-    """
+def _pixel_box(clip, scale: float, width: float, height: float) -> tuple:
+    """The clip as whole pixels of the page's own grid, cut to the page: the pixels MuPDF would draw
+    (`fz_round_rect`, with its own thousandth of a pixel of slack)."""
     sw, sh = math.ceil(width * scale), math.ceil(height * scale)
     x0 = min(max(math.floor(float(clip[0]) * scale + 0.001), 0), sw)
     y0 = min(max(math.floor(float(clip[1]) * scale + 0.001), 0), sh)
     x1 = min(max(math.ceil(float(clip[2]) * scale - 0.001), x0), sw)
     y1 = min(max(math.ceil(float(clip[3]) * scale - 0.001), y0), sh)
+    return (x0, y0, x1, y1)
+
+
+def _crop(box, scale: float, width: float, height: float) -> tuple:
+    """That pixel box as the four edge insets PDFium wants - left, bottom, right, top.
+
+    PDFium draws the whole page at `scale` and cuts whole pixels off each edge, rounding each inset up, so
+    each inset is given half a pixel inside its edge and PDFium's rounding lands on the row MuPDF drew. A
+    crop one pixel short turns a chevron in a disc into a dot (`tests/test_marks_arrows.py`).
+    """
+    sw, sh = math.ceil(width * scale), math.ceil(height * scale)
+    x0, y0, x1, y1 = box
     return (max(0.0, x0 - 0.5) / scale, max(0.0, sh - y1 - 0.5) / scale,
             max(0.0, sw - x1 - 0.5) / scale, max(0.0, y0 - 0.5) / scale)
 
@@ -118,7 +119,15 @@ def _render_pdfium(pdf_page, scale: float, clip, grey: bool) -> Image.Image | No
         # reads: PDFium is asked to add it (clockwise, as /Rotate is; the crop applies after it).
         turn = (int(pdf_page.rotation) - int(page.get_rotation())) % 360
         width, height = float(pdf_page.rect.width), float(pdf_page.rect.height)
-        crop = _crop(clip, scale, width, height) if clip is not None else (0, 0, 0, 0)
+        crop = (0, 0, 0, 0)
+        if clip is not None:
+            box = _pixel_box(clip, scale, width, height)
+            if box[2] <= box[0] or box[3] <= box[1]:
+                # Nothing of the page lies inside the clip. PDFium refuses such a crop ("Crop exceeds page
+                # dimensions") and MuPDF hands back an empty picture, so hand back the same empty picture
+                # rather than falling back to MuPDF for it: those were the last renderings reaching PyMuPDF.
+                return Image.new("L" if grey else "RGB", (box[2] - box[0], box[3] - box[1]), "white")
+            crop = _crop(box, scale, width, height)
         bitmap = page.render(scale=scale, rotation=turn, crop=crop, grayscale=grey)
         return bitmap.to_pil().convert("L" if grey else "RGB")
     except Exception:
@@ -126,6 +135,7 @@ def _render_pdfium(pdf_page, scale: float, clip, grey: bool) -> Image.Image | No
 
 
 def _render_mupdf(pdf_page, scale: float, clip, grey: bool) -> Image.Image:
+    pymupdf = pymupdf_module()
     kwargs = {"matrix": pymupdf.Matrix(scale, scale), "alpha": False,
               "colorspace": pymupdf.csGRAY if grey else pymupdf.csRGB}
     if clip is not None:

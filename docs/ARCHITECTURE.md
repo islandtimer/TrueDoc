@@ -80,8 +80,19 @@ held-out fifth (81.1 against 80.9).
 | `TRUEDOC_RENDERER=pdfium` / `mupdf` | every page rendering | `extract/render.py` | 100/128, and identical marks on 82 rotated pages - measured at commit 3fb9e5b; from 905f456 (10 Sept 10:43) until run 83 a call left on a renamed function made every PDFium render fail and MuPDF drew every page, unnoticed because the fallback is silent |
 | `TRUEDOC_OBJECTS=pdfium` / `mupdf` | drawings, images, ruled tables | `extract/pdfium_objects.py`, `tables/ruled_pdfium.py` | tables 850 against 848 of 1,022; multi-column 678 against 678 of 884 |
 
-What the swap does not yet remove: the document handle and `Page` objects, `pymupdf.Rect`/`Matrix`
-as plain geometry types (about 27 sites), `set_rotation` (2 sites), and the MuPDF path itself.
+What the swap removed, a stage at a time (12 Sept): **A** - `truedoc/geometry.py`, TrueDoc's own `Rect`,
+`Matrix` and `transform_point`, PyMuPDF's arithmetic to the bit (MuPDF computes in 32-bit floats, and so
+does this). **B** - the page-quality check's invisible-text count taken from the reader's own characters
+instead of a second `get_texttrace`. **C** - `truedoc/extract/handle.py`, PDFium document and page handles
+carrying what the product asks of a page: its file, its index, its size as drawn, its rotation, the matrix
+that turns unrotated coordinates into drawn ones, and `set_rotation`, which turns a page in memory only.
+**D** - the renderer repaired (see below) and the vision stage's crops taken through the same handle. **E**
+- PyMuPDF imported only when the old reader asks for it, and an empty picture handed back for a crop with
+nothing of the page inside it, which PDFium refuses to draw. Proved run by run: run 82's markdown was run
+81's byte for byte on all 1,403 pages, run 83 put PDFium in charge of drawing at a cost of four checks,
+run 84 carried the owner's dollar-sign decision (D024), and run 85 gave run 84's markdown byte for byte
+with three calls reaching PyMuPDF in the whole run - all three from the test suite, none from the
+conversion of any page.
 
 **Coordinate conventions are where this goes wrong, every time.** Four different spaces are in play
 and mixing them fails silently - nothing crashes, the document just comes out wrong.
@@ -102,11 +113,31 @@ and mixing them fails silently - nothing crashes, the document just comes out wr
   178.5pt out; missing the second put its rectangles at y = -32,000 while the bounding boxes looked
   perfect.
 
-**Still on PyMuPDF:** `get_texttrace` and `get_bboxlog` inside `_Visibility` (the hidden-text
-machinery of D011), `set_rotation` for pages lying on their side, and `pymupdf.Rect` as a geometry
-type. `_Visibility` is the one real piece of work left; it needs a per-character link to the object
-that drew it, which PDFium gives through `FPDFText_GetTextObject` - the same pointers
-`pdfium_objects` already walks, so the two can be joined on them.
+**Two rules the swap taught.** *Never hand TrueDoc's geometry to a PyMuPDF object.* PyMuPDF's conversions
+take only its own types, tuples and lists, and read anything else as the identity or an empty rectangle:
+`pymupdf.Point(p) * M` with TrueDoc's `M` leaves the point exactly where it was, without a word. That was
+stage C's first fault, caught two minutes into its proof run, and `transform_point` replaced it. Convert at
+the hand-off - `pymupdf.Rect(*r)`, `tuple(r)`. *PyMuPDF builds the rotation matrix from the /CropBox as
+written,* not from the drawn page, which is the crop box cut to the media box, and keeps that size in
+32-bit floats; on a page whose crop box reaches past its media box the two differ, and the handle copies
+PyMuPDF, quirk included.
+
+**Silent fallbacks hide faults.** The renderer falls back to MuPDF whenever PDFium declines, and from
+10 Sept 10:43 (905f456) to run 82 one call left on a renamed function made every PDFium render fail: MuPDF
+drew every page image while the switch read PDFium, and nothing said so. `tests/test_render_pdfium.py`
+fails now if an upright page, or one turned in memory, reaches the fallback. Two more differences surfaced
+the moment PDFium really drew. A clip must be handed over as the pixel box MuPDF would have drawn, half a
+pixel inside each edge, because PDFium rounds each inset up and a crop came out a pixel short. And a mark
+must be read from a crop drawn four times larger than the classifier's grid and shrunk here, a cell
+counting as ink when a quarter of its pixels are: at the grid's own size PDFium keeps a stroke a pixel wide
+where MuPDF thins it, and the same tick covered 0.146 of the crop under one and 0.177 under the other -
+a tick drawn one way and an arrow drawn the other.
+
+**Still on PyMuPDF:** the old readers themselves (`TRUEDOC_READER=mupdf`, `TRUEDOC_RENDERER=mupdf`,
+`TRUEDOC_OBJECTS=mupdf`) and the measurement tools, which import the package for themselves. The product
+path does not: `tests/test_no_pymupdf.py` converts a document in an interpreter where importing PyMuPDF
+raises, and `pyproject.toml` carries the package under the `mupdf` and `bench` extras rather than among the
+dependencies. D007 holds the licence table for everything the product path does import.
 
 ## Where the benchmark harness lives
 

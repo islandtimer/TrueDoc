@@ -10,9 +10,9 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
-  "pymupdf>=1.24",
   "pdfplumber>=0.11",
   "pypdfium2>=4.30",
+  "pdftext>=0.7",     # Apache-2.0: the default text reader over PDFium (D023)
   "pypdf>=4",         # BSD-3: the glyph names PDFium cannot map, read from the PDF's own font tables
   "fonttools>=4.40",  # MIT: the Adobe Glyph List, names in parts ("f_i") included
   "numpy>=1.26",
@@ -26,10 +26,16 @@ dependencies = [
   "lxml>=5",
   "rich>=13",
   "typer>=0.12",
+  "torch>=2",                   # BSD-3 and others: runs the layout model
+  "transformers>=5",            # Apache-2.0: the layout model, ds4sd/docling-layout-heron (tested with 5.16)
+  "huggingface_hub>=0.23",      # Apache-2.0: fetches the layout and OCR models on first use
+  "rapidocr_onnxruntime>=1.2",  # Apache-2.0: OCR for pages without a text layer
 ]
 
 [project.optional-dependencies]
-bench = ["huggingface_hub>=0.23", "fuzzysearch>=0.7", "pytest>=8"]
+bench = ["huggingface_hub>=0.23", "fuzzysearch>=0.7", "pytest>=8", "pymupdf>=1.24"]
+# AGPL or a paid licence (D007): never on the product path - the old reader and measurement only
+mupdf = ["pymupdf>=1.24"]
 dev = ["pytest>=8", "ruff>=0.5"]
 
 [project.scripts]

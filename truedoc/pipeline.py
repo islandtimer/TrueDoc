@@ -9,8 +9,6 @@ import pathlib
 import re
 from dataclasses import dataclass, field
 
-import pymupdf
-
 from truedoc.classify.blocks import _assign_heading_levels, classify_blocks
 from truedoc.extract import render as page_render
 from truedoc.extract.handle import open_pdf
