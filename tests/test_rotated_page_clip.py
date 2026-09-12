@@ -18,6 +18,7 @@ import pymupdf
 import pytest
 
 from truedoc.extract.textlayer import _renders_uniform
+from truedoc.extract import render
 from truedoc.model import BBox
 
 
@@ -75,6 +76,7 @@ def test_clipping_finds_the_ink_where_the_render_shows_it(rotate):
             "so clipping there must not report a blank area")
     finally:
         doc.close()
+        render.close_documents()   # PDFium holds the file open until it is let go
         os.unlink(path)
 
 
@@ -92,4 +94,5 @@ def test_an_empty_corner_still_reads_as_blank(rotate):
         assert _renders_uniform(page, empty, M) is True, f"rotation {rotate}: {empty} should be blank"
     finally:
         doc.close()
+        render.close_documents()   # PDFium holds the file open until it is let go
         os.unlink(path)

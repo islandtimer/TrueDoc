@@ -201,7 +201,32 @@ cap whose column line our line join welds to the next column (one check); three 
 arXiv pages (matrices in brackets, a cases brace read as three pieces, tilde accents) worth seven
 checks the MuPDF path also loses in part.
 
-## Open - Literal dollar signs in prose (found 2026-09-12; the owner's to decide)
+## D024 - Formulas in `\( \)`, literal dollar signs escaped (2026-09-12, the owner's decision)
+
+TrueDoc writes formulas as `\(...\)` inline and `\[...\]` as a block, and writes a literal dollar sign in
+markdown text as `\$`. The old convention - `$...$`, `$$...$$`, prose dollar signs bare - is gone.
+
+**Why.** The owner will read the output rendered as well as have machines read it, and the standing
+objective is that meaning survives for the reader. While formulas are marked by dollar signs, a price in
+the same paragraph swallows the formula, and a stray dollar sign flips every formula after it - that cost
+2503.05329 page 4 its check. While prose dollar signs are bare, a viewer that pairs any two of them turns
+"The excess is $100 and the benefit limit is $2,000" into a formula. One change covers each, and neither
+leans on the reader's software being careful.
+
+**Cost, measured.** Re-delimiting costs nothing: on run 82's markdown, all 7,019 checks over all 1,403
+pages read exactly the same with every formula re-delimited (`bracket_sim.py`, 12 Sept). Escaping costs
+the benchmark, because its expected text holds bare dollar signs and its scorer does not undo a markdown
+escape: sixteen checks of the 98 on the fifteen pages that carry one, fourteen of them in tables, about a
+fifth of a point overall (`dollar_escape_sim.py`). That is a cost in the benchmark's bookkeeping, not in
+meaning - the page still reads "$448" to anyone looking at it.
+
+**Where escaping applies.** Markdown text: paragraphs, headings, list items and pipe-table cells. Not
+inside a formula, and not inside an HTML table, where markdown escapes do not apply and a backslash would
+show as a backslash.
+
+**Measured on a run:** run 84.
+
+## Decided - Literal dollar signs in prose (found 2026-09-12, decided the same day: D024)
 TrueDoc writes formulas as `$...$` and `$$...$$` (`docs/OKF_SPEC.md`) and writes a dollar sign in prose
 as it stands: a hand-built page reading "The excess is $100 and the benefit limit is $2,000 per claim"
 comes out exactly so. A maths-aware markdown viewer - GitHub's among them - then reads "100 and the
@@ -215,8 +240,12 @@ of prices. Three ways out, measured where they can be:
    does not undo markdown escapes.
 2. Leave prose dollar signs bare and write formulas as `\(...\)` and `\[...\]`, which the benchmark's
    maths checks also accept: a stray dollar sign could then never break a formula and the dollar checks
-   keep passing, but a viewer that reads `$...$` as maths would still read prices as formulas. Not yet
-   measured.
+   keep passing, but a viewer that reads `$...$` as maths would still read prices as formulas. Measured
+   on 12 Sept, on run 82's own markdown with every formula re-delimited: not one check changes,
+   7,019 of them over all 1,403 pages, every category identical. So option 2 costs nothing on the
+   benchmark where option 1 costs sixteen checks.
 3. Leave both as they are.
 The xy-pic arrow tip behind 2503.05329's stray dollar sign is fixed separately - it was never a dollar
 sign. The choice between 1, 2 and 3 trades benchmark checks against how the output reads in a viewer.
+
+_Decided 12 Sept, the owner: options 1 and 2 together - formulas in brackets, prose dollar signs escaped. The output is to be read rendered as well as by machine, and meaning for the reader decides. See D024._

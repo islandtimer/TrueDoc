@@ -162,7 +162,9 @@ def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None) -> Mark | None:
     # the ring test on purpose: a solid disc has ink all the way round, so it reads as a ring,
     # and erasing that ring throws away the very shape that carries the meaning. Only a hole
     # that reads as a tick or a cross is taken (that is what is drawn this way), and only from
-    # a shape solid enough to be a background - a true ring is too thin to qualify.
+    # a shape solid enough to be a background - a true ring is too thin to qualify. The reading is the
+    # page's rather than the renderer's because the crop is drawn large and shrunk here (`_SUPER`):
+    # the same grey disc reads 0.511 drawn by MuPDF and 0.505 by PDFium.
     if filled >= 0.45 * n * n:
         hole = _knockout(mask)
         if sum(sum(row) for row in hole) >= 0.03 * n * n:
@@ -205,6 +207,9 @@ def _knockout(mask):
     return out
 
 
+_SUPER = 4          # the crop is drawn this many times larger than the grid it is read on
+
+
 def _ink(pdf_page, box: BBox, M=None):
     """A square boolean grid of "ink" pixels inside the box, and the ink colour.
 
@@ -217,7 +222,12 @@ def _ink(pdf_page, box: BBox, M=None):
     rect.normalize()
     pad = 0.08 * max(rect.width, rect.height)
     rect = Rect(rect.x0 - pad, rect.y0 - pad, rect.x1 + pad, rect.y1 + pad)
-    zoom = _GRID / max(rect.width, rect.height, 1.0)
+    # Drawn at the grid's own size, the shape is the renderer's opinion as much as the page's: PDFium
+    # keeps a stroke at least a pixel wide where MuPDF thins it, and a tick on a presentation-sized
+    # page came out 0.146 of the crop under one and 0.177 under the other, which read as a tick and an
+    # arrow. Drawn four times larger and shrunk to the grid here, the two agree to a thousandth
+    # (0.171 and 0.172) and both read the tick.
+    zoom = _SUPER * _GRID / max(rect.width, rect.height, 1.0)
     try:
         img = render.render_image(pdf_page, zoom, tuple(rect))
     except Exception:
@@ -230,15 +240,22 @@ def _ink(pdf_page, box: BBox, M=None):
     bg = tuple(sorted(c[i] for c in border)[len(border) // 2] for i in range(3))
     ink_px = []
     n = _GRID
-    mask = [[0] * n for _ in range(n)]
+    # A grid cell covers several pixels now that the crop is drawn larger, and counts as ink when a
+    # quarter of them are. Any pixel at all fattens the ink until a tick knocked out of a green disc
+    # closes up and the disc reads as a plain dot; half of them thins it until a chevron in a disc
+    # disappears. A quarter reads every mark right and reads the same whichever library drew the page.
+    hits = [[0] * n for _ in range(n)]
+    seen = [[0] * n for _ in range(n)]
     for y in range(h):
+        gy = min(n - 1, int(y * n / h))
         for x in range(w):
+            gx = min(n - 1, int(x * n / w))
+            seen[gy][gx] += 1
             r, g, b = px[y][x]
             if abs(r - bg[0]) + abs(g - bg[1]) + abs(b - bg[2]) > 120:
-                gy = min(n - 1, int(y * n / h))
-                gx = min(n - 1, int(x * n / w))
-                mask[gy][gx] = 1
+                hits[gy][gx] += 1
                 ink_px.append((r, g, b))
+    mask = [[1 if hits[y][x] >= max(1, 0.25 * seen[y][x]) else 0 for x in range(n)] for y in range(n)]
     if not ink_px:
         return mask, ""
     r = sum(p[0] for p in ink_px) / len(ink_px)

@@ -68,6 +68,7 @@ def _both(rotate: int, scale: float = 1.0, clip=None, grey: bool = False):
         if was is not None:
             os.environ["TRUEDOC_RENDERER"] = was
         doc.close()
+        render.close_documents()   # PDFium holds the file open until it is let go
         os.unlink(path)
 
 
@@ -100,6 +101,7 @@ def test_a_clip_lands_on_the_same_part_of_the_page(rotate):
         clip = (float(x0) - 3, float(y0) - 3, float(x1) + 4, float(y1) + 4)
     finally:
         doc.close()
+        render.close_documents()   # PDFium holds the file open until it is let go
         os.unlink(path)
     a, b = _both(rotate, 1.0, clip)
     assert abs(a.shape[0] - b.shape[0]) <= 2 and abs(a.shape[1] - b.shape[1]) <= 2, (a.shape, b.shape)

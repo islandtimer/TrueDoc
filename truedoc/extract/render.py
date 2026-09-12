@@ -23,6 +23,7 @@ Two details that cost an afternoon when they were assumed rather than measured:
 from __future__ import annotations
 
 import io
+import math
 import os
 
 import pymupdf
@@ -87,13 +88,23 @@ def document(path: str):
     return doc
 
 
-def _crop(clip, width: float, height: float) -> tuple:
-    """A clip rectangle as the four edge insets PDFium wants, clamped inside the page."""
-    x0 = max(0.0, min(float(clip[0]), width))
-    y0 = max(0.0, min(float(clip[1]), height))
-    x1 = max(x0, min(float(clip[2]), width))
-    y1 = max(y0, min(float(clip[3]), height))
-    return (x0, height - y1, width - x1, y0)
+def _crop(clip, scale: float, width: float, height: float) -> tuple:
+    """A clip rectangle as the four edge insets PDFium wants - left, bottom, right, top - selecting exactly
+    the pixels MuPDF would have drawn.
+
+    PDFium draws the whole page at `scale` and cuts whole pixels off each edge, rounding each inset up;
+    MuPDF grows the clip to whole pixels of the same grid (`fz_round_rect`, with its own thousandth of a
+    pixel of slack). So the box is taken to pixels here, and each inset given half a pixel inside its edge,
+    which is what makes PDFium's rounding land on the row MuPDF drew. A crop one pixel short turns a
+    chevron in a disc into a dot (`tests/test_marks_arrows.py`).
+    """
+    sw, sh = math.ceil(width * scale), math.ceil(height * scale)
+    x0 = min(max(math.floor(float(clip[0]) * scale + 0.001), 0), sw)
+    y0 = min(max(math.floor(float(clip[1]) * scale + 0.001), 0), sh)
+    x1 = min(max(math.ceil(float(clip[2]) * scale - 0.001), x0), sw)
+    y1 = min(max(math.ceil(float(clip[3]) * scale - 0.001), y0), sh)
+    return (max(0.0, x0 - 0.5) / scale, max(0.0, sh - y1 - 0.5) / scale,
+            max(0.0, sw - x1 - 0.5) / scale, max(0.0, y0 - 0.5) / scale)
 
 
 def _render_pdfium(pdf_page, scale: float, clip, grey: bool) -> Image.Image | None:
@@ -101,16 +112,14 @@ def _render_pdfium(pdf_page, scale: float, clip, grey: bool) -> Image.Image | No
         path = pdf_page.parent.name
         if not path:
             return None
-        page = _document(path)[pdf_page.number]
-        # `vision/regions.py` turns a page that lies on its side by setting its rotation, and that
-        # change lives only in MuPDF's copy of the document. Anything PDFium would draw differently
-        # from what the caller is holding goes back to MuPDF rather than quietly drawing the page
-        # the wrong way up.
-        if int(page.get_rotation()) != int(pdf_page.rotation):
-            return None
+        page = document(path)[pdf_page.number]
+        # A page that lay on its side is turned by setting its rotation (`pipeline._turn_page`,
+        # `vision/regions.py`), and the turn lives only in the page handle, not in the file PDFium
+        # reads: PDFium is asked to add it (clockwise, as /Rotate is; the crop applies after it).
+        turn = (int(pdf_page.rotation) - int(page.get_rotation())) % 360
         width, height = float(pdf_page.rect.width), float(pdf_page.rect.height)
-        crop = _crop(clip, width, height) if clip is not None else (0, 0, 0, 0)
-        bitmap = page.render(scale=scale, crop=crop, grayscale=grey)
+        crop = _crop(clip, scale, width, height) if clip is not None else (0, 0, 0, 0)
+        bitmap = page.render(scale=scale, rotation=turn, crop=crop, grayscale=grey)
         return bitmap.to_pil().convert("L" if grey else "RGB")
     except Exception:
         return None

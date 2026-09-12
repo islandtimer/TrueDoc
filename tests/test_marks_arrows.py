@@ -76,3 +76,26 @@ def test_a_cross_is_still_a_cross_not_an_arrow(tmp_path):
     mark = marks.classify_mark(d[0], BBox(39, 39, 57, 57), None)
     d.close()
     assert mark is not None and mark.kind == "cross", mark.kind if mark else None
+
+
+def test_the_arrow_reads_the_same_whichever_library_draws_the_page(tmp_path, monkeypatch):
+    """A mark is decided from a crop about thirty pixels across, so which library drew it matters. The
+    same grey disc covers 0.459 of that crop drawn by MuPDF and 0.449 drawn by PDFium - its part-covered
+    rim falling either side of the ink test - and a gate at 0.45 turned this arrow into a dot on the day
+    PDFium started drawing the pages (12 Sept). Both libraries must read the same mark.
+    """
+    from truedoc.extract import render
+
+    path = _chain_page(tmp_path)
+    kinds = {}
+    for backend in ("mupdf", "pdfium"):
+        monkeypatch.setenv("TRUEDOC_RENDERER", backend)
+        render.close_documents()
+        doc = pymupdf.open(path)
+        try:
+            mark = marks.classify_mark(doc[0], BBox(200.8, 80.8, 219.2, 99.2), None)
+        finally:
+            doc.close()
+            render.close_documents()
+        kinds[backend] = None if mark is None else mark.kind
+    assert kinds == {"mupdf": "arrow-down", "pdfium": "arrow-down"}, kinds
