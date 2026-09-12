@@ -297,6 +297,35 @@ several times that per page for four checks. The deep read is only ever meant fo
 a third of the scanned pages, which are themselves a fifth of the corpus - so the bill is small either
 way, and the argument for Sonnet is that it is better value, not that Opus is unaffordable.
 
+## Settled: two full runs, and the number
+
+The measurements above were all on the 98 old-scan pages in isolation. Two full benchmark runs then put
+the deep reader in the product, on all 1,403 pages, with the routing deciding which pages qualify (103
+of them: 64 old scans, 15 headers, 10 tables, 7 old-scan maths, 6 multi-column, 1 tiny text).
+
+| run | what it was | overall | held-out | tuned-on |
+|---|---|---|---|---|
+| 89 | open weights, the default | 84.1 | 81.4 | 82.0 |
+| 90 | the deep reader, first attempt | 82.8 | 81.8 | 80.2 |
+| **91** | **the deep reader, maths delimiters translated** | **85.4** (CI 84.5-86.3) | **82.4** | **83.5** |
+
+**Run 91 is the best score the project has had**, and the whole confidence interval sits above the
+previous best of 84.2. Against the open-weight run: old scans +35, old-scan maths +11, tables +6, tiny
+text +4, headers -2, multi-column -1. Held-out and tuned-on are both at their best and moved together,
+which is what a real gain looks like rather than a fitted one.
+
+**Run 90 is kept in the table because it is the more useful row.** It scored 82.8 - worse than not doing
+it at all - because D024 escapes every literal dollar sign outside TrueDoc's own delimiters, and a
+general model writes its maths between dollar signs. Fourteen integrals on one textbook page became
+literal text, and old-scan maths fell 80.8 to 64.0. olmOCR 2 happens to answer in our delimiters, which
+is why ninety runs never met this. The fix translates a model's delimiters before anything else sees the
+text (`truedoc/vision/mathdelims.py`).
+
+**The method error was worse than the bug.** The deep reader was measured over one category, 98 pages
+and 526 checks, and then shipped to all eight. Six categories have model-read pages. The category it
+broke was the one that was never looked at. `scratchpad/compare_categories.py <a> <b>` now puts two runs
+side by side category by category and names anything that lost ten checks or more.
+
 ## The cheapest way to settle it## The cheapest way to settle it
 
 One rental, several models, one small page set. The 98 old-scan pages are the concentrated pool: 526 checks, 280 of our failures, and the category score is exactly the pass rate on them, so a candidate can be judged in minutes without a full conversion run. Shape of the experiment:

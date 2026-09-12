@@ -32,7 +32,16 @@ PDF page
   |                              model (olmOCR 2 behind an OpenAI-style endpoint) or Anthropic's API
   |                              (`anthropic[:model]`, key from ANTHROPIC_API_KEY); then icon-only table
   |                              cells and figures are asked about (vision/regions.py, pipeline
-  |                              _read_regions_with_model); everything marked as inferred (D015)
+  |                              _read_regions_with_model); everything marked as inferred (D015),
+  |                              and the mark names the reader that read the page, not the stage
+  |  6c'. the deep reader        a page with no text layer whose own OCR comes back with nothing
+  |      (optional, D025)        word-like goes to a second, paid reader instead (--vision-deep;
+  |                              pipeline._needs_a_deeper_read). Measured: on pages the ordinary
+  |                              reader handles the two are level to the check, and on the hardest
+  |                              third of the scanned pages the deep one roughly doubles the score.
+  |                              A model's maths arrives between dollar signs and is translated into
+  |                              the document's own delimiters first (vision/mathdelims.py), or D024
+  |                              escapes it into literal text - which cost 77 checks in run 90.
   |     (maths notes, 3 Sept pm: `is_extension_font` names every cmex-layout font (CM, Latin Modern, tx/px, MathTime, Euler); fixed-size
   |      delimiters map to \big/\Big/\bigg/\Bigg by glyph code; script-sized fraction stacks are assigned to a script by their
   |      position against the baseline; numerators join the line below their bar; bars between rows veto a matrix)

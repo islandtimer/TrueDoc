@@ -275,3 +275,38 @@ The xy-pic arrow tip behind 2503.05329's stray dollar sign is fixed separately -
 sign. The choice between 1, 2 and 3 trades benchmark checks against how the output reads in a viewer.
 
 _Decided 12 Sept, the owner: options 1 and 2 together - formulas in brackets, prose dollar signs escaped. The output is to be read rendered as well as by machine, and meaning for the reader decides. See D024._
+
+## D025 - A second, paid reader for the pages the first one cannot manage, and two scores kept apart (2026-09-13, owner's decision)
+
+**Context.** D014 put a vision stage in the product and D019 sends every page without a digital text
+layer to it. Those pages are a fifth of the benchmark and carry a quarter of its checks, and we pass far
+fewer of them than of the rest. The question the owner put on 12 September was which model to rent for
+that stage.
+
+**What the measurement found** (`docs/MODEL_CHOICE.md`, and the log for 12 and 13 September).
+The published tables could not answer it, so the 98 old-scan pages were read again and scored. A
+frontier model reads the hard tail far better than olmOCR 2 - on the hardest third of those pages it
+roughly doubles the score - and on pages olmOCR reads well the two are level to the check, 117 each. So
+the answer is not a better model for every page; it is a second reader for the pages the first cannot
+manage.
+
+**The decision.** A page goes to the deep reader when it has no digital text layer *and* our own OCR of
+it comes back with nothing word-like (`pipeline._needs_a_deeper_read`; the threshold is
+`vision_deep_wordlike`, 0.6 by default). Everything else keeps the ordinary reader. The deep reader is
+off unless an endpoint is given (`--vision-deep anthropic`), so an ordinary conversion and an ordinary
+benchmark run are unchanged. 103 of the benchmark's 1,403 pages qualify.
+
+**And two scores, kept apart.** The owner asked for this explicitly. An open-weight score - the machine's
+own reading plus a model whose weights anyone can download - stays the default and the number we quote.
+A hosted score, with a paid service in the loop, is reported in its own row and never mixed with the
+others, which is how olmOCR-bench's own published tables treat hosted services. On 13 September those
+numbers are **84.1 open weights (run 89)** and **85.4 hosted (run 91)**.
+
+**What the user sees.** Pages leaving the machine needs their consent, so the deep reader is something a
+user opts into rather than something that happens to them; but they opt into a policy, not a sorting
+job, because the converter decides which pages qualify. Everything a model wrote is still marked as
+inferred and the mark names the model that wrote it (D015), which run 90 got wrong and which is now
+tested.
+
+_Decided 13 Sept, the owner: proceed with the deep read, with the open-weight score kept as its own
+column._
