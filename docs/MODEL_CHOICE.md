@@ -266,6 +266,37 @@ Two defects the run itself turned up, both fixed and tested:
 - **The converter is not thread-safe.** Four readers through PDFium, the layout model and the OCR
   engine in threads crashed the interpreter outright. It runs in processes now.
 
+## The ladder: five readings of the same pages, one thing changed at a time
+
+The production call is +5.1, the hand read was +9.7. To find out what the difference is made of - a
+bigger model, a better prompt, more pixels, a second look - each was changed on its own and scored on
+the 517 checks every reading covers (page 64 left out of all of them, since the hand read never got it).
+
+| reading | checks | rate | against olmOCR-2 |
+|---|---|---|---|
+| olmOCR-2, what we run today | 239 | 46.2% | - |
+| Sonnet 5, one API call a page | 267 | 51.6% | +5.4 on the category, +0.68 overall |
+| **Sonnet 5 plus the faithful-transcription paragraph** | **273** | **52.8%** | **+6.6, +0.82** |
+| Opus 5, one API call, no paragraph | 271 | 52.4% | +6.2, +0.77 |
+| the hand read: Opus, able to zoom, 2,200 px | 289 | 55.9% | +9.7, +1.21 |
+
+**A paragraph beat a bigger model.** Telling a general model to keep the writer's spelling,
+capitalisation and punctuation and not to tidy anything is worth 6 checks and costs nothing. Moving to
+Opus is worth 4 over Sonnet, inside the noise at this size, at several times the price a page. The
+paragraph ships (`_FAITHFUL` in `truedoc/vision/anthropic_api.py`); Opus does not.
+
+**What is left is 16 checks and it is not model class.** Opus at the same resolution with one look does
+not get them, so the residue is the two things only the hand read had: the page at 2,200 px where the
+API path sends 1,568, and a second look at a hard patch. Both are plumbing rather than purchase, and
+reading a page as two overlapping halves tests them together - each half arrives at full resolution and
+gets its own pass. 16 checks is about +3 on the category and +0.4 overall, several times what a good
+rule run buys.
+
+**A note on prices.** Sonnet reads a page in about 20 seconds and 98 pages cost a few dollars; Opus is
+several times that per page for four checks. The deep read is only ever meant for the hard tail anyway -
+a third of the scanned pages, which are themselves a fifth of the corpus - so the bill is small either
+way, and the argument for Sonnet is that it is better value, not that Opus is unaffordable.
+
 ## The cheapest way to settle it## The cheapest way to settle it
 
 One rental, several models, one small page set. The 98 old-scan pages are the concentrated pool: 526 checks, 280 of our failures, and the category score is exactly the pass rate on them, so a candidate can be judged in minutes without a full conversion run. Shape of the experiment:
