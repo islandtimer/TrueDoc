@@ -939,6 +939,7 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
             doc.warnings.append(f"the deep reader is unavailable, the ordinary one is reading every page: {exc}")
     inferred: list[dict] = doc.metadata.setdefault("inferred", [])
     pages_with_model: list[int] = doc.metadata.setdefault("pages_with_model", [])
+    from truedoc.vision.mathdelims import normalise_math_delimiters
     from truedoc.vision.witness import strip_lines, strip_lines_from_ocr, strip_running_heads
     from truedoc.vision import corroborate
 
@@ -987,6 +988,14 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
         text, dropped = strip_running_heads(text, top, bottom)
         if dropped:
             page.meta["vision_dropped"] = dropped
+        # A model writes its maths the way it learned to, between dollar signs; the document writes it
+        # between \( and \), and D024 escapes every other dollar sign it finds. Without this the two
+        # rules meet and the formulas lose: fourteen integrals on old_scans_math/1_pg131 came out as
+        # literal text in run 90, and that category fell 80.8 to 64.0.
+        before = text
+        text = normalise_math_delimiters(text)
+        if text != before:
+            page.meta["vision_math_delimiters"] = True
         if not text:
             continue
         # D008, M6: check the model's reading against what we can read of the page ourselves,
