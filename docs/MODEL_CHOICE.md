@@ -21,36 +21,20 @@ model never touches we pass 89.0 per cent; on the 1,718 it does, 72.5.
 
 ## What a better model is worth
 
-**Correction (15:40, after the model research).** An earlier version of this section asked what old scans
-at 70 per cent would be worth and answered +2.9 points. That target was invented. **No model published,
-open or closed, scores above the mid-fifties on olmOCR-bench's old-scans category.** The published ranking
-is: Datalab's hosted API 54.6, Unsiloed 52.9 (closed), Chandra 2 51.1, Chandra 1 50.4, Nanonets OCR-3 49.6
-(weights never released), dots.mocr 48.2, olmOCR-2 47.7 (what we run), then everything else below 43 down
-to GOT-OCR2 at 22.1. Our own harness reads 47.0 on that category, within a point of olmOCR-2's published
-figure, which is what you would expect since every old-scan page is model-read.
+**This section was twice wrong before it was measured, and both corrections are kept here.** The first
+version asked what old scans at 70 per cent would be worth and answered +2.9 points; that target was
+invented, and no model published scores above the mid-fifties on the category. The second version took
+the published ceiling instead - Chandra 2's 51.1 against our 47.0 - and answered about +0.5. Then the
+pages were actually read (see "Measured, 12 September" below) and the answer came back **+9.7 points on
+the category, +1.2 overall**, because a frontier model reads degraded handwriting far better than any
+published table suggested and the benchmark's own leaders are not measured on that tail.
 
-So the realistic arithmetic, using the best open weights available rather than a wish:
+The lesson is the one the project keeps relearning: a published overall score says little about what a
+model does on the pages you actually send it. Measure on your own pages.
 
-| category | checks | ours now | best published open weights | checks won | overall |
-|---|---|---|---|---|---|
-| old_scans | 526 | 47.0 | 51.1 (Chandra 2) | +22 | +0.5 |
-| old_scans_math | 458 | 80.8 | not published per-category by any leader | ? | ? |
-| long_tiny_text | 442 | 88.7 | not published per-category by any leader | ? | ? |
-
-**A model swap is worth about half a point on old scans, not three points.** The upside on the other two
-model-read categories is unknown because the leaders do not publish a per-category breakdown - Chandra 2
-is the only model above 83 that does. The whole model-read pool is 1,718 of the 7,019 checks and we pass
-72.5 per cent of them, against 89.0 per cent on the 5,301 checks the model never touches; but the
-published ceilings say most of that gap is the difficulty of the pages, not the model we chose.
-
-Two further cautions on the numbers:
-
-- **Every published score above 82.5 is self-reported by the model's authors.** The only figures AllenAI
-  measured itself are olmOCR's own, DeepSeek-OCR 75.7, Marker 76.1, Nanonets-OCR2 69.5 and Mistral's API.
-- **Our harness and theirs are not on the same scale.** We score 84.1 where olmOCR-2 alone publishes 82.4,
-  because we read the 1,125 digital pages from their own text layer and only send the rest to the model.
-  A model's published overall therefore says little about what it would do inside our pipeline; only its
-  old-scans and other model-read categories bear on us at all.
+For scale, the whole model-read pool is 1,718 of the 7,019 checks and we pass 72.5 per cent of them,
+against 89.0 per cent on the 5,301 checks the model never touches. 473 of our 1,054 remaining failures
+are there.
 
 ## Why no rule of ours can win them
 
@@ -150,6 +134,99 @@ CHURRO, a 3B model purpose-built for degraded historical text, publishes no olmO
 not write markdown with tables and formulas, so it cannot replace the page reader - though it could, in
 principle, be a second opinion on the old-scan pages alone.
 
+## Measured, 12 September: a frontier model reading the old scans
+
+The open question in every published table was what a better model would actually do on *our* pages.
+Rather than infer it from model cards, the 98 old-scan pages were read again from their images by a
+frontier model (me, Opus 5, under the owner's Max plan, which their own note of 3 September says covers
+development looking; an API key is a separate product and a separate bill). Fifteen subagents transcribed
+them **blind** - each saw the page image and olmOCR's own instruction, never the benchmark's expected
+text - and the readings were scored against the same 526 checks, paired page by page.
+
+**The result over 97 pages and 517 checks** (page 64 is excluded, see below):
+
+| reading | present | order | absent | total |
+|---|---|---|---|---|
+| olmOCR-2, as we run it today | 120 | 53 | 66 | 239 (46.2%) |
+| frontier, first prompt | 160 | 66 | 31 | 257 (49.7%) |
+| frontier, with the furniture instruction | 157 | 66 | 66 | **289 (55.9%)** |
+
+Counting only the checks the two read differently, which is the statistic that carries the verdict: the
+corrected frontier read wins 70 and loses 20, **net +50 over 90 disagreements**, where sampling noise at
+that size is about 9. On `present` it is +37, on `order` +13, and on `absent` the two are level with not
+one check between them.
+
+**That is +9.7 points on the old-scans category, or +1.2 on the overall score** - 84.1 to about 85.3. The
+three rule changes of the same day, each proved by its own full run, bought 0.05 between them.
+
+### The first prompt cost 35 checks, and the lesson generalises
+
+The first read looked like a tie (257 against 239) because it failed 35 of the 68 `absent` checks. Asked
+what text each said must not appear, every single one was page furniture: 'Copy.', '2590', "Mch 20/'62",
+'20 Blue anchor', 'FORM 1864', 'ack 5/27/14', 'CABLE ADDRESS, BUVALE', '74 EDUCATION BULLETIN',
+'JANUARY 1920 75', 'new york State FOUNDED 1814.' Archivists' annotations, docket dates, catalogue
+numbers, letterhead and running heads. olmOCR-2 is trained to drop them; the transcription prompt had
+said what to keep and never what to leave out. One added paragraph took that row from 31 to 66, level
+with olmOCR-2, and cost nothing in reading accuracy.
+
+**So the rental experiment needs the same control.** dots.mocr, Infinity-Parser2 and Chandra may or may
+not share olmOCR's convention, and a model that keeps the furniture will score worse than it reads.
+Without holding that constant the comparison measures habits, not capability.
+
+Checked and clean, because it would otherwise have wrecked the comparison: the converter strips running
+heads from a model's reading using the page's own text as a witness, and on a scanned page there is no
+witness - **zero of the 98 pages had anything stripped**, so olmOCR's discipline is its own, not ours.
+
+### Where the gain sits: entirely in the hard tail
+
+Splitting the pages by how well olmOCR-2 does on them, as a proxy for how legible they are:
+
+| page difficulty | pages | checks | olmOCR-2 | frontier | delta |
+|---|---|---|---|---|---|
+| olmOCR passes 70% or more | 24 | 128 | 117 (91.4%) | 117 (91.4%) | 0 |
+| 30 to 70% | 28 | 151 | 73 (48.3%) | 85 (56.3%) | +12 |
+| under 30% | 33 | 172 | 25 (14.5%) | 54 (31.4%) | +29 |
+
+**On legible pages the two readers are level to the check.** The whole advantage is the degraded
+handwritten tail, where the frontier read more than doubles the score. For a customer whose documents are
+clean and printed this buys nothing at all - those pages have a text layer and never reach a model.
+
+### TrueDoc can already tell which pages those are
+
+The converter runs a classical OCR over any page with no text layer and records how word-like the result
+is (`ocr_wordlike` in `page.meta`); the function's own docstring says real text scores 0.6 to 0.9 and
+handwriting noise under 0.3. Measured on eight pages from each group:
+
+| group | wordlike median | range | OCR lines |
+|---|---|---|---|
+| olmOCR reads well | 0.84 | 0.11 to 0.91 | 20 to 37 |
+| olmOCR struggles | 0.36 | 0.00 to 0.58 | 0 to 13 |
+
+A threshold at 0.6 catches every hard page in the sample and misroutes three easy ones, which is the cheap
+direction: on legible pages the deep reader is merely equal, so a misroute wastes a fraction of a cent.
+**The routing needs no declaration from the user** - the converter can say "this page has no text layer
+and our own reader gets nothing word-like from it, so it goes to the deep reader". The user still opts in,
+because those pages leave the machine, but they opt in to a policy rather than sorting their own archive.
+
+### What the number is not
+
+Every one of these favours the frontier read, and they are why this is a ceiling rather than a production
+figure:
+
+- It is Opus 5, not the cheaper model an API call would use.
+- The agents could zoom into a region; one API call cannot.
+- They were given transcription guidance where olmOCR gets its terse prompt.
+- The page was rendered at 2,200 px against olmOCR's 1,288, which is olmOCR's training size, not a limit.
+
+### One page was refused outright
+
+old_scans/64 was stopped twice by the API's content filter, on output, once inside a batch and once
+alone. It carries 9 of the 526 checks and is excluded from both sides of the table. These are American
+archival documents of the 1860s and some carry the language of their period. **A frontier API will refuse
+some historical material, and an open-weight model on our own hardware will not.** That is an operational
+difference no benchmark score records, and for an archive customer it is the difference between a
+converter that works and one that stops.
+
 ## The cheapest way to settle it
 
 One rental, several models, one small page set. The 98 old-scan pages are the concentrated pool: 526 checks, 280 of our failures, and the category score is exactly the pass rate on them, so a candidate can be judged in minutes without a full conversion run. Shape of the experiment:
@@ -179,23 +256,24 @@ MIT, 3B) and **Infinity-Parser2-Flash** (overall 86.0, old scans not published, 
 
 ## My view, for the conversation
 
-1. **The rental is worth doing, but not for the reason I gave earlier today.** I said a better model was
-   worth about 4.6 points; that was wrong, and the correction is above. The published ceiling on old scans
-   is the mid-fifties for anyone, so the realistic prize is half a point there, plus an unknown on
-   old-scan maths and tiny text that nobody publishes.
-2. **The cheap experiment answers the unknown.** One rental, the 98 old-scan pages, three candidates
-   (dots.mocr, Infinity-Parser2-Flash, and olmOCR-2 again as the control), scored against the old-scan
-   checks alone. That is an hour and a few dollars, and it turns two unknowns into numbers. Adding the 36
-   old-scan maths pages and the 46 tiny-text pages makes it 180 pages and still one sitting.
-3. **Run the control.** Re-reading the same pages with olmOCR-2 tells us how much of the gap is the model
-   at all: if the control comes back at 47 and the others at 48, the model is not the lever and we should
-   stop looking there.
-4. **Chandra 2 is worth measuring even though we cannot ship it,** because it is the best published on our
-   category. If it reads the old scans markedly better than the clean models, that says the gap is real
-   and worth chasing another way; if it does not, the question is closed.
-5. **What I would not do**: rent a large general vision-language model on spec. Qwen3-VL and InternVL3.5
-   publish no olmOCR-bench score at all, the only general VLMs AllenAI measured scored 31.5 and 65.5, and
-   the 30B checkpoints need 48 GB.
+1. **The deep read is worth having, and it is worth more than the published tables implied.** Measured on
+   our own pages: +9.7 on the old-scans category, +1.2 overall, with the paired count 70 to 20 over 90
+   disagreements. That is not a rounding error and no amount of rule work reaches it.
+2. **It is worth having only for the hard tail.** On pages a model already reads well the two are level
+   to the check. This is not "swap the model", it is "add a second tier for the pages that need one".
+3. **The converter can route to that tier by itself**, from a number it already computes, and the user
+   opts in to a policy rather than sorting their documents.
+4. **The measurement is a ceiling, not a production figure.** It is Opus 5 with the ability to zoom, a
+   fuller prompt and a larger page image. The next measurement worth making is the production call:
+   `--vision-endpoint anthropic` on the same 98 pages with the furniture instruction, which needs an API
+   key with its own billing and costs a few dollars. That number, not this one, is what a shipped product
+   would deliver.
+5. **The rental is now the second question, not the first.** If the hard tail goes to a frontier API, the
+   open model's job is the pages where everything scores about 91 per cent, and the choice between
+   olmOCR-2, dots.mocr and Infinity-Parser2 barely matters. Rent only to confirm that.
+6. **Two things sit outside the score and should weigh on the decision**: a frontier API refused one of
+   98 archival pages outright, and every page sent to it leaves the machine. An open model on the owner's
+   own hardware does neither. For an archive customer that may matter more than a point of benchmark.
 
 ## Open questions for the owner
 
