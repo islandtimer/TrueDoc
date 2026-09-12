@@ -69,12 +69,14 @@ def bench(
     ocr: bool = typer.Option(True, help="OCR pages without a text layer"),
     vision_endpoint: Optional[str] = typer.Option(None, "--vision-endpoint", help="Optional vision stage endpoint for pages with no usable text"),
     vision_pages_only: bool = typer.Option(False, "--vision-pages-only", help="With the vision stage on, read only unreadable pages; do not ask about icons and figures"),
+    vision_deep: Optional[str] = typer.Option(None, "--vision-deep", help="A second, more expensive reader used only for pages the first one cannot manage"),
 ):
     from truedoc.bench.olmocr import run_olmocr_bench
 
     cats = [c.strip() for c in categories.split(",")] if categories else None
     run_olmocr_bench(candidate=candidate, workers=workers, categories=cats, limit=limit, score=score, jsonl=jsonl, layout=layout, ocr=ocr,
-                     vision_endpoint=vision_endpoint, vision_regions=not vision_pages_only)
+                     vision_endpoint=vision_endpoint, vision_regions=not vision_pages_only,
+                     vision_deep=vision_deep)
 
 
 if __name__ == "__main__":

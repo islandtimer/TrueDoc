@@ -30,13 +30,15 @@ BENCH_DATA = os.path.join(REPO, "bench", "data", "olmocr-bench", "bench_data")
 RUNS = os.path.join(REPO, "bench", "runs")
 
 
-def _convert_one(pdf_path: str, out_path: str, layout: bool = True, ocr: bool = True, vision_endpoint: str | None = None, vision_regions: bool = True) -> tuple[str, float, str | None]:
+def _convert_one(pdf_path: str, out_path: str, layout: bool = True, ocr: bool = True, vision_endpoint: str | None = None,
+                 vision_regions: bool = True, vision_deep: str | None = None) -> tuple[str, float, str | None]:
     from truedoc.pipeline import ConvertOptions, convert
 
     t0 = time.time()
     err = None
     try:
-        text = convert(pdf_path, ConvertOptions(frontmatter=False, page_markers=False, pages=[1], layout=layout, ocr=ocr, vision_endpoint=vision_endpoint, vision_regions=vision_regions))
+        text = convert(pdf_path, ConvertOptions(frontmatter=False, page_markers=False, pages=[1], layout=layout, ocr=ocr, vision_endpoint=vision_endpoint,
+                                        vision_regions=vision_regions, vision_deep=vision_deep))
     except Exception:
         text = ""
         err = traceback.format_exc()
@@ -57,6 +59,7 @@ def run_olmocr_bench(
     ocr: bool = True,
     vision_endpoint: str | None = None,
     vision_regions: bool = True,
+    vision_deep: str | None = None,
 ) -> dict | None:
     pdf_root = os.path.join(BENCH_DATA, "pdfs")
     if not os.path.isdir(pdf_root):
@@ -82,7 +85,7 @@ def run_olmocr_bench(
         os.environ.setdefault("OMP_NUM_THREADS", "2")
         os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
     with ProcessPoolExecutor(max_workers=workers) as ex:
-        futs = [ex.submit(_convert_one, p, o, layout, ocr, vision_endpoint, vision_regions) for p, o in jobs]
+        futs = [ex.submit(_convert_one, p, o, layout, ocr, vision_endpoint, vision_regions, vision_deep) for p, o in jobs]
         for f in as_completed(futs):
             pdf_path, dt, err = f.result()
             times.append(dt)

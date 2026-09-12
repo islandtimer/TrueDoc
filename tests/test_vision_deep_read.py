@@ -138,3 +138,18 @@ def test_a_page_is_attributed_to_the_reader_that_read_it(tmp_path, monkeypatch):
     assert easy.meta["vision_model"] == "olmocr"
     named = {entry["page"]: entry["model"] for entry in doc.metadata["inferred"]}
     assert named == {1: "olmocr", 2: "a-frontier-model"}
+
+
+def test_the_benchmark_runner_passes_the_deep_reader_to_its_workers():
+    """Run 90 launched, converted nothing and died in seconds: the switch had been added to the
+    `convert` command only, and the benchmark uses `bench`. Every layer has to carry it (12 September).
+    """
+    import inspect
+
+    from truedoc.bench.olmocr import _convert_one, run_olmocr_bench
+
+    assert "vision_deep" in inspect.signature(run_olmocr_bench).parameters
+    assert "vision_deep" in inspect.signature(_convert_one).parameters
+    source = inspect.getsource(run_olmocr_bench)
+    assert "vision_deep)" in source, "the workers are handed it, not just the runner"
+    assert "vision_deep=vision_deep" in inspect.getsource(_convert_one), "and it reaches ConvertOptions"
