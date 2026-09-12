@@ -71,9 +71,10 @@ def _same(a: str, b: str) -> bool:
     if ka == kb:
         return True
     # One reading may have dropped or gained a word at a band's edge, so a line contained in the other
-    # counts - but only if it is most of it. Without that second condition a short line matches almost
-    # any long one, and on old_scans/1 a single bad match threw away the middle of the letter: the weld
-    # kept the top band and then jumped to the signature (12 September).
+    # counts - but only if it is most of it, because without that a short line matches almost any long
+    # one. Hardening, not a repair: it was added on a guess that a bad match had eaten the middle of
+    # old_scans/1, and printing that page's bands showed the weld had behaved correctly. It stays
+    # because it biases towards writing a line twice rather than losing one.
     shorter, longer = (ka, kb) if len(ka) <= len(kb) else (kb, ka)
     return len(shorter) >= 12 and shorter in longer and len(shorter) >= 0.6 * len(longer)
 

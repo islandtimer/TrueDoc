@@ -115,13 +115,13 @@ def test_a_band_is_told_it_is_a_slice():
         assert "running heads" in prompt and "keep the writer's spelling" in prompt
 
 
-def test_a_bad_match_far_down_the_second_band_cannot_eat_the_middle():
-    """The failure that cost old_scans/1 the middle of its letter (12 September).
+def test_a_match_far_down_the_second_band_cannot_eat_the_middle():
+    """A weld may only reach as far into the second band as the shared strip can plausibly extend.
 
-    The top band ended "...During your Trip to". The weld matched that against a line far down the
-    bottom band and dropped everything before it, so the page read from the salutation straight to the
-    signature and forty per cent of the words were gone. A weld may only reach as far into the second
-    band as the shared strip can plausibly extend; past that it keeps both halves.
+    Past that it would be dropping text that was never duplicated, which is how the middle of a letter
+    would disappear. This guards the rule rather than a failure that was seen: old_scans/1 came back
+    short from the banded run and I assumed this was why, but printing that page's bands showed the
+    weld had behaved correctly and kept both halves (12 September).
     """
     top = "\n".join([
         "I am one of D E Sickles old Regt and Brigade",
