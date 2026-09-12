@@ -60,5 +60,5 @@ def test_inline_formula_broken_across_lines_is_rejoined():
     from truedoc.render.okf import join_lines
 
     lines = [_line("we have v"), _line("x is small")]
-    texts = ["we have $v_{p}(\Theta_{0})\notin$", "$\{-1,0\}$ is small"]
-    assert join_lines(lines, texts) == "we have $v_{p}(\Theta_{0})\notin \{-1,0\}$ is small"
+    texts = ["we have \\(v_{p}(\Theta_{0})\notin\\)", "\\(\{-1,0\}\\) is small"]
+    assert join_lines(lines, texts) == "we have \\(v_{p}(\Theta_{0})\notin \{-1,0\}\\) is small"

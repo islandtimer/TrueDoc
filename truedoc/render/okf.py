@@ -39,9 +39,9 @@ def join_lines(lines: list[Line], texts: list[str] | None = None) -> str:
         if not out:
             out = text
             continue
-        # An inline formula broken across a line break: "$a =$" / "$b + c$" is one formula.
-        if out.endswith("$") and not out.endswith("$$") and text.startswith("$") and not text.startswith("$$") and len(out) >= 2 and out[-2] != "$":
-            out = out[:-1] + " " + text[1:]
+        # An inline formula broken across a line break: "\(a =\)" / "\(b + c\)" is one formula.
+        if out.endswith("\\)") and text.startswith("\\(") and len(out) >= 3:
+            out = out[:-2] + " " + text[2:]
             continue
         if out.endswith("-") and len(out) >= 2 and not out.endswith(" -"):
             out = _join_at_hyphen(out, text)
@@ -124,8 +124,34 @@ def render_table(table: Table) -> str:
     return "\n".join(lines)
 
 
+_DOLLAR = re.compile(r"(?<!\\)\$")
+# What must not be touched: TrueDoc's own formulas, and only those. A span between two dollar signs is
+# never spared, however TeX-looking, because the stretch between two prices can hold one: "about $5 and
+# \(x^2\) and $6" would then have been read as a single formula and both prices left bare. A model that
+# writes its maths between dollar signs has them escaped, which shows a reader the maths as it was typed
+# rather than as italic gibberish.
+_FORMULA_SPAN = re.compile(r"\\\[.*?\\\]|\\\(.*?\\\)", re.S)
+
+
+def _escape_dollars(text: str) -> str:
+    """A literal dollar sign written as `\\$` (D024).
+
+    TrueDoc writes formulas between `\\(` and `\\)`, so nothing of ours depends on dollar signs any
+    more; a reader's viewer, though, may read the stretch between any two of them as a formula, and
+    an insurance document is full of prices. Escaping is markdown's own answer and shows a dollar
+    sign in every viewer. Formulas are left alone.
+    """
+    out, pos = [], 0
+    for m in _FORMULA_SPAN.finditer(text):
+        out.append(_DOLLAR.sub(r"\\$", text[pos:m.start()]))
+        out.append(m.group(0))
+        pos = m.end()
+    out.append(_DOLLAR.sub(r"\\$", text[pos:]))
+    return "".join(out)
+
+
 def _md_cell(text: str) -> str:
-    return text.replace("|", "\\|").replace("\n", " ").strip()
+    return _escape_dollars(text.replace("|", "\\|").replace("\n", " ").strip())
 
 
 def _render_html_table(table: Table, grid) -> str:
@@ -248,8 +274,8 @@ def _render_list_item(text: str) -> str:
 
 _DANGLING_END = r"(?:=|\+|-|<|>|\\leq|\\geq|\\le|\\ge|\\neq|\\to|\\rightarrow|\\times|\\cdot|\\pm|\\approx|\\sim|\\subset|\\in)"
 _PLAIN_TERM = r"(?:[0-9]+(?:\.[0-9]+)?%?|[-+=<>/*×·]|\([0-9,\s]+\))"
-_DANGLING_FORMULA = re.compile(r"(" + _DANGLING_END + r")\$[ \n]+(" + _PLAIN_TERM + r"(?:[ \n]+" + _PLAIN_TERM + r")*)(?=[.,;:]?(?:\s|$))")
-_SPLIT_FORMULA = re.compile(r"(" + _DANGLING_END + r")\$[ \n]+\$(?!\$)")
+_DANGLING_FORMULA = re.compile(r"(" + _DANGLING_END + r")\\\)[ \n]+(" + _PLAIN_TERM + r"(?:[ \n]+" + _PLAIN_TERM + r")*)(?=[.,;:]?(?:\s|$))")
+_SPLIT_FORMULA = re.compile(r"(" + _DANGLING_END + r")\\\)[ \n]+\\\(")
 
 
 def _join_dangling_formulas(body: str) -> str:
@@ -263,10 +289,10 @@ def _join_dangling_formulas(body: str) -> str:
     """
     def repl(m: re.Match) -> str:
         arithmetic = m.group(2).replace(" ", "").replace("\n", "").replace("×", r"\times ").replace("·", r"\cdot ")
-        return m.group(1) + arithmetic + "$"
+        return m.group(1) + arithmetic + "\\)"
     body = _DANGLING_FORMULA.sub(repl, body)
     # Two inline formulas split by a line break, the first ending in a dangling
-    # relation ("$\sigma(x)=$" then "$[\sigma(x_1),...]^T$"), are one formula.
+    # relation ("\(\sigma(x)=\)" then "\([\sigma(x_1),...]^T\)"), are one formula.
     body = _SPLIT_FORMULA.sub(r"\1 ", body)
     return body
 
@@ -293,6 +319,8 @@ def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
             text = render_block(block)
             if not text:
                 continue
+            if block.kind not in (BlockKind.FORMULA, BlockKind.TABLE):
+                text = _escape_dollars(text)      # D024; a table escapes its own cells
             # Join a paragraph continued across a column or page break. A figure
             # sitting at the foot of the column does not break the paragraph: its
             # placeholder stays where it was, after the joined paragraph.
@@ -373,7 +401,7 @@ def _description_from(body: str) -> str | None:
     fallback: str | None = None
     for para in body.split("\n\n"):
         p = para.strip()
-        if not p or p.startswith(("#", "|", "!", "$$", "- ", "* ", "<!--")):
+        if not p or p.startswith(("#", "|", "!", "\\[", "- ", "* ", "<!--")):
             continue
         p = re.sub(r"\s+", " ", p)
         m = re.match(r"(.+?[.!?])(\s|$)", p)

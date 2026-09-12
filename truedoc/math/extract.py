@@ -89,7 +89,7 @@ def _command_at(latex: str, i: int) -> str:
 def display_formula_blocks(page: Page, region_boxes: list[BBox]) -> list[Block]:
     """FORMULA blocks for each formula region.
 
-    A region with one equation line becomes one `$$...$$` block. Several rows
+    A region with one equation line becomes one `\\[...\\]` block. Several rows
     that sit close together (a multi-line derivation, a system of equations)
     become a single `aligned` block with each row aligned on its first relation,
     which is how authors write them; a reader (and the benchmark) treats the
@@ -131,10 +131,10 @@ def display_formula_blocks(page: Page, region_boxes: list[BBox]) -> list[Block]:
             bbox = BBox.union_all(r[2] for r in grp)
             numbers = [r[1] for r in grp if r[1]]
             if len(grp) == 1:
-                text = "$$" + grp[0][0] + "$$"
+                text = "\\[" + grp[0][0] + "\\]"
             else:
                 body = " \\\\ ".join(_align_row(r[0]) for r in grp)
-                text = "$$\\begin{aligned} " + body + " \\end{aligned}$$"
+                text = "\\[\\begin{aligned} " + body + " \\end{aligned}\\]"
             if numbers:
                 text += " " + " ".join("(" + n + ")" for n in numbers)
             blocks.append(Block(kind=BlockKind.FORMULA, bbox=bbox, text_override=text, provenance="math-textlayer", confidence=0.6))
@@ -149,7 +149,7 @@ _TEX_SPECIALS = str.maketrans({"%": r"\%", "&": r"\&", "#": r"\#", "_": r"\_", "
 
 def _ocr_formula_blocks(page: Page, region_boxes: list[BBox]) -> list[Block]:
     """Formula regions on a page TrueDoc read by OCR: each line as the string the
-    engine read, inside `$$...$$`, one per line.
+    engine read, inside `\\[...\\]`, one per line.
 
     The rebuild from glyph geometry needs real glyph boxes and fonts; an OCR
     line has neither (its characters are spread evenly over the line box, all in
@@ -164,7 +164,7 @@ def _ocr_formula_blocks(page: Page, region_boxes: list[BBox]) -> list[Block]:
         for l in lines:
             text = " ".join(w.text for w in l.words).strip()
             if text:
-                rows.append("$$" + text.translate(_TEX_SPECIALS) + "$$")
+                rows.append("\\[" + text.translate(_TEX_SPECIALS) + "\\]")
         if not rows:
             continue
         bbox = BBox.union_all(l.bbox for l in lines)
@@ -372,7 +372,7 @@ def inline_math_text(line: Line, rules: list[BBox]) -> str:
         if latex and len(gs) <= 2 and not any(g.ch.isalpha() or g.ch in _GREEK_AND_SYMBOLS for g in gs):
             latex = ""
         if latex:
-            out.append(lead_word + lead + "$" + latex + "$" + trail)
+            out.append(lead_word + lead + "\\(" + latex + "\\)" + trail)
         else:
             out.append(" ".join(w.text for w in run))
         i = j

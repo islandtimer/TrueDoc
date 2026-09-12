@@ -224,7 +224,7 @@ meaning - the page still reads "$448" to anyone looking at it.
 inside a formula, and not inside an HTML table, where markdown escapes do not apply and a backslash would
 show as a backslash.
 
-**Measured on a run:** run 84.
+**Measured on a run:** run 84 scored 84.0 (against run 83's 84.2): 0 won, 13 lost, every one a check whose expected text holds a bare dollar sign, on six pages; held-out unmoved at 81.1. Thirteen rather than sixteen because a price inside an HTML table is left bare.
 
 ## Decided - Literal dollar signs in prose (found 2026-09-12, decided the same day: D024)
 TrueDoc writes formulas as `$...$` and `$$...$$` (`docs/OKF_SPEC.md`) and writes a dollar sign in prose

@@ -398,7 +398,7 @@ def _apply_math(page: Page, blocks: list[Block], regions) -> list[Block]:
                 b.meta["preserve_lines"] = True
         if b.kind in (BlockKind.TEXT, BlockKind.LIST_ITEM, BlockKind.CAPTION, BlockKind.FOOTNOTE, BlockKind.HEADING) and b.lines:
             texts = [inline_math_text(l, rules) for l in b.lines]
-            if any("$" in t for t in texts):
+            if any("\\(" in t or "\\[" in t for t in texts):
                 b.meta["line_texts"] = texts
     return blocks
 
@@ -471,7 +471,7 @@ def _mark_footnotes(page: Page, blocks: list[Block]) -> None:
         for li, line in enumerate(b.lines):
             text = existing[li] if existing and li < len(existing) else line.text
             runs = marker_runs(line)
-            if not runs or "$" in text:
+            if not runs or "\\(" in text or "\\[" in text:
                 texts.append(text)
                 continue
             words = []

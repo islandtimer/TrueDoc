@@ -124,7 +124,7 @@ def test_two_stacked_rows_become_one_aligned_block():
     page.chars = [Char(text=x.ch, bbox=x.bbox, font=x.font, size=x.size, origin_y=x.oy) for x in row1 + row2]
     blocks = display_formula_blocks(page, [BBox(90, 285, 140, 325)])
     assert len(blocks) == 1
-    assert blocks[0].text_override == r"$$\begin{aligned} a&=b \\ c&=d \end{aligned}$$"
+    assert blocks[0].text_override == r"\[\begin{aligned} a&=b \\ c&=d \end{aligned}\]"
 
 
 def test_upright_prose_inside_a_formula_becomes_text():
