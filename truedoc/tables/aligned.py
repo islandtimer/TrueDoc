@@ -386,6 +386,29 @@ def _channels(rows: list[_Row], x0: float, x1: float, size: float) -> list[tuple
     return channels
 
 
+def _runs_on(segments: list[Line]) -> bool:
+    """Do these lines read as one paragraph, or as a column of separate cells?
+
+    A paragraph's lines run on: they break wherever the measure ends, so line after line begins in
+    the middle of a sentence, in lower case. A column of cells starts: each cell is its own
+    statement and opens with a capital.
+
+    This decides whether a wide column of words beside a block of short cells is prose that happens
+    to sit there - a figure's key values set beside the body text of a paper (run 58) - or the third
+    column of a three-column table. Getting it wrong the second way is expensive and silent: on 51 of
+    190 Key Facts Sheets the exclusions column was cut off the table and left as loose paragraphs, so
+    every "no cover for..." was still on the page with nothing to say which insured event it
+    qualified. Nothing is deleted; the meaning is.
+
+    Judged on the opening letter alone, which is typography and knows nothing of any subject.
+    """
+    starts = [s.text.strip() for s in segments if s.text.strip()]
+    if len(starts) < 3:
+        return True
+    capital = sum(1 for t in starts if t[:1].isupper())
+    return capital <= 0.3 * len(starts)
+
+
 def _split_side_by_side(cand: _Candidate, size: float) -> list[_Candidate]:
     """Split a region into separate tables where a much wider whitespace channel divides it,
     or where a channel divides a prose column from a block of short cells."""
@@ -414,7 +437,10 @@ def _split_side_by_side(cand: _Candidate, size: float) -> list[_Candidate]:
                 lm = sorted(left)[len(left) // 2]
                 rm = sorted(right)[len(right) // 2]
                 if (lm >= 7 and rm <= 4) or (rm >= 7 and lm <= 4):
-                    wide.append(c)
+                    wordy = [s for r in cand.rows for s in r.segments
+                             if (s.bbox.cx >= mid) == (rm >= 7)]
+                    if _runs_on(wordy):
+                        wide.append(c)
         if not wide:
             return [cand]
         prose_split = True
