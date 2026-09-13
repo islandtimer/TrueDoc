@@ -718,8 +718,10 @@ def _fold_wrapped_heading(grid: list[list[str]], geom: list[_Row]) -> tuple[list
         return grid, geom
     grid = [list(row) for row in grid]
     geom = list(geom)
-    for _ in range(3):      # a heading of up to four lines
-        if len(grid) < 3 or not _heading_wraps_on(grid, 0):
+    for _ in range(5):      # a heading of up to six lines
+        if len(grid) < 3:
+            break
+        if not (_heading_wraps_on(grid, 0) or _heading_hangs_open(grid, 0)):
             break
         grid[0] = [_join_lines(upper, lower) for upper, lower in zip(grid[0], grid[1])]
         if len(geom) > 1:
@@ -728,6 +730,36 @@ def _fold_wrapped_heading(grid: list[list[str]], geom: list[_Row]) -> tuple[list
             del geom[1]
         del grid[1]
     return grid, geom
+
+
+def _heading_hangs_open(grid: list[list[str]], i: int) -> bool:
+    """The heading breaks off on a word that cannot end it, and the row below is not a body row.
+
+    Where the columns of a heading wrap by different amounts their lines interleave, so a column's
+    continuation can sit two rows below its own start with an empty cell between:
+
+        |             |          | Some examples of specific conditions ... that apply to |
+        |             | Yes/No   |                                                        |
+        | Event/Cover |          | events/covers (see PDS and other policy documentation for details of |
+        |             | Optional |                                                        |
+        |             |          | others)*                                               |
+
+    `_heading_wraps_on` looks one row down and finds nothing, so the fold stops at the first line.
+    The signal that this is still the heading is the break itself: "apply to", "details of" - a
+    preposition or conjunction cannot end a column heading, so the sentence has to go on somewhere.
+    That is a far tighter test than "no full stop", which most headings would pass.
+
+    The row below must also still look like heading: part of it empty. A body row of the prescribed
+    table fills every column, so the fold stops there.
+    """
+    if i + 1 >= len(grid):
+        return False
+    row, below = grid[i], grid[i + 1]
+    if not any(row) or all(below):
+        return False
+    hangs = any(text and text.rstrip().rstrip("-,;:").split()[-1:] and
+                text.rstrip().rstrip("-,;:").split()[-1].lower() in _CONNECTORS for text in row)
+    return hangs and any(below)
 
 
 def _heading_wraps_on(grid: list[list[str]], i: int) -> bool:
