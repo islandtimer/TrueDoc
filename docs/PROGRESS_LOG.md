@@ -4,6 +4,75 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-13 - The insurance library gets a score, and a dossier rebuilt so a decision takes seconds
+
+**Done**
+- **First score on the owner's own documents: 198 of 229 checks, 86.5%** (present 103/113, order 50/58, absent 31/31, **tables 14/27**). 25 pages of the PDS library - half at random, half chosen because the page draws many rules - read as images by a model that never sees our output, which writes the checks; scored by the benchmark's own `load_single_test`. Tools now in `bench/tools/insurance_*.py`. The scorer undoes markdown escapes before comparing, because D024 writes a price as `\$500` and every price check on an insurance page would otherwise fail on one character of syntax.
+- **The dossier was rebuilt after the owner said it was hard to follow and hard to decide from.** The first version was one card per page carrying all ten checks as a wall of text plus 4,000 characters of our markdown - a research task per card. Now it is **one card per decision**: 191 checks pass *and* have their quotation confirmed by a second reading, so they are counted and collapsed; 38 need a person; each card states the check in a sentence, the computed reason it failed, our output beside it, and three buttons. `bench/tools/insurance_dossier.py`.
+- **Reasons are computed and cards grouped by them,** so one judgement covers a run: text we never produced (3), same words a few characters apart (7), not a table in our output (7), the cell is nearly right (5), right cell wrong neighbour (1), an ordering check blocked by missing text (8), and passes worth one look (7).
+- **The verification was reading `absent` checks upside down.** It looked for each check's quotation in a second reading of the page and flagged what it could not find. For "the page number 6 must NOT appear", a reading that omits the page number is agreement - and that false alarm was **24 of the 38 flags** in the first dossier. Read the right way up, only 7 absent checks are worth a look.
+
+**Found on the library, none of it visible on the public benchmark**
+- **A lossy text layer sails straight through.** The RAA landlord PDS page 22's own font maps the ff and fi ligatures to a single letter: the **PDF file itself** says `ofer`, `fnd`, `Certifcate` (checked with PDFium against the source, not inferred from our output). TrueDoc trusts a text layer whenever one exists, so a page that has already lost letters is never sent to the deeper read. An impossible-word detector would catch it cheaply.
+- **Spaces lost on that same page, and this half is ours.** The file says `If you`, `Cooling-of Period`, `of 21`; we write `Ifyou`, `Cooling-ofPeriod`, `of21`. Leading suspicion, not yet proven: the 11 September note that PDFium splits a ligature into two characters sharing one origin, against a space rule that works on the gap between boxes in ems, would make exactly this gap read as zero.
+- **A tick or cross swept into the label beside it** - our cell reads `X Loss or damage caused by lightning.` where the page keeps the mark in its own column. Five checks, three insurers.
+- **A table row vanishes while its words survive.** Seniors page 25: the page's limits grid holds $5,000 and $10,000; our output has `Limits Essential Top Landlords $5,000 $10,000 Not covered` as flattened text beside a two-cell table. Every amount is present and nothing ties an amount to its cover.
+- **Cover-page issuer, ABN and registered office dropped on purpose** (the reader is told to omit page furniture, worth 35 checks on the benchmark). Three checks say that is wrong for an insurance document. A policy call for the owner, not a defect.
+
+**Lessons**
+- **A fuzzy match will tell a confident false story.** The dossier first reported "our cell reads $1,000" against a check wanting `$10,000` - 92% alike, and completely wrong: our table is missing that row, and the `$1,000` it found is a different cell that passes its own check. `find_cell` now requires the digits to match before anything is called close. In an insurance document the digits *are* the content.
+- **Diff what the judge compares.** Diffing our raw markdown against the check showed a wall of pipes and newlines and hid the one character that failed; diffing the benchmark's own `normalize_text` of both, with the aligner's window padded and its boundary insertions dropped, puts the mark on `offer` against `ofer`.
+- **Parse what the judge parses.** Only markdown tables were searched at first, so six cards said "we built no table here" about pages where we emit HTML tables. The benchmark reads both. Six of seven cards in one group were telling the wrong story.
+
+**The owner ruled on all 38, and nothing was dropped**
+- **31 fair, 7 unsure, 0 unfair**, so **198 of 229 (86.5%) is a confirmed score** and every one of the 31 failures is ours to fix. The rulings are in `bench/out/insurance_set/fairness_decisions.json`.
+- The seven parked: four are the tick-and-cross cells, where the owner's note says our output *is* correct - the ✓ is a bullet, and the page's column heading already carries the polarity; three are order checks on a navigational illustration whose cover name we cut in half across two rows ("Unspecified" over "Personal Effects"), which is broken whatever is decided about the illustration.
+- His ruling on the cover-page issuer, ABN and registered office is a decision to **change what we emit**, not a defect report. It pulls against the omit-furniture instruction that is worth 35 checks on the benchmark, so it gets measured both ways before anything moves.
+
+**Key Facts Sheets: an oracle, 202 of them (D027)**
+- A Key Facts Sheet is prescribed by the Australian Government under the Insurance Contracts Act 1984. The library holds **202 across 34 insurers**, 17% of it, and the law fixes the wording while each insurer sets the type - so a few hundred pages where the right answer is known without a check being written, laid out 34 ways. `bench/tools/kfs_grade.py` grades them on shape alone and holds back a fifth by filename hash.
+- The owner's decision: use them to *derive* rules, never to special-case. A rule earns its place by being written in geometry, verified there, and measured on olmOCR-bench, which holds none of this material. The oracle says whether a rule fixes; only the benchmark says whether it harms.
+- **Before:** header whole on 34% tuned-on, 16% held out; 8% of prescribed events lose their Yes/No answer. On a document whose only job is "is this covered", that is the worst thing on the page.
+
+**Two rules, both measured**
+- **A tick or cross at the head of a cell starts a new entry.** `✗ Pontoons` and `✗ Buildings under construction where...` were being published as one exclusion; the library census counted ~104 such cells. Narrowed to ticks and crosses only after the broad version cost two insurance checks by shredding sub-lists - `✓ Loss or damage caused by impact from: • any motor vehicle, • any animal` is one covered item. Benchmark exposure is 53 of 24,984 table cells; measured code-against-code on every page where it can fire, it moves nothing. Insurance set unchanged at 198. **Worth no score anywhere and ~104 rows of meaning across the library.**
+- **A heading that wraps mid-sentence is still the heading.** `_header_row_count` ended the heading at the first cell of more than six words, which on a Key Facts Sheet is the heading's own third column. Folding the wrapped heading into one row *before* anything counts it - rather than teaching each downstream rule about it - leaves a grid every later rule already handles. **Header whole 34% -> 51% tuned-on and 16% -> 34% held out, bands swallowed 61 -> 48 and 8 -> 6.** The held-out set moving with the tuned-on set is the evidence the rule is geometry and not a shape fitted to what was in front of me.
+
+**Lessons**
+- **The yardstick broke before the code did, and cost two hours.** `page_check.py` was pointed at a run launched with `--vision-endpoint ... --vision-deep anthropic` while the check passed no vision flags at all, so every page that run had read with a model scored near zero locally. That read as "-48 checks across 21 pages" in a change touching three checks in the whole category. A control run of the unmodified code scored **identically, page for page**. Two tells were ignored: reverting the suspect rule changed nothing, and a rule with no exposure cannot cost 48 checks. `bench/tools/ab_pages.py` now converts with whatever the working tree holds into a named folder and compares **code against code**, both sides carrying the same options.
+- **Run directories are named for the candidate, not the run.** `bench/runs/truedoc89-*` holds candidate truedoc89, which is run *90*. Read the `conversion.json`, not the folder name.
+- **A census that predicts a regression is worth acting on.** The library census said plainly that a round bullet leads a sub-list and a tick leads an entry; the first version of the rule ignored that and lost exactly the two checks the census pointed at.
+- **The benchmark caught a rule drawn from the insurance library.** A flora's dichotomous key sets "A. Glands of the involucre ovate..." over "aa. Glands kidney-shaped...", and the second starts lowercase, so "wraps mid-sentence" folded two rows of the key into one. Guarded by an enumerator test. Two-sided measurement earning its keep in the direction not expected.
+
+**Both rules measured together on the whole table category, code against code: 843 v 843, not one page moved.**
+188 pages, 1,022 checks, the same command on the same machine with the same options on both sides. (That 843 is not the scoreboard's 87.7%: a real run reads the model-dependent pages with olmOCR's saved output and this A/B reads nothing with a model on either side. It is a sound measure of change and a useless measure of quality - the distinction missed this afternoon.) Insurance set 198/229 with both rules in; suite 511.
+
+**What the cover page's missing ABN actually is, and it is not what the dossier said**
+The dossier told the owner the issuer, ABN and registered office were dropped "on purpose, because the
+reader is told to omit page furniture", and that the change would push against 35 checks. Both wrong,
+and the error was mine repeated back to me from my own card. The page carries a text layer holding
+every one of those lines, so no model reads it and the vision prompt's furniture instruction never
+runs. The block is dropped because **the layout model labels it `layout:page_footer`** - four lines in
+small type at 91% down the page, set apart by white space, which is exactly what a running foot looks
+like from the outside.
+
+The fix is generic and already half-written elsewhere in the code: `_margin_cleanup` refuses to call
+anything longer than two lines a running foot, and we accept the layout model's label without applying
+the same test. This block is four lines and about 32 words. A rule that declines `page_footer` for a
+block too big to be a running foot rescues an address block, a copyright notice or a funding note at
+the foot of an academic paper just as well. A second and stronger signal - a running foot repeats, and
+this appears once - cannot be the primary test, because every benchmark PDF is a single page and the
+rule would quietly do nothing there. Cost unmeasured: the benchmark has `absent` checks that want
+footers left out, so this one is measured both ways before it moves.
+
+**Next**
+- The cover-page footer rule above, measured both ways.
+- Half the Key Facts Sheets still lose their header; the band swallowed by the cell above it; the
+  ligature text layer that no one notices is lossy.
+- Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
+
+---
+
 ## 2026-09-11 (midday) - Whole categories measured, fills are not rules, and four things PDFium says differently
 
 **Done**

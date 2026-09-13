@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-13, 07:32 (**Two scores, and they mean different things.** **Open weights: 84.1** (run 89; held-out 81.4, tuned-on 82.0) - your own machine plus olmOCR 2's saved readings, nothing leaving the building, reproducible by anyone with a rented GPU. This is the default: the deep reader is off unless asked for. **With a hosted service: 85.4** (run 91, CI 84.5-86.3; held-out 82.4 and tuned-on 83.5, both the best ever) - the same converter, with the 103 pages of 1,403 that have no text layer and that our own OCR can make nothing of read by Claude Sonnet 5 over the API. **That is the best score the project has had, and the whole interval sits above the previous best of 84.2.** Against the open-weight run: old scans +35, old-scan maths +11, tables +6, tiny text +4, headers -2, multi-column -1. The route there was not straight: run 90 scored 82.8 because D024 escapes every dollar sign outside our own delimiters and a general model writes its maths between dollar signs, so fourteen integrals on one page became literal text and old-scan maths fell 17 points. Fixed by translating a model's delimiters before anything else sees the text. **The method error mattered more than the fix: a change measured on one category was shipped to all eight, and the category it broke was the one never looked at; `scratchpad/compare_categories.py` now makes that impossible to miss.** Also settled this week: a paragraph of prompt beat moving from Sonnet to Opus, reading a page in overlapping bands measured 28 checks worse and is switched off, and the evidence for all of it is in `docs/MODEL_CHOICE.md`. **M7 is met**: 85.4 against a best published 83.1, and OmniDocBench was investigated on 13 September and declined as a measure of TrueDoc - every page in it is an image, so our text reader, formula rebuilder and both table builders never run and the score would belong to whichever model reads the pages (D026). Next, in the owner's order: the insurance documents, which have never been scored; then the model for the hard tail; then the remaining grind.)_
+_Last updated: 2026-09-13, 12:03 (**Two scores, and they mean different things.** **Open weights: 84.1** (run 89; held-out 81.4, tuned-on 82.0) - your own machine plus olmOCR 2's saved readings, nothing leaving the building, reproducible by anyone with a rented GPU. This is the default: the deep reader is off unless asked for. **With a hosted service: 85.4** (run 91, CI 84.5-86.3; held-out 82.4 and tuned-on 83.5, both the best ever) - the same converter, with the 103 pages of 1,403 that have no text layer and that our own OCR can make nothing of read by Claude Sonnet 5 over the API. **That is the best score the project has had, and the whole interval sits above the previous best of 84.2.** Against the open-weight run: old scans +35, old-scan maths +11, tables +6, tiny text +4, headers -2, multi-column -1. The route there was not straight: run 90 scored 82.8 because D024 escapes every dollar sign outside our own delimiters and a general model writes its maths between dollar signs, so fourteen integrals on one page became literal text and old-scan maths fell 17 points. Fixed by translating a model's delimiters before anything else sees the text. **The method error mattered more than the fix: a change measured on one category was shipped to all eight, and the category it broke was the one never looked at; `scratchpad/compare_categories.py` now makes that impossible to miss.** Also settled this week: a paragraph of prompt beat moving from Sonnet to Opus, reading a page in overlapping bands measured 28 checks worse and is switched off, and the evidence for all of it is in `docs/MODEL_CHOICE.md`. **M7 is met**: 85.4 against a best published 83.1, and OmniDocBench was investigated on 13 September and declined as a measure of TrueDoc - every page in it is an image, so our text reader, formula rebuilder and both table builders never run and the score would belong to whichever model reads the pages (D026). **Your insurance library now has a score too, and it is a different measure: 198 of 229 checks, 86.5%**, written by a model reading 25 of your PDS pages as images and never seeing our output (tables are the weak spot at 14 of 27). **All 38 were ruled on: 31 fair, 7 unsure, nothing dropped**, so the score is confirmed and every failure is ours. Building the set already found five things the public benchmark cannot show, including a PDF whose own text layer has lost letters to its ligatures and which TrueDoc trusts anyway. The section below has them. Next, in the owner's order: those rulings, then the model for the hard tail, then the remaining grind.)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -213,6 +213,67 @@ Left to do: the last 18 table checks. Nothing needs a rental.
 
 - **Runs 30 to 37 (4 to 5 September, overnight loop): 64.8 to 65.6.** Formula round 16 (33 items) took the formula section from 82.6 to 86.8: the mathabx symbol font's codes read off a contact sheet of its glyphs, roots and scripts inside limits, italic Times fonts recognised by name, typed "..." told from the LaTeX dots by their spacing, negated relations, text-font terms such as "4k+1" joining their formula. The biggest single step was elsewhere: 89 benchmark pages were coming out empty because the OCR gate rejected confident reads of non-English scans as noise; accepting confident reads whose words look like any Latin-script language filled ten of them and was worth +0.2 on its own (tables 69.6 to 70.3, multi-column 71.9 to 72.7). Four rules were tried and withdrawn after page checks or a run showed losses (symbol-font spaces as negation slashes, fraction rows inside matrices, a respelling of "not in", a fold rule for numerator roots); each is written up in `docs/PROGRESS_LOG.md` so it is not retried blind. Held-out 61.8 to 62.2.
 - **6 September: pages lying on their side are turned before reading (run 38).** A landscape scan of a Spanish decree and a table printed up the page were both coming out empty: every line was filed as a rotated stamp. TrueDoc now notices when most of a page's text runs up or down, works out which way from the OCR engine's own angle classifier (or from the text layer's line directions), turns the page in memory and reads it again; the front matter says which pages were turned. A census of all 1,403 benchmark pages found exactly three such pages (one is a picture table with only its title in the text layer, left for the tables job). The bar for accepting confident non-English or numeric OCR moved from 0.85 to 0.80 on the census evidence (the two pages in that band that were rejected stay rejected). On the affected pages: 0 of 8 to 5 of 8, 0 of 5 to 5 of 5 and 0 of 8 to 5 of 8 checks; three ordinary OCR pages unchanged.
+
+## Your insurance library has a score, and it found five things, 13 September
+
+Twenty-five pages of your PDS library - half drawn at random, half chosen because the page draws
+many rules - were read as images by a model that never saw our output, and it wrote **229 checks**
+about what any honest conversion must say. **TrueDoc passes 198 of them, 86.5%**: present 103/113,
+order 50/58, absent 31/31, tables 14/27. The checks are not confirmed yet; you rule on the 38 that
+need a person in `bench/out/insurance_set/insurance_dossier.html`, and the 191 that both pass and
+read correctly in a second, independent reading of the page are already settled.
+
+Five things came out of building it, and none of them would have shown on the public benchmark:
+
+- **A lossy text layer sails straight through.** One RAA page's own font maps the "ff" and "fi"
+  ligatures to a single letter, so the PDF file itself says "ofer", "fnd" and "Certifcate" - we
+  checked the file, not the conversion. TrueDoc trusts a text layer whenever there is one, so a page
+  that has already lost letters is never read as an image. A cheap detector (impossible words) could
+  send such a page to the deeper read.
+- **Spaces go missing on that same page.** The file says "If you", "Cooling-of Period", "of 21"; we
+  write "Ifyou", "Cooling-ofPeriod", "of21". This one is ours, and it is the sort of thing a reader
+  notices immediately.
+- **A tick or a cross gets swept into the label beside it.** Our cell reads "X Loss or damage caused
+  by lightning." where the page keeps the mark in its own column. Five checks across three insurers.
+  The meaning survives for a person reading it; an exact-match test fails, and so would anything
+  parsing the table.
+- **A table row can vanish while its words survive.** On the Seniors page 25 the page has a limits
+  grid with $5,000 and $10,000 in it; our output has "Limits Essential Top Landlords $5,000 $10,000
+  Not covered" as flattened text and a two-cell table beside it. The amounts are all there and the
+  grid that ties each amount to its cover is not.
+- **A cover page's issuer, ABN and registered office are dropped on purpose** - the reader is told to
+  omit page furniture, which is worth 35 checks on the public benchmark. Three checks say that is
+  wrong for an insurance document. That is a policy call for you, not a defect.
+
+### The Key Facts Sheets grade themselves, and two rules came out of them
+
+A Key Facts Sheet is prescribed by the Australian Government under the Insurance Contracts Act 1984.
+Your library holds **202 of them across 34 insurers** - 17% of it. The law fixes the wording; each
+insurer sets the type. So a few hundred pages where the right answer is known without anyone writing a
+check, laid out 34 different ways. `bench/tools/kfs_grade.py` converts and grades all of them and keeps
+a fifth hidden, so no rule can be tuned until everything passes. Your decision (D027): use them to
+derive rules, never to special-case - a rule that says "if this is a Key Facts Sheet" fixes 202
+documents and no others.
+
+Two rules came out of it on 13 September, and both are **free on the public benchmark**: measured
+code against code over the whole table category, 188 pages and 1,022 checks, **843 v 843 with not one
+page moved**.
+
+- **A tick or cross at the head of a cell starts a new entry.** Your Allianz policy was publishing
+  "✗ Pontoons ✗ Buildings under construction where the value of any alterations... is over $75,000" as
+  a single exclusion - two things the policy does not cover, glued into one. About 104 cells across the
+  library read like that. Narrowed to ticks and crosses after a broader version shredded sub-lists:
+  "✓ Loss or damage caused by impact from: • any motor vehicle, • any animal" is one covered item.
+- **A heading that wraps mid-sentence is still the heading.** Two thirds of Key Facts Sheets were
+  losing "Event/Cover" and "Yes/No Optional" into the middle of the table, because the heading's own
+  third column runs to three lines and the rule that ends a heading stops at the first long cell. On a
+  document whose only job is "is this event covered", that loses the labels saying which column holds
+  the answer. **Header whole: 34% to 51% on the sheets tuned on, 16% to 34% on the hidden fifth** - the
+  hidden ones moving with the rest is the evidence the rule is geometry, not a shape fitted to what was
+  in front of us.
+
+The scorer is `bench/tools/insurance_score.py` (it undoes markdown escapes first, or D024's "\$500"
+would fail every price check), and the dossier is built by `bench/tools/insurance_dossier.py`.
 
 ## Icons, answered on your library, 9 September
 

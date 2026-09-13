@@ -599,6 +599,7 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         grid_rows.append(cells)
 
     grid_rows, grid_geom = _merge_wrapped_rows(grid_rows, cand.rows, size)
+    grid_rows, grid_geom = _fold_wrapped_heading(grid_rows, grid_geom)
     kept_columns = [c for c in range(n_cols) if any(row[c] for row in grid_rows)]
     grid_rows = _drop_empty_columns(grid_rows)
     n_cols = len(grid_rows[0]) if grid_rows else 0
@@ -692,6 +693,60 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
 
 # A qualifier line under a heading: "(percent)", "[kg]", "%", "$", "mm", "ppm".
 _UNIT = re.compile(r"^(\(.*\)|\[.*\]|%|\$|[a-z%$/]{1,3})$")
+
+
+# A line opening with an enumerator starts an entry, however lowercase it is. A flora's key sets
+# its leads "A. Glands of the involucre ovate..." over "aa. Glands kidney-shaped...": the second is
+# a new lead, not the tail of the first, and reading it as one folded two rows of the key into one.
+_ENUMERATED = re.compile(r"^\s*\(?(?:[A-Za-z]{1,3}|\d{1,3})[.)]\s+\S")
+
+
+def _fold_wrapped_heading(grid: list[list[str]], geom: list[_Row]) -> tuple[list[list[str]], list[_Row]]:
+    """A heading set over two or three lines is one heading row, so join it before anything counts.
+
+    Every rule downstream - how many rows are heading, whether the heading is stacked, which cell a
+    column is headed by - assumes a heading occupies whole rows. A heading whose widest column runs
+    to three lines breaks that assumption at the first step: `_header_row_count` ends the heading at
+    the first cell of more than six words, which is the heading's own third column, so the rest of
+    the heading becomes body.
+
+    Joining here rather than teaching each downstream rule about it keeps one mechanism in one place,
+    and leaves a grid every later rule already handles: the Bendigo sheet, whose heading fits on one
+    line, has always worked and is untouched by this.
+    """
+    if len(grid) < 3:
+        return grid, geom
+    grid = [list(row) for row in grid]
+    geom = list(geom)
+    for _ in range(3):      # a heading of up to four lines
+        if len(grid) < 3 or not _heading_wraps_on(grid, 0):
+            break
+        grid[0] = [_join_lines(upper, lower) for upper, lower in zip(grid[0], grid[1])]
+        if len(geom) > 1:
+            geom[0] = _Row(segments=geom[0].segments + geom[1].segments,
+                           y0=min(geom[0].y0, geom[1].y0), y1=max(geom[0].y1, geom[1].y1))
+            del geom[1]
+        del grid[1]
+    return grid, geom
+
+
+def _heading_wraps_on(grid: list[list[str]], i: int) -> bool:
+    """Is this row's long cell an unfinished sentence that the row below carries on in the same column?
+
+    Written in typography, not in subject matter: a cell of more than six words that closes on no
+    full stop, with a lowercase line beneath it in its own column, is one sentence set over two
+    lines. A body row's long cell is a finished statement, so this never fires on one.
+    """
+    if i + 1 >= len(grid):
+        return False
+    row, below = grid[i], grid[i + 1]
+    for k, text in enumerate(row):
+        if not text or len(text.split()) <= 6 or text.rstrip()[-1:] in ".?!":
+            continue
+        under = below[k] if k < len(below) else ""
+        if under and under.lstrip()[:1].islower() and not _ENUMERATED.match(under):
+            return True
+    return False
 
 
 def _header_row_count(grid: list[list[str]]) -> int:
@@ -1063,6 +1118,20 @@ def _continues(prev_text: str, text: str) -> bool:
 
 _ENTRY_END = re.compile(r"\(\s*[^()]*\d[^()]*\)\s*[*†‡]?\s*$")
 
+# A tick, cross or bullet at the head of a cell starts a new entry, and never continues the one
+# above. An insurance "What's covered? / What's not covered?" page is two lists of different
+# lengths set side by side, so the two columns' lines interleave and a continuation can land
+# under an empty cell; without this the merger read "✗ Pontoons" and "✗ Buildings under
+# construction where..." as one exclusion and joined them into a single cell, which publishes a
+# list of exclusions the page does not have. The glyphs are the ones `truedoc/marks.py` speaks,
+# plus the bullet a text layer writes directly.
+# Ticks and crosses only. A round or square bullet leads a *sub-list* under an entry, not a new
+# entry: "✓ Loss or damage caused by impact from: • any motor vehicle, • any aircraft, • any animal"
+# is one covered item, and starting a row at each bullet shreds it - measured, two checks on the
+# insurance set. A bare hyphen is out for the same reason and one more: it also leads a wrapped
+# continuation in a reference list, which the benchmark has far more of.
+_BULLET_START = re.compile(r"^\s*[✓✔✗✘☑☒]\s+\S")
+
 
 def _label_rowspans(grid: list[list[str]], geom: list[_Row], n_header: int) -> dict[int, int]:
     """A row label written once for a group of entry rows ("Education" beside
@@ -1185,7 +1254,16 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
             out_rows[-1] = _Row(segments=prev_row.segments + row.segments, y0=prev_row.y0, y1=row.y1)
             took_statistics.add(len(out) - 1)
             continue
+        # (A continuation whose own column is empty in the row above - "or commercial building"
+        # under the empty half of a side-by-side pair of lists - was tried here, folding into the
+        # last row with anything in that column. Measured on the benchmark's 188 table pages it
+        # cost 48 checks across 21 of them: reaching past a row destabilises the grid far more
+        # often than it rescues a continuation. Not retried without a much narrower gate.)
+        into = len(out) - 1
         tight = bool(filled) and gap <= 0.6 * size and all(prev[i] for i in filled) and not any(_NUMERIC.match(cells[i].strip()) for i in filled)
+        # A tick, cross or bullet at the head of the line starts a new entry, whatever sits above it.
+        if any(_BULLET_START.match(cells[i]) for i in filled):
+            tight = False
         is_continuation = tight and (
             # A long line under a heading reads as a wrapped continuation, unless
             # it is an entry in its own right, closing with a count or share
@@ -1208,7 +1286,8 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
         if is_continuation:
             for i in filled:
                 prev[i] = _join_lines(prev[i], cells[i])
-            out_rows[-1] = _Row(segments=prev_row.segments + row.segments, y0=prev_row.y0, y1=row.y1)
+            out_rows[into] = _Row(segments=prev_row.segments + row.segments,
+                                  y0=prev_row.y0, y1=max(prev_row.y1, row.y1))
         else:
             out.append(cells)
             out_rows.append(row)

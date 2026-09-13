@@ -352,3 +352,41 @@ the hard tail; then the remaining grind on the benchmark we do use.
 
 _Decided 13 Sept, the owner: close the milestone, then the insurance docs, then the hard tail, then the
 remaining grind._
+
+## D027 - The Key Facts Sheets are an oracle, and every rule drawn from them must be generic (2026-09-13, owner's decision)
+
+**What we found.** A Key Facts Sheet is prescribed by the Australian Government under the Insurance
+Contracts Act 1984: the same three columns, the same header wording, the same list of insured events.
+The owner's library holds **202 of them across 34 insurers** - 17% of the whole library. What the law
+prescribes is the *content*; the typesetting is each insurer's own, because the sheets only have to
+look the same to a reader.
+
+That combination is the rarest thing a converter can be handed: a few hundred pages where **the right
+answer is known without anyone writing a check**, laid out 34 different ways. Nothing else in the
+project has this. The olmOCR benchmark needed a thousand checks written by hand; the insurance set
+needed a model to read 25 pages and the owner to rule on 38 of them. The Key Facts Sheets grade
+themselves, for nothing, for ever.
+
+**The decision, and it is the owner's.** The sheets are used as an oracle to *derive* rules, never as
+a document class to special-case. A rule that reads "if this is a Key Facts Sheet" fixes 202 documents
+and no others. The faults these sheets expose - a header that wraps onto three lines, a full-width band
+inside a table, a label parted from its answer - are faults on any document. So a rule earns its place
+three ways:
+
+1. **Written in geometry and typography**, with nothing in it that knows what an insurance document is.
+   The first rule drawn this way is "a heading that wraps mid-sentence is still the heading": the
+   prescribed header's third column is a long sentence, and `_header_row_count` ended the heading at the
+   first cell of more than six words, so two thirds of the header became body rows.
+2. **Verified on the sheets**, because there the answer is known - and on a fifth of them held back and
+   never tuned on, chosen by a hash of the filename (`bench/tools/kfs_grade.py`), the same guard
+   `bench/holdout.txt` gives the benchmark under D016. Two hundred examples of *one table* is a lot of
+   examples of very little, and a rule tuned until all of them pass is a rule shaped to that table.
+3. **Measured on olmOCR-bench**, which holds none of this material. The oracle says whether a rule
+   fixes; only the benchmark says whether it harms. This is the run-90 lesson written into a method:
+   a change measured where it helps and shipped everywhere else is how 77 checks were lost in an hour.
+
+**What it is worth.** Graded over one sheet from each of fourteen insurers before any fix: the
+prescribed events land in their own rows almost everywhere (13 of 14 sheets at 10 of 10), so the body
+is sound; **9 of the 14 lose the header**, which on a document whose whole purpose is "is this event
+covered - yes or no" means losing which column holds the answer.
+
