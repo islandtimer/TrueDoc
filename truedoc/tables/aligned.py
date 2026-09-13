@@ -620,11 +620,19 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         cols = [_column_of(seg.bbox, columns) for seg in r.segments]
         if _headings_in_order(r, cols):
             cols = list(range(cols[0], cols[0] + len(cols)))
+        # (Moving a band into the first column it covers was tried here, on the grounds that a
+        # reader takes the first cell as the row's own label and a later cell as belonging under
+        # that column's heading. Measured on the 202 Key Facts Sheets it cost 26 events their
+        # Yes/No answer and four sheets their heading: a single wrapped line that spills a little
+        # into the narrow "Yes/No" column reads as a band under any test loose enough to catch the
+        # real ones, and lands on top of the answer. Keeping the band out of the cell above it wins
+        # all 60 bands on its own, so the placement is not worth a second attempt without a much
+        # sharper test of what a band is.)
         for seg, ci in zip(r.segments, cols):
             cells[ci] = (cells[ci] + " " + seg.text).strip() if cells[ci] else seg.text
         grid_rows.append(cells)
 
-    grid_rows, grid_geom = _merge_wrapped_rows(grid_rows, cand.rows, size)
+    grid_rows, grid_geom = _merge_wrapped_rows(grid_rows, cand.rows, size, columns)
     grid_rows, grid_geom = _fold_wrapped_heading(grid_rows, grid_geom)
     kept_columns = [c for c in range(n_cols) if any(row[c] for row in grid_rows)]
     grid_rows = _drop_empty_columns(grid_rows)
@@ -1238,7 +1246,59 @@ def _label_rowspans(grid: list[list[str]], geom: list[_Row], n_header: int) -> d
     return spans
 
 
-def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) -> tuple[list[list[str]], list[_Row]]:
+def _spanned_columns(row: _Row, columns: list[tuple[float, float]] | None) -> set[int]:
+    """The columns one piece of this row's text is laid across, if it crosses more than its own.
+
+    Measured on the page rather than guessed: an ordinary wrapped continuation begins some 16pt
+    *inside* its own column, while a band begins 96pt to the left of the column it was filed under
+    and crosses the ones between.
+    """
+    if not columns or len(columns) < 2:
+        return set()
+    for seg in row.segments:
+        touched = {k for k, (lo, hi) in enumerate(columns)
+                   if min(seg.bbox.x1, hi) - max(seg.bbox.x0, lo) > 0.3 * (hi - lo)}
+        if len(touched) >= 2:
+            return touched
+    return set()
+
+
+def _is_band(index: int, grid: list[list[str]], rows: list[_Row],
+             columns: list[tuple[float, float]] | None) -> bool:
+    """Is this row a band laid across the table, rather than a title above it?
+
+    A band - "Cover for valuables, collections and items away from the insured address" opening a
+    section of a Key Facts Sheet - is a row of the table in its own right, but it is not a *cell*,
+    and markdown has no way to say "this row spans every column". Left to the wrapped-cell merger it
+    reads as the continuation of whatever sat above, so the heading of a new section ends up inside
+    the previous exclusion and a reader ties it to escape of liquid.
+
+    A table's own centred title crosses the columns in exactly the same way, and must not be treated
+    the same: splitting "TABLE 1 / Partial Correlations Between Stroop Scores and / Verbal Responses"
+    dragged a piece of the title into the headings and cost two checks.
+
+    What separates them is **where** they sit, not how wide they are. A title stands above the grid,
+    with no proper row of the table before it; a band stands inside the body, with proper rows both
+    above and below. Width was tried first - a band crosses three columns, a title two - and the
+    owner pointed out it cannot be right: a two-column table can hold a band and would never satisfy
+    it, so live documents would keep the fault whatever this corpus happens to contain.
+
+    "A proper row" is counted only within the columns the text spans, so a neighbouring column of a
+    two-column page - the references running down beside a table - cannot vouch for a title.
+    """
+    spanned = _spanned_columns(rows[index], columns)
+    if len(spanned) < 2:
+        return False
+
+    def solid(cells: list[str]) -> bool:
+        return sum(1 for k in spanned if k < len(cells) and cells[k]) >= 2
+
+    return (any(solid(grid[k]) for k in range(index))
+            and any(solid(grid[k]) for k in range(index + 1, len(grid))))
+
+
+def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
+                        columns: list[tuple[float, float]] | None = None) -> tuple[list[list[str]], list[_Row]]:
     """Fold continuation lines of a wrapped cell into the row above.
 
     Returns the grid and the row geometry that goes with it (merged rows span
@@ -1252,6 +1312,7 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
     took_statistics: set[int] = set()   # rows of `out` that have folded a statistics row in
     k = 1
     while k < len(grid):
+        here = k
         cells, row = grid[k], rows[k]
         k += 1
         prev = out[-1]
@@ -1321,6 +1382,9 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float) ->
         tight = bool(filled) and gap <= 0.6 * size and all(prev[i] for i in filled) and not any(_NUMERIC.match(cells[i].strip()) for i in filled)
         # A tick, cross or bullet at the head of the line starts a new entry, whatever sits above it.
         if any(_BULLET_START.match(cells[i]) for i in filled):
+            tight = False
+        # A band laid across the table is a row of its own, never the tail of the cell above it.
+        if _is_band(here, grid, rows, columns):
             tight = False
         is_continuation = tight and (
             # A long line under a heading reads as a wrapped continuation, unless
