@@ -65,10 +65,50 @@ this appears once - cannot be the primary test, because every benchmark PDF is a
 rule would quietly do nothing there. Cost unmeasured: the benchmark has `absent` checks that want
 footers left out, so this one is measured both ways before it moves.
 
+**Two more rules, and the oracle sorted the work rather than leaving it to guesswork** (13-14 Sept)
+After the first heading fold, 99 sheets still lost their header. `scratchpad/kfs_why.py` sorted them by
+cause instead of two examples being generalised from: 51 had lost a whole column, 27 were still split,
+21 had a sentence from above the table sitting in the header row. That ordering is what made the next
+two rules aimed rather than hopeful.
+
+- **A heading that breaks on "apply to" carries on past an empty cell** (a431c79). Where a heading's
+  columns wrap by different amounts their lines interleave, so a column's continuation sits two rows
+  below its own start with an empty cell between, and a fold that looks one row down stops at the first
+  line. The signal is the break itself: a preposition or conjunction cannot end a column heading, so the
+  sentence has to go on somewhere - a far tighter test than "no full stop", which nearly every heading
+  passes. Guarded by requiring the row below to still look like heading, part of it empty; a body row of
+  the prescribed table fills every column and stops the fold dead. Header whole 51% -> 59% tuned on,
+  34% -> 50% held out; stray continuation rows 22 -> 9 and 6 -> 1, which was not designed for.
+- **A paragraph's lines run on; a column's cells start with a capital** (7afddab). `_split_side_by_side`'s
+  prose branch, added in run 58 for a figure's key values set beside a paper's body text, was cutting
+  the third column off 51 sheets: "Yes" and "No" beside seven-word sentences is exactly what that branch
+  looks for. The exclusions were not deleted - they were left as loose paragraphs above the table, with
+  nothing to say which insured event each one qualified, which on a Key Facts Sheet is the whole point
+  of the document. The separator is how the wide side reads, judged on the opening letter alone: run 58's
+  prose opens every one of its five lines lower case and mid-sentence; each exclusion opens with a
+  capital. It fails safe - unsure means the table stays whole. Header whole 59% -> 72% tuned on,
+  50% -> 66% held out; sheets whose exclusions are severed from their events 51 -> 0.
+
+**The second of those needed three categories, not one.** It changes whether a region becomes a table at
+all, and that code runs on every page of every category - the run-90 mistake in miniature if measured on
+tables alone. Code against code on 481 pages and 2,348 checks: tables 843 v 843, multi_column 682 v 682,
+long_tiny_text 357 v 357, not one page moved in any of them. Both `before` and `after` sides were chained
+inside a single command around the `git stash`, so the working tree could not be left half-applied
+between them.
+
+**Where the Key Facts Sheets stand after four rules:** header whole **34% -> 72% tuned on and 16% -> 66%
+held out**, the hidden fifth moving with the rest at every step. All four rules are written in geometry
+and typography; none of them knows what an insurance document is.
+
 **Next**
-- The cover-page footer rule above, measured both ways.
-- Half the Key Facts Sheets still lose their header; the band swallowed by the cell above it; the
-  ligature text layer that no one notices is lossy.
+- The full-width band swallowed by the cell above it: 63 sheets tuned on, 8 held out. The count rose
+  from 48 when the third column came back, which is the column being restored rather than new damage -
+  a band that used to sit in the loose paragraphs is now inside a table where a cell can absorb it.
+- 21 sheets take a sentence from the paragraph *above* the table as their header row.
+- The cover page's issuer, ABN and registered office, dropped because the layout model calls the block
+  `layout:page_footer`; our own `_margin_cleanup` already refuses to call anything longer than two lines
+  a running foot, and we do not apply that test to the model's label. Measured both ways before it moves.
+- The ligature text layer that no one notices is lossy.
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 
 ---

@@ -268,7 +268,7 @@ page moved**.
   losing "Event/Cover" and "Yes/No Optional" into the middle of the table, because the heading's own
   third column runs to three lines and the rule that ends a heading stops at the first long cell. On a
   document whose only job is "is this event covered", that loses the labels saying which column holds
-  the answer. **Header whole: 34% to 51% on the sheets tuned on, 16% to 34% on the hidden fifth** - the
+  the answer. **Header whole: 34% to 72% on the sheets tuned on, 16% to 66% on the hidden fifth**, over four rules - the
   hidden ones moving with the rest is the evidence the rule is geometry, not a shape fitted to what was
   in front of us.
 
