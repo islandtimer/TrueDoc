@@ -249,6 +249,57 @@ def _table_from_picture(page: Page, pdf_page, box: BBox):
     return table
 
 
+_WORD = re.compile("[a-z]{2,}")
+
+
+def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
+    """Whether the pages beside this one print most of this block's words in the same band at their foot.
+
+    A running foot runs: the same words at the same height, page after page. Up to two pages each side are
+    asked, so a foot set differently on facing pages is still seen, in the band the block fills measured up
+    from the foot of each page's own box, so a page of another height is asked at the same place. The file
+    is read again through PDFium by its path, as the readers read it. None when no page beside it has a
+    text layer to ask - a file of one page, or pages beside it that are scanned - and nothing then shows
+    whether the block runs.
+    """
+    path = getattr(getattr(pdf_page, "parent", None), "name", None)
+    index = getattr(pdf_page, "number", None)
+    words = set(_WORD.findall(b.text.lower()))
+    if not path or index is None or not words:
+        return None
+    size = b.size or page.body_font_size or 10.0
+    low, high = page.height - b.bbox.y1 - size, page.height - b.bbox.y0 + size
+    try:
+        import pypdfium2 as pdfium
+
+        doc = pdfium.PdfDocument(path)
+    except Exception:
+        return None
+    asked = False
+    try:
+        for i in (index - 2, index - 1, index + 1, index + 2):
+            if not 0 <= i < len(doc):
+                continue
+            other = doc[i]
+            textpage = other.get_textpage()
+            try:
+                if textpage.count_chars() == 0:
+                    continue
+                asked = True
+                foot = other.get_cropbox()[1]
+                band = textpage.get_text_bounded(bottom=foot + max(0.0, low), top=foot + high)
+            finally:
+                textpage.close()
+                other.close()
+            if len(words & set(_WORD.findall(band.lower()))) >= 0.6 * len(words):
+                return True
+    except Exception:
+        return None
+    finally:
+        doc.close()
+    return False if asked else None
+
+
 def apply_layout(page: Page, blocks: list[Block], regions: list[Region], pdf_page=None, ocr: bool = True) -> list[Block]:
     regions = clean_regions(regions, page.height)
     if not regions:
@@ -456,6 +507,21 @@ def apply_layout(page: Page, blocks: list[Block], regions: list[Region], pdf_pag
                     continue
                 b.kind = BlockKind.TEXT
                 b.provenance = f"layout:{r.kind.value}"
+            continue
+        # A running foot runs. The layout model labelled the Qantas home PDS cover's issuer, ABN and registered office
+        # - four lines and 34 words at the foot of the page - a page footer, so they were published nowhere, and the
+        # pipeline's own margin rule calls nothing longer than two lines a running foot. A longer block comes out of
+        # the feet when the pages beside it have a text layer and none prints most of its words at the same height
+        # (`_repeated_beside`). Two first versions judged the block on its own page: taking out every such block
+        # released, on the benchmark's one-page files, a journal's foot, a catalogue's legal notice and a report's
+        # banner, which pushed its page's tables away from their headings; taking out only those set flush left
+        # still released a licence stamp and an article-in-press notice. With no page beside it to ask, the model's
+        # label stands.
+        if (new_kind == BlockKind.FOOTER and len(b.lines) > 2 and len(b.text.split()) > 14
+                and _repeated_beside(b, page, pdf_page) is False):
+            if b.kind in (BlockKind.FOOTER, BlockKind.HEADER):
+                b.kind = BlockKind.TEXT
+            b.provenance = "footer-not-repeated"
             continue
         if new_kind == BlockKind.TITLE:
             b.kind = BlockKind.HEADING

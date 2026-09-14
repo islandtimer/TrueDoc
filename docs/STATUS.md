@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-15, 04:06 (**Two scores, and they mean different things.** **Open weights: 84.1** (run 89; held-out 81.4, tuned-on 82.0) - your own machine plus olmOCR 2's saved readings, nothing leaving the building, reproducible by anyone with a rented GPU. This is the default: the deep reader is off unless asked for. **With a hosted service: 85.4** (run 91, CI 84.5-86.3; held-out 82.4 and tuned-on 83.5, both the best ever) - the same converter, with the 103 pages of 1,403 that have no text layer and that our own OCR can make nothing of read by Claude Sonnet 5 over the API. **That is the best score the project has had, and the whole interval sits above the previous best of 84.2.** Against the open-weight run: old scans +35, old-scan maths +11, tables +6, tiny text +4, headers -2, multi-column -1. The route there was not straight: run 90 scored 82.8 because D024 escapes every dollar sign outside our own delimiters and a general model writes its maths between dollar signs, so fourteen integrals on one page became literal text and old-scan maths fell 17 points. Fixed by translating a model's delimiters before anything else sees the text. **The method error mattered more than the fix: a change measured on one category was shipped to all eight, and the category it broke was the one never looked at; `bench/tools/compare_categories.py` now makes that impossible to miss.** Also settled this week: a paragraph of prompt beat moving from Sonnet to Opus, reading a page in overlapping bands measured 28 checks worse and is switched off, and the evidence for all of it is in `docs/MODEL_CHOICE.md`. **M7 is met**: 85.4 against a best published 83.1, and OmniDocBench was investigated on 13 September and declined as a measure of TrueDoc - every page in it is an image, so our text reader, formula rebuilder and both table builders never run and the score would belong to whichever model reads the pages (D026). **Your insurance library now has a score too, and it is a different measure: 198 of 229 checks, 86.5%**, written by a model reading 25 of your PDS pages as images and never seeing our output (tables are the weak spot at 14 of 27). **All 38 were ruled on: 31 fair, 7 unsure, nothing dropped**, so the score is confirmed and every failure is ours. Building the set already found five things the public benchmark cannot show, including a PDF whose own text layer has lost letters to its ligatures and which TrueDoc trusts anyway. The section below has them. **The Key Facts Sheets have become an oracle for table rules (D027)**: the prescribed header now reads whole on 95% of the sheets tuned on and 97% of the hidden fifth, from 34% and 16%, and the Yes/No answer sits in its own column for 99.9% of prescribed events tuned on and 100% in the hidden fifth - every rule written in geometry, none of them knowing what an insurance document is. **A benchmark zero is no longer taken on trust**: on 14 September a rule that moved no score had changed 16 pages, and reading them against their images caught a false table and phrases cut in two, both fixed before anything was committed. Next: a label set tight against its answer (Honey's landlord building sheet), then the cover page's ABN.)_
+_Last updated: 2026-09-15, 06:01 (**Two scores, and they mean different things.** **Open weights: 84.1** (run 89; held-out 81.4, tuned-on 82.0) - your own machine plus olmOCR 2's saved readings, nothing leaving the building, reproducible by anyone with a rented GPU. This is the default: the deep reader is off unless asked for. **With a hosted service: 85.4** (run 91, CI 84.5-86.3; held-out 82.4 and tuned-on 83.5, both the best ever) - the same converter, with the 103 pages of 1,403 that have no text layer and that our own OCR can make nothing of read by Claude Sonnet 5 over the API. **That is the best score the project has had, and the whole interval sits above the previous best of 84.2.** Against the open-weight run: old scans +35, old-scan maths +11, tables +6, tiny text +4, headers -2, multi-column -1. The route there was not straight: run 90 scored 82.8 because D024 escapes every dollar sign outside our own delimiters and a general model writes its maths between dollar signs, so fourteen integrals on one page became literal text and old-scan maths fell 17 points. Fixed by translating a model's delimiters before anything else sees the text. **The method error mattered more than the fix: a change measured on one category was shipped to all eight, and the category it broke was the one never looked at; `bench/tools/compare_categories.py` now makes that impossible to miss.** Also settled this week: a paragraph of prompt beat moving from Sonnet to Opus, reading a page in overlapping bands measured 28 checks worse and is switched off, and the evidence for all of it is in `docs/MODEL_CHOICE.md`. **M7 is met**: 85.4 against a best published 83.1, and OmniDocBench was investigated on 13 September and declined as a measure of TrueDoc - every page in it is an image, so our text reader, formula rebuilder and both table builders never run and the score would belong to whichever model reads the pages (D026). **Your insurance library now has a score too, and it is a different measure: 206 of 229 checks, 90.0%**, written by a model reading 25 of your PDS pages as images and never seeing our output (tables are the weak spot at 15 of 27). **All 38 were ruled on: 31 fair, 7 unsure, nothing dropped**, so the score is confirmed and every failure is ours. Building the set already found five things the public benchmark cannot show, including a PDF whose own text layer has lost letters to its ligatures and which TrueDoc trusts anyway. The section below has them. **The Key Facts Sheets have become an oracle for table rules (D027)**: the prescribed header now reads whole on 95% of the sheets tuned on and 97% of the hidden fifth, from 34% and 16%, and the Yes/No answer sits in its own column for 99.9% of prescribed events tuned on and 100% in the hidden fifth - every rule written in geometry, none of them knowing what an insurance document is. **A benchmark zero is no longer taken on trust**: on 14 September a rule that moved no score had changed 16 pages, and reading them against their images caught a false table and phrases cut in two, both fixed before anything was committed. Next: a label set tight against its answer (Honey's landlord building sheet), then a text layer that has lost letters to its ligatures.)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -97,11 +97,11 @@ What moved across the runs, section by section: formulas 0 to 41 (rebuilt from t
 
 ## Where we are
 
-**14 September.** On the public exam TrueDoc scores **84.1 on open weights** (run 89) and **85.4 with the hosted deep
-reader** (run 91), against a best published 83.1: M7 is met. On your insurance library it scores **199 of 229 checks**,
+**15 September.** On the public exam TrueDoc scores **84.1 on open weights** (run 89) and **85.4 with the hosted deep
+reader** (run 91), against a best published 83.1: M7 is met. On your insurance library it scores **206 of 229 checks**,
 a score your rulings confirmed. Your Key Facts Sheets have become an oracle for table rules (D027); where they stand
 is in their own section below. Every stage reads the PDF through PDFium, and the product path no longer imports
-PyMuPDF (D023). The unit tests pass at every commit: 528 at 12c2137.
+PyMuPDF (D023). The unit tests pass at every commit: 545 on 15 September.
 
 ### As it stood on 8 September, kept for the record
 
@@ -258,11 +258,11 @@ Five things came out of building it, and none of them would have shown on the pu
   grid with $5,000 and $10,000 in it; our output has "Limits Essential Top Landlords $5,000 $10,000
   Not covered" as flattened text and a two-cell table beside it. The amounts are all there and the
   grid that ties each amount to its cover is not.
-- **A cover page's issuer, ABN and registered office are dropped**, and not on purpose, as this page first
-  said: the page has a text layer, so no model reads it, and the block goes because the layout model labels
-  it a page footer. You ruled that an insurance document keeps them. The fix, a footer label declined for a
-  block too big to be a running foot, is measured both ways first, since some benchmark checks want footers
-  left out.
+- **A cover page's issuer, ABN and registered office were dropped**, and not on purpose, as this page first
+  said: the page has a text layer, so no model reads it, and the block went because the layout model labelled
+  it a page footer. You ruled that an insurance document keeps them. Fixed on 15 September: a block of more
+  than two lines and more than fourteen words that no page beside it repeats is no longer taken for a running
+  foot, and the seven checks that were failing on it now pass.
 
 ### The Key Facts Sheets grade themselves, and the rules that came out of them
 
@@ -332,6 +332,14 @@ page moved**.
   score moves, and of the six pages the run-together rule had changed, a soil table now reads as it did before that
   rule, its sub-labels back in the label column. Every table rule is now scored on your insurance set, check by check,
   before it is committed.
+- **A cover page's issuer, ABN and registered office (the same morning).** The Qantas home cover sets its issuer, its
+  ABN and its registered office in four lines at the foot of the page, and the layout model called the block a page
+  footer, so they were left out as furniture. A running foot runs, page after page, so a block that size now comes out
+  of the feet when no page beside it repeats it. Your insurance set now scores 206 of 229, from 199: the Qantas home cover keeps its issuer, ABN and registered office, in the page's order, and no other page's markdown changed. Two first versions judged the block on its own page, and read
+  against their images they put running feet and stamps into the body on 10 benchmark pages - a journal's foot, a
+  catalogue's notice, a licence stamp, and a report's banner that pushed its tables away from their headings. Every
+  benchmark file is a single page, so the rule as committed changes none of them; on your Key Facts Sheets CGU's
+  building sheet now publishes its underwriter statement, and no grading moved.
 
 The scorer is `bench/tools/insurance_score.py` (it undoes markdown escapes first, or D024's "\$500"
 would fail every price check), and the dossier is built by `bench/tools/insurance_dossier.py`.
@@ -371,7 +379,6 @@ product - which is the reason your library is the test bed.
 
 - On a few of your Key Facts Sheets a prescribed event's Yes/No still runs into its label or its exclusions; the
   shapes left are named under Next in `docs/PROGRESS_LOG.md`.
-- A cover page's issuer, ABN and registered office are dropped when the layout model labels the block a page footer.
 - A PDF whose own text layer has lost letters to its ligatures ("ofer", "fnd", "Certifcate") is trusted as it stands.
 - The five limits below were written on 6 and 7 September and have not been measured again since.
 - Handwritten pages and old maths scans stay empty: the classical OCR engine cannot read them, and TrueDoc leaves such a page empty rather than fill it with nonsense (61 of the 79 benchmark pages that are still empty are handwriting). The optional vision stage reads them when you switch it on, with a rented GPU or an API key.

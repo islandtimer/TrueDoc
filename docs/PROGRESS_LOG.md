@@ -371,6 +371,36 @@ was stashed in place for the gate - each is identical to the pool's own reading 
 - **What changes in the loop:** a table rule is now scored on the insurance set, check by check against the commit
   before it, as well as on the Key Facts Sheets and the benchmark, and a page whose count rises is read like any other.
 
+**A block too big to be a running foot, and repeated on no page beside it, is published** (15 Sept, after 4bfca16)
+- **The fault** (`apply_layout`, `truedoc/layout/fuse.py`). On the Qantas home PDS cover the layout model labelled the
+  issuer, the ABN and the registered office - four lines and 34 words at the foot of the page, 91 to 97% of the way
+  down - a page footer. Running feet are furniture, so the reader saw none of them, and seven of the insurance set's
+  checks failed: three that each is there, four on the order they come in.
+- **Two versions judged the block on its own page, and reading their pages undid both.** The first took out of the
+  feet every block of more than two lines and more than fourteen words. Its benchmark pool, stopped once this was
+  understood, had changed 14 of the 617 pages it reached (every benchmark file is a single page); read against their
+  images, 1 was better (a paper's author affiliations), 3 neutral (two equal-opportunity notices and a census report's
+  source note) and 10 put running feet or stamps into the body - a journal's foot with its page number, a catalogue's
+  legal notice on four pages, a licence stamp, an article-in-press notice, a download stamp, a trademark notice and a
+  report's banner, which as text also pushed the page's two tables to its end, away from their headings. The second
+  kept only blocks whose lines start on one left edge (the issuer block starts all four at 14.2pt; the journal's foot
+  is centred, the notice and the banner flush right), and in memory it still released the licence stamp, the
+  article-in-press notice and the trademark notice, all set flush left. Size and alignment stand in for the thing
+  itself; a running foot is one that runs.
+- **The rule.** A block of more than two lines and more than fourteen words that the layout model calls a page footer
+  comes out of the feet when the pages beside it - up to two each side - have a text layer and none prints most of its
+  words (60%) in the band it fills, measured up from the foot of each page (`_repeated_beside`, which reads the file
+  again through PDFium by its path). Repeated, it stays a foot; with no page beside it to ask - a one-page file, or
+  scanned pages beside it - the model's label stands.
+- **Measured.** Benchmark: every one of its 1,403 files is a single page, so the rule cannot change a benchmark page,
+  and converted with it the 14 pages the first version had changed come out byte for byte as at 4bfca16. The
+  insurance set 206 of 229, from 199: the cover's seven checks won and none lost anywhere; the other 24 pages convert byte for byte as at 4bfca16, and the cover, read against its image, carries its four lines in the page's order, run together into one paragraph as a text block's lines are. Key Facts Sheets publish the underwriter statement on CGU's home building sheet ("The policy this KFS relates to is Underwritten by Insurance Australia Limited ABN 11 000 016 722 AFSL 227681 trading as CGU Insurance"), the only one of 190 sheets whose markdown changed, and no grading moved: header whole 150 of 158 tuned on and 31 of 32 held out, answers 1,884 of 1,885 and 375 of 375, as before. The full oracle ran on the first version; the rule can only change what that version changed, and CGU's sheet converts byte for byte as it did.
+- **Tests:** an issuer block that no page beside it repeats is published, failing on the code before it; the same block
+  repeated on the pages beside it stays a foot, and so does one in a one-page file, both failing on the first version;
+  a one-line foot stays a foot; suite 545. `bench/probes/foot_geometry.py` prints each foot block's lines and
+  edges, `bench/tools/partial_footprint.py` lists the pages a pool has changed while it still converts, and
+  `bench/tools/convert_compare.py` converts named pages with the code on the path against earlier conversions.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for 99.9% of prescribed events tuned on and 100% held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
@@ -387,7 +417,7 @@ geometry and typography.
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
-- The cover page's issuer, ABN and registered office (`layout:page_footer`); the lossy ligature text layer.
+- The lossy ligature text layer.
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 
 ---
