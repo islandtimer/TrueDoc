@@ -273,24 +273,50 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   checks on two other pages (`bench/probes/dollar_cells.py`). A test built on ALDI's geometry, failing on the code
   before it; suite 529.
 
+**A band that starts in the gutter** (14-15 Sept, after ddf5ff9)
+- **A known band spans the column to its left when it starts in the gutter before that column's text**
+  (`_band_reaching_left`, from `_is_band`). Bank of Queensland's household contents sheet sets the band at x 156.1,
+  after the answers end (155.3) and 7.5pt before the exclusions' own text (163.6), so on the grid it covered none of
+  the answers' column and was folded into the exclusions above it. The band must start at least 0.4 of the body size
+  before the column's leftmost other line, and only a segment already known to be a band is ever moved.
+- **A first look** (`bench/tools/kfs_quick.py`): Bank of Queensland's band its own row, its answers unchanged at 12;
+  ALDI's and Honey's contents sheets, a landlord sheet, CGU's building and AAMI's contents sheets, WFI's contents
+  sheet and Honey's two landlord sheets did not move.
+- **The first version measured the column's edge from the median start of its lines, and one benchmark page caught
+  it.** Its oracle moved only Bank of Queensland's band, and no benchmark score moved (tables 848 v 848, multi_column
+  682 v 682, long_tiny_text 357 v 357), but the markdown changed on 1 of 481 pages, and read against its image it was
+  worse. Oracle's BI Publisher guide describes "Accessibility Mode" in a paragraph, then a paragraph set apart ("When
+  Accessibility Mode is enabled,"), then a list indented past the column's edge; the median sat at the list's indent,
+  so the set-apart paragraph read as starting in a gutter and ran across the table as a row belonging to no option.
+  Measured from the leftmost start, the page converts as it did at ddf5ff9, byte for byte, and Bank of Queensland's
+  band is still its own row. A test built on the guide's geometry fails on the median version.
+- **Result, code against code, on the version committed:** Key Facts Sheets a band glued to the exclusions above it on 1 sheet -> 0, Bank of Queensland's, the only one of the 190 whose markdown changed at all, tuned on or held out; header whole (150 of 158, 31 of 32), answers (1870 of 1885, 371 of 375) and events in rows unchanged. Benchmark tables 848 v 848, multi_column 682 v 682, long_tiny_text 357 v 357, not one page moved; the
+  markdown changed on 0 of 481 pages. Tests built on Bank of Queensland's geometry and on the guide's, each failing on the
+  code before it; suite 531.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for 99.2% of prescribed events tuned on and 98.9% held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
-buried inside an exclusion 63 sheets -> 1. Every rule is
+buried inside an exclusion 63 sheets -> 0. Every rule is
 geometry and typography.
 
 **Next**
-- The band that starts in the gutter (Bank of Queensland's household contents): a known band spans the column to its
-  left when it starts at least 0.4 of the body size before that column's own text, measured from the median start of
-  the column's other segments. Drafted with a test that fails on today's code, and checked in memory.
-- A two-line answer ("Yes /" over "Optional") beside "Accidental" over "Breakage": the answer column carries on
-  across its slash while the exclusions open a paragraph for each answer ("Yes - ..." over "Optional - ...").
+- A two-line answer ("Yes/" or "Yes /" over "Optional") beside "Accidental" over "breakage" or "Breakage": the second
+  line fills every column, so `_label_carries_on` never finds the emptied value it wants, and in title case the
+  exclusions do not carry on either. Drafted: when the second line fills every column the first did, words ending on a
+  slash above with words under them carry the row on. Two tests fail on today's code, and in memory all ten tuned-on sheets with no row for Accidental breakage gain it, with its answer (the four HCKFS sheets, ALDI's and Bank of Queensland's building and contents sheets, Honey's contents sheet and a March 2017 building sheet), and three control sheets do not move.
 - The tight label alone on its answers' edge: Honey's building sheet, and WFI's two contents sheets, where the text
   layer runs "Items away from Yes" together - three answers, drafted with two tests.
 - CGU's "Actions of the sea No", glued on two contents sheets: the text layer sets "No" 11.5pt (1.2 of the body
-  size) after "sea", at the very x where every other row's "Yes" starts (141.4pt on the July 2025 sheet), yet the
-  two arrive as one line (`bench/probes/row_geometry.py`). Not the tight label's case; next is why that line was
-  not broken at a gap four times a word space.
+  size, five word spaces - four, as first written here, was wrong) after "sea", at the very x where every other row's
+  "Yes" starts (141.4pt on the July 2025 sheet), yet the two arrive as one line (`bench/probes/row_geometry.py`).
+  Traced (`bench/probes/sea_cut_probe.py`, `bench/probes/place_probe.py`): every other row reaches the table with its
+  label and its answer already apart, and the second look sees one empty range from the labels to the exclusions
+  (84.0 to 193.6pt) - the label lines with no answer beside them vote across the answers' column - and skips it,
+  because the first look's cut at the exclusions' edge already lies inside it. So no cut is ever tried between the
+  labels and the answers, and this row's one segment stays whole in the label's column. The candidate: a segment
+  with a gap wider than a word space, whose far side starts on the edge where the rows around it start a column, is
+  divided there.
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.

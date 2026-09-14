@@ -1387,6 +1387,33 @@ def _spanned_columns(row: _Row, columns: list[tuple[float, float]] | None, bands
     return set()
 
 
+def _band_reaching_left(rows: list[_Row], index: int, columns: list[tuple[float, float]] | None,
+                        bands: frozenset | set, size: float) -> set[int]:
+    """The two columns a known band spans when it starts in the gutter before the column it lies over.
+
+    Bank of Queensland's contents sheets set the band 7.5pt before the exclusions' own text starts, in the gutter after
+    the answers, so it covers none of the answers' column; it is still the band over both. The column's edge is where
+    its leftmost other line starts, not the median start: Oracle's BI Publisher guide describes an option in a
+    paragraph, then a paragraph set apart, then a list indented past the column's edge, so the median sat at the list's
+    indent, and the set-apart paragraph, starting on the column's own edge, read as starting in a gutter and ran across
+    the table. Measured from the leftmost start, a paragraph of the column's own is never ahead of its edge.
+    """
+    if not columns or len(columns) < 2:
+        return set()
+    segs = [s for s in rows[index].segments if id(s) in bands]
+    if len(segs) != 1:
+        return set()
+    band = segs[0]
+    home = max(range(len(columns)), key=lambda k: min(band.bbox.x1, columns[k][1]) - max(band.bbox.x0, columns[k][0]))
+    if home == 0:
+        return set()
+    lo, hi = columns[home]
+    starts = [s.bbox.x0 for r in rows for s in r.segments if id(s) not in bands and lo <= s.bbox.x0 < hi]
+    if not starts:
+        return set()
+    return {home - 1, home} if min(starts) - band.bbox.x0 >= 0.4 * size else set()
+
+
 def _is_band(index: int, grid: list[list[str]], rows: list[_Row],
              columns: list[tuple[float, float]] | None, bands: frozenset | set = frozenset(), size: float = 10.0) -> bool:
     """Is this row a band laid across the table, rather than a title above it?
@@ -1411,6 +1438,8 @@ def _is_band(index: int, grid: list[list[str]], rows: list[_Row],
     two-column page - the references running down beside a table - cannot vouch for a title.
     """
     spanned = _spanned_columns(rows[index], columns, bands, size)
+    if len(spanned) < 2:
+        spanned = _band_reaching_left(rows, index, columns, bands, size)
     if len(spanned) < 2:
         return False
 
