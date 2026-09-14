@@ -100,14 +100,64 @@ between them.
 held out**, the hidden fifth moving with the rest at every step. All four rules are written in geometry
 and typography; none of them knows what an insurance document is.
 
+**The band inside a table, in three attempts and one owner's objection** (14 Sept, 140c19f and 84b38a5)
+A Key Facts Sheet breaks its table with a full-width line opening a section - "Cover for valuables,
+collections and items away from the insured address" - and the merger was reading it as the tail of the
+cell above, so a reader tied a new section's heading to escape of liquid. 63 sheets.
+
+- **The geometry, measured before any rule:** an ordinary wrapped continuation begins some 16pt *inside*
+  its own column; the band begins 96pt to the left of the column it was filed under and crosses the rest.
+- **Attempt one - don't fold a row that crosses columns, and move it into the first column it covers.**
+  Won 60 of 63 bands and cost 26 events their Yes/No answer. Bisected: the no-fold half carried the whole
+  win at no cost; the placement half did all the damage, because a wrapped line spilling a little into the
+  narrow "Yes/No" column read as a band under any test loose enough to catch the real ones, and landed on
+  top of the answer. Placement removed.
+- **Attempt two - the same, unless the row above also spans.** Still cost two checks on the benchmark: a
+  table's own centred title ("TABLE 1 / Partial Correlations Between Stroop Scores and / Verbal
+  Responses") crosses the columns in exactly the same fashion, and the guard did not fire where assumed.
+- **Attempt three - a band must cross three columns, a title two.** Measured, and **the owner stopped it
+  before it shipped**: a two-column table can hold a band and could never satisfy the test, so live
+  documents would keep the fault whatever this corpus happens to contain. His point was a design point,
+  not an empirical one - no census was needed or wanted.
+- **What shipped: position, not width.** A title stands above the grid with no proper row of the table
+  before it; a band stands inside the body with proper rows above *and* below, counted only within the
+  columns the text spans (so the references running beside a table on a two-column page cannot vouch
+  for a title). Bands swallowed 63 -> 12 tuned on, 8 -> 0 held out; every other measure unmoved; and
+  **+1 on the benchmark** (843 -> 844), where the width version had been -1.
+- **Then the band spans the table.** The band kept its own row but sat under whichever column it was
+  filed beneath, so a reader took the heading for an example of an exclusion. A band belongs to no
+  column, and `render_table` already switches a table to HTML the moment any cell spans, so it became
+  `<td colspan="3">`. With detection now positional the same placement that cost 26 answers is safe:
+  header whole 72% -> 75% tuned on and 66% -> 69% held out, stray continuation rows 9 -> 7, answers
+  unchanged at 93%, benchmark 844 v 844.
+
+**The instrument was wrong twice in one afternoon, and both times it looked like the converter.**
+- `kfs_grade.py` matched a prescribed event *anywhere* in a cell. Once bands moved into the first column,
+  the band's own text - which contains "items away" - matched as that event's row, a row that by its
+  nature carries no answer. It reported **47 events losing their Yes/No** when nothing in the converter
+  had changed for them. Three explanations about the converter were offered and all were wrong; the
+  per-sheet diff found it, because 54 sheets each losing exactly one is not the shape of a real
+  regression. The label must now *open* the cell.
+- `kfs_diff.py` had **copied** the grader's matching logic instead of calling it, so after the grader was
+  fixed it went on reporting 55 lost. It now delegates. One implementation, or two disagree exactly when
+  it matters.
+- And a near miss worth recording: with the grader fixed, the spanning change read 1804 answers against
+  a remembered 1797 - but 1797 had been measured by the broken grader. Both code states were re-graded
+  by the one corrected grader before anything was claimed; they came out identical.
+
+**Where the Key Facts Sheets stand after six rules:** header whole **34% -> 75% tuned on, 16% -> 69% held
+out**; exclusions severed from their events 51 -> 0; section headings buried in an exclusion 63 -> 12;
+events carrying their Yes/No 93%. Every rule is geometry and typography.
+
 **Next**
-- The full-width band swallowed by the cell above it: 63 sheets tuned on, 8 held out. The count rose
-  from 48 when the third column came back, which is the column being restored rather than new damage -
-  a band that used to sit in the loose paragraphs is now inside a table where a cell can absorb it.
-- 21 sheets take a sentence from the paragraph *above* the table as their header row.
+- **The missing 7% of Yes/No answers** - the reason the document exists. Sorted by shape before any rule
+  (answer glued to the label, split into a neighbouring row, event never opening a row, or bare); one
+  shape already seen on the ALDI sheets, "Fire and Explosion Yes" fused into one cell, which predates
+  this week's work.
+- 21 sheets take a sentence from the paragraph *above* the table as their header row; 12 bands remain.
 - The cover page's issuer, ABN and registered office, dropped because the layout model calls the block
-  `layout:page_footer`; our own `_margin_cleanup` already refuses to call anything longer than two lines
-  a running foot, and we do not apply that test to the model's label. Measured both ways before it moves.
+  `layout:page_footer`; `_margin_cleanup` already refuses to call anything longer than two lines a
+  running foot, and that test is not applied to the model's label. Measured both ways before it moves.
 - The ligature text layer that no one notices is lossy.
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 
