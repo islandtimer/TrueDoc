@@ -20,7 +20,7 @@ def main() -> None:
         body = io.open(draft, encoding="utf-8").read()
         for key, value in values.items():
             body = body.replace("@@" + key + "@@", value)
-        left = sorted(set(re.findall("@@[A-Z]+@@", body)))
+        left = sorted(set(re.findall("@@[A-Z0-9_]+@@", body)))
         target = draft[:-4] + "_filled.txt"
         io.open(target, "w", encoding="utf-8").write(body)
         print(f"{os.path.basename(target)}: " + ("LEFT " + ", ".join(left) if left else "complete"))
