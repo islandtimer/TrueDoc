@@ -15,7 +15,7 @@ import re
 from dataclasses import dataclass, field
 
 from truedoc.model import BBox, Block, BlockKind, Line, Page, Table, TableCell
-from truedoc.tables.cells import clean_cell_text, is_bracketed_statistic
+from truedoc.tables.cells import clean_cell_text, is_bracketed_statistic, runs_across_columns
 
 _NUMERIC = re.compile(
     # A currency sign before the number ("$448", "€1,298") is still a number: a press release's
@@ -116,6 +116,14 @@ def find_aligned_tables(page: Page, lines: list[Line], body_size: float) -> tupl
         for sub in _split_side_by_side(cand, size):
             table = _build_table(sub, size)
             if table is None:
+                continue
+            # The second look in `_refine_segments` finds a column inside a table; it is no evidence that
+            # a table is there, and nothing else here says one is - no ruling, no layout model. On a court
+            # form its cut between "Claim No." and "CL-2016-000631" made one table of an address box and
+            # the claim box beside it, each row an address line beside a line of the claim box ("Ikoyl |
+            # (including | Malabu Oil & Gas Limited"). What this finder calls a table must be one to the
+            # first look too; the second look only sharpens it.
+            if _build_table(sub, size, second_look=False) is None:
                 continue
             tables.append(Block(kind=BlockKind.TABLE, bbox=table.bbox, table=table, provenance="textlayer-aligned", confidence=0.7))
             for r in sub.rows:
@@ -489,7 +497,7 @@ def _structural_rows(rows: list[_Row]) -> list[_Row]:
     return keep if len(keep) >= 2 else rows
 
 
-def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[float]]:
+def _refine_segments(rows: list[_Row], size: float, second_look: bool = True) -> tuple[list[_Row], list[float]]:
     """Split segments at narrow word gaps that line up across most rows.
 
     "9  SPS/09" is one segment when the gap is under two ems, yet a gap at the
@@ -519,43 +527,98 @@ def _refine_segments(rows: list[_Row], size: float) -> tuple[list[_Row], list[fl
     all_segments = [seg for r in rows for seg in r.segments]
     events = sorted([(x0, 1) for x0, _ in spans] + [(x1, -1) for _, x1 in spans], key=lambda e: (e[0], e[1]))
     cuts: list[float] = []
-    depth = 0
-    start: float | None = None
 
     def straddled(c: float) -> bool:
         return any(w.bbox.x0 < c - 1 and w.bbox.x1 > c + 1 for w in all_words)
 
-    for x, d in events:
-        depth += d
-        if depth >= need and start is None:
-            start = x
-        elif depth < need and start is not None:
-            if x - start >= 1.0:
-                # A segment running across the whole range belongs to both
-                # sides (a group heading, a title over the table): no cut, even
-                # through one of its word spaces. A heading row set closer than
-                # two ems ("N Minimum Maximum Gemiddelde Sd") is one segment
-                # too, but its own word gap over the range voted for the cut.
-                spanning = [s for s in all_segments if s.bbox.x0 <= start + 1 and s.bbox.x1 >= x - 1]
+    def ranges(threshold: float) -> list[tuple[float, float]]:
+        """The x ranges at least `threshold` votes leave empty, in order across the page."""
+        found: list[tuple[float, float]] = []
+        depth = 0
+        start: float | None = None
+        for x, d in events:
+            depth += d
+            if depth >= threshold and start is None:
+                start = x
+            elif depth < threshold and start is not None:
+                if x - start >= 1.0:
+                    found.append((start, x))
+                start = None
+        return found
 
-                def open_over(s: Line) -> bool:
-                    ws = sorted(s.words, key=lambda w: w.bbox.x0)
-                    return any(b.bbox.x0 - a.bbox.x1 >= 0.4 * size and a.bbox.x1 < x and b.bbox.x0 > start
-                               for a, b in zip(ws, ws[1:]))
+    def place(start: float, x: float) -> float | None:
+        """Where a cut goes in the empty range [start, x], or None if nothing may cut it."""
+        # A segment running across the whole range belongs to both
+        # sides (a group heading, a title over the table): no cut, even
+        # through one of its word spaces. A heading row set closer than
+        # two ems ("N Minimum Maximum Gemiddelde Sd") is one segment
+        # too, but its own word gap over the range voted for the cut.
+        spanning = [s for s in all_segments if s.bbox.x0 <= start + 1 and s.bbox.x1 >= x - 1]
 
-                if all(open_over(s) for s in spanning):
-                    # The right end first, just before the words that close the
-                    # range: rows without a vote (a wrapped description line)
-                    # fill the range from the left, and the midpoint of a wide
-                    # range landed in one of their word spaces ("(approx." |
-                    # "90-95%"), moving half a cell over. A heading centred over
-                    # the right column can reach back over that end ("C14" over
-                    # "23.8"); then the middle, then the left end.
-                    for c in (x - 1.0, (start + x) / 2.0, start + 1.0):
-                        if not straddled(c):
-                            cuts.append(c)
-                            break
-            start = None
+        def open_over(s: Line) -> bool:
+            ws = sorted(s.words, key=lambda w: w.bbox.x0)
+            return any(b.bbox.x0 - a.bbox.x1 >= 0.4 * size and a.bbox.x1 < x and b.bbox.x0 > start
+                       for a, b in zip(ws, ws[1:]))
+
+        if not all(open_over(s) for s in spanning):
+            return None
+        # The right end first, just before the words that close the
+        # range: rows without a vote (a wrapped description line)
+        # fill the range from the left, and the midpoint of a wide
+        # range landed in one of their word spaces ("(approx." |
+        # "90-95%"), moving half a cell over. A heading centred over
+        # the right column can reach back over that end ("C14" over
+        # "23.8"); then the middle, then the left end.
+        for c in (x - 1.0, (start + x) / 2.0, start + 1.0):
+            if not straddled(c):
+                return c
+        return None
+
+    for start, x in ranges(need):
+        c = place(start, x)
+        if c is not None:
+            cuts.append(c)
+
+    # A second look, for the boundary the first one out-voted. The threshold above is a share of
+    # every row holding two words, but a row whose words all lie to one side of an x can say nothing
+    # about a boundary there - and it still counts against one. A Key Facts Sheet shows the cost: its
+    # Yes/No column starts at one x on every row, and all 14 rows with words on both sides of that x
+    # leave a gap there, yet the 21 wrapped lines of the exclusions column lie wholly to its right,
+    # so 14 votes fell short of 21 and "Fire and Explosion" was filed in one column with its "Yes".
+    # The same sheet from another insurer only escaped because its gap was wide enough for a
+    # whitespace channel; its cut vote failed identically. Here a range is judged by the rows able to
+    # judge it: a cut stands where three in five of the rows with words on both sides leave it empty.
+    # It only adds a cut the first look missed, in a range no word crosses, so every cut that stood
+    # before still stands where it stood.
+    #
+    # The lower bar asks what the cut would do. It divides the segments that cross it; where every one of
+    # them crosses on a word space, its only work is to split phrases. On the benchmark this look had cut
+    # "Groups at | Risk", "quimicos | e" and "Day | 35" - each the one segment its cut divided, every other
+    # row already standing apart. Where the text layer has run cells together across real gaps ("Fire and
+    # Explosion Yes"), the cut is proven, and a label set tight against its answer is divided with the rest:
+    # "Accidental Breakage" ends 0.46 of the body size before its "Yes" on the same Key Facts Sheets, and an
+    # earlier version that let that one row refuse the cut cost 38 answers tuned on and 13 held out
+    # (`runs_across_columns`). With `second_look=False` the first look stands alone, for the finder that
+    # must first ask whether a table is there at all (`find_aligned_tables`).
+    worded = [sorted((w for seg in r.segments for w in seg.words), key=lambda w: w.bbox.x0) for r in rows]
+    worded = [ws for ws in worded if len(ws) >= 2]
+    for start, x in (ranges(3) if second_look else []):
+        if any(start - 1.0 <= c <= x + 1.0 for c in cuts):
+            continue
+        c = place(start, x)
+        if c is None:
+            continue
+        able = [ws for ws in worded if ws[0].bbox.x1 <= c and ws[-1].bbox.x0 >= c]
+        divided = [[(w, w.bbox.cx >= c) for w in s.words] for s in all_segments if s.bbox.x0 < c < s.bbox.x1]
+        divided = [placed for placed in divided if len({side for _, side in placed}) == 2]
+        if divided and all(runs_across_columns(placed, size) for placed in divided):
+            continue
+        agree = sum(1 for ws in able
+                    if any(b.bbox.x0 - a.bbox.x1 >= 0.4 * size and a.bbox.x1 <= c <= b.bbox.x0
+                           for a, b in zip(ws, ws[1:])))
+        if agree >= max(3, 0.6 * len(able)):
+            cuts.append(c)
+    cuts.sort()
     if not cuts:
         return rows, []
     out: list[_Row] = []
@@ -593,12 +656,12 @@ def _headings_in_order(row: _Row, cols: list[int]) -> bool:
     return not any(_NUMERIC.match(seg.text.strip()) for seg in row.segments)
 
 
-def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bool = False) -> Table | None:
+def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bool = False, second_look: bool = True) -> Table | None:
     # Segments per row as the text layer gave them, before voted cuts re-slice them:
     # prose sliced word by word ends with far more columns than segments.
     seg_counts = sorted(len(r.segments) for r in cand.rows)
     median_segments = seg_counts[len(seg_counts) // 2] if seg_counts else 1
-    refined, cuts = _refine_segments(cand.rows, size)
+    refined, cuts = _refine_segments(cand.rows, size, second_look=second_look)
     cand = _Candidate(rows=refined, bbox=cand.bbox)
     channels = _channels(_structural_rows(cand.rows), cand.bbox.x0, cand.bbox.x1, size)
     # Voted cuts are column boundaries even when the gap is narrower than a channel.

@@ -133,6 +133,40 @@ def cells_of(line: str) -> list[str]:
     return [c.strip() for c in line.strip().strip("|").split("|")]
 
 
+def carries_answer(cells: list[str]) -> bool:
+    """Does this row hold its Yes / No / Optional in the answer column - the second cell?
+
+    The column is headed "Yes / No / Optional", so the answer belongs in that column and nowhere
+    else. An earlier test accepted an answer word opening *any* later cell, so a row reading
+    "Flood |  | Optional Excludes damage to the liner..." - the answer fused onto the front of the
+    exclusions and filed in the third column, the answer column left blank - passed as answered.
+    A reader of that row sees a blank where the answer should be, so it is not answered.
+
+    Shared by everything that asks the question, so no copy of it can drift from this one.
+    """
+    return len(cells) > 1 and bool(ANSWER.match(cells[1]))
+
+
+def held_events(body: list[str]) -> list[str]:
+    """The prescribed events a table holds: those named in its label column, read down the table.
+
+    An event is held if its name is in the *label column* - the first cell of each row, read down
+    the table - not if it appears anywhere in the table. Matching the whole table counted names
+    *mentioned* inside other cells as events with no row of their own: "Accidental Damage" inside
+    the exclusions of the Accidental Breakage row (91 sheets, 76 of them with the real event
+    answered), "items away" inside the band that opens the valuables section (12), "malicious
+    damage" inside the fire exclusion (8). That inflated both the missing count and the total.
+
+    Read down the column rather than row by row, so a label genuinely split across two rows
+    ("Accidental" over "breakage") still counts as held and still fails - that is real damage and
+    worth seeing. A row that is one cell spanning the table is a band, not a label, and is left out.
+
+    Shared with every diagnostic that sorts the events, so none of them can count a different set.
+    """
+    labels = " ".join(cs[0] for cs in (cells_of(line) for line in body) if len(cs) >= 2).lower()
+    return [e for e in EVENTS if e in labels]
+
+
 def grade(md: str) -> dict:
     """The prescribed table, found by the events it holds, then graded on shape alone."""
     best, best_hits = None, 0
@@ -150,7 +184,7 @@ def grade(md: str) -> dict:
     body_text = " ".join(body).lower()
 
     # Every event the sheet holds, and whether it opens a row with an answer beside it.
-    want = [e for e in EVENTS if e in (head_text + " " + body_text)]
+    want = held_events(body)
     opens = answered = 0
     for event in want:
         for line in body:
@@ -162,7 +196,7 @@ def grade(md: str) -> dict:
             # 47 events losing their Yes/No when nothing in the converter had changed for them.
             if cs and _LEAD.sub("", cs[0]).lower().startswith(event):
                 opens += 1
-                if len(cs) > 1 and any(ANSWER.match(c) for c in cs[1:]):
+                if carries_answer(cs):
                     answered += 1
                 break
 

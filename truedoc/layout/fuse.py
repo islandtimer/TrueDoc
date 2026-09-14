@@ -15,6 +15,7 @@ from truedoc.classify.blocks import _CONTACT
 from truedoc.layout.base import Region, RegionKind
 from truedoc.model import BBox, Block, BlockKind, Line, Page
 from truedoc.tables.aligned import table_from_lines
+from truedoc.tables.cells import runs_across_columns
 
 _MIN_SCORE = {
     RegionKind.TABLE: 0.5,
@@ -169,6 +170,17 @@ def _header_lines_above(page: Page, box: BBox, table, inside: list, consumed: se
         cols = [column_of(w) for w in l.words]
         if any(c is None for c in cols):
             continue  # a word off the columns: a caption or a sentence, not a header row
+        # A header row moves from one column to the next across the gap between its cells; a
+        # sentence moves across an ordinary word space. "Any amounts you claim include GST less any
+        # input tax credit..." sat above a Key Facts Sheet's table and changed column twice on spaces
+        # of 2.8pt. It had been kept out only by accident: a band spanning the table stretched the
+        # first column's span to the full width, so every word read as one column and the line
+        # failed the single-column test on its length. Once the cut-finder gave that column its true
+        # width, the sentence hit three columns and became the first row of the table on three
+        # contents sheets. Judged on the geometry, not the words: under 0.6 of the body size is a
+        # word space.
+        if runs_across_columns(zip(l.words, cols), size):
+            continue
         out.append(l)
         columns_hit.update(c for c in cols if c is not None)
     if len(columns_hit) >= 2:

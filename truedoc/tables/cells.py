@@ -1,4 +1,4 @@
-"""Cell text clean-up shared by the ruled and the aligned table builders."""
+"""Cell text and cell geometry shared by the ruled and aligned table builders and the layout path."""
 
 import re
 
@@ -34,3 +34,25 @@ def clean_cell_text(text: str) -> str:
     if not core or not _MEANING.search(core):
         return t
     return core
+
+
+def runs_across_columns(placed, size: float) -> bool:
+    """Does a line of text cross from one column into the next on an ordinary word space?
+
+    `placed` pairs every word of the line with the column it falls in, in any order. A row of cells moves
+    from one column to the next across the gap between its cells; a sentence or a phrase moves across a
+    word space. Judged on the geometry alone: under 0.6 of the body size is a word space.
+
+    Two questions rest on it, each asked where an accident had let text through:
+    - whether a line just above a table's box is the header row the box missed or a sentence spanning it
+      (`layout.fuse._header_lines_above`): "Any amounts you claim include GST less any input tax
+      credit..." crossed three columns of a Key Facts Sheet on word spaces of 2.8pt against a 10pt body;
+    - whether a cut proposed by the cut-finder's second look does any work but split phrases
+      (`tables.aligned._refine_segments`): on the benchmark the one segment each such cut divided ran
+      across it on 0.23 to 0.51 of the body size ("Groups at | Risk", "quimicos | e"). A label set tight
+      against its answer crosses on as little ("Accidental Breakage | Yes", 0.46), which is why the
+      question is asked of everything a cut divides, never of one row alone.
+    """
+    ordered = sorted(placed, key=lambda p: p[0].bbox.x0)
+    return any(ca != cb and b.bbox.x0 - a.bbox.x1 < 0.6 * size
+               for (a, ca), (b, cb) in zip(ordered, ordered[1:]))

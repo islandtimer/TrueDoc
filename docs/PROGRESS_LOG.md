@@ -149,16 +149,114 @@ cell above, so a reader tied a new section's heading to escape of liquid. 63 she
 out**; exclusions severed from their events 51 -> 0; section headings buried in an exclusion 63 -> 12;
 events carrying their Yes/No 93%. Every rule is geometry and typography.
 
+**Where the missing Yes/No answers went, and a column the cut-finder had been voting down** (14 Sept)
+- **The losses sorted by shape before any rule** (`scratchpad/answer_census.py`): most were "no row" - an
+  event named in the table but never opening a row of its own - then "glued" ("Fire and Explosion Yes" in
+  one cell), then "bare".
+- **"No row" was mostly the grader again.** It counted an event as present if its name appeared anywhere in
+  the table, so "Accidental Damage" inside the exclusions of the Accidental Breakage row (91 sheets, 76 of
+  them with the real event answered), "items away" inside the valuables band (12) and "malicious damage"
+  inside the fire exclusion (8) all read as missing events. An event is now held only if it is named in the
+  label column read down the table (`held_events`), which still counts - and fails - a label genuinely split
+  over two rows. A second fault in the same grader flattered us: it accepted an answer word opening *any*
+  later cell, so "Flood |  | Optional Excludes damage..." passed with its answer column blank. The owner
+  confirmed the column is headed "Yes / No / Optional", and `carries_answer` now looks only there. Both are
+  shared helpers the census and the diff call, rather than copies of them.
+- **"Glued" was a column the cut-finder out-voted** (`_refine_segments`). On the ALDI template every "Yes"
+  starts at x=136.9, and all 14 rows with words either side of that x leave a gap there; but the vote was a
+  share of all 35 multi-word rows, 21 of them wrapped exclusion lines lying wholly to its right and unable to
+  vote either way - 14 against a threshold of 21. AAMI's cut vote failed identically (16 against 20.4) and
+  escaped only because its gap was wide enough for a whitespace channel. A second, purely additive look now
+  judges a range by the rows able to judge it. ALDI reads "Fire and Explosion | Yes |" again, and "High value
+  items No and collection" became "High value items and collections | No |".
+- **Then three contents sheets lost their heading, and the cause was an accident being removed.** A sentence
+  above the table ("Any amounts you claim include GST less...") was adopted as the table's first row by
+  `_header_lines_above`. It had been kept out only because a band spanning the table stretched the first
+  column's span across the whole width, so every word read as one column; better cuts gave that column its
+  true width, and the sentence walked across three columns, changing column on word spaces of 2.8pt. A row of
+  headings crosses between columns on the gap between its cells, so a line that crosses on less than 0.6 of
+  the body size is now refused; 19 other sheets gained their headings and none lost one.
+
+**Not one benchmark page moved, and the markdown had changed on 16 of them** (14 Sept)
+The pooled gate for those two rules read tables 844 v 844, multi_column 682 v 682 and long_tiny_text 357 v
+357. Diffing the markdown instead of the scores found 13 table pages and 3 multi-column pages changed, and
+each was read against an image of its page:
+- **7 better:** labels freed from their values ("Pupillary reactions | Relative afferent pupillary defect"),
+  headings split into the columns they head ("Item | Quantity", "Sexe | Âge | Côté | Présentation",
+  "Distortion | Intensity | Actual Parameters"), and a P/R/F1 table given all ten of its columns.
+- **5 neutral:** two index pages and a chart read as tables either way, and two pages that gained one thing
+  and lost another.
+- **3 worse, from two causes.** A court form's address box and the claim box beside it became one table of
+  three columns, every row an address line beside a line of the claim box ("Ikoyl | (including | Malabu Oil
+  & Gas Limited"). And phrases were cut across two cells - "Groups at | Risk", "(thousands | or Os$)" - with
+  "quimicos | e" and "Day 0 and 35 Day | 35 and 42" on the two mixed pages.
+- **One that looked worse and was not.** A dishwasher manual's "de Störung, was tun?" disappeared. The layout
+  model labels the line `layout:page_header`, a running head, removed on every page; the old code had kept
+  the words only by filing them as the table's first row, which the new guard rightly refused.
+
+**What the cuts were, read from the code itself.** `scratchpad/pass2_probe.py` runs `_refine_segments`' own
+source with the second look cut out beside the real function, and prints every cut the second look adds with
+the gap each crossing row leaves there. The phrases crossed on 0.23 to 0.51 of the body size - three of them
+wide enough to count as a vote for a column - while every row the new cuts rightly divided on those pages left 1.09 or more.
+The court form's cut was sound, 2.05 to 4.67 on all four rows it crossed; the fault sat one step earlier.
+Without the second look, the finder saw no table there at all.
+
+**Two rules, each with a test that fails without it** (`tests/test_second_look_cuts.py`):
+- **A cut whose only work is to split phrases is refused.** The first version refused a cut if any one row
+  crossed it on a word space - the 0.6 of the body size that `_header_lines_above` uses to tell a header row
+  from a sentence - and the oracle caught what the benchmark pages could not: 38 answers lost on the sheets
+  tuned on and 13 held out. On the ALDI, Bank of Queensland and Honey templates "Accidental Breakage" ends
+  0.46 of the body size before its "Yes", a tight label on a column the other labels prove: on ALDI the cut
+  divides six label-and-answer segments, five of them across real gaps. So the question is now asked of
+  everything the cut would divide, and the cut is refused only when every segment it divides crosses on a
+  word space. Each benchmark phrase was the one segment its cut divided, every other row already standing
+  apart. One helper answers both questions (`runs_across_columns` in `tables/cells.py`). What it still
+  misses: a sheet where the tight label is the only row the text layer ran together with its answer (Honey's
+  building sheet, one answer), which on the geometry is the same shape as "Groups at | Risk".
+- **The text-layer finder calls something a table only if the first look does too** (`find_aligned_tables`).
+  Nothing there vouches for a table - no ruling, no layout model - and the second look finds a column inside
+  a table, not a table. Where a ruling or the layout model has found the table, the second look still
+  sharpens it.
+- **Result, code against code:** Key Facts Sheets header whole 119 -> 133 tuned on and 22 -> 27 held out, and the Yes/No in its column 1788 -> 1827 of 1885 tuned on and 351 -> 367 of 375 held out; against the patch before the phrase rule, one answer fewer on one tuned-on sheet and nothing else moved. Benchmark tables 844 v 844, multi_column 682 v 682, long_tiny_text 357 v 357, not one page moved; the
+  markdown changed against the committed code on 11 of 481 pages - 7 better, 3 neutral, and a running head the old code had filed into a table.
+
+**A faster instrument, checked before it was trusted.** `ab_pages.py` starts the CLI for every page and so
+reloads the layout model every time: 51 to 76 seconds a page with three subsets sharing the machine. The CLI's
+options default to the dataclass's and it writes the converted string unchanged, and three pages came out
+byte-identical converted both ways, so `bench/tools/ab_pool.py` converts in a pool of worker processes
+instead. Both sides of a gate run on it, never one side per tool. Checked again on the 219 pages the CLI runs
+had also converted: 217 identical, and the 2 that differed were converted by the CLI while the committed code
+was stashed in place for the gate - each is identical to the pool's own reading of the committed code.
+
+**Lessons**
+- **"Not one page moved" counts checks, not the output.** A gate reading zero across 481 pages hid a false
+  table and four phrases cut in two, because the benchmark holds no check on those cells. When a gate reads zero,
+  diff the markdown and read the changed pages against their images before calling the change free.
+- **`pkill -f` kills nothing here.** Git Bash does not see Windows command lines, so four A/B loops "stopped"
+  twice ran on for more than three hours - one since 12:38 - converting pages all through the gate, slowing
+  it to about 7 seconds a page, and writing committed-code pages into folders named for the patch while the
+  stash was applied. Jobs are now stopped by PID through PowerShell and confirmed from the process list,
+  never from a count of output files that held still for less time than one page takes.
+
+**Where the Key Facts Sheets stand:** header whole **34% -> 84% tuned on, 16% -> 84% held out**; the
+Yes/No in its own answer column for 96.9% of prescribed events tuned on and 97.9% held out (94.9% and 93.6%
+for the code before the answer column was cut, by the corrected grader); exclusions severed from their events
+51 -> 0; section headings buried in an exclusion 63 -> 12. Every rule is geometry and typography.
+
 **Next**
-- **The missing 7% of Yes/No answers** - the reason the document exists. Sorted by shape before any rule
-  (answer glued to the label, split into a neighbouring row, event never opening a row, or bare); one
-  shape already seen on the ALDI sheets, "Fire and Explosion Yes" fused into one cell, which predates
-  this week's work.
-- 21 sheets take a sentence from the paragraph *above* the table as their header row; 12 bands remain.
-- The cover page's issuer, ABN and registered office, dropped because the layout model calls the block
-  `layout:page_footer`; `_margin_cleanup` already refuses to call anything longer than two lines a
-  running foot, and that test is not applied to the model's label. Measured both ways before it moves.
-- The ligature text layer that no one notices is lossy.
+- The split label ("Escape" over "of liquid": 33 row pairs on 26 sheets, 3 on 2 benchmark pages), drafted and
+  dry-run against its file, with a test that fails on today's code.
+- The tight label alone on its answers' edge (Honey's building sheet, one answer), drafted and dry-run with two
+  tests: the answer starting within a tenth of a point of an edge three rows in five share, in the document's
+  own words rather than our OCR's - which is what separates it from "Groups at | Risk", whose "Risk" is our
+  OCR's box landing near a column edge. Held back because the oracle measured the corrected rule's whole cost
+  at that one answer, against a constant shared by three modules and a four-part test.
+- `_adopt_ruled_headers` asking the same word-space question through `runs_across_columns`: a Key Facts
+  Sheet's own header cell of more than four words makes its ruled box look headerless, and the sentence above
+  is adopted - the 21 remaining "prose above" sheets, confirmed on Huddle, with the failing test written.
+- The band veto: a band's word ("collections", "Cover") straddles the answer/exclusion boundary, so no cut
+  forms there and "Optional" fuses into the exclusions on 8 contents sheets from at least four insurers.
+- The cover page's issuer, ABN and registered office (`layout:page_footer`); the lossy ligature text layer.
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 
 ---
