@@ -530,6 +530,45 @@ def _band_segments(rows: list[_Row], size: float) -> set[int]:
     return found
 
 
+def _splits_at_shared_edges(rows: list[_Row], bands: set[int], size: float) -> dict[int, list[float]]:
+    """Where a segment runs a label on into its answer across a real gap, at the edge the other rows start a column on.
+
+    CGU's contents sheets set "Actions of the sea" and its "No" 11.5pt apart, and WFI's "Items away from" and its "Yes"
+    9.8pt apart, each answer starting exactly where every other row's answer starts; the text layer runs each pair into
+    one line. Every other row reaches the table with its label and its answer already apart, so no cut is voted between
+    those columns - the second look sees one empty range from the labels to the exclusions, bridged by the label lines
+    with no answer beside them - and the line stayed whole in the label's column with its answer cell empty. A segment
+    is divided where a word starts on an edge that segments of three other rows start on, after a gap wider than a
+    word space (0.6 of the body size, the phrase guard's measure) and more than three of the segment's own word spaces.
+    The second test is the benchmark's: a census profile set in a fixed-width face spaces its words 0.6 of the body
+    size apart on a character grid, where every word starts where other rows' words start, and the measure alone cut
+    its title and its notes into pieces. A band is never divided.
+    """
+    starts: dict[int, set[int]] = {}
+    for k, r in enumerate(rows):
+        for seg in r.segments:
+            if id(seg) not in bands:
+                starts.setdefault(round(seg.bbox.x0), set()).add(k)
+
+    def shared(x: float, row: int) -> bool:
+        near = set().union(*(starts.get(round(x) + d, set()) for d in (-1, 0, 1)))
+        return len(near - {row}) >= 3
+
+    found: dict[int, list[float]] = {}
+    for k, r in enumerate(rows):
+        for seg in r.segments:
+            if id(seg) in bands:
+                continue
+            ws = sorted(seg.words, key=lambda w: w.bbox.x0)
+            gaps = [b.bbox.x0 - a.bbox.x1 for a, b in zip(ws, ws[1:])]
+            for i, (a, b) in enumerate(zip(ws, ws[1:])):
+                others = sorted(g for j, g in enumerate(gaps) if j != i)
+                space = others[len(others) // 2] if others else 0.3 * size
+                if gaps[i] >= 0.6 * size and gaps[i] > 3.0 * space and shared(b.bbox.x0, k):
+                    found.setdefault(id(seg), []).append((a.bbox.x1 + b.bbox.x0) / 2.0)
+    return found
+
+
 def _refine_segments(rows: list[_Row], size: float, second_look: bool = True) -> tuple[list[_Row], list[float]]:
     """Split segments at narrow word gaps that line up across most rows.
 
@@ -658,13 +697,16 @@ def _refine_segments(rows: list[_Row], size: float, second_look: bool = True) ->
         if agree >= max(3, 0.6 * len(able)):
             cuts.append(c)
     cuts.sort()
-    if not cuts:
+    # Like the second look, it refines a table the first look found and never makes one of its own: on the benchmark,
+    # an address page's lines divided at shared edges read as a table where the finder alone saw none.
+    edge_splits = _splits_at_shared_edges(rows, bands, size) if second_look else {}
+    if not cuts and not edge_splits:
         return rows, []
     out: list[_Row] = []
     for r in rows:
         segs: list[Line] = []
         for seg in r.segments:
-            crossing = [] if id(seg) in bands else [c for c in cuts if seg.bbox.x0 < c < seg.bbox.x1]
+            crossing = [] if id(seg) in bands else [c for c in cuts if seg.bbox.x0 < c < seg.bbox.x1] + edge_splits.get(id(seg), [])
             if not crossing:
                 segs.append(seg)
                 continue

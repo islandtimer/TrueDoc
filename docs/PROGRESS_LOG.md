@@ -313,28 +313,54 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   0 of 481 pages. Tests: lower case and title case, each failing on the code before it; a full row under an answer with
   no slash, and the entry under a web address ending on a slash, each still an entry of its own; suite 535.
 
+**A label run together with its answer is divided where the other rows start their answers** (15 Sept, after 3ea5e99)
+- **The shape** (`_splits_at_shared_edges`, from `_refine_segments`). CGU's contents sheets set "Actions of the sea"
+  and its "No" 11.5pt apart, and WFI's set "Items away from" and its "Yes" 9.8pt apart; in both the answer starts
+  exactly where every other row's answer starts, and the text layer runs the pair into one line. Every other row reaches
+  the table with its label and its answer already apart, so no cut was voted between those columns: the second look saw
+  one empty range from the labels to the exclusions, bridged by the label lines with no answer beside them, and skipped
+  it, because the first look's cut at the exclusions already lay inside it. Now a segment is divided where a word starts
+  on an edge that segments of three other rows start on, after a gap wider than a word space (0.6 of the body size, the
+  phrase guard's measure) and more than three of the segment's own word spaces. A band is never divided, and like the
+  second look the rule refines a table the first look found and never makes one of its own.
+- **A first test that could not fail.** Built on a sheet of seven events, it passed on the code before the rule: with
+  too few wrapped lines of exclusions, enough rows voted for the answers' cut and the first look drew it. Three more
+  wrapped lines, as a real sheet has, made the vote fall short; the test then failed without the rule and passed with
+  it, as the two sheets it was drawn from do.
+- **In memory, before any file changed (the first version):** CGU's two contents sheets and WFI's two each gain their
+  answer; an HCKFS sheet, a landlord sheet, AAMI's and ALDI's contents sheets, WFI's two building sheets and Honey's
+  landlord contents sheet do not move. Honey's landlord building sheet keeps its "Accidental Breakage Yes": there the
+  gap is 4.7pt, 0.47 of the body size, under the word-space measure.
+- **The first version, measured on the benchmark, changed 12 pages, and reading them caught three faults.** Tables
+  went from 848 to 850 on one page, but an address page's lines became a table where the finder saw none, a census
+  profile set in a fixed-width face - whose word space is itself 0.6 of the body size, every word on a character grid
+  shared with the rows around it - had its title and its notes cut into pieces, and a fund table's heading read "Fund
+  Type 5". So the rule now waits for the first look's table, and wants the gap wider than three of the line's own word
+  spaces. Converted again, 6 of the 12 pages return to 3ea5e99 byte for byte, among them three the first version had
+  made better by their markdown - the page behind the two checks, its values divided into their columns, a column of
+  p-values and a header of two measures - which the ratio no longer reaches. Of the 6 still changed, read against
+  their images, 4 are better ("Porcine (4)" and "Full thickness" in their own columns, "Driving at night on lonely
+  highway | 90", a header's "Distribution | Source", a soil table's header and its Silt row), 1 is a false table on an
+  index page rearranged with no word gained or lost, and 1 is slightly worse: on that index's next page a hyphenated
+  word is left in two parts. A test built on the census geometry fails on the first version.
+- **Result, code against code, on the version committed:** Key Facts Sheets the Yes/No in its own column 1880 -> 1884 of 1885 tuned on (99.7% -> 99.9%), CGU's two contents sheets and WFI's two, and 373 -> 375 of 375 held out (99.5% -> 100%), both on one held-out contents sheet never looked at; the markdown changed on exactly the 5 sheets that gained, byte for byte as the first version wrote them, and header whole, events in rows, bands and orphan rows are unchanged. The one answer still missing tuned on is Honey's landlord building sheet's. Benchmark tables 848 v 848, multi_column 682 v 682, long_tiny_text 357 v 357, not one score moved; the
+  markdown changed on 6 of 481 pages - the six read against their images above, which the pool wrote byte for byte as they were read. Tests: CGU's and WFI's geometry, each failing on the code before it; a word space
+  before the answers' edge, a gap whose far side starts where no other row starts, and a line whose words stand evenly
+  apart, each left whole; suite 540.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
-its own answer column for 99.7% of prescribed events tuned on and 99.5% held out (94.9% and 93.6% before the
+its own answer column for 99.9% of prescribed events tuned on and 100% held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
 buried inside an exclusion 63 sheets -> 0. Every rule is
 geometry and typography.
 
 **Next**
-- The tight label alone on its answers' edge: Honey's building sheet, and WFI's two contents sheets, where the text
-  layer runs "Items away from Yes" together - three answers, drafted with two tests.
-  On WFI's it is CGU's shape, not a tight one: "Yes" starts on the answers' shared edge (139.1pt), 9.8pt (0.98 of the
-  body size, three and a half word spaces) after "from" (`bench/probes/row_geometry.py`), so CGU's candidate may
-  answer both.
-- CGU's "Actions of the sea No", glued on two contents sheets: the text layer sets "No" 11.5pt (1.2 of the body
-  size, five word spaces - four, as first written here, was wrong) after "sea", at the very x where every other row's
-  "Yes" starts (141.4pt on the July 2025 sheet), yet the two arrive as one line (`bench/probes/row_geometry.py`).
-  Traced (`bench/probes/sea_cut_probe.py`, `bench/probes/place_probe.py`): every other row reaches the table with its
-  label and its answer already apart, and the second look sees one empty range from the labels to the exclusions
-  (84.0 to 193.6pt) - the label lines with no answer beside them vote across the answers' column - and skips it,
-  because the first look's cut at the exclusions' edge already lies inside it. So no cut is ever tried between the
-  labels and the answers, and this row's one segment stays whole in the label's column. The candidate: a segment
-  with a gap wider than a word space, whose far side starts on the edge where the rows around it start a column, is
-  divided there.
+- A label set tight against its answer: Honey's landlord building sheet sets "Accidental Breakage" 4.7pt (0.47 of the
+  body size, 1.7 of its word spaces) before its "Yes", which starts on the answers' shared edge
+  (`bench/probes/row_geometry.py`). The rule for a label run together with its answer wants more than 0.6 of the body
+  size and more than three word spaces, and the census profile showed why the second test stays: its word gaps
+  measure 4.8pt at a body size of 8pt, 0.6 exactly. So this one needs a signal other than the gap - and not the words
+  "Yes" or "No" themselves, which would make it a rule about Key Facts Sheets (D027).
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
