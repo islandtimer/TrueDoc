@@ -238,24 +238,50 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   stash was applied. Jobs are now stopped by PID through PowerShell and confirmed from the process list,
   never from a count of output files that held still for less time than one page takes.
 
-**Where the Key Facts Sheets stand:** header whole **34% -> 84% tuned on, 16% -> 84% held out**; the
-Yes/No in its own answer column for 96.9% of prescribed events tuned on and 97.9% held out (94.9% and 93.6%
-for the code before the answer column was cut, by the corrected grader); exclusions severed from their events
-51 -> 0; section headings buried in an exclusion 63 -> 12. Every rule is geometry and typography.
+**The two rules drafted this morning, measured together** (14 Sept, after 752ffa6)
+- **A sentence above a ruled box is not its heading row** (`_adopt_ruled_headers`, through the same
+  `runs_across_columns`). A Key Facts Sheet's own heading cell of more than four words made its ruled box look
+  headerless, and the sentence printed above the box lines up with two of its column edges, so RACQ's sheets
+  published "Under STEP this policy 2 you | Check set the the maximum |..." - a step heading and a sentence
+  woven together - as the first row of the table, and Huddle's "Under this policy you | choose the | maximum
+  level of cover...". A sentence crosses from one column into the next on a word space, a row of headings on
+  the gap between its cells. Header whole 133 -> 150 of 158 tuned on and 27 -> 31 of 32 held out, no sheet
+  losing its header.
+- **A label that wraps continues its row, whatever the column beside it begins with** (`_label_carries_on` in
+  `_merge_wrapped_rows`). "Escape" over "of liquid" stayed two rows on ANZ's buildings sheet because the
+  exclusions beside the second line open a new sentence ("...from certain items." over "Not covered for the
+  cost of repairing..."). The label column decides now: a lowercase tail of a few words, under a label not
+  closed, on a row that leaves the short value above it empty. Yes/No in its column 1827 -> 1832 tuned on and
+  367 -> 368 held out, no answer lost. It reached six events; the census still finds 34 events on the sheets
+  tuned on whose name never opens a row - 22 of them a title-case label wrapping onto a capital ("Malicious"
+  over "Damage"), which this rule does not accept - and that is the next rule.
+- **The benchmark caught the first version gluing an index.** A back-of-book index read as two columns had
+  "permeability 454, 457, 465" joined to the entry above, and with it the next row, because the rule overrode the
+  merger's own guard that a line carrying a number under a line carrying a number is an entry of its own. The
+  label column keeps that guard now; on the Key Facts Sheets, whose label tails carry no numbers, not one sheet
+  moved for it. A German index still loses an entry the same way: the scan's own text layer reads
+  "Impulsberegnung" as "lmpulsberegnung", and nothing in the geometry says a capital was lost.
+- Tests for both, each failing on the code before it, and one for the index; suite 521. Benchmark, code against
+  code: tables 844 v 844, multi_column 682 v 682, long_tiny_text 357 v 357, not one page moved; the markdown changed on 6 of 481 pages - 4 better (two captions and a title no longer the first row of their tables, and a TV listing's wrapped lines joined), 1 neutral, and 1 worse: a German index read as a table.
+
+**Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
+its own answer column for 97.2% of prescribed events tuned on and 98.1% held out (94.9% and 93.6% before the
+answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
+buried in an exclusion 63 -> 12. Every rule is geometry and typography.
 
 **Next**
-- The split label ("Escape" over "of liquid": 33 row pairs on 26 sheets, 3 on 2 benchmark pages), drafted and
-  dry-run against its file, with a test that fails on today's code.
-- The tight label alone on its answers' edge (Honey's building sheet, one answer), drafted and dry-run with two
-  tests: the answer starting within a tenth of a point of an edge three rows in five share, in the document's
-  own words rather than our OCR's - which is what separates it from "Groups at | Risk", whose "Risk" is our
-  OCR's box landing near a column edge. Held back because the oracle measured the corrected rule's whole cost
-  at that one answer, against a constant shared by three modules and a four-part test.
-- `_adopt_ruled_headers` asking the same word-space question through `runs_across_columns`: a Key Facts
-  Sheet's own header cell of more than four words makes its ruled box look headerless, and the sentence above
-  is adopted - the 21 remaining "prose above" sheets, confirmed on Huddle, with the failing test written.
-- The band veto: a band's word ("collections", "Cover") straddles the answer/exclusion boundary, so no cut
-  forms there and "Optional" fuses into the exclusions on 8 contents sheets from at least four insurers.
+- The band that blocks an answer column: 16 answers tuned on sit fused into the exclusions ("Flood |  | Optional
+  Excludes damage..."), 14 of them behind a band whose one unbroken line runs over the answer/exclusion boundary,
+  so no cut can form. Drafted and dry-run: a band belongs to no column, so it neither refuses a cut nor is divided
+  by one - with tests that fail on today's code.
+- The 34 events that still never open a row of their own: 22 "Malicious" over "Damage", a title-case label
+  wrapping onto a capital while its exclusions carry on in lower case; 10 "Accidental" over "Breakage" beside a
+  two-line answer ("Yes /" over "Optional"); 2 "Fire and" over "Explosion". The first and the last are drafted and
+  dry-run as one rule - the label column carries on by the merger's own test, and a capital tail carries on when
+  every other column the row fills does - with tests that fail on today's code.
+- The tight label alone on its answers' edge: Honey's building sheet, and WFI's two contents sheets, where the
+  text layer runs "Items away from Yes" together - three answers. Drafted with two tests, held back until its
+  worth is more than a stray answer.
 - The cover page's issuer, ABN and registered office (`layout:page_footer`); the lossy ligature text layer.
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 

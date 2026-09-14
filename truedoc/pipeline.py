@@ -19,7 +19,7 @@ from truedoc.render.okf import RenderOptions, render_document
 from truedoc.segment.blocks import build_blocks
 from truedoc.segment.order import assign_reading_order
 from truedoc.tables.aligned import find_aligned_tables
-from truedoc.tables.cells import clean_cell_text
+from truedoc.tables.cells import clean_cell_text, runs_across_columns
 from truedoc.tables.ruled import find_ruled_tables
 
 
@@ -1300,7 +1300,10 @@ def _adopt_ruled_headers(tables: list[Block], lines, size: float) -> tuple[list[
                         outside = True
                         break
                     buckets.setdefault(hit, []).append(w)
-                if not outside and len(buckets) >= 2:
+                # A sentence can line up with two column edges by chance; what it cannot do is cross
+                # from one column into the next on anything wider than a word space.
+                placed = [(w, col) for col, ws in buckets.items() for w in ws]
+                if not outside and len(buckets) >= 2 and not runs_across_columns(placed, size):
                     # Headings start at their column's left edge (or sit centred in it); a
                     # sentence that merely spans the box lines up with one column at most.
                     aligned = sum(1 for c in cols if c.col in buckets and abs(min(w.bbox.x0 for w in buckets[c.col]) - c.bbox.x0) <= 1.2 * size)

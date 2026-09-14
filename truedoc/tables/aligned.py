@@ -1375,6 +1375,41 @@ def _is_band(index: int, grid: list[list[str]], rows: list[_Row],
             and any(solid(grid[k]) for k in range(index + 1, len(grid))))
 
 
+def _label_carries_on(above: list[str], cells: list[str], filled: list[int]) -> bool:
+    """Is this row the second line of the label above it, whatever its other columns begin with?
+
+    Labels and long text wrap; a short value never does. So when a row's first cell reads as the
+    tail of the label above - lower case, a few words, the label above not closed - and the row leaves
+    empty a column where the row above held a short value, it cannot be a new entry: a new entry in a
+    table of labels and values fills its value.
+
+    On the Key Facts Sheets "Escape" over "of liquid", "Alternative" over "accommodation" and
+    "Accidental" over "breakage" each left the Yes/No column empty beneath a "Yes", and each stayed a
+    row of its own, for a different reason in the column beside the label: a new sentence in the
+    exclusions ("...certain items." over "Not covered for the cost..."), or the number guard ("Limited
+    to 20% of..." over "up to 52 weeks."). So the label column decides, because it is the only column
+    whose continuation is unmistakable. Measured before it was written: this exact test finds 33 row
+    pairs on 26 Key Facts Sheets, and 3 pairs on 2 pages of the benchmark's table category.
+    """
+    if not above or not cells or not above[0] or not cells[0]:
+        return False
+    label, tail = above[0].strip(), cells[0].strip()
+    if not tail[:1].islower() or len(tail.split()) > 4 or _ENUMERATED.match(tail) or _BULLET_START.match(tail):
+        return False
+    if label[-1:] in ".?!:;" or tail[-1:] in ".?!:;":
+        return False
+    # A line carrying a number under a line carrying a number is an entry of its own, in the label column as in
+    # any other - the merger's own guard - unless the line above ends on a connector. An index read as two
+    # columns showed why: "permeability 454, 457, 465" under "perfluorocarbon 455, 458, 463, 466, 472-4, 476,
+    # 479" is the next entry, not the rest of that one.
+    if _has_digit(label) and _has_digit(tail) and label[-1:] not in ",;:-–&/":
+        return False
+    emptied = [i for i in range(1, min(len(above), len(cells))) if not cells[i] and above[i]]
+    if not emptied or any(len(above[i].split()) > 3 for i in emptied):
+        return False
+    return len(filled) < sum(1 for c in above if c)
+
+
 def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
                         columns: list[tuple[float, float]] | None = None) -> tuple[list[list[str]], list[_Row]]:
     """Fold continuation lines of a wrapped cell into the row above.
@@ -1483,6 +1518,9 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
                 and not any(_has_digit(prev[i]) and _has_digit(cells[i]) and len(cells[i].split()) <= 4
                             and prev[i].rstrip()[-1:] not in ",;:-–&/" for i in filled))
         )
+        # The second line of a label that wrapped continues its row whatever the other columns say.
+        if tight and not is_continuation and _label_carries_on(prev, cells, filled):
+            is_continuation = True
         if is_continuation:
             for i in filled:
                 prev[i] = _join_lines(prev[i], cells[i])
