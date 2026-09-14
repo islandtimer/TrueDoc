@@ -519,6 +519,14 @@ def _band_segments(rows: list[_Row], size: float) -> set[int]:
             continue
         if any(proper(rows[k], seg) for k in range(i)) and any(proper(rows[k], seg) for k in range(i + 1, len(rows))):
             found.add(id(seg))
+            continue
+        # A band over only some of the columns is told from a wrapped line by the white space around it: a wrapped line
+        # runs on from the line above, a band stands apart from both. ALDI's contents sheets start the band over the
+        # answers, so the rows around it hold one segment under its extent - the answer run together with its
+        # exclusions, the very fault the band was causing - and the test above could never see it.
+        apart = 0 < i < len(rows) - 1 and r.y0 - rows[i - 1].y1 >= 0.3 * size and rows[i + 1].y0 - r.y1 >= 0.3 * size
+        if apart and any(len(rows[k].segments) >= 2 for k in range(i)) and any(len(rows[k].segments) >= 2 for k in range(i + 1, len(rows))):
+            found.add(id(seg))
     return found
 
 
@@ -726,6 +734,7 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
             cells[ci] = (cells[ci] + " " + seg.text).strip() if cells[ci] else seg.text
         grid_rows.append(cells)
 
+    bands = _band_segments(cand.rows, size)
     grid_rows, grid_geom = _merge_wrapped_rows(grid_rows, cand.rows, size, columns)
     grid_rows, grid_geom = _fold_wrapped_heading(grid_rows, grid_geom)
     kept_columns = [c for c in range(n_cols) if any(row[c] for row in grid_rows)]
@@ -803,7 +812,7 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
     # of under whichever column heading it happened to be filed beneath.
     if len(row_geom) == len(grid_rows):
         for ri in range(len(grid_rows)):
-            if not _is_band(ri, grid_rows, row_geom, columns):
+            if not _is_band(ri, grid_rows, row_geom, columns, bands, size):
                 continue
             filled = [c for c, text in enumerate(grid_rows[ri]) if text]
             if len(filled) != 1:
@@ -1355,7 +1364,8 @@ def _label_rowspans(grid: list[list[str]], geom: list[_Row], n_header: int) -> d
     return spans
 
 
-def _spanned_columns(row: _Row, columns: list[tuple[float, float]] | None) -> set[int]:
+def _spanned_columns(row: _Row, columns: list[tuple[float, float]] | None, bands: frozenset | set = frozenset(),
+                     size: float = 10.0) -> set[int]:
     """The columns one piece of this row's text is laid across, if it crosses more than its own.
 
     Measured on the page rather than guessed: an ordinary wrapped continuation begins some 16pt
@@ -1365,15 +1375,20 @@ def _spanned_columns(row: _Row, columns: list[tuple[float, float]] | None) -> se
     if not columns or len(columns) < 2:
         return set()
     for seg in row.segments:
+        # A segment the page already sets out as a band (`_band_segments`) has crossed into a column once it reaches
+        # a little way in: ALDI's contents sheets start the band 6pt inside the answers' column, a tenth of its width.
+        # Any other segment must still cover three tenths of the column, so a label running a little long is not
+        # taken for a band.
+        band = id(seg) in bands
         touched = {k for k, (lo, hi) in enumerate(columns)
-                   if min(seg.bbox.x1, hi) - max(seg.bbox.x0, lo) > 0.3 * (hi - lo)}
+                   if min(seg.bbox.x1, hi) - max(seg.bbox.x0, lo) > (min(0.3 * (hi - lo), 0.4 * size) if band else 0.3 * (hi - lo))}
         if len(touched) >= 2:
             return touched
     return set()
 
 
 def _is_band(index: int, grid: list[list[str]], rows: list[_Row],
-             columns: list[tuple[float, float]] | None) -> bool:
+             columns: list[tuple[float, float]] | None, bands: frozenset | set = frozenset(), size: float = 10.0) -> bool:
     """Is this row a band laid across the table, rather than a title above it?
 
     A band - "Cover for valuables, collections and items away from the insured address" opening a
@@ -1395,7 +1410,7 @@ def _is_band(index: int, grid: list[list[str]], rows: list[_Row],
     "A proper row" is counted only within the columns the text spans, so a neighbouring column of a
     two-column page - the references running down beside a table - cannot vouch for a title.
     """
-    spanned = _spanned_columns(rows[index], columns)
+    spanned = _spanned_columns(rows[index], columns, bands, size)
     if len(spanned) < 2:
         return False
 
@@ -1467,6 +1482,7 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
         return grid, list(rows)
     grid = [list(cells) for cells in grid]
     rows = list(rows)
+    bands = _band_segments(rows, size)
     out: list[list[str]] = [grid[0]]
     out_rows: list[_Row] = [rows[0]]
     took_statistics: set[int] = set()   # rows of `out` that have folded a statistics row in
@@ -1544,7 +1560,7 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
         if any(_BULLET_START.match(cells[i]) for i in filled):
             tight = False
         # A band laid across the table is a row of its own, never the tail of the cell above it.
-        if _is_band(here, grid, rows, columns):
+        if _is_band(here, grid, rows, columns, bands, size):
             tight = False
         is_continuation = tight and (
             # A long line under a heading reads as a wrapped continuation, unless

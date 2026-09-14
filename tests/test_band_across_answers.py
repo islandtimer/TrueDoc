@@ -55,3 +55,23 @@ def test_a_label_run_together_with_its_answer_is_not_a_band():
     after = _event(300, [("Fire", 40, 58)], ("Yes", 140, 156), [("Excludes", 185, 225), ("arson.", 228, 256)])
     cells = _cells(table_from_lines(_sheet(*glued, *after), 10.0, trusted=True))
     assert "Actions of the sea" in cells and "No" in cells, cells
+
+
+def test_a_band_over_only_the_answers_and_exclusions_is_still_a_band():
+    # ALDI's contents sheets start the band over the answers, so the rows around it hold one segment under its extent;
+    # it stands 5pt clear of both neighbours, where a wrapped line runs on from the line above.
+    lines = [_segment(100, ("Theft", 21, 45)), _segment(100, ("Yes", 101, 118)), _segment(100, ("Excludes", 145, 185), ("jewellery.", 188, 232)),
+             _segment(111, ("unless", 145, 175), ("specified.", 178, 222)),
+             _segment(130, ("Escape", 21, 52), ("of", 55, 64), ("liquid", 67, 94)), _segment(130, ("Yes", 101, 118)),
+             _segment(130, ("Excludes", 145, 185), ("leaks.", 188, 214)),
+             _segment(141, ("device", 145, 175), ("which", 178, 204), ("leaked.", 207, 240)),
+             _segment(156, *[(t, x0 + 96, x1 + 96) for t, x0, x1 in BAND]),
+             _segment(171, ("High", 21, 42), ("value", 45, 68)),
+             _segment(171, ("Optional", 101, 138), ("We", 145, 158), ("refer", 161, 181), ("to", 184, 192), ("items.", 195, 220)),
+             _segment(182, ("items", 21, 44), ("and", 47, 64)), _segment(182, ("for", 145, 158), ("loss.", 161, 181)),
+             _segment(200, ("Flood", 21, 45)), _segment(200, ("Optional", 101, 138), ("Excludes", 145, 185), ("walls.", 188, 214)),
+             _segment(211, ("and", 145, 162), ("paths.", 165, 192))]
+    cells = _cells(table_from_lines(lines, 10.0, trusted=True))
+    assert "Optional" in cells, cells
+    assert any(c.startswith("We refer to items.") for c in cells), cells
+    assert "Cover for valuables, collections and items away from the insured address" in cells, cells

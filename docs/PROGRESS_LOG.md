@@ -240,21 +240,60 @@ was stashed in place for the gate - each is identical to the pool's own reading 
 - **Result, code against code:** Key Facts Sheets the Yes/No in its own column 1832 -> 1864 of 1885 tuned on (97.2% -> 98.9%) and 368 -> 371 of 375 held out (98.1% -> 98.9%); events opening a row of their own 1851 -> 1875 and 370 -> 373 - the 22 "Malicious Damage" and 2 "Fire and Explosion" labels - with the other 8 answers the four HCKFS sheets' "Optional" freed from their exclusions; header whole and bands unchanged, and no sheet lost anything. Benchmark tables 844 v 844, multi_column 682 v 682, long_tiny_text 357 v 357, not one page moved; the markdown
   changed on 1 of 481 pages - a milestone table whose two-line row now reads as one ("Substantial Completion of Construction - Operational"), better. Tests for both rules and the guard, each failing without the part it guards; suite 528.
 
+**A band over only some of the columns** (14 Sept, after 12c2137)
+- **White space tells a band from a wrapped line** (`_band_segments`). ALDI's, Bank of Queensland's and Honey's
+  household contents sheets start the band over the answers, or in the gutter after them, so the rows around it hold
+  one segment under its extent - the answer run together with its exclusions, the very fault the band was causing -
+  and the test by position could never see it. A wrapped line runs on from the line above; a band stands apart from
+  both neighbours (4.7pt and more on these sheets), so a single run of text set apart above and below, with rows of
+  the table on both sides, is taken for a band too.
+- **On the finished grid a known band crosses into a column once it reaches 0.4 of the body size into it**
+  (`_spanned_columns`, `_is_band`). The 30% of a column's width that any other segment must cover still stands, so a
+  label running a little long is not taken for a band; ALDI's band reaches 6pt into the answers' column, a tenth of it.
+- **A first look** (`bench/tools/kfs_quick.py`): each of the three sheets from 10 answers to 12, and the band its own row
+  again on ALDI's and Honey's; still folded into the exclusions on Bank of Queensland's, which starts it in the gutter
+  7.5pt before the exclusions' own text. A refinement for that is drafted and checked in memory against a test of its
+  geometry. The two control sheets did not move.
+- **And a fault the rule was never pointed at.** Nine landlord sheets from six insurers (Allianz, Australian Unity
+  and Guild two each; Kogan, TIO and Westpac one each) had the band glued to the end of the exclusions above it
+  ("...a direct result of an insured event. Cover for valuables, collections and items away from the insured
+  address"); on every one it is now a row of its own across the table. None of their answers moved, because none had
+  been lost, so only the grader's band count shows it - and `bench/tools/kfs_three.py` now names a sheet whose band
+  changes, as it already did one whose header or answers change.
+- **Which half did what** (`bench/probes/band_halves.py`, each half cut in memory in turn). On the nine landlord
+  sheets the crossing alone frees the band: it was already known for a band, and reached too little into a column to
+  count as crossing it. On ALDI's and Honey's the white-space test frees the two answers and the crossing gives the
+  band its row.
+- **Result, code against code:** Key Facts Sheets the Yes/No in its own column 1864 -> 1870 of 1885 tuned on (98.9% -> 99.2%), two more on each of the three sheets; a band glued to the exclusions above it on 12 sheets -> 1, Bank of Queensland's; header whole and events in rows unchanged, and nothing in the hidden fifth moved (371 of 375). Benchmark tables 844 -> 848, multi_column 682 v 682, long_tiny_text 357 v 357; the markdown changed on 2 of 481 pages,
+  both read against their images. A conference paper's table now carries "STEP Participants" as the black band the
+  page draws across it, where it had been a label over eight empty cells - better. A Wiley earnings table carries
+  "Reported EPS" across its columns the same way - no worse - and that page's four new checks are not the band's
+  doing: they are the four that name a dollar amount, which the pipe table wrote as `\$448` (D024) where the check
+  compares `$448` exactly, and the table, set as HTML for its band, writes `$448`. The same escape costs six more
+  checks on two other pages (`bench/probes/dollar_cells.py`). A test built on ALDI's geometry, failing on the code
+  before it; suite 529.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
-its own answer column for 98.9% of prescribed events tuned on and 98.9% held out (94.9% and 93.6% before the
-answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0. Every rule is
+its own answer column for 99.2% of prescribed events tuned on and 98.9% held out (94.9% and 93.6% before the
+answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
+buried inside an exclusion 63 sheets -> 1. Every rule is
 geometry and typography.
 
 **Next**
-- The band over only some of the columns (ALDI's, Bank of Queensland's and Honey's household contents sheets): the
-  white-space test for a band, drafted with a test that fails on today's code, and a crossing on the finished grid
-  measured in points for a segment already known to be a band, rather than in a share of the column's width.
+- The band that starts in the gutter (Bank of Queensland's household contents): a known band spans the column to its
+  left when it starts at least 0.4 of the body size before that column's own text, measured from the median start of
+  the column's other segments. Drafted with a test that fails on today's code, and checked in memory.
 - A two-line answer ("Yes /" over "Optional") beside "Accidental" over "Breakage": the answer column carries on
   across its slash while the exclusions open a paragraph for each answer ("Yes - ..." over "Optional - ...").
 - The tight label alone on its answers' edge: Honey's building sheet, and WFI's two contents sheets, where the text
-  layer runs "Items away from Yes" together - three answers, drafted with two tests. CGU's "Actions of the sea No"
-  is still glued on two contents sheets: no second-look cut there divides a segment on a word space, so it is not
-  the tight label's case, and its cause is not yet traced.
+  layer runs "Items away from Yes" together - three answers, drafted with two tests.
+- CGU's "Actions of the sea No", glued on two contents sheets: the text layer sets "No" 11.5pt (1.2 of the body
+  size) after "sea", at the very x where every other row's "Yes" starts (141.4pt on the July 2025 sheet), yet the
+  two arrive as one line (`bench/probes/row_geometry.py`). Not the tight label's case; next is why that line was
+  not broken at a gap four times a word space.
+- Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
+  the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
+  question about D024 rather than a table rule.
 - The cover page's issuer, ABN and registered office (`layout:page_footer`); the lossy ligature text layer.
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 
