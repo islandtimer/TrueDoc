@@ -542,12 +542,16 @@ def _splits_at_shared_edges(rows: list[_Row], bands: set[int], size: float) -> d
     word space (0.6 of the body size, the phrase guard's measure) and more than three of the segment's own word spaces.
     The second test is the benchmark's: a census profile set in a fixed-width face spaces its words 0.6 of the body
     size apart on a character grid, where every word starts where other rows' words start, and the measure alone cut
-    its title and its notes into pieces. A band is never divided.
+    its title and its notes into pieces. A start counts toward an edge only where its row holds something to its left:
+    the wrapped lines of a list item start on the list's hanging indent with nothing beside them, and on Bank of
+    Melbourne's building modifications table that indent cut "you were living in the" off its bullet and filed it
+    under "How much we will pay". A band is never divided.
     """
     starts: dict[int, set[int]] = {}
     for k, r in enumerate(rows):
-        for seg in r.segments:
-            if id(seg) not in bands:
+        segs = [seg for seg in r.segments if id(seg) not in bands]
+        for seg in segs:
+            if any(o.bbox.x1 < seg.bbox.x0 for o in segs if o is not seg):
                 starts.setdefault(round(seg.bbox.x0), set()).add(k)
 
     def shared(x: float, row: int) -> bool:

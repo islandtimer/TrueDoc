@@ -348,6 +348,29 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   before the answers' edge, a gap whose far side starts where no other row starts, and a line whose words stand evenly
   apart, each left whole; suite 540.
 
+**A list's hanging indent is no column edge: two insurance pages the run-together rule broke** (15 Sept, after e32e431)
+- **How it was found.** Re-scoring the insurance set as a baseline for the next rule gave 197 of 229, one fewer than
+  the 198 of 13 September. Named check by check (`bench/tools/insurance_diff.py`), that was 3 lost and 2 won, on two
+  pages - and both pages read worse. Bank of Melbourne's building modifications table had "you were living in the" cut
+  off its bullet and filed under "How much we will pay" ("We will pay up to $10,000. you were living in the"); Direct
+  Insurance's covered and not-covered lists were shredded row by row, the exclusion "Any buildings at your insured
+  address rented to short-term tenants for money, reward or other consideration" spread over three rows between lines
+  of the other column. On that page the count had gone up, from 7 checks to 8.
+- **Which commit.** Both pages were converted at each of the twelve commits since 13 September, each from a git worktree
+  of its own under the ignored `bench/out`: both read right through 3ea5e99 and broke at e32e431, the run-together label
+  rule. That rule was measured on the Key Facts Sheets and the benchmark, and not on the insurance set.
+- **The cause** (`bench/probes/cut_probe.py`). The wrapped lines of a list item start on the list's hanging indent with
+  nothing beside them, and the rule counted those starts as a column edge: on Bank of Melbourne's page four lines start
+  at x 68.0, so "• you were living in the" and "• we receive" were each divided at 64.7, between the bullet and its
+  text. Now a start counts toward an edge only where its row holds something to its left - CGU's and WFI's answers
+  have their labels beside them; a list's wrapped lines do not.
+- **In memory, before any file changed:** Bank of Melbourne's page from 8 checks of 10 to 10, its condition whole again;
+  Direct Insurance's exclusion whole again, at 8 of 10; CGU's and WFI's contents sheets still 13 answers of 13.
+- **Result, code against code:** the insurance set 199 of 229, against 197 on e32e431 and 198 on 13 September: Bank of Melbourne's page back to 10 checks of 10, word for word as on 13 September; Direct Insurance's exclusions whole again, its crosses in a column of their own, one table check traded for another. Of the 25 pages, 23 convert byte for byte as on 13 September; the other two, both Direct Insurance's, were read against their images - page 13 no worse, its crosses beside whole exclusions, and page 28 better, its theft cover and its police-report note in one cell where 13 September paired them across the wrong rows. Key Facts Sheets not one sheet's markdown changed from e32e431, byte for byte on all 190 - CGU's two contents sheets and WFI's two keep their answers (1884 of 1885 tuned on) and the held-out sheet keeps its last two (375 of 375), so the guard costs the Key Facts Sheets nothing. Benchmark tables 848 v 848, multi_column 682 v 682, long_tiny_text 357 v 357, headers_footers 739 v 739, not one score moved; the
+  markdown changed on 1 of 747 pages against e32e431, read against its image: a soil table whose sub-labels (Sand, Silt, Clay; Ca, Mg, Na, K) sit indented under their label, which e32e431 had given a column of their own and which now sit in the label column as they did at 3ea5e99, its header split over two rows again and Silt's value still carrying Clay's, as before - no worse than 3ea5e99, where e32e431 alone had it better. Against 3ea5e99 the two commits together change the same 6 pages as e32e431 did: 3 better, 2 neutral, 1 slightly worse. A test built on Bank of Melbourne's table, failing on e32e431; suite 541.
+- **What changes in the loop:** a table rule is now scored on the insurance set, check by check against the commit
+  before it, as well as on the Key Facts Sheets and the benchmark, and a page whose count rises is read like any other.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for 99.9% of prescribed events tuned on and 100% held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings

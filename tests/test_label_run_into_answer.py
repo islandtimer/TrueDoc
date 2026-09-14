@@ -93,3 +93,27 @@ def test_a_line_whose_words_stand_evenly_apart_is_not_divided_at_an_edge():
     middle = [_segment(400, ("All", 50, 68), ("rows", 74, 98), ("of", 104, 116), ("the", 122, 135), ("table", 141, 171))]
     rows = _rows(table_from_lines(_sheet(middle), 10.0, trusted=True))
     assert any(r[0] == "All rows of the table" for r in rows), rows
+
+
+def test_a_list_items_hanging_indent_is_not_a_column_edge():
+    # Bank of Melbourne's building modifications table sets its condition as bullets, and the wrapped lines of each item
+    # start on the list's hanging indent with nothing beside them. Counted as an edge, the indent cut "you were living in
+    # the" off its bullet and filed it under "How much we will pay"; only a start with something to its left counts.
+    lines = [_segment(121, ("When", 45, 68), ("we", 70, 82), ("pay", 83, 97)),
+             _segment(121, ("How", 157, 174), ("much", 176, 198), ("we", 199, 211), ("will", 213, 227), ("pay", 228, 242)),
+             _segment(121, ("What's", 268, 295), ("covered?", 297, 332)),
+             _segment(139, ("We", 45, 57), ("will", 59, 71), ("pay", 73, 85), ("this", 87, 100), ("benefit", 102, 127)),
+             _segment(139, ("We", 157, 169), ("will", 170, 182), ("pay", 184, 197), ("up", 199, 208), ("to", 210, 217), ("$10,000.", 219, 249)),
+             _segment(139, ("Modifications", 268, 316), ("to", 317, 325), ("make", 326, 346), ("your", 348, 364)),
+             _segment(151, ("when:", 45, 67)), _segment(151, ("home", 268, 289), ("building", 291, 320), ("accessible", 321, 357)),
+             _segment(163, ("•", 57, 61), ("you", 68, 81), ("were", 83, 100), ("living", 102, 121), ("in", 123, 129), ("the", 131, 143)),
+             _segment(163, ("for", 268, 278), ("your", 280, 296), ("disability.", 298, 330)),
+             _segment(175, ("buildings", 68, 100), ("when", 102, 122), ("the", 124, 135)),
+             _segment(187, ("insured", 68, 94), ("event", 96, 116), ("took", 118, 133)),
+             _segment(199, ("place,", 68, 88), ("and", 90, 104)),
+             _segment(211, ("•", 57, 61), ("we", 68, 79), ("receive", 80, 106)),
+             _segment(223, ("confirmation", 68, 114), ("of", 116, 123)),
+             _segment(235, ("your", 68, 84), ("paraplegia.", 86, 128))]
+    rows = _rows(table_from_lines(lines, 9.0, trusted=True))
+    assert not any(c.startswith("you were living") for r in rows for c in r[1:]), rows
+    assert any("you were living in the" in r[0] for r in rows), rows
