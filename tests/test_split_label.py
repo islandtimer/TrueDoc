@@ -65,3 +65,67 @@ def test_a_number_under_a_number_is_the_next_entry():
              _segment(136, ("quantum", 260, 297), ("dots", 300, 318), ("458", 321, 336))]
     rows = _rows(table_from_lines(lines, 10.0, trusted=True))
     assert any(r[0] == "permeability 454, 457, 465" for r in rows), rows
+
+
+def _event(y, label, answer, exclusion):
+    """A label, its answer (or none) and its exclusions, each a segment of (text, x0, x1) words."""
+    lines = [_segment(y, *label), _segment(y, *exclusion)]
+    return lines + ([_segment(y, answer)] if answer else [])
+
+
+def _malicious(second):
+    return (_event(100, [("Flood", 40, 66)], ("Optional", 140, 178), [("Excludes", 200, 240), ("walls.", 243, 270)])
+            + _event(130, [("Malicious", 40, 84)], ("Yes", 140, 156),
+                     [("Excludes", 200, 240), ("loss", 243, 262), ("caused", 265, 297), ("by", 300, 310), ("you,", 313, 332), ("your", 335, 355)])
+            + second
+            + _event(172, [("Storm", 40, 68)], ("Yes", 140, 156), [("Excludes", 200, 240), ("rain.", 243, 266)]))
+
+
+def test_a_title_case_label_carries_on_when_its_other_columns_do():
+    # "Damage" starts with a capital, but its exclusions carry on in lower case and its Yes/No sits empty.
+    second = _event(142, [("Damage", 40, 76)], None, [("tenant", 200, 229), ("or", 232, 242), ("visitors.", 245, 285)])
+    rows = _rows(table_from_lines(_malicious(second), 10.0, trusted=True))
+    assert any(r[0] == "Malicious Damage" for r in rows), rows
+
+
+def test_a_title_case_row_that_opens_its_own_sentence_is_a_new_entry():
+    second = _event(142, [("Impacts", 40, 76)], None, [("Excludes", 200, 240), ("lopping.", 243, 280)])
+    rows = _rows(table_from_lines(_malicious(second), 10.0, trusted=True))
+    assert any(r[0] == "Impacts" for r in rows), rows
+
+
+def test_a_label_ending_on_a_connector_carries_on_whatever_follows():
+    lines = (_event(100, [("Flood", 40, 66)], ("Optional", 140, 178), [("Excludes", 200, 240), ("walls.", 243, 270)])
+             + _event(130, [("Fire", 40, 58), ("and", 61, 77)], ("Yes", 140, 156),
+                      [("Covered", 200, 236), ("as", 239, 249), ("separate", 252, 290), ("events.", 293, 326)])
+             + _event(142, [("Explosion", 40, 84)], None, [("Fire", 200, 218), ("-", 221, 225), ("not", 228, 243), ("covered.", 246, 284)])
+             + _event(172, [("Storm", 40, 68)], ("Yes", 140, 156), [("Excludes", 200, 240), ("rain.", 243, 266)]))
+    rows = _rows(table_from_lines(lines, 10.0, trusted=True))
+    assert any(r[0] == "Fire and Explosion" for r in rows), rows
+
+
+def test_a_capital_line_carrying_a_number_is_not_the_rest_of_the_label():
+    # Two boxes read side by side: "SA SOLDIER" over "Private Bag X158" is the next line of an address, though the
+    # column beside it carries on after a colon and a short value sits empty above.
+    lines = [_segment(100, ("STREET", 40, 76), ("ADDRESS", 79, 124)), _segment(100, ("Translation", 200, 250)),
+             _segment(100, ("Directorate", 300, 350)),
+             _segment(130, ("SA", 40, 52), ("SOLDIER", 55, 98)), _segment(130, ("Consultant:", 200, 252)),
+             _segment(130, ("Language", 300, 342), ("Services", 345, 385)),
+             _segment(142, ("Private", 40, 72), ("Bag", 75, 92), ("X158", 95, 118)),
+             _segment(142, ("Editor:", 200, 232), ("Ms", 235, 247), ("Pienaar", 250, 290)),
+             _segment(172, ("PRETORIA", 40, 88)), _segment(172, ("Distribution:", 200, 258)),
+             _segment(172, ("Mr", 300, 312), ("Tshabalala", 315, 365))]
+    rows = _rows(table_from_lines(lines, 10.0, trusted=True))
+    assert any(r[0] == "Private Bag X158" for r in rows), rows
+
+
+def test_a_line_with_a_time_does_not_finish_a_label_ending_on_a_connector():
+    # A TV listing read as a grid: "A Night To" ends on a connector, but "Remember (S). 3.40" carries a time.
+    lines = [_segment(100, ("12.05", 40, 62), ("Vera", 65, 85)), _segment(100, ("Strictly", 200, 236)),
+             _segment(100, ("11.35", 300, 322), ("News", 325, 347)),
+             _segment(130, ("A", 40, 46), ("Night", 49, 72), ("To", 75, 86)), _segment(130, ("Come", 200, 224), ("Dancing", 227, 263)),
+             _segment(130, ("formulated", 300, 348), ("his", 351, 364)),
+             _segment(142, ("Remember", 40, 84), ("(S).", 87, 103), ("3.40", 106, 124)), _segment(142, ("Tess", 200, 222), ("Daly", 225, 247)),
+             _segment(172, ("Road", 40, 62), ("Trip", 65, 83)), _segment(172, ("Radio", 200, 226)), _segment(172, ("Weather", 300, 340))]
+    rows = _rows(table_from_lines(lines, 10.0, trusted=True))
+    assert any(r[0].startswith("Remember") for r in rows), rows

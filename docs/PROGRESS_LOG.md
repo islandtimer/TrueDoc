@@ -264,24 +264,56 @@ was stashed in place for the gate - each is identical to the pool's own reading 
 - Tests for both, each failing on the code before it, and one for the index; suite 521. Benchmark, code against
   code: tables 844 v 844, multi_column 682 v 682, long_tiny_text 357 v 357, not one page moved; the markdown changed on 6 of 481 pages - 4 better (two captions and a title no longer the first row of their tables, and a TV listing's wrapped lines joined), 1 neutral, and 1 worse: a German index read as a table.
 
+**A band belongs to no column, and a title-case label carries on** (14 Sept, after 639a1ab)
+- **A band neither refuses a cut nor is divided by one** (`_band_segments`, in `_refine_segments`). On four
+  contents sheets "Cover for valuables, collections and items away from the insured address" ran as one unbroken
+  line over the gap between the answers and the exclusions. The cut-finder refuses a cut that a segment crosses
+  without a gap of its own - right for a title or a group heading - so "Optional" was published at the head of the
+  exclusions ("Flood |  | Optional Excludes damage to the liner..."). A band is told from a title by where it sits,
+  as `_is_band` tells it on the finished grid: rows of the table above and below it, each with two or more
+  segments under its extent. A label run together with its answer ("Actions of the sea No") is one segment too, but
+  with a real gap in it, so it stays a row to be divided.
+- **The label column carries on by the merger's own test, and a capital tail carries on when its row's other
+  columns do** (`_label_carries_on`). "Malicious" over "Damage" - 22 of the 34 events that never opened a row -
+  stayed two rows because "Damage" starts with a capital, though its exclusions carry on in lower case ("...caused
+  by you, your" over "tenant or their visitors") and its Yes/No sits empty. And "Fire and" over "Explosion": a
+  label ending on a connector goes on whatever case follows, which `_continues` already said.
+- **The benchmark caught both parts reaching too far.** A TV listing's "Michael Flatley: A Night To" took "Remember
+  (S). 3.40 Road" as its second line, and the page's table fell apart into loose lines; an address box's "SA
+  SOLDIER" took "Private Bag X158", and three boxes became one table pairing names with the wrong roles
+  ("Distribution: Deputy Editor: Mr Lufuno Netshirembe"). Neither tail read as words. A second line that does not
+  start in lower case must, so one carrying a digit - a time, a box number, a count - stays an entry of its own. Both
+  pages returned to the committed reading, and the milestone table the connector part repaired ("Substantial
+  Completion of" over "Construction - Operational") kept its repair. Not one Key Facts Sheet
+  moved for the guard.
+- **A first look before the whole oracle**, on the sheets each rule was written for (`scratchpad/kfs_quick.py`):
+  the four HCKFS sheets from 8 answers to 11 each, every "Malicious Damage" family one more, the sheet with "Fire
+  and Explosion" two more - and ALDI's, Bank of Queensland's and Honey's household contents sheets not moved.
+- **What the band rule does not reach yet.** Those three sheets start the band over the answers, so the rows around
+  it hold one segment under its extent - the answer run together with its exclusions, the fault itself - and the
+  band test cannot see it. White space tells it from a wrapped line (it stands 4.7pt or more clear of both neighbours, where
+  wrapped lines touch), and a refinement drafted on that frees the answers; but on the finished grid
+  `_spanned_columns` wants 30% of a column's width before a segment counts as crossing into it, and this band
+  reaches 6pt into the answers' column, so it is still folded into the exclusions above. Both halves are a cycle of
+  their own.
+- **Result, code against code:** Key Facts Sheets the Yes/No in its own column 1832 -> 1864 of 1885 tuned on (97.2% -> 98.9%) and 368 -> 371 of 375 held out (98.1% -> 98.9%); events opening a row of their own 1851 -> 1875 and 370 -> 373 - the 22 "Malicious Damage" and 2 "Fire and Explosion" labels - with the other 8 answers the four HCKFS sheets' "Optional" freed from their exclusions; header whole and bands unchanged, and no sheet lost anything. Benchmark tables 844 v 844, multi_column 682 v 682, long_tiny_text 357 v 357, not one page moved; the markdown
+  changed on 1 of 481 pages - a milestone table whose two-line row now reads as one ("Substantial Completion of Construction - Operational"), better. Tests for both rules and the guard, each failing without the part it guards; suite 528.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
-its own answer column for 97.2% of prescribed events tuned on and 98.1% held out (94.9% and 93.6% before the
-answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
-buried in an exclusion 63 -> 12. Every rule is geometry and typography.
+its own answer column for 98.9% of prescribed events tuned on and 98.9% held out (94.9% and 93.6% before the
+answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0. Every rule is
+geometry and typography.
 
 **Next**
-- The band that blocks an answer column: 16 answers tuned on sit fused into the exclusions ("Flood |  | Optional
-  Excludes damage..."), 14 of them behind a band whose one unbroken line runs over the answer/exclusion boundary,
-  so no cut can form. Drafted and dry-run: a band belongs to no column, so it neither refuses a cut nor is divided
-  by one - with tests that fail on today's code.
-- The 34 events that still never open a row of their own: 22 "Malicious" over "Damage", a title-case label
-  wrapping onto a capital while its exclusions carry on in lower case; 10 "Accidental" over "Breakage" beside a
-  two-line answer ("Yes /" over "Optional"); 2 "Fire and" over "Explosion". The first and the last are drafted and
-  dry-run as one rule - the label column carries on by the merger's own test, and a capital tail carries on when
-  every other column the row fills does - with tests that fail on today's code.
-- The tight label alone on its answers' edge: Honey's building sheet, and WFI's two contents sheets, where the
-  text layer runs "Items away from Yes" together - three answers. Drafted with two tests, held back until its
-  worth is more than a stray answer.
+- The band over only some of the columns (ALDI's, Bank of Queensland's and Honey's household contents sheets): the
+  white-space test for a band, drafted with a test that fails on today's code, and a crossing on the finished grid
+  measured in points for a segment already known to be a band, rather than in a share of the column's width.
+- A two-line answer ("Yes /" over "Optional") beside "Accidental" over "Breakage": the answer column carries on
+  across its slash while the exclusions open a paragraph for each answer ("Yes - ..." over "Optional - ...").
+- The tight label alone on its answers' edge: Honey's building sheet, and WFI's two contents sheets, where the text
+  layer runs "Items away from Yes" together - three answers, drafted with two tests. CGU's "Actions of the sea No"
+  is still glued on two contents sheets: no second-look cut there divides a segment on a word space, so it is not
+  the tight label's case, and its cause is not yet traced.
 - The cover page's issuer, ABN and registered office (`layout:page_footer`); the lossy ligature text layer.
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 

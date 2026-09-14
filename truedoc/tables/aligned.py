@@ -497,6 +497,31 @@ def _structural_rows(rows: list[_Row]) -> list[_Row]:
     return keep if len(keep) >= 2 else rows
 
 
+def _band_segments(rows: list[_Row], size: float) -> set[int]:
+    """The segments laid across a table as bands, by id - found before there are any columns.
+
+    The test `_is_band` makes on the finished grid, made on segments instead: a row that is one run of text,
+    its words no further apart than word spaces, with rows of the table both above and below it holding at
+    least two segments under its extent. A title stands above the grid and a footnote below it; a wrapped line
+    of one column has only that column's segment over it; and a label run together with its answer ("Actions
+    of the sea No") has a gap in it, so it stays a row to be divided.
+    """
+    def proper(row: _Row, seg: Line) -> bool:
+        return sum(1 for s in row.segments if s.bbox.x1 > seg.bbox.x0 and s.bbox.x0 < seg.bbox.x1) >= 2
+
+    found: set[int] = set()
+    for i, r in enumerate(rows):
+        if len(r.segments) != 1 or len(r.segments[0].words) < 2:
+            continue
+        seg = r.segments[0]
+        ws = sorted(seg.words, key=lambda w: w.bbox.x0)
+        if any(b.bbox.x0 - a.bbox.x1 >= 0.4 * size for a, b in zip(ws, ws[1:])):
+            continue
+        if any(proper(rows[k], seg) for k in range(i)) and any(proper(rows[k], seg) for k in range(i + 1, len(rows))):
+            found.add(id(seg))
+    return found
+
+
 def _refine_segments(rows: list[_Row], size: float, second_look: bool = True) -> tuple[list[_Row], list[float]]:
     """Split segments at narrow word gaps that line up across most rows.
 
@@ -523,8 +548,13 @@ def _refine_segments(rows: list[_Row], size: float, second_look: bool = True) ->
     if rows_with_words < 3 or not spans:
         return rows, []
     need = max(3, 0.6 * rows_with_words)
-    all_words = [w for r in rows for seg in r.segments for w in seg.words]
-    all_segments = [seg for r in rows for seg in r.segments]
+    # A band laid across the table ("Cover for valuables, collections and items away from the insured
+    # address") belongs to no column, so it neither refuses a boundary nor is divided by one. On seven contents
+    # sheets it ran unbroken over the gap between "Optional" and the exclusions beside it, no cut could form,
+    # and the answer was published at the head of the exclusions (`_band_segments`).
+    bands = _band_segments(rows, size)
+    all_words = [w for r in rows for seg in r.segments if id(seg) not in bands for w in seg.words]
+    all_segments = [seg for r in rows for seg in r.segments if id(seg) not in bands]
     events = sorted([(x0, 1) for x0, _ in spans] + [(x1, -1) for _, x1 in spans], key=lambda e: (e[0], e[1]))
     cuts: list[float] = []
 
@@ -600,7 +630,8 @@ def _refine_segments(rows: list[_Row], size: float, second_look: bool = True) ->
     # earlier version that let that one row refuse the cut cost 38 answers tuned on and 13 held out
     # (`runs_across_columns`). With `second_look=False` the first look stands alone, for the finder that
     # must first ask whether a table is there at all (`find_aligned_tables`).
-    worded = [sorted((w for seg in r.segments for w in seg.words), key=lambda w: w.bbox.x0) for r in rows]
+    worded = [sorted((w for seg in r.segments if id(seg) not in bands for w in seg.words), key=lambda w: w.bbox.x0)
+              for r in rows]
     worded = [ws for ws in worded if len(ws) >= 2]
     for start, x in (ranges(3) if second_look else []):
         if any(start - 1.0 <= c <= x + 1.0 for c in cuts):
@@ -625,7 +656,7 @@ def _refine_segments(rows: list[_Row], size: float, second_look: bool = True) ->
     for r in rows:
         segs: list[Line] = []
         for seg in r.segments:
-            crossing = [c for c in cuts if seg.bbox.x0 < c < seg.bbox.x1]
+            crossing = [] if id(seg) in bands else [c for c in cuts if seg.bbox.x0 < c < seg.bbox.x1]
             if not crossing:
                 segs.append(seg)
                 continue
@@ -1379,9 +1410,9 @@ def _label_carries_on(above: list[str], cells: list[str], filled: list[int]) -> 
     """Is this row the second line of the label above it, whatever its other columns begin with?
 
     Labels and long text wrap; a short value never does. So when a row's first cell reads as the
-    tail of the label above - lower case, a few words, the label above not closed - and the row leaves
-    empty a column where the row above held a short value, it cannot be a new entry: a new entry in a
-    table of labels and values fills its value.
+    tail of the label above - carrying on by the merger's own test, a few words, the label above not
+    closed - and the row leaves empty a column where the row above held a short value, it cannot be a new
+    entry: a new entry in a table of labels and values fills its value.
 
     On the Key Facts Sheets "Escape" over "of liquid", "Alternative" over "accommodation" and
     "Accidental" over "breakage" each left the Yes/No column empty beneath a "Yes", and each stayed a
@@ -1394,10 +1425,26 @@ def _label_carries_on(above: list[str], cells: list[str], filled: list[int]) -> 
     if not above or not cells or not above[0] or not cells[0]:
         return False
     label, tail = above[0].strip(), cells[0].strip()
-    if not tail[:1].islower() or len(tail.split()) > 4 or _ENUMERATED.match(tail) or _BULLET_START.match(tail):
+    if len(tail.split()) > 4 or _ENUMERATED.match(tail) or _BULLET_START.match(tail):
         return False
     if label[-1:] in ".?!:;" or tail[-1:] in ".?!:;":
         return False
+    # A second line that starts in lower case is plainly the rest of the label. One that does not must at least read as
+    # words: a time, a box number or a count on it makes it an entry or a value of its own. On the benchmark "Michael
+    # Flatley: A Night To" over "Remember (S). 3.40 Road" in a TV listing, and "SA SOLDIER" over "Private Bag X158" in
+    # an address box, each taken for the rest of the line above, turned a table into loose lines and three boxes into
+    # one table.
+    if not tail[:1].islower() and _has_digit(tail):
+        return False
+    # The label column carries on by the merger's own test, not by lower case alone: a label ending on a connector
+    # goes on whatever case follows ("Fire and" over "Explosion"). And a label set in title case wraps onto a
+    # capital ("Malicious" over "Damage"); then the capital is the only thing objecting, so the row still carries on
+    # when every other column it fills carries on from the line above ("...caused by you, your" over "tenant or
+    # their visitors"). On the Key Facts Sheets that was 22 of the 34 events that never opened a row of their own.
+    if not _continues(label, tail):
+        others = [i for i in filled if 0 < i < len(above)]
+        if not tail[:1].isupper() or not others or not all(_continues(above[i], cells[i]) for i in others):
+            return False
     # A line carrying a number under a line carrying a number is an entry of its own, in the label column as in
     # any other - the merger's own guard - unless the line above ends on a connector. An index read as two
     # columns showed why: "permeability 454, 457, 465" under "perfluorocarbon 455, 458, 463, 466, 472-4, 476,
