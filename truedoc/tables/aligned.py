@@ -703,6 +703,21 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
     if filled_rows < 2:
         return None
 
+    # A band is a row of the table that belongs to no column, so it is written as one cell across
+    # the whole width. Markdown cannot say that; `render_table` switches a table to HTML as soon as
+    # any cell spans, and that is the honest shape - the heading sits where the page puts it instead
+    # of under whichever column heading it happened to be filed beneath.
+    if len(row_geom) == len(grid_rows):
+        for ri in range(len(grid_rows)):
+            if not _is_band(ri, grid_rows, row_geom, columns):
+                continue
+            filled = [c for c, text in enumerate(grid_rows[ri]) if text]
+            if len(filled) != 1:
+                continue
+            if filled[0] != 0:
+                grid_rows[ri][0], grid_rows[ri][filled[0]] = grid_rows[ri][filled[0]], ""
+            spans[(ri, 0)] = n_cols
+
     rowspans = _label_rowspans(grid_rows, row_geom, n_header) if len(row_geom) == len(grid_rows) else {}
     cells: list[TableCell] = []
     covered = {(r, c + k) for (r, c), span in spans.items() for k in range(1, span)}

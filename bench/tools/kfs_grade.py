@@ -48,6 +48,7 @@ HOLDOUT_IN = 5          # one sheet in five is never reported with the tuned-on 
 
 ROW = re.compile(r"^\|.*\|\s*$")
 SEP = re.compile(r"^\|[\s:|-]+\|\s*$")
+_LEAD = re.compile(r"^[^0-9A-Za-z]+")
 ANSWER = re.compile(r"^\s*(yes|no|optional|yes\s*/\s*no|not covered|covered)\b", re.I)
 BAND = re.compile(r"^\|\s*([^|]{12,96}?)\s*\|(?:\s*\|)+\s*$")
 # The header's three parts, however an insurer breaks its lines across them.
@@ -154,7 +155,12 @@ def grade(md: str) -> dict:
     for event in want:
         for line in body:
             cs = cells_of(line)
-            if cs and event in cs[0].lower():
+            # The label must *open* the cell, not merely appear in it. A band spanning the table -
+            # "Cover for valuables, collections and items away from the insured address" - contains
+            # the name of a prescribed event, and once bands were written into the first column this
+            # matched as that event's row, a row which by its nature carries no answer. That read as
+            # 47 events losing their Yes/No when nothing in the converter had changed for them.
+            if cs and _LEAD.sub("", cs[0]).lower().startswith(event):
                 opens += 1
                 if len(cs) > 1 and any(ANSWER.match(c) for c in cs[1:]):
                     answered += 1
