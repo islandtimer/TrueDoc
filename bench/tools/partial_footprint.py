@@ -10,7 +10,8 @@ usage (repo root): partial_footprint.py <candidate label> <base label> [<base la
 import os
 import sys
 
-AB = os.path.join("bench", "out", "ab")
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+AB = os.path.join(REPO, "bench", "out", "ab")
 
 
 def pages(folder: str) -> set:

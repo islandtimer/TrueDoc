@@ -546,17 +546,33 @@ def _splits_at_shared_edges(rows: list[_Row], bands: set[int], size: float) -> d
     the wrapped lines of a list item start on the list's hanging indent with nothing beside them, and on Bank of
     Melbourne's building modifications table that indent cut "you were living in the" off its bullet and filed it
     under "How much we will pay". A band is never divided.
+
+    A tighter gap is divided too, but only on an edge that is exact and clean. Honey's landlord building sheet sets
+    "Accidental Breakage" 4.7pt before its "Yes", 1.7 of the line's own word spaces, in the same face, size and colour
+    on both sides; the "Yes" starts within a tenth of a point of where all fourteen other answers on the sheet start,
+    and no other row's text runs across that edge. So a gap of at least one and a half of the segment's other word
+    spaces is divided where three other rows start a segment within half a point of the far word and no other row's
+    segment runs across it. A segment with no other word space has nothing to measure the gap against, and is not
+    divided this way.
     """
     starts: dict[int, set[int]] = {}
+    exact: dict[int, list[float]] = {}
     for k, r in enumerate(rows):
         segs = [seg for seg in r.segments if id(seg) not in bands]
         for seg in segs:
             if any(o.bbox.x1 < seg.bbox.x0 for o in segs if o is not seg):
                 starts.setdefault(round(seg.bbox.x0), set()).add(k)
+                exact.setdefault(k, []).append(seg.bbox.x0)
 
     def shared(x: float, row: int) -> bool:
         near = set().union(*(starts.get(round(x) + d, set()) for d in (-1, 0, 1)))
         return len(near - {row}) >= 3
+
+    def clean_edge(x: float, row: int) -> bool:
+        if sum(1 for j, xs in exact.items() if j != row and any(abs(v - x) <= 0.5 for v in xs)) < 3:
+            return False
+        return not any(seg.bbox.x0 < x - 0.5 and seg.bbox.x1 > x + 0.5
+                       for j, r in enumerate(rows) if j != row for seg in r.segments if id(seg) not in bands)
 
     found: dict[int, list[float]] = {}
     for k, r in enumerate(rows):
@@ -568,7 +584,9 @@ def _splits_at_shared_edges(rows: list[_Row], bands: set[int], size: float) -> d
             for i, (a, b) in enumerate(zip(ws, ws[1:])):
                 others = sorted(g for j, g in enumerate(gaps) if j != i)
                 space = others[len(others) // 2] if others else 0.3 * size
-                if gaps[i] >= 0.6 * size and gaps[i] > 3.0 * space and shared(b.bbox.x0, k):
+                wide = gaps[i] >= 0.6 * size and gaps[i] > 3.0 * space and shared(b.bbox.x0, k)
+                tight = bool(others) and gaps[i] >= 1.5 * space and clean_edge(b.bbox.x0, k)
+                if wide or tight:
                     found.setdefault(id(seg), []).append((a.bbox.x1 + b.bbox.x0) / 2.0)
     return found
 

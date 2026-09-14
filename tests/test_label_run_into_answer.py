@@ -4,7 +4,9 @@ CGU's contents sheets set "Actions of the sea" and its "No" 11.5pt apart, and WF
 apart; in both the answer starts exactly where every other row's answer starts, and the text layer runs the pair into
 one line. Every other row reaches the table with its label and answer already apart, so no cut is voted between those
 columns, and the one line stayed whole in the label's column with its answer cell empty. A word space is not divided,
-and nor is a gap whose far side starts where no other row starts.
+and nor is a gap whose far side starts where no other row starts. Honey's landlord building sheet sets "Accidental
+Breakage" only 4.7pt before its "Yes", 1.7 of the line's own word spaces; a gap that tight is divided only where the
+answer starts within half a point of where the other rows' answers start and no other row runs across that edge.
 """
 from truedoc.model import BBox, Line, Word
 from truedoc.tables.aligned import table_from_lines
@@ -117,3 +119,30 @@ def test_a_list_items_hanging_indent_is_not_a_column_edge():
     rows = _rows(table_from_lines(lines, 9.0, trusted=True))
     assert not any(c.startswith("you were living") for r in rows for c in r[1:]), rows
     assert any("you were living in the" in r[0] for r in rows), rows
+
+
+def _tight_label(x, answer_x):
+    """Honey's landlord building row: a 2.8pt word space inside the label and 4.7pt before the answer."""
+    return [_segment(400, ("Accidental", x, x + 46), ("Breakage", x + 48.8, x + 86.3), ("Yes", answer_x, answer_x + 16)),
+            _segment(400, ("We", 194, 209), ("pay", 212, 229), ("for", 232, 244), ("glass.", 247, 272))]
+
+
+def test_a_label_set_tight_against_its_answer_is_divided_on_an_exact_clean_edge():
+    # The "Yes" starts where every other row's answer starts, and no other row's text runs across that edge.
+    rows = _rows(table_from_lines(_sheet(_tight_label(50, 141)), 10.0, trusted=True))
+    assert any(r[0] == "Accidental Breakage" and r[1] == "Yes" for r in rows), rows
+
+
+def test_a_tight_gap_whose_far_side_starts_a_point_short_of_the_edge_is_not_divided():
+    # A point left of where the other answers start, where none of their cells runs across: only exactness refuses it.
+    rows = _rows(table_from_lines(_sheet(_tight_label(49, 140)), 10.0, trusted=True))
+    assert not any(r[0] == "Accidental Breakage" and r[1] == "Yes" for r in rows), rows
+    assert any(r[0] == "Flood" and r[1] == "Yes" for r in rows), rows
+
+
+def test_a_tight_gap_on_an_edge_another_row_runs_across_is_not_divided():
+    note = _segment(440, ("Cover", 50, 78), ("for", 81, 95), ("this", 98, 116), ("event", 119, 145), ("is", 148, 156),
+                    ("limited.", 159, 190))
+    rows = _rows(table_from_lines(_sheet(_tight_label(50, 141) + [note]), 10.0, trusted=True))
+    assert not any(r[0] == "Accidental Breakage" and r[1] == "Yes" for r in rows), rows
+    assert any(r[0] == "Flood" and r[1] == "Yes" for r in rows), rows

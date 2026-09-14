@@ -401,23 +401,43 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   edges, `bench/tools/partial_footprint.py` lists the pages a pool has changed while it still converts, and
   `bench/tools/convert_compare.py` converts named pages with the code on the path against earlier conversions.
 
+**A label set tight against its answer is divided on an exact, clean edge** (15 Sept, after 90dc95a)
+- **The fault** (`_splits_at_shared_edges`, `truedoc/tables/aligned.py`). Honey's landlord building sheet sets
+  "Accidental Breakage" 4.7pt before its "Yes" - 1.7 of the line's own word spaces - and the text layer runs the pair
+  into one line, so the row read "Accidental Breakage Yes" with its answer cell empty: the last prescribed event on a
+  sheet tuned on without its answer in its own column. The run-together rule wants a gap wider than 0.6 of the body
+  size and than three word spaces, and the census profile is why the second test stays. Label and answer share one
+  face, size, colour and set of flags (`bench/probes/label_spans.py`), so typography cannot tell them apart. Geometry
+  can: the "Yes" starts within a tenth of a point of where all fourteen other answers on the sheet start, and no other
+  row's text runs across that edge.
+- **The rule.** A gap of at least one and a half of the segment's other word spaces is also divided where three other
+  rows start a segment within half a point of the far word and no other row's segment runs across it; a segment with
+  no other word space has nothing to measure the gap against and is not divided this way. Each guard has a toy test
+  that fails with that guard removed: an answer a point short of the edge, which only exactness refuses, and a note run
+  across the edge, which only the clean edge refuses. A first control, an answer a point and a half past the edge, was
+  refused by the clean edge as well - the other answers' own cells run across it - and so tested neither.
+- **Measured, code against code.** Key Facts Sheets: Honey's landlord building sheet is the only one of 190 whose
+  markdown changed ("| Accidental Breakage | Yes |"), and the Yes/No now sits in its own column for all 1,885 prescribed
+  events tuned on (from 1,884) and all 375 held out; header whole, events in rows, bands and orphan rows unchanged. The
+  insurance set converts byte for byte as before on all 25 pages. Benchmark not one score moved on any of the seven subsets (tables 848 v 848, multi_column 682 v 682, long_tiny_text 357 v 357, headers_footers 739 v 739, arxiv_math 2594 v 2594, old_scans 110 v 110, old_scans_math 17 v 17); the markdown changed on
+  1 of the 1,327 pages with markdown on both sides (the other 76 of the 1,403 give none without a model, the same on both), read against its image: a study-findings table whose two means had their p-values run into the same cell ("1.28 (0.784) <.001") with the p-value column beside them empty, now each p-value in its own column - better.
+- **Tests:** Honey's geometry, failing on the code before it; an answer a point short of the edge and a tight gap on an
+  edge another row runs across, each left whole; suite 548.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
-its own answer column for 99.9% of prescribed events tuned on and 100% held out (94.9% and 93.6% before the
+its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
 buried inside an exclusion 63 sheets -> 0. Every rule is
 geometry and typography.
 
 **Next**
-- A label set tight against its answer: Honey's landlord building sheet sets "Accidental Breakage" 4.7pt (0.47 of the
-  body size, 1.7 of its word spaces) before its "Yes", which starts on the answers' shared edge
-  (`bench/probes/row_geometry.py`). The rule for a label run together with its answer wants more than 0.6 of the body
-  size and more than three word spaces, and the census profile showed why the second test stays: its word gaps
-  measure 4.8pt at a body size of 8pt, 0.6 exactly. So this one needs a signal other than the gap - and not the words
-  "Yes" or "No" themselves, which would make it a rule about Key Facts Sheets (D027).
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
-- The lossy ligature text layer.
+- The lossy ligature text layer, and the spaces we lose beside it. RAA's landlord PDS page 22, whose own font maps
+  ff and fi to one letter (`ofer`, `fnd`), also comes out as `Ifyou`, `ofthese`, `of21`: the space after an "f" is
+  kept in the file and lost by us, which fits the 11 September suspicion that a ligature split into two characters on
+  one origin reads as a zero gap.
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 
 ---
