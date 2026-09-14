@@ -9,16 +9,28 @@ PDF page
   |                               around scripts, never across column gutters), rulings, images, text-layer quality
   |     ocr/rapid.py              (only if the page has no usable text) RapidOCR -> same evidence shapes; a page read sideways is turned and read again
   v
-  |  2. tables/ruled.py           tables with visible rulings (PyMuPDF finder; one-row boxes too, kept only when
-  |                              pipeline._adopt_ruled_headers finds their column headings just above the box)
-  |     tables/aligned.py         unruled tables from whitespace channels; prose is rejected
+  |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;
+  |                               one-row boxes too, kept only when pipeline._adopt_ruled_headers finds their column
+  |                               headings just above the box - never a sentence, which crosses from one column to the
+  |                               next on a word space (tables/cells.runs_across_columns)
+  |     tables/aligned.py         unruled tables from whitespace channels and voted column cuts; prose is rejected.
+  |                               A second look (_refine_segments) adds a cut judged only by the rows with words on both
+  |                               sides of it, refused when every segment it would divide crosses on a word space; it
+  |                               sharpens a table the first look found and never makes one of its own
+  |                               (find_aligned_tables). A band laid across a table (_band_segments, _is_band) neither
+  |                               votes on a cut nor is divided, and spans the grid. _merge_wrapped_rows folds a wrapped
+  |                               cell into its row, and _label_carries_on carries a label on to its second line when
+  |                               the short value beside it is left empty (a capitalised second line only when the
+  |                               row's other cells carry on too; never one holding a digit unless it starts in lower
+  |                               case)
   v
   |  3. segment/blocks.py         lines -> paragraph blocks (gap, overlap, size, typeface rules)
   |     classify/blocks.py        heuristic kinds: heading, header/footer, page/line numbers, list, caption
   v
   |  4. layout/docling_layout.py  RT-DETR layout model on the rendered page (CPU, ~3 s)
   |     layout/fuse.py            model regions override kinds, split straddling blocks, add figures,
-  |                               build tables inside table boxes, veto false tables
+  |                               build tables inside table boxes (a header row the box missed is taken from
+  |                               just above it, never a sentence crossing the columns on word spaces), veto false tables
   v
   |  5. math/extract.py           display formulas per equation line, inline maths runs
   |     math/reconstruct.py       glyphs + rules -> LaTeX (fractions, scripts, radicals, matrices, accents)

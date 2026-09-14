@@ -42,7 +42,7 @@ Of 216 old-scan near misses (the check's text is in our markdown but not charact
 **171 allow no edits at all**, and the differences are the model's transcription against the page's: a
 comma it drops, a space before a semicolon it closes up, a dash it reads as a full stop, a capital it
 lowers. The words come from the model. The tiny-text pool reads the same way - letters misread on a
-photographed page. Tool: `scratchpad/nearmiss_edits.py`.
+photographed page. Tool: `bench/probes/nearmiss_edits.py`.
 
 ## What the old-scan pages actually are
 
@@ -323,7 +323,7 @@ text (`truedoc/vision/mathdelims.py`).
 
 **The method error was worse than the bug.** The deep reader was measured over one category, 98 pages
 and 526 checks, and then shipped to all eight. Six categories have model-read pages. The category it
-broke was the one that was never looked at. `scratchpad/compare_categories.py <a> <b>` now puts two runs
+broke was the one that was never looked at. `bench/tools/compare_categories.py <a> <b>` now puts two runs
 side by side category by category and names anything that lost ten checks or more.
 
 ## The cheapest way to settle it## The cheapest way to settle it

@@ -17,14 +17,14 @@ Milestones are ordered; each one is measured before the next starts. "Score" mea
 
 Milestones M2 to M6 loop: build, measure, look at failures, fix, repeat.
 
-## Status of the milestones (updated 2026-09-08, after run 63)
+## Status of the milestones (last updated 2026-09-14)
 
 | # | State | Evidence |
 |---|---|---|
-| M0 | done | Official scorer runs locally; 128 unit tests; quick regression check on 13 pages (`bench/quick_check.py`); the loop's helper tools in `bench/tools/` |
+| M0 | done | Official scorer runs locally; 528 unit tests (14 Sept); quick regression check on 13 pages (`bench/quick_check.py`); the loop's helper tools in `bench/tools/` |
 | M1 | done | First full run 48.6 (about 43 once a scorer artefact is removed) |
 | M2 | done | Its four sections all beat Marker 1.10.1 at run 63: headers and footers 68.6 -> 96.8 (Marker 86.6), multi-column 68.4 -> 82.9 (80.0), tiny text 88.5 (85.7), baseline 99.8 (99.3). The multi-column family of rules (runs 61 to 63) closed the last gap |
-| M3 | done | Tables 32.7 -> 88.2 at run 63, past MinerU 2.5's 84.9 and Chandra's 88.0: the best published figure for the section. 121 of 1,022 checks still fail, a long tail of one-page shapes |
+| M3 | done | Tables 32.7 -> 88.2 at run 63, past MinerU 2.5's 84.9 and Chandra's 88.0: the best published figure for the section. 121 of 1,022 checks still fail, a long tail of one-page shapes. **14 Sept, on the owner's documents:** graded on the structure the law prescribes, the Key Facts Sheets (D027) read their header whole on 95% of the sheets tuned on and 97% held out, from 34% and 16% on 13 Sept, with the Yes/No answer in its own column for 98.9% of prescribed events |
 | M4 | done | Formula rebuild from glyphs: 0 -> 87.4 on arXiv maths at run 63, above every published figure (the best is PaddleOCR-VL's 85.7); old-scan maths 4.1 -> 80.8 once a model reads the scans. 369 arXiv checks still fail, at diminishing returns per rule |
 | M5 | done | The vision stage is the product path since D019 (run 55 onward): every page without a digital text layer is read by a model, the rest keep their exact text. Old scans 20.7 -> 47.3, old-scan maths 4.1 -> 80.8 at run 63. Competitive, not leading: Chandra publishes 50.4 and Infinity-Parser 83.8, and both gaps are the model's reading quality rather than our code |
 | M6 | done | Provenance on every block; OCR gate and empty-output rule; hidden text kept out of the body and listed in the front matter (D011); model-read text marked `[^inferred]` (D015); a document-level confidence figure exists, no per-block one yet. **9 Sept: the invented-text check on model pages is built (D021, `truedoc/vision/corroborate.py`)** - every model-read page is checked against what we can read of it ourselves and a verdict per page goes in the front matter (over the 281 benchmark model pages: 181 corroborated, 91 unchecked for want of a witness, 7 low support, 2 unverified). It reports and never acts, because every low-support page measured had a broken witness rather than an inventing model |

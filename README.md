@@ -16,6 +16,8 @@ Status, plans and results live in `docs/` and are kept current:
 | The GPU experiment for scanned pages (run once, 3 Sept) and the optional vision stage | [docs/GPU_PLAN.md](docs/GPU_PLAN.md) |
 | How the converter works, stage by stage (for developers) | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | The day-by-day working log (what was tried, what was learned) | [docs/PROGRESS_LOG.md](docs/PROGRESS_LOG.md) |
+| Which model reads which pages, and what each choice measured | [docs/MODEL_CHOICE.md](docs/MODEL_CHOICE.md) |
+| The icons in the insurance library: what was measured, and why no icon reader was built | [docs/ICONS_REVIEW.md](docs/ICONS_REVIEW.md) |
 
 ## The one-paragraph pitch
 
@@ -41,7 +43,9 @@ The first run downloads the layout model weights (about 100 MB) from Hugging Fac
 ```
 truedoc/        the Python package (converter)
 bench/          benchmark harness; datasets download into bench/data/ (git-ignored)
-bench/tools/    the improvement loop's helpers: launch a scored run, check a rule page by page, diff two runs
+bench/tools/    the improvement loop's helpers: launch a scored run, check a rule page by page, diff two runs,
+                A/B two code states, grade the Key Facts Sheets, read the pages a change moved
+bench/probes/   one-off investigation scripts the docs cite as evidence
 tests/          unit tests
 docs/           status, roadmap, decisions, benchmarks, format spec, progress log
 ```

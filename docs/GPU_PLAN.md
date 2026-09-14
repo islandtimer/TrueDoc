@@ -114,7 +114,7 @@ sort into two piles:
 | pages a model reads for us (no digital layer) | 385 | 9.2 |
 
 The model's pile is the larger prize and none of it is our code: an audit of every check on
-those pages (`scratchpad/audit_model_pages.py`) found our processing loses nothing against the
+those pages (`bench/probes/audit_model_pages.py`) found our processing loses nothing against the
 model's raw reading and wins nine checks. Sorting those 385 by what the reading itself shows:
 
 | what went wrong in the model's reading | checks | points | what would fix it |
