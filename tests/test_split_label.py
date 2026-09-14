@@ -129,3 +129,43 @@ def test_a_line_with_a_time_does_not_finish_a_label_ending_on_a_connector():
              _segment(172, ("Road", 40, 62), ("Trip", 65, 83)), _segment(172, ("Radio", 200, 226)), _segment(172, ("Weather", 300, 340))]
     rows = _rows(table_from_lines(lines, 10.0, trusted=True))
     assert any(r[0].startswith("Remember") for r in rows), rows
+
+def _breakage(tail, answer_words):
+    """ "Accidental" over `tail`, an answer beside each line, and the exclusions opening a paragraph for each answer."""
+    return [_segment(100, ("Flood", 40, 66)), _segment(100, ("Yes", 140, 156)),
+            _segment(100, ("Excludes", 200, 240), ("walls.", 243, 270)),
+            _segment(130, ("Accidental", 40, 86)), _segment(130, *answer_words),
+            _segment(130, ("Yes", 200, 217), ("-", 220, 225), ("limited", 228, 262), ("cover.", 265, 292)),
+            _segment(142, (tail, 40, 82)), _segment(142, ("Optional", 132, 169)),
+            _segment(142, ("Optional", 200, 237), ("-", 240, 245), ("a", 248, 253), ("separate", 256, 296), ("cover.", 299, 326)),
+            _segment(172, ("Storm", 40, 68)), _segment(172, ("Yes", 140, 156)),
+            _segment(172, ("Excludes", 200, 240), ("rain.", 243, 266))]
+
+
+def test_a_two_line_answer_carries_its_label_on():
+    # "Accidental" over "breakage" beside "Yes/" over "Optional": the second line fills every column, so no emptied
+    # value says it carries on - the answer ending on its slash does.
+    rows = _rows(table_from_lines(_breakage("breakage", [("Yes/", 140, 160)]), 10.0, trusted=True))
+    assert any(r[0] == "Accidental breakage" and r[1] == "Yes/ Optional" for r in rows), rows
+
+
+def test_a_two_line_answer_carries_a_title_case_label_on():
+    # "Accidental" over "Breakage" beside "Yes /" over "Optional", and the exclusions open a paragraph of their own.
+    rows = _rows(table_from_lines(_breakage("Breakage", [("Yes", 140, 156), ("/", 159, 163)]), 10.0, trusted=True))
+    assert any(r[0] == "Accidental Breakage" and r[1].startswith("Yes") and r[1].endswith("Optional") for r in rows), rows
+
+
+def test_a_full_row_under_an_answer_with_no_slash_is_an_entry_of_its_own():
+    rows = _rows(table_from_lines(_breakage("breakage", [("Yes", 140, 156)]), 10.0, trusted=True))
+    assert any(r[0] == "breakage" for r in rows), rows
+
+
+def test_a_web_address_ending_on_a_slash_does_not_carry_the_next_entry_on():
+    lines = [_segment(100, ("Phone", 40, 68)), _segment(100, ("Daily", 140, 166)), _segment(100, ("Calls", 200, 226), ("free.", 229, 252)),
+             _segment(130, ("Website", 40, 80)), _segment(130, ("shop.com/", 140, 169)),
+             _segment(130, ("Orders", 200, 232), ("online.", 235, 268)),
+             _segment(142, ("Hours", 40, 68)), _segment(142, ("Nine", 140, 160)),
+             _segment(142, ("Closed", 200, 233), ("Sundays.", 236, 278)),
+             _segment(172, ("Email", 40, 66)), _segment(172, ("Any", 140, 158)), _segment(172, ("Replies", 200, 236), ("fast.", 239, 262))]
+    rows = _rows(table_from_lines(lines, 10.0, trusted=True))
+    assert any(r[0] == "Hours" for r in rows), rows

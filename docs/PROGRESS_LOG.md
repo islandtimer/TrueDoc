@@ -294,19 +294,37 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   markdown changed on 0 of 481 pages. Tests built on Bank of Queensland's geometry and on the guide's, each failing on the
   code before it; suite 531.
 
+**A two-line answer carries its label on** (the same night, after ee27c52)
+- **Words ending on a slash carry a full row on** (`_label_carries_on`). Ten sheets set "Accidental" over "breakage"
+  (or "Breakage") beside "Yes/" (or "Yes /") over "Optional", and the exclusions open a paragraph for each answer
+  ("Yes - We pay for glass..." over "Optional - We cover accidental damage..."). The second line fills every column the
+  first did, so the rule never found the emptied short value it looks for, and in title case the exclusions do not
+  carry on either: the line stayed a row of its own, an answer with no event. Now, when the second line fills every
+  column the first did and its label reads on (lower case, a connector, or title case), a cell above that is words
+  ending on a slash, with words under it, carries the row on. Words only, so a web address ending on a slash is not
+  taken for a wrapped value.
+- **A first draft reached four of the ten.** Keyed on the emptied value's place, it carried on the four HCKFS sheets,
+  set in lower case, and none of the six in title case (ALDI's and Bank of Queensland's building and contents sheets,
+  Honey's contents sheet, a March 2017 building sheet), which the title-case test refused first because their
+  exclusions open a new paragraph. The check moved in front of that test.
+- **In memory, before any file changed:** all ten gain the row and its answer; a landlord sheet, AAMI's contents sheet
+  and CGU's contents sheet (whose "Actions of the sea No" is another fault) do not move.
+- **Result, code against code:** Key Facts Sheets the Yes/No in its own column 1870 -> 1880 of 1885 tuned on (99.2% -> 99.7%) and 371 -> 373 of 375 held out (98.9% -> 99.5%), the two held-out sheets Honey's building sheet and a March 2017 contents sheet, the same shape and never looked at; every prescribed event now opens a row of its own, 1885 of 1885 and 375 of 375; the markdown changed on exactly the 12 sheets that gained, and header whole, bands and orphan rows are unchanged. Benchmark tables 848 v 848, multi_column 682 v 682, long_tiny_text 357 v 357, not one page moved; the markdown changed on
+  0 of 481 pages. Tests: lower case and title case, each failing on the code before it; a full row under an answer with
+  no slash, and the entry under a web address ending on a slash, each still an entry of its own; suite 535.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
-its own answer column for 99.2% of prescribed events tuned on and 98.9% held out (94.9% and 93.6% before the
+its own answer column for 99.7% of prescribed events tuned on and 99.5% held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
 buried inside an exclusion 63 sheets -> 0. Every rule is
 geometry and typography.
 
 **Next**
-- A two-line answer ("Yes/" or "Yes /" over "Optional") beside "Accidental" over "breakage" or "Breakage": the second
-  line fills every column, so `_label_carries_on` never finds the emptied value it wants, and in title case the
-  exclusions do not carry on either. Drafted: when the second line fills every column the first did, words ending on a
-  slash above with words under them carry the row on. Two tests fail on today's code, and in memory all ten tuned-on sheets with no row for Accidental breakage gain it, with its answer (the four HCKFS sheets, ALDI's and Bank of Queensland's building and contents sheets, Honey's contents sheet and a March 2017 building sheet), and three control sheets do not move.
 - The tight label alone on its answers' edge: Honey's building sheet, and WFI's two contents sheets, where the text
   layer runs "Items away from Yes" together - three answers, drafted with two tests.
+  On WFI's it is CGU's shape, not a tight one: "Yes" starts on the answers' shared edge (139.1pt), 9.8pt (0.98 of the
+  body size, three and a half word spaces) after "from" (`bench/probes/row_geometry.py`), so CGU's candidate may
+  answer both.
 - CGU's "Actions of the sea No", glued on two contents sheets: the text layer sets "No" 11.5pt (1.2 of the body
   size, five word spaces - four, as first written here, was wrong) after "sea", at the very x where every other row's
   "Yes" starts (141.4pt on the July 2025 sheet), yet the two arrive as one line (`bench/probes/row_geometry.py`).

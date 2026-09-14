@@ -1450,6 +1450,12 @@ def _is_band(index: int, grid: list[list[str]], rows: list[_Row],
             and any(solid(grid[k]) for k in range(index + 1, len(grid))))
 
 
+# Words ending on a slash ("Yes/", "Yes /"): the one way a short value wraps onto a second line. Words only, so a web
+# address ending on a slash is not one; and the words the second line carries on with.
+_SLASHED_WORDS = re.compile("[A-Za-z]+(?: [A-Za-z]+)? ?/")
+_SHORT_WORDS = re.compile("[A-Za-z]+(?: [A-Za-z]+){0,2}")
+
+
 def _label_carries_on(above: list[str], cells: list[str], filled: list[int]) -> bool:
     """Is this row the second line of the label above it, whatever its other columns begin with?
 
@@ -1480,6 +1486,15 @@ def _label_carries_on(above: list[str], cells: list[str], filled: list[int]) -> 
     # one table.
     if not tail[:1].islower() and _has_digit(tail):
         return False
+    # A short value wraps only across its slash. "Yes/" or "Yes /" over "Optional", beside "Accidental" over "breakage" or
+    # "Breakage", is one answer, and the exclusions beside it open a paragraph for each ("Yes - There is limited cover..."
+    # over "Optional - A separate optional cover..."). So the second line fills every column the first did and leaves no
+    # value empty, and in title case the exclusions do not carry on either: the words ending on their slash, with words
+    # under them, are what say the row carries on. On the Key Facts Sheets that was ten events with no row of their own.
+    slashed = [i for i in filled if 0 < i < len(above) and _SLASHED_WORDS.fullmatch(above[i].strip())
+               and _SHORT_WORDS.fullmatch(cells[i].strip())]
+    if slashed and len(filled) == sum(1 for c in above if c) and (_continues(label, tail) or tail[:1].isupper()):
+        return True
     # The label column carries on by the merger's own test, not by lower case alone: a label ending on a connector
     # goes on whatever case follows ("Fire and" over "Explosion"). And a label set in title case wraps onto a
     # capital ("Malicious" over "Damage"); then the capital is the only thing objecting, so the row still carries on
