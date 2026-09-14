@@ -416,6 +416,19 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                         return True
                 return False
 
+            nl, nr, nb, nt = (ctypes.c_double() for _ in range(4))
+
+            def _beside(raw_api, tp, i, ink, x_off, y_top) -> bool:
+                """True when the character after this one stands beside this glyph, not over or under it:
+                their ink shares at least a tenth of the smaller glyph's height, or one of them has no ink to
+                stand over anything. A space has none, and PDFium gives an ArialMT space a box of no height at
+                all (CGU's and NRMA's Key Facts Sheets). See the width cap below."""
+                if ink is None or not raw_api.FPDFText_GetCharBox(tp, i + 1, nl, nr, nb, nt):
+                    return False
+                theirs = _flip(nl.value, nt.value, nr.value, nb.value, x_off, y_top)
+                smaller = min(ink[3] - ink[1], theirs[3] - theirs[1])
+                return smaller <= 0 or min(ink[3], theirs[3]) - max(ink[1], theirs[1]) >= 0.1 * smaller
+
             for i in wanted:
                 box = None
                 probe = None
@@ -503,6 +516,39 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                             # plus the advance times the x scale on every one of 73,316 characters
                             # whose matrix scales x and y differently (the y scale on 8%).
                             advance = adv_w.value * (abs(matrix.a) or 1.0)
+                            # ... and it stops at the next character's origin on the line, give or take a
+                            # kern. The lookup goes by Unicode, and a font that maps its ligatures to letters
+                            # answers for the ligature: RAA's landlord PDS maps ff and fi to "f", PDFium gave
+                            # every f the ligature's 7.34pt where the f advances 2.54, the box ran over the
+                            # space and into the next word, and "If you", "of these" and "of 21" read "Ifyou",
+                            # "ofthese" and "of21" - 25 spaces lost on one page. An advance that runs more than a
+                            # quarter of the size past the next character's origin is taken to that origin - but
+                            # only to a character the file holds, at least 0.15 of the size along: a line break
+                            # or a space PDFium makes up stands a fraction of a point after the glyph's own
+                            # origin, and a first version cut ticks, crosses, bullets and word-final letters to
+                            # half a point there, which opened false column edges on an insurance page. Not to a
+                            # mark or an accent laid over this character either, nor to the same character again
+                            # (text drawn twice to look bold). And only to a character set beside this glyph,
+                            # not over or under it: their ink shares at least a tenth of the smaller glyph's
+                            # height, or one of them has no ink to stand over anything, as a space has none
+                            # (`_beside`). An accent or a limit clears the glyph it is set on, whatever Unicode
+                            # value its font gives it, and says nothing of where that glyph ends: a second
+                            # version stopped TeX's letters at the hats, tildes and dots set over them and a
+                            # sum's limit at the sum, whose fonts map them to "b", "e", "9" and "X", and
+                            # "\widehat{f}(\chi)" read "f\widehat{(}\chi)"; an umlaut its font maps to "«" put a
+                            # space into "Jönsson". Every such cut on the benchmark shared none of the glyph's
+                            # height; the letters and spaces after RAA's f share nearly all of it.
+                            if (advance > 0 and i + 1 < count
+                                    and not raw_api.FPDFText_IsGenerated(tp, i + 1)
+                                    and raw_api.FPDFText_GetCharOrigin(tp, i + 1, ox2, oy2)
+                                    and abs(oy2.value - oy.value) < 0.5 * max(drawn, 1.0)
+                                    and origin[0] + 0.15 * max(drawn, 1.0) <= ox2.value - x_off
+                                    < origin[0] + advance - 0.25 * max(drawn, 1.0)):
+                                nxt = raw_api.FPDFText_GetUnicode(tp, i + 1)
+                                kind = unicodedata.category(chr(nxt))
+                                if (nxt != code and kind[0] != "M" and kind not in ("Sk", "Lm")
+                                        and _beside(raw_api, tp, i, ink, x_off, y_top)):
+                                    advance = ox2.value - x_off - origin[0]
                             if advance > 0:
                                 # The left edge is the origin as well: MuPDF's box runs from the
                                 # glyph's origin to its advance, and the origin agrees with MuPDF's

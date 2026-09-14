@@ -424,6 +424,49 @@ was stashed in place for the gate - each is identical to the pool's own reading 
 - **Tests:** Honey's geometry, failing on the code before it; an answer a point short of the edge and a tight gap on an
   edge another row runs across, each left whole; suite 548.
 
+**A glyph's box stops at the next glyph beside it, however wide the width lookup says it is** (15 Sept, after 737012f)
+- **The fault** (`_geometry`, `truedoc/extract/pdftext_rawdict.py`). RAA's landlord PDS page 22 read "Ifyou", "ofthese",
+  "of21" and "Cooling-ofPeriod" where the file keeps the spaces. The reader boxes a level character from its origin to
+  its origin plus the advance `FPDFFont_GetGlyphWidth` gives for its Unicode value, and this page's font maps its ff
+  and fi ligatures to "f" as well (the letters the file itself has lost, `ofer` and `fnd`): asked for "f", PDFium
+  answers with a ligature's 7.34pt where the f advances 2.54 (`bench/probes/width_lookup.py`), so every f's box ran over
+  the space after it and into the next word - 25 spaces lost on the one page. It was not the 11 September suspicion, a
+  ligature split into two characters on one origin: this page's f's are single characters.
+- **The rule.** An advance that runs more than a quarter of the size past the next character's origin on the line is
+  taken to that origin. A first version stopped at any next character, and on the insurance set it changed six pages:
+  RAA's for the better, but on an Allianz PDS it cut ticks, crosses, bullets and word-final letters to half a point -
+  PDFium puts the line breaks and spaces it makes up a fraction of a point after the origin of the letter before them -
+  which opened false column edges and lost two checks, and on a Huddle page it cut overlapping display digits to
+  nothing (`bench/probes/cap_fires.py` lists every character a cap shortens). So the next character must be one the
+  file holds, standing at least 0.15 of the size along, and not a mark, an accent or the same character again; on the
+  25 insurance pages the rule then fires on RAA's page alone, on its f's only.
+- **Beside the glyph, not over it.** That second version, run over the benchmark, changed the markdown of 25 pages and
+  cost three points (arxiv_math 2594 to 2591). Two pages gained: a table page set in Trade Gothic, whose "r" the lookup
+  also answers too wide, got 19 spaces back in 17 places ("forthe", "sufferfrom" and "perspecies" read "for the",
+  "suffer from" and "per species"), and another page's heading a space its image shows. On each of the other 23 it cut
+  a glyph short at a character sharing none of the glyph's height: TeX's letters at the hats, tildes and dots set over
+  them, which their fonts map to "b", "e" and "9", and a sum's upper limit at the sum - `\widehat{f}(\chi)` read
+  `f\widehat{(}\chi)` and `\sum_{i=1}^{n_{MP}}` read `\sum_{i=1}^{nMP}` - and Jönsson's o at the umlaut its font maps
+  to "«", which put a space into the name. Accents and limits stand over or under a glyph, not beside it; all 40 of
+  RAA's cuts share at least nine tenths of the glyph's height (`bench/probes/stack_probe.py`). So the next character
+  must also stand beside the glyph, their ink
+  sharing at least a tenth of the smaller one's height (`_beside`; a comma after an r shares 0.43 of its height) - or
+  one of them having no ink, as a space has none: PDFium gives an ArialMT space a box of no height at all, and asking
+  it for height declined the cuts at the spaces of three Key Facts Sheet pages. With that, all 23 pages read byte for
+  byte as they did before the cap, and the two that gained keep their gains. Whether
+  the next character came from the same font was a near miss: TeX's accents come from other fonts, but so does the
+  letter set beside a TeX angle bracket. The price: where a font's glyph boxes share no height though the glyphs stand
+  side by side - a Japanese page's full-width commas and the letters after them - the lookup's width stands, as before
+  the cap.
+- **Measured, code against code** (against 737012f). Insurance set: 207 of 229, from 206: RAA's page 22 gains the check its lost spaces had failed ("condition of the Rental Property including any existing or subsequent damage or loss;"), and it is the only one of the 25 pages whose markdown changed - every change a space the file keeps, restored after an f. Key Facts Sheets: not one of the 190 sheets' markdown changed, byte for byte, and no grading moved: header whole 150 of 158 tuned on and 31 of 32 held out, answers 1,885 of 1,885 and 375 of 375.
+  Benchmark: no score moves on any subset (tables 848 of 1,022, multi_column 682 of 884, long_tiny_text 357 of 442, headers_footers 739 of 760, arxiv_math 2,594 of 2,927, old_scans 110 of 526, old_scans_math 17 of 458). Measured as the second version's pool (`pwidth`, all 1,403 pages, against `ptight`), then every page whose cuts differ between the second version and this one converted again with this one (`bench/probes/cap_counts.py` lists them, `bench/tools/convert_compare.py` converts); the markdown changed on 2 of the 1,403 pages, both for the better and both as the second version had them: the Trade Gothic table page's 19 spaces and the heading's one.
+- **Tests:** a lookup that answers "f" with a ligature's width keeps the spaces, failing on the code before it; it
+  keeps them too when PDFium gives the spaces no ink, failing on a version that asked every glyph for height; a word
+  at a line end keeps its last letter when PDFium puts its made-up line break just after the letter's origin, failing
+  on the first version; an o keeps its advance under an umlaut its font maps to "«" (a hand-built page), failing on
+  the second; suite 553. A page built with PyMuPDF puts PDFium's made-up characters at the glyph's end, where
+  no version cuts anything, so each test gives PDFium the fault seen on the real page.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
@@ -434,10 +477,16 @@ geometry and typography.
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
-- The lossy ligature text layer, and the spaces we lose beside it. RAA's landlord PDS page 22, whose own font maps
-  ff and fi to one letter (`ofer`, `fnd`), also comes out as `Ifyou`, `ofthese`, `of21`: the space after an "f" is
-  kept in the file and lost by us, which fits the 11 September suspicion that a ligature split into two characters on
-  one origin reads as a zero gap.
+- The lossy ligature text layer, and a way to mend it from the file. RAA's landlord PDS page 22's own Unicode map sends
+  the codes of its ff, fi, fl and ffi ligatures to "f" (`ofer`, `fnd`, `Certifcate`), and TrueDoc trusts the layer. The
+  encoding still names those glyphs (`f_f`, `fi`, `fl`, `f_f_i`; `bench/probes/ligature_codes.py`), and the content stream
+  draws each by its code. PDFium reports no codes and its characters come in another order and number than the codes
+  drawn, but aligned as text all 2,035 of the page's characters pair with a drawn code, and all 14 ligature glyphs land
+  on their f's: "offences", "different", "find", "offer", "Certificate", and "Cooling-off" nine times, which a word list
+  cannot see because "of" is a word (`bench/probes/ligature_align.py`). So the letters can be read back from the file,
+  not guessed; still to build: text inside form XObjects, fonts with two-byte codes, and dividing the f's box. A
+  word-list signal flagged only this page of 405 (`bench/probes/lossy_ligatures.py`). The spaces we lost beside those
+  letters were ours, and are fixed.
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 
 ---
