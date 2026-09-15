@@ -390,3 +390,38 @@ prescribed events land in their own rows almost everywhere (13 of 14 sheets at 1
 is sound; **9 of the 14 lose the header**, which on a document whose whole purpose is "is this event
 covered - yes or no" means losing which column holds the answer.
 
+## D028 - A table cell holds what its box holds, and a list inside a cell is written as a list (2026-09-15, owner's decision)
+
+**The question.** Eight checks on the owner's insurance set failed for one reason. Where a page draws a box around
+several things, TrueDoc's table cell held everything in the box, and the check - written from the page image - wanted
+less: the tick or cross at the head of an item left off (five checks, on POL1418DIR page 13, Kogan's POL1439FI page 29
+and BOM's home PDS page 22); one item of a whole ticked list drawn in one box, as a cell of its own (two, on Kogan's
+page 29); and the "Go to page 32." line at the foot of BOM's "Contents cover" box left out (one). The owner ruled card
+by card on a dossier of the eight, each card showing its page (`bench/out/insurance_set/cell_box_ruling.json`).
+
+**The decision.**
+1. **A tick or cross stays at the head of its item, in the cell.** For the reader both readings keep the meaning: the
+   column heading ("What's covered?") establishes it and the mark confirms it. Keeping the mark never loses meaning;
+   dropping it would, wherever no heading says the same.
+2. **A "Go to page" line stays in the cell whose box holds it.** It tells the reader where that cover is set out in
+   full.
+3. **A list set in one box - or beside another list with no boxes drawn - is written as a list inside its cell:** each
+   item a list element with its tick or cross, a sub-list nested under the item it belongs to, and a note that is not
+   an item (BOM page 22's "An additional excess of $250 ... applies to each earthquake") kept in the cell after the
+   list. Asked first whether one row per item would serve a machine comparing two insurance products better, and not
+   knowing how such a machine will read tables, the owner chose to future-proof. One row per item invents pairings: two
+   lists set side by side share rows only by their order, and a tool that reads each row as a record would pair a cover
+   with an exclusion the page never pairs. Line breaks inside a cell are flattened by TrueDoc's own markdown tables and
+   by many tools, which would run the items together as today's cells already do. A list element is separated by any
+   HTML reader, converter or language model, and pairs only what the page pairs. It needs an HTML table, which TrueDoc
+   already writes wherever a cell spans.
+
+**What follows.** The six checks the first two points settle were rewritten on 15 September to quote the cell with its
+mark or line; the files as they stood are in `bench/out/insurance_set/checks_a_before_cell_box_ruling/`. At fb091fb the
+set scores 222 of 229 on them, where it scored 216. The two list checks are rewritten when lists are written as lists,
+to look for each item inside its cell's list. The owner also named the fault behind the first point as the one that
+matters for meaning: POL1418DIR page 13 draws no boxes, and its table is cut at text lines, so "or commercial building"
+stands in a row of its own and the strata-title condition on residential flats lands beside "Recreational structures".
+Reading an item as the page sets it - a tick or cross, then lines at the item's own indent - is the same work as writing
+the list, and the two are built together.
+

@@ -619,6 +619,32 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   failing with the crossing count switched off; a band spanning both columns keeps its span and renders once; a table
   that agrees with its drawing is left alone. Suite 565.
 
+**The owner's ruling on what a table cell holds (D028)** (15 Sept, evening)
+- **The dossier.** The eight insurance checks that turned on "is a table cell everything drawn inside its box?" went to
+  the owner as one page with a card each: the page with the box outlined, the words the check wanted and what our cell
+  also held marked on it, what TrueDoc writes, what each answer would change, and a recommendation with the way it
+  could be wrong. The ruling is `bench/out/insurance_set/cell_box_ruling.json`.
+- **Keep, on six.** The tick or cross at the head of an item stays in the cell (five checks), and so does BOM's "Go to
+  page 32." line (one): for the reader both readings keep the meaning, the column heading establishing it and the
+  mark confirming it. The six checks now quote the cell with its mark or line; the files as they stood are in
+  `bench/out/insurance_set/checks_a_before_cell_box_ruling/`. At fb091fb the set scores 222 of 229 on them, where it
+  scored 216, and 224 with the wrapped-entry rule in the tree.
+- **Unsure, on Kogan's two whole lists, with a question worth asking:** why does a list there come out as one
+  run-together cell when other pages give each ticked item a line of its own? Because Kogan's page 29 draws one box
+  round the whole list and a drawn box is read as one cell. POL1418DIR page 13 draws no boxes, so its rows come from
+  text lines, and BOM page 22's lightning box holds a single item. BOM page 22's earthquake box holds several and runs
+  them together too, with no check to see it.
+- **Lists, decided for machines as well as readers.** The owner asked whether one row per item would serve a machine
+  comparing two insurance products and, not knowing how such a machine will read tables, chose to future-proof: each
+  item a list element inside its cell, a sub-list under its item, a note after the list. One row per item pairs a
+  cover with an exclusion the page never pairs; line breaks in a cell are flattened by markdown and by many tools; a
+  list element is separated by any HTML reader and pairs only what the page pairs.
+- **Next, named by the owner as what matters for meaning:** POL1418DIR page 13's table is cut at text lines, so "or
+  commercial building" stands in a row of its own and the strata-title condition on residential flats lands beside
+  "Recreational structures". An item is read as the page sets it - a tick or cross, then lines at its own indent - and
+  the same reading writes a boxed list as a list. A looser fix for exactly this was tried and cost 48 benchmark checks
+  across 21 pages (the note in `_merge_wrapped_rows`), so the indent is the evidence, not the empty cell.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
