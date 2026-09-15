@@ -14,7 +14,7 @@ from truedoc.classify.page_numbers import release_pointers
 from truedoc.extract import render as page_render
 from truedoc.extract.handle import open_pdf
 from truedoc.extract.textlayer import extract_page
-from truedoc.layout.fuse import apply_layout
+from truedoc.layout.fuse import _repeated_beside, apply_layout
 from truedoc.model import BBox, Block, BlockKind, Document, Page
 from truedoc.render.okf import RenderOptions, render_document
 from truedoc.segment.blocks import build_blocks
@@ -193,7 +193,7 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
     blocks.extend(table_blocks)
 
     # Heuristic kinds first; the layout model then overrides what it is sure about.
-    classify_blocks(page, blocks)
+    classify_blocks(page, blocks, pdf_page)
 
     regions = []
     if opts.layout:
@@ -210,7 +210,7 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
     blocks = _merge_label_headings(blocks, page.body_font_size)
     blocks = _merge_wrapped_headings(blocks, page.body_font_size)
 
-    _margin_cleanup(page, blocks)
+    _margin_cleanup(page, blocks, pdf_page)
     # A number in the margin that counts no pages and does not run is text, not furniture (Budget Direct's "page 52").
     release_pointers(pdf_page, page, blocks)
 
@@ -697,16 +697,29 @@ def _control_stamp(table) -> bool:
     return keyed * 2 >= len(filled)
 
 
-def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
+def _margin_cleanup(page: Page, blocks: list[Block], pdf_page=None) -> None:
     """Running heads and feet that survive the layout model's labels.
 
     A short "heading" in the outermost strip of the page is a running head
     ("STAR FLEET UNIVERSE" beside the page's header), a short text line next
     to a header block belongs to it ("Revision 2" under "issued: 2019-04-17"),
     and a short line in the bottom strip is a running foot whatever its size.
+
+    A running head runs, so a line is taken at the head only when no page
+    beside it shows that it stops here: AAMI's definitions pages set the term
+    at the top of the page ("Incident", "Illegal drugs") and a building PDS
+    opens a page on "This guarantee does not apply:", and no page beside them
+    prints those words there (`_repeated_beside`). With no page beside it to
+    ask - every benchmark file is one page - the strip decides, as before.
     """
     H = page.height
     body = page.body_font_size or 10.0
+    asked: dict[int, bool] = {}
+
+    def runs(b: Block) -> bool:
+        if id(b) not in asked:
+            asked[id(b)] = _repeated_beside(b, page, pdf_page) is not False
+        return asked[id(b)]
 
     def words(b: Block) -> int:
         return len(b.text.split())
@@ -740,7 +753,7 @@ def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
             # At the top a title in display type stays a title; at the foot a short line
             # is a running foot whatever its size (a newspaper's masthead line, "Surfside
             # Gazette • AUGUST 2013" in 18 pt, eac8e314 in run 62).
-            if b.bbox.y1 <= 0.08 * H and size <= 1.4 * body:
+            if b.bbox.y1 <= 0.08 * H and size <= 1.4 * body and runs(b):
                 b.kind = BlockKind.HEADER
                 b.provenance = "margin-heading"
                 headers.append(b)
@@ -759,7 +772,7 @@ def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
               # The tail of a paragraph carried over to the top of a column
               # ("each condition was averaged across all three subjects.") starts
               # in lowercase or holds a sentence end; a running head does neither.
-              and not b.text[:1].islower() and not _SENTENCE_END.search(b.text)):
+              and not b.text[:1].islower() and not _SENTENCE_END.search(b.text) and runs(b)):
             b.kind = BlockKind.HEADER
             b.provenance = "top-strip"
             headers.append(b)
@@ -785,7 +798,7 @@ def _margin_cleanup(page: Page, blocks: list[Block]) -> None:
             size = b.size or body
             for h in headers:
                 gap = max(b.bbox.y0 - h.bbox.y1, h.bbox.y0 - b.bbox.y1)
-                if gap <= 1.5 * size and (b.bbox.x_overlap(h.bbox) > 0 or abs(b.bbox.x0 - h.bbox.x0) <= 2 * size):
+                if gap <= 1.5 * size and (b.bbox.x_overlap(h.bbox) > 0 or abs(b.bbox.x0 - h.bbox.x0) <= 2 * size) and runs(b):
                     b.kind = BlockKind.HEADER
                     b.provenance = "header-stack"
                     headers.append(b)

@@ -254,14 +254,15 @@ _WORD = re.compile("[a-z]{2,}")
 
 
 def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
-    """Whether the pages beside this one print most of this block's words in the same band at their foot.
+    """Whether the pages beside this one print most of this block's words in the same band at their head or foot.
 
-    A running foot runs: the same words at the same height, page after page. Up to two pages each side are
-    asked, so a foot set differently on facing pages is still seen, in the band the block fills measured up
-    from the foot of each page's own box, so a page of another height is asked at the same place. The file
-    is read again through PDFium by its path, as the readers read it. None when no page beside it has a
-    text layer to ask - a file of one page, or pages beside it that are scanned - and nothing then shows
-    whether the block runs.
+    A running head or foot runs: the same words at the same height, page after page. Up to two pages each side
+    are asked, so a head or foot set differently on facing pages is still seen, in the band the block fills
+    measured down from the head of each page's own box for a block in the upper half of its page, and up from
+    the foot for one in the lower half, so a page of another height is asked at the same place. The file is
+    read again through PDFium by its path, as the readers read it. None when no page beside it has a text
+    layer to ask - a file of one page, or pages beside it that are scanned - and nothing then shows whether
+    the block runs.
     """
     path = getattr(getattr(pdf_page, "parent", None), "name", None)
     index = getattr(pdf_page, "number", None)
@@ -269,6 +270,7 @@ def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
     if not path or index is None or not words:
         return None
     size = b.size or page.body_font_size or 10.0
+    head = b.bbox.cy < 0.5 * page.height
     low, high = page.height - b.bbox.y1 - size, page.height - b.bbox.y0 + size
     try:
         import pypdfium2 as pdfium
@@ -287,8 +289,11 @@ def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
                 if textpage.count_chars() == 0:
                     continue
                 asked = True
-                foot = other.get_cropbox()[1]
-                band = textpage.get_text_bounded(bottom=foot + max(0.0, low), top=foot + high)
+                _, foot, _, top = other.get_cropbox()
+                if head:
+                    band = textpage.get_text_bounded(bottom=top - b.bbox.y1 - size, top=top - max(0.0, b.bbox.y0 - size))
+                else:
+                    band = textpage.get_text_bounded(bottom=foot + max(0.0, low), top=foot + high)
             finally:
                 textpage.close()
                 other.close()
@@ -495,7 +500,10 @@ def apply_layout(page: Page, blocks: list[Block], regions: list[Region], pdf_pag
             # The rival box is a near-duplicate that the cleaning step removed, so
             # look at the detector's raw output.
             raw = page.meta.get("layout_regions") or regions
-            if in_margin and any(q.kind == rival and q.score >= r.score - 0.1 and (q.bbox.overlap_fraction(b.bbox) >= 0.5 or b.bbox.overlap_fraction(q.bbox) >= 0.5) for q in raw):
+            # The tie goes to the margin only when the line runs: one no page beside it prints at the same place is
+            # the page's own section header.
+            if (in_margin and any(q.kind == rival and q.score >= r.score - 0.1 and (q.bbox.overlap_fraction(b.bbox) >= 0.5 or b.bbox.overlap_fraction(q.bbox) >= 0.5) for q in raw)
+                    and _repeated_beside(b, page, pdf_page) is not False):
                 b.kind = BlockKind.HEADER if rival == RegionKind.PAGE_HEADER else BlockKind.FOOTER
                 b.provenance = "layout:margin-tie"
                 continue
@@ -535,6 +543,17 @@ def apply_layout(page: Page, blocks: list[Block], regions: list[Region], pdf_pag
             if b.kind in (BlockKind.FOOTER, BlockKind.HEADER):
                 b.kind = BlockKind.TEXT
             b.provenance = "footer-not-repeated"
+            continue
+        # A running head runs too. The layout model labels the peril's name at the top of each page of Honey's
+        # household PDS - "Animal damage", "Explosion", "Flood", 14 pt and red, one to a page - a page header, so no
+        # peril's page said which peril it describes. A block labelled a page header comes back to the text when the
+        # pages beside it have a text layer and none prints most of its words in the same band at their head. A head
+        # takes no length test, as a long foot does: a running head is a line or two, and so is the title it is
+        # taken for. With no page beside it to ask - every benchmark file is one page - the model's label stands.
+        if new_kind == BlockKind.HEADER and _repeated_beside(b, page, pdf_page) is False:
+            if b.kind in (BlockKind.FOOTER, BlockKind.HEADER):
+                b.kind = BlockKind.TEXT
+            b.provenance = "header-not-repeated"
             continue
         if new_kind == BlockKind.TITLE:
             b.kind = BlockKind.HEADING

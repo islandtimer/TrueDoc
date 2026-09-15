@@ -950,42 +950,70 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   failing without the rule; a body row under an empty cell is not taken into the heading; and a two-level heading and
   a review table's wrapped entries stay as they are - both failing on the first version. Suite 615.
 
-**In progress: a line at the head of a page is taken for a running head only if it runs** (16 Sept, morning; paused for a reboot before it was measured)
+**A line at the head of a page is taken for a running head only if it runs** (16 Sept, morning, after 955500b)
 - **What was found.** Honey's household PDS names each peril at the top of its page - "Animal damage", "Explosion",
-  "Flood", 14 pt in red - and TrueDoc publishes none of them: the layout model labels the name a page header, so page
-  33 opens on "# Included for:" and no peril's page says which peril its cover, limit and exclusions belong to. The
+  "Flood", 14 pt in red - and TrueDoc published none of them: the layout model labels the name a page header, so page
+  33 opened on "# Included for:" and no peril's page said which peril its cover, limit and exclusions belong to. The
   insurance set's checks on that page quote its sentences, not the name, so 229 of 229 never saw it. The page's ringed
   tick, dollar and cross icons stand beside headings that say "You are covered for:", "Limit:" and "You are not
   covered for:", so under the owner's icons ruling they are illustration; the name is the loss.
-- **How far it reaches.** A census of what TrueDoc takes out at the head and foot of a page, each block's pages beside
-  it asked whether they print most of its words at the same height, read 210 pages of 168 documents before it was
-  stopped - the first 210 of the 1,237 pages of a one-in-fifty sample of the library, in file-name order, so mostly
-  AAMI, ALDI and Apia. Of the heads the rules take out that the pages beside can judge, 28 blocks on 23 pages are
-  printed on no page beside them and 15 are. Fifteen of the 28 were labelled page headers by the layout model: the
-  cover titles of ten AAMI guides and a landlord PDS's "Your excess". Thirteen were taken by the pipeline's own margin
-  clean-up: the defined term at the top of a definitions page ("Incident", "Illegal drugs", "Computer", "Joint
+- **How far it reached.** A census of every block the conversion takes out at the head and foot of a page
+  (`bench/probes/running_head_census.py`), each asked whether a page within two either side prints most of its words
+  at the same height, has read 210 pages of 168 documents in file-name order - the first of the 1,237 pages of a
+  one-in-fifty sample of the library, mostly AAMI, ALDI and Apia - then 132 pages of 129 documents in shuffled order,
+  a random sample of the rest. In file-name order the rule gives back 28 heads on 23 pages; 13 stay out, printed
+  beside them, and 9 have no page beside to ask. Fifteen of those 28 the layout model had labelled page headers - the
+  cover titles of ten AAMI guides and a landlord PDS's "Your excess" - and thirteen the pipeline's own margin clean-up
+  had taken: the defined term at the top of a definitions page ("Incident", "Illegal drugs", "Computer", "Joint
   policyholders", Apia's "Loss or damage"), two complaint steps' headings, a proofs table's title, the covers of four
-  supplementary PDSs, and a building PDS's "This guarantee does not apply:", without which nothing says the guarantee
-  does not apply to the four cases listed under it. Nine of the 28, on seven pages, were read against their page
-  images, and every one is the page's own; the other nineteen are more of the same kinds by their text.
-- **The change, built but not yet measured** (`bench/out/wt_runhead`, on c95d559). Every rule that takes a line out as
-  a running head first asks whether it runs: the zone rule for small lines in the top margin (`classify_blocks`), the
-  layout model's page-header label and its margin tie (`apply_layout`), and the margin clean-up's heading in the
-  outermost strip, top strip and header stack (`_margin_cleanup`). The question is the foot rule's
-  (`_repeated_beside`), now measured down from each page's head for a block in the upper half of its page. A line
-  printed beside it stays a head; with no page beside it to ask - a one-page file, or scanned pages beside it - each
-  rule decides as before, and every benchmark file is one page, so the benchmark cannot move. A released page header
-  keeps the kind its text gave it: Honey's page 33 gains "# Explosion", at the level of "# Fire" below it, and nothing
-  else on the page changes. Text inside a picture at the top (the banner rule) and rotated side tabs make other claims
-  and are not asked. Eleven tests (`tests/test_running_head.py` in the worktree): four fail with only the model's
-  label asked; the zone rule's, the top strip's, the margin heading's and the header stack's each fail with that guard
-  alone taken out; and with the classification, clean-up and foot tests 22 pass.
-- **Left to do after the reboot.** Port it onto the heading commit; the full suite; the Key Facts Sheets graded afresh;
-  the insurance set; the rest of the census, in shuffled order; every page whose markdown changes read against its
-  image; then the commit. Page feet are left as they are: the ones no page beside them repeats are mostly a cover's
+  supplementary PDSs, and a building PDS's "This guarantee does not apply:", without which nothing said the guarantee
+  does not apply to the four cases listed under it. In the shuffled pages it gives back 1 head on 1 of the 132 pages;
+  5 stay out, printed beside them, and 4 have no page beside to ask. Nine of the heads given back in file-name order,
+  on seven pages, were read against their page images and every one is the page's own; so was the one given back in
+  the shuffled pages, the title of Apia's village supplementary PDS; and converted under this rule, the 24 pages the
+  first read found heads on no longer take out any of them.
+- **The rule** (`truedoc/layout/fuse.py`, `truedoc/classify/blocks.py`, `truedoc/pipeline.py`). A running head runs:
+  the same words at the same height, page after page. Every rule that takes a line out as a running head now asks
+  first whether it runs - the zone rule for small lines in the top margin, the layout model's page-header label and
+  its margin tie, and the margin clean-up's heading in the outermost strip, top strip and header stack - and takes the
+  line only when no page beside it shows that it stops at this page. The question is the foot rule's
+  (`_repeated_beside`: most of the block's words, 60%, in the band it fills on a page within two either side), now
+  measured down from each page's head for a block in the upper half of its page. Printed beside it, a line stays a
+  head; with no page beside it to ask - a one-page file, or scanned pages beside it - each rule decides as it did. A
+  released page header keeps the kind its text gave it, so Honey's page 33 now opens "# Explosion", at the level of
+  "# Fire" below it. Text inside a picture at the top (the banner rule) and rotated side tabs make other claims than
+  running and are not asked.
+- **Measured, code against code** (against 3a2810b). Key Facts Sheets: the same as 3a2810b on every measure - header
+  whole 157 of 158 tuned on and 32 of 32 held out, every event and answer carried, no band swallowed, no row only a
+  continuation. Fifty-five sheets change, each only gaining lines at the head of a page, 96 in all and none taken
+  away: the sheet's product line and preparation date under its title, with its "THIS IS NOT AN INSURANCE CONTRACT"
+  (60 lines); page 2's "Step 3 Other things to consider" (33, of which 29 come out "Step3Other things to consider",
+  the spaces around its large numeral lost - which dropping the line had hidden); CBA's prescribed statement, which
+  its sheet prints on page 1 only; and a table row Direct Insurance carries over to the head of page 2 ("Items away
+  from insured address | No"), published as loose lines beside a row of that table already loose. A sheet of each kind
+  was read against its page image. Insurance set: 229 of 229 either way. Four pages gain the heading at their top and
+  nothing else - Honey's "Explosion", ALDI's "Flood" (the same design), Apia's "What to do" beside its claim steps and
+  GIO's "Contents with fixed limits (continued)" over its example box - each read against its page image and each the
+  page's own. Benchmark: every one of its 1,403 files is a single page, so no page beside a line can be asked and no
+  benchmark page can change; and converted under this rule, the headers-and-footers section - the one a rule about
+  running heads could touch - comes out byte for byte as it did on all 266 of its pages, the same three empty, 739 of
+  760 checks either way.
+- **Left as they were: feet, and the contact rule.** The page feet no page beside them repeats are mostly a cover's
   issuer line ("AAI Limited ABN 48 005 297 807 AFSL 230859 trading as AAMI"), "Continued on next page." and a
-  document's preparation date, and publishing a cover's issuer is the owner's 13 September ruling, to be measured
-  both ways.
+  document's preparation date. The classifier's contact rule - a web address, phone number or e-mail in a page's
+  margin is furniture whatever its length - is not asked either: in the census it took RACQ's supplementary PDS
+  cover block, the issuer's name, ABN, licence, addresses and phone. Which of a cover's issuer lines to publish is
+  the owner's 13 September ruling, a question of its own. A rule that asks the pages beside a line cannot move the
+  benchmark's one-page files, so it can serve that ruling without costing the furniture checks; that is the next
+  thing to measure, not a side effect of this rule.
+- **Tests** (`tests/test_running_head.py`, 11): the model's label on a title no page beside it repeats is refused,
+  failing on the code before it; a head repeated beside it, set alternately on facing pages, or in a one-page file
+  stays a head; a head is asked at its height from the top of pages of another height, failing when heads are
+  measured from the foot; the margin tie, a small line at the top, a heading at the very top and a line stacked under
+  a running head come back when no page beside them prints them - the zone rule's, the top strip's, the margin
+  heading's and the header stack's tests each failing with that guard alone taken out - while a small line and a
+  heading repeated at the top of every page stay heads. `bench/probes/running_head_census.py` lists every block a
+  conversion takes out at a page's head or foot, the rule that took it and whether it runs. Suite 626.
 
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the

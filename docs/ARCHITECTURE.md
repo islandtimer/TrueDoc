@@ -29,11 +29,14 @@ PDF page
   v
   |  3. segment/blocks.py         lines -> paragraph blocks (gap, overlap, size, typeface rules)
   |     classify/blocks.py        heuristic kinds: heading, header/footer, page/line numbers, list, caption
+  |                               - a line at a page's head is a running head only if a page beside it prints it there
   v
   |  4. layout/docling_layout.py  RT-DETR layout model on the rendered page (CPU, ~3 s)
   |     layout/fuse.py            model regions override kinds, split straddling blocks, add figures,
   |                               build tables inside table boxes (a header row the box missed is taken from
   |                               just above it, never a sentence crossing the columns on word spaces), veto false tables
+  |                               - a page header, or a long page footer, that no page beside it prints at the same
+  |                               height is the page's own (_repeated_beside, two pages each way)
   |     tables/rule_grid.py       a confident table box whose text builds no table - its columns hold only drawn marks -
   |                               is read from its own rules: rows between them, columns where their pieces meet at the
   |                               same x on at least three rules, each word in the cell its centre falls in

@@ -36,8 +36,13 @@ _SECTION_WORDS = re.compile(
 )
 
 
-def classify_blocks(page: Page, blocks: list[Block]) -> None:
+def classify_blocks(page: Page, blocks: list[Block], pdf_page=None) -> None:
     body = page.body_font_size or 10.0
+
+    def runs(b: Block) -> bool:
+        """Not shown to stop at this page: a page beside it prints it at its head, or none can be asked."""
+        from truedoc.layout.fuse import _repeated_beside    # imported here: fuse imports this module
+        return _repeated_beside(b, page, pdf_page) is not False
     top_zone = 0.09 * page.height
     bottom_zone = page.height - 0.09 * page.height
 
@@ -64,8 +69,9 @@ def classify_blocks(page: Page, blocks: list[Block]) -> None:
             if b.bbox.y0 >= page.height - 0.14 * page.height:
                 b.kind = BlockKind.FOOTER
                 continue
-        # Running headers: small, short, in the top margin.
-        if b.bbox.y1 <= top_zone and n_lines <= 2 and len(text) <= 160 and size <= body * 1.3:
+        # Running headers: small, short, in the top margin - and running: a line no page beside it prints at its head
+        # is the page's own, however small. With no page beside it to ask, the zone decides.
+        if b.bbox.y1 <= top_zone and n_lines <= 2 and len(text) <= 160 and size <= body * 1.3 and runs(b):
             b.kind = BlockKind.HEADER
             continue
         # Running footers: short text in the bottom margin (footnotes are longer, handled below).
