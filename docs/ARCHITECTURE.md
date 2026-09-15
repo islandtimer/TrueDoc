@@ -48,6 +48,7 @@ PDF page
   |                               not fit and none prints the same line at the same place (release_pointers)
   v
   |  5. math/extract.py           display formulas per equation line, inline maths runs
+  |                               - never a mark the page draws, which marks.py sets into a line as a word of its own
   |     math/reconstruct.py       glyphs + rules -> LaTeX (fractions, scripts, radicals, matrices, accents)
   v
   |  6. segment/order.py          reading order: column split when a full-height gap exists, else peel
@@ -55,6 +56,8 @@ PDF page
   v
   |  6b. marks.py                 ticks, crosses and bullets drawn as shapes or tiny images are
   |                              rendered, matched to templates and written into the cell or line
+  |                              - a shafted arrow, drawn or cut out of a square, before a chevron (_shafted_arrow):
+  |                                its head meeting on the shaft's line, never from what erasing a ring leaves
   |     tables/list_columns.py    then, the marks in place: lists set side by side with no boxes, cut at their lines by a
   |                               text-built table, are read column by column and rebuilt as one row of list cells under
   |                               their headings (rebuild_side_by_side_lists)

@@ -780,6 +780,62 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   folded; boxes of stacked values are rows, not a run; and a key with a sample before each line is not one run, while an
   icon beside a name leads no line - the first failing without the guard. Suite 588.
 
+**An arrow with a shaft, cut out of a square, is read as an arrow and written as one** (15 Sept, night)
+- **The fault** (`truedoc/marks.py`). Budget Direct's home PDS cuts a white arrow out of a green square beside every page
+  link ("page 47"), and every one came out as a bullet. The chevron test wants an arrow's arms to reach the corners of
+  its ink, and a shaft running the ink's length leaves those corners empty, so each square was read as a dot. The cut-outs
+  also fill only 30 to 39 cells of the classifier's grid of 1,024, and the knockout gate stood at 31.
+- **The rule.** Before the chevron, each orientation of the ink is asked for a shafted arrow: a bar through the middle at
+  least 70% of the ink's length, arms above and below closing on its end by more than 15% of the width, nothing but the
+  bar in the first quarter, and ink on the bar's line at the far end, where the arms meet. A knockout filling 2.5% to 3%
+  of the grid is taken only as a shafted arrow; at 3% and above everything reads as it did.
+- **Found on the way.** The first version left the first 35% of the ink to the bar and missed Budget Direct's two
+  lower-left squares, whose heads reach back to 31%; the tail is the first quarter now - a plus sign's upright stands at
+  half, a T-bar's cross at the end. It also lowered the gate for every shape, and a question mark cut out of an NRMA disc,
+  26 cells, read as a chevron pointing down; below 3% only a shafted arrow is taken.
+- **Letters are not arrows.** A census of the library's marks, one page in forty (6,334 marks), found the reader
+  changing 22: six right - Budget Direct's and Qantas's page links, arrows drawn before "page 62" - and sixteen letters
+  drawn as outlines, the "m" of CBA's "Commonwealth" and of Woolworths' "Home" read as arrows pointing up. A bold letter
+  fills its box, so its ink touches the ring test's band all round and the ring is erased; what is left of an "m" is the
+  middle stroke with the arches bending onto it, a shaft with two arms closing on its end. A shafted arrow is read now
+  from a mark's whole ink or from a shape cut out of a solid one, never from what erasing a ring leaves, and none of the
+  six right ones is read through a ring. The "re" of CBA's "CommInsure" still reads as a chevron from inside its ring,
+  as it did before the reader.
+- **Nor are stars.** A census of every mark on the benchmark's 1,403 pages found the five filled stars of a book
+  record's "Doody's Star Rating" (headers_footers 7881b598) read as arrows pointing down, where the chevron test had
+  them pointing up. Turned so its top spike is the tail, a star has nothing but that spike in the first quarter, a column
+  down its middle for a shaft, and its arms and legs for a head - but an arrowhead's arms meet on the shaft's line, and a
+  star's legs end either side of it with nothing between. The ink's far end must now lie on the shaft, and the stars
+  read as they did before the reader: pointing up, a misreading older than it.
+- **An arrow in a line is not maths** (`truedoc/math/extract.py`). With every square read as an arrow, the page still
+  read wrong: the four links in table cells came out "→ page 47", and the four in lines outside tables as
+  `\(\overline{\rightarrow}\) page 50`. The marks reader sets a mark at the head of its line as a word of its own, and the
+  inline maths pass - which a table cell never meets - took the arrow for a relation sign. The words that are never
+  inline maths, display type until now, take every word the marks reader set, and all eight links read "→ page N".
+  Neither the insurance score nor a census of the marks' kinds could see it; reading the page did.
+- **Measured, code against code** (against the boxed-cells rule). Insurance set: 229 of 229 either way, and one page
+  changes: Budget Direct's page 8, whose eight page links read "→ page 47" and so on - four in two table rows, four in
+  lines outside tables - with no formula left on the page. Marks read on a one-in-forty sample of the library: 6 of
+  6,334 marks on 1,325 pages change kind, each an arrow before a page link now read as an arrow (Budget Direct's and
+  Qantas's), where the reader before its ring fix changed 22; on the benchmark's 1,403 pages 26 of 2,695 marks change
+  kind, every one an arrowhead drawn apart from its shaft in a diagram of an arxiv paper, now read with its direction.
+  Key Facts Sheets: byte for byte the same on all 190 sheets, measured with the reader before its rule for the tip,
+  which can only take a shafted arrow back, so header whole stays at 95% tuned on and 97% held out with every answer
+  carried. Benchmark: the 159 of the 1,403 pages that hold a mark - the only pages a mark reader or the maths guard
+  can reach - converted before the reader and after it: no check moves, and the markdown differs on two pages, each
+  read. A HAL cover's arrow before "To cite this version", written `\(\rightarrow\)` since before the reader, is "→"
+  now; and the arrowhead of a block diagram, taken into a formula with the label beside it, is text, that label,
+  G3(s), losing the subscript it had only inside the arrow's formula. The 26 arrowheads the reader now names in six
+  arxiv diagrams sit in no line or cell, so their pages do not change, and the star-rating page the combined pool
+  changed reads as it did.
+- **Tests:** an arrow cut out of a square is read whichever way it points; an arrow drawn in ink is read too; a plus cut
+  out of a square is no arrow; a thin shape under the old gate is taken only as a shafted arrow, and an arrow whose head
+  reaches back a third of its length is an arrow - those two failing on the first version; what erasing a ring leaves of
+  a bold letter, the reader's own grid of CBA's "m", is no arrow - failing without that fix; a star, the reader's own grid
+  of one of Doody's five, is no shafted arrow - failing without the rule for the tip; and a drawn arrow leading a line is
+  text, not maths, while the same arrow set in a maths font is still maths - the first failing without the guard.
+  Suite 597.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings

@@ -165,10 +165,19 @@ def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None) -> Mark | None:
     # the same grey disc reads 0.511 drawn by MuPDF and 0.505 by PDFium.
     if filled >= 0.45 * n * n:
         hole = _knockout(mask)
-        if sum(sum(row) for row in hole) >= 0.03 * n * n:
+        cut = sum(sum(row) for row in hole)
+        if cut >= 0.03 * n * n:
             kind, score = _best_template(hole)
             if kind in ("tick", "cross") or (kind or "").startswith("arrow-"):
                 return Mark(bbox=box, kind=kind, score=score, colour=colour)
+        elif cut >= 0.025 * n * n:
+            # A thin arrow cut out of a square holds fewer cells than a tick cut out of a disc: Budget Direct's page
+            # links cut 30 to 39 of the grid's 1,024, and one fell under the 3% gate. Below it only an arrow with a
+            # shaft is taken - with the gate lowered for every shape, a question mark cut out of an NRMA disc read as
+            # a chevron pointing down.
+            arrow = _shafted_arrow(_tight(_drop_specks(hole)))
+            if arrow is not None:
+                return Mark(bbox=box, kind=arrow[0], score=arrow[1], colour=colour)
     ring = _has_ring(mask)
     if ring:
         core = _erase_ring(mask)
@@ -176,7 +185,10 @@ def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None) -> Mark | None:
         if core_filled < 0.03 * n * n:
             return Mark(bbox=box, kind="circle", score=0.9, colour=colour)
         mask = core
-    kind, score = _best_template(mask)
+    # A shafted arrow is read from the whole ink or from a shape cut out of a solid one, never from what erasing a ring
+    # leaves: a bold letter touches the ring's band all round, and the middle of an "m" - a stroke with two arches
+    # bending onto it - is a shaft with two arms closing on its end (CBA's "Commonwealth", Woolworths' "Home").
+    kind, score = _best_template(mask, shafts=not ring)
     if kind is None:
         return Mark(bbox=box, kind="unknown", score=0.0, colour=colour)
     return Mark(bbox=box, kind=kind, score=score, colour=colour)
@@ -462,14 +474,74 @@ def _chevron(mask):
     return None
 
 
-def _best_template(mask):
+def _points_right(m) -> float | None:
+    """How firmly the ink is an arrow with a shaft pointing right, or None.
+
+    A bar through the middle running most of the ink's length; a head of two arms at the right end, one above the bar
+    and one below, each closing on the bar's end - nearer the bar, further right; and nothing but the bar at the left
+    end. A plus sign has its upright in the middle and no arms closing, a T-bar has its cross-bar straight, a solid
+    triangle has ink at its base, and a star turned to take its top spike for the bar ends in two legs either side of the
+    bar's line, where an arrowhead's arms meet on it; none of them passes."""
+    n = len(m)
+    rows = [y for y in range(n) if any(m[y])]
+    cols = [x for x in range(n) if any(m[y][x] for y in range(n))]
+    if len(rows) < 6 or len(cols) < 6:
+        return None
+    y0, y1, x0, x1 = rows[0], rows[-1], cols[0], cols[-1]
+    h, w = y1 - y0 + 1, x1 - x0 + 1
+    mid = (y0 + y1) / 2.0
+    band = max(1, round(h / 8))
+    shaft = [y for y in range(y0, y1 + 1) if abs(y - mid) <= band + 1 and sum(m[y][x0:x1 + 1]) >= 0.7 * w]
+    if not shaft:
+        return None
+    above = [y for y in range(y0, min(shaft)) if any(m[y])]
+    below = [y for y in range(max(shaft) + 1, y1 + 1) if any(m[y])]
+    if not above or not below:
+        return None
+    if any(m[y][x] for y in above + below for x in range(x0, int(x0 + 0.25 * w))):
+        return None
+    # The head's arms meet on the shaft's line, so the ink's far end lies on the shaft (the Doody's star rating on
+    # headers_footers 7881b598 ends in two legs with nothing between them).
+    if not any(m[y][x] for y in shaft for x in range(max(x0, x1 + 1 - max(2, round(0.1 * w))), x1 + 1)):
+        return None
+
+    def centre(y):
+        xs = [x for x in range(x0, x1 + 1) if m[y][x]]
+        return sum(xs) / len(xs)
+
+    closing = min(centre(above[-1]) - centre(above[0]), centre(below[0]) - centre(below[-1])) / w
+    return round(closing, 2) if closing > 0.15 else None
+
+
+def _shafted_arrow(mask):
+    """An arrow with a shaft, whichever way it points, or None.
+
+    Budget Direct's page links cut one out of a green square beside "page 47". The chevron test wants an arrow's arms
+    to reach the corners of its ink; a shaft running the length of the ink leaves the corners at its tail empty, so the
+    squares were read as dots and every "go to page" came out as a bullet."""
+    n = len(mask)
+    views = {
+        "arrow-right": mask,
+        "arrow-left": [list(reversed(row)) for row in mask],
+        "arrow-down": [[mask[x][y] for x in range(n)] for y in range(n)],
+        "arrow-up": [list(reversed([mask[x][y] for x in range(n)])) for y in range(n)],
+    }
+    for kind, view in views.items():
+        score = _points_right(view)
+        if score is not None:
+            return kind, score
+    return None
+
+
+def _best_template(mask, shafts: bool = True):
     """Say what shape the ink is.
 
     Ticks and crosses are told by where their ink lies (a tick leaves the
     upper-left quarter empty and runs from lower-left to upper-right; a cross
     fills all four quarters along the diagonals), which holds for any stroke
     weight or font. Discs, squares and boxes are matched against templates
-    with checks that a glyph in a ring ("$") cannot pass.
+    with checks that a glyph in a ring ("$") cannot pass. `shafts` false leaves
+    the shafted arrow out, for what is left once a ring is erased.
     """
     mask = _tight(_drop_specks(mask))
     n = len(mask)
@@ -485,7 +557,7 @@ def _best_template(mask):
     # An arrow head, before the cross test because the two are easily confused: both are two
     # strokes crossing the middle. The difference is at the corners - an X reaches all four, a
     # chevron reaches only the two it opens away from, and its point sits on the opposite edge.
-    arrow = _chevron(mask)
+    arrow = (_shafted_arrow(mask) if shafts else None) or _chevron(mask)
     if arrow is not None:
         return arrow
     # A cross: ink in all four quarters, lying along the two diagonals (a disc

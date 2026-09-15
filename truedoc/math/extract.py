@@ -235,9 +235,13 @@ def inline_math_text(line: Line, rules: list[BBox]) -> str:
     if not words:
         return ""
     # Display type (a newspaper headline at 139 pt) is never inline maths unless
-    # it is set in a maths font.
-    huge = [bool(w.chars) and max(c.size for c in w.chars) > _HEADLINE_PT and not any(is_math_font(c.font) for c in w.chars) for w in words]
-    flags = [not huge[i] and (_word_is_math(w) or _word_on_fraction(w, rules, words)) for i, w in enumerate(words)]
+    # it is set in a maths font; nor is a mark the page draws, which the marks
+    # reader set into the line as a symbol (pipeline._attach_marks, font "mark"):
+    # the arrow before each of Budget Direct's page links came out as an
+    # overlined relation sign.
+    prose = [bool(w.chars) and ((max(c.size for c in w.chars) > _HEADLINE_PT and not any(is_math_font(c.font) for c in w.chars))
+                                or all(c.font == "mark" for c in w.chars)) for w in words]
+    flags = [not prose[i] and (_word_is_math(w) or _word_on_fraction(w, rules, words)) for i, w in enumerate(words)]
     if not any(flags):
         return line.text
     # An upright word glued to the maths that follows it, with no space at all
@@ -255,12 +259,12 @@ def inline_math_text(line: Line, rules: list[BBox]) -> str:
     # "std(44425533116)") on either side of a bare relation sign ("=") is maths
     # even when no glyph comes from a maths font (2503.08911).
     for i, w in enumerate(words):
-        if flags[i] or huge[i]:
+        if flags[i] or prose[i]:
             continue
         if not _FORMULA_SHAPED.fullmatch(w.text.rstrip(".,;:")):
             continue
         for j in (i - 1, i + 1):
-            if 0 <= j < len(words) and words[j].text in _RELATION_WORDS and not huge[j]:
+            if 0 <= j < len(words) and words[j].text in _RELATION_WORDS and not prose[j]:
                 flags[i] = True
                 flags[j] = True
     # A run of dots and commas between two formula words is part of the formula:
@@ -269,11 +273,11 @@ def inline_math_text(line: Line, rules: list[BBox]) -> str:
     # sequence (the single-word bridge below cannot chain through the run).
     i = 0
     while i < len(words):
-        if not flags[i] or huge[i]:
+        if not flags[i] or prose[i]:
             i += 1
             continue
         j = i + 1
-        while j < len(words) and not flags[j] and not huge[j] and len(words[j].text) <= 2 and all(ch in ".,;…" for ch in words[j].text):
+        while j < len(words) and not flags[j] and not prose[j] and len(words[j].text) <= 2 and all(ch in ".,;…" for ch in words[j].text):
             j += 1
         if j < len(words) and flags[j] and 2 <= j - i <= 7:
             for k in range(i + 1, j):
@@ -287,7 +291,7 @@ def inline_math_text(line: Line, rules: list[BBox]) -> str:
     while changed:
         changed = False
         for i, w in enumerate(words):
-            if flags[i] or huge[i]:
+            if flags[i] or prose[i]:
                 continue
             left = i > 0 and flags[i - 1]
             right = i < len(words) - 1 and flags[i + 1]
