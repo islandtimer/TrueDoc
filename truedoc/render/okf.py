@@ -106,7 +106,8 @@ def _broken_word(a: str, b: str) -> bool:
 
 def render_table(table: Table) -> str:
     grid = table.grid()
-    if table.has_merged:
+    # A list inside a cell (D028) needs HTML as a span does: a markdown table's cell holds one line.
+    if table.has_merged or any(c.listing is not None for c in table.cells):
         return _render_html_table(table, grid)
     rows: list[list[str]] = []
     for r in range(table.n_rows):
@@ -195,7 +196,8 @@ def _render_html_table(table: Table, grid) -> str:
             if cell.colspan > 1:
                 attrs += f' colspan="{cell.colspan}"'
             tag = "th" if cell.is_header else "td"
-            out.append(f"<{tag}{attrs}>{_html_escape(cell.text)}</{tag}>")
+            body = _listing_html(cell.listing) if cell.listing is not None else _html_escape(cell.text)
+            out.append(f"<{tag}{attrs}>{body}</{tag}>")
         out.append("</tr>")
     out.append("</table>")
     return "\n".join(out)
@@ -203,6 +205,26 @@ def _render_html_table(table: Table, grid) -> str:
 
 def _html_escape(s: str) -> str:
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _listing_html(listing) -> str:
+    """A list set inside a table cell (D028): an element per entry with its sub-list nested, the words before the list
+    and a note after it as paragraphs. Each element goes on a line of its own, so a reader that takes a cell's text
+    whole (the benchmark's scorer does) still finds a break between one entry and the next."""
+    nl = chr(10)
+    parts = [f"<p>{_html_escape(listing.lead)}</p>"] if listing.lead else []
+    parts.append("<ul>")
+    for item in listing.items:
+        inner = _html_escape(item.text)
+        if item.children:
+            inner += nl + "<ul>" + nl + nl.join(f"<li>{_html_escape(c)}</li>" for c in item.children) + nl + "</ul>"
+        if item.tail:
+            inner += nl + _html_escape(item.tail)
+        parts.append(f"<li>{inner}</li>")
+    parts.append("</ul>")
+    if listing.note:
+        parts.append(f"<p>{_html_escape(listing.note)}</p>")
+    return nl.join(parts)
 
 
 def _corroboration_summary(doc: Document) -> dict | None:

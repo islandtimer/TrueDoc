@@ -11,6 +11,12 @@ insurance library, where prices are on every page, that would make a correct con
 benchmark's own normaliser already strips `**bold**` and `*italics*` for exactly this reason; escapes
 are the same kind of thing.
 
+**One kind of check is our own: `list_item`.** Under D028 a list set inside a table cell is written as a
+list, so a check can no longer ask for one of its entries as a cell of its own ("Solar panels" out of
+Kogan's boxed list of covers). It asks instead for the entry, with its tick or cross, among the list
+elements of a table cell under its column heading - `{"type": "list_item", "item": ..., "top_heading":
+...}`. An entry's own words are compared, not its sub-list's, after the benchmark's own normalising.
+
 usage (repo root): insurance_score.py [--keep <file of page names to score>]
 """
 import collections
@@ -20,15 +26,54 @@ import os
 import re
 import sys
 
-from olmocr.bench.tests import load_single_test
+from olmocr.bench.tests import load_single_test, normalize_text
 
 OUT = os.path.join("bench", "out", "insurance_set")
 ESCAPE = re.compile(r"\\([\\`*_{}\[\]()#+\-.!$|&%~<>])")
+KINDS = ("present", "order", "absent", "table", "list_item")
 
 
 def unescape(md: str) -> str:
     """Markdown escapes are syntax, not content."""
     return ESCAPE.sub(r"\1", md)
+
+
+class ListItemTest:
+    """An entry of a list set inside a table cell (D028), under its column's heading."""
+
+    def __init__(self, raw: dict):
+        self.item = raw["item"]
+        self.top_heading = raw.get("top_heading") or ""
+
+    def run(self, md: str) -> tuple[bool, str]:
+        from bs4 import BeautifulSoup
+
+        want = normalize_text(self.item)
+        heading = normalize_text(self.top_heading) if self.top_heading else None
+        elsewhere = False
+        for table in BeautifulSoup(md, "html.parser").find_all("table"):
+            taken: set[tuple[int, int]] = set()
+            headings: dict[int, list[str]] = {}
+            for r, tr in enumerate(table.find_all("tr")):
+                c = 0
+                for cell in tr.find_all(["th", "td"], recursive=False):
+                    while (r, c) in taken:
+                        c += 1
+                    span, down = int(cell.get("colspan", 1)), int(cell.get("rowspan", 1))
+                    taken |= {(r + i, c + j) for i in range(down) for j in range(span)}
+                    if cell.name == "th":
+                        for j in range(span):
+                            headings.setdefault(c + j, []).append(normalize_text(cell.get_text(" ")))
+                    for li in cell.find_all("li"):
+                        own = " ".join(li.find_all(string=True, recursive=False))
+                        if normalize_text(own) != want:
+                            continue
+                        if heading is None or any(heading in headings.get(c + j, []) for j in range(span)):
+                            return True, ""
+                        elsewhere = True
+                    c += span
+        return False, ("the entry is in a list, but not under that heading" if elsewhere
+                       else "no list in a table cell holds that entry")
 
 
 def main() -> None:
@@ -61,7 +106,7 @@ def main() -> None:
             raw.setdefault("pdf", name + ".pdf")
             raw.setdefault("page", 1)
             try:
-                test = load_single_test(raw)
+                test = ListItemTest(raw) if raw.get("type") == "list_item" else load_single_test(raw)
             except Exception as exc:
                 failures.append((name, raw.get("type"), "the check itself is malformed: " + repr(exc)[:70]))
                 continue
@@ -74,7 +119,7 @@ def main() -> None:
             ok += good
             passed_kind[raw["type"]] += good
             if not good:
-                quoted = raw.get("text") or raw.get("cell") or raw.get("before") or ""
+                quoted = raw.get("text") or raw.get("cell") or raw.get("item") or raw.get("before") or ""
                 failures.append((name, raw["type"], " ".join(str(quoted).split())[:90]))
         per_page.append((name, ok, n))
 
@@ -83,7 +128,7 @@ def main() -> None:
     print(f"{len(per_page)} pages, {total} checks, {good} passed ({100.0 * good / max(1, total):.1f}%)")
     print()
     print(f"{'kind':10s} {'passed':>7s} {'of':>5s}")
-    for kind in ("present", "order", "absent", "table"):
+    for kind in KINDS:
         if by_kind[kind]:
             print(f"{kind:10s} {passed_kind[kind]:7d} {by_kind[kind]:5d}   "
                   f"{100.0 * passed_kind[kind] / by_kind[kind]:5.1f}%")

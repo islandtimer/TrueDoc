@@ -233,6 +233,23 @@ class BlockKind(str, Enum):
 
 
 @dataclass
+class CellItem:
+    """An entry of a list set inside a table cell (D028): its words with its tick or cross, the sub-list under it, and
+    the words that carry it on after the sub-list."""
+    text: str
+    children: list[str] = field(default_factory=list)
+    tail: str = ""
+
+
+@dataclass
+class CellList:
+    """A list set inside a table cell (D028): the words before it, its entries, and a note after it."""
+    items: list[CellItem]
+    lead: str = ""
+    note: str = ""
+
+
+@dataclass
 class TableCell:
     text: str
     row: int
@@ -241,6 +258,7 @@ class TableCell:
     colspan: int = 1
     bbox: Optional[BBox] = None
     is_header: bool = False
+    listing: Optional[CellList] = None   # the cell's text read as the list it is set as (D028); `text` stays whole
 
 
 @dataclass

@@ -688,6 +688,58 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   are each left as they were; and a price list of the flyer's shape stays a table with its entries joined - failing on
   the code before the rule, which joins nothing, and on the rule before its repair, which makes no table. Suite 570.
 
+**A list inside a table cell is written as a list, and lists set side by side are read as lists (D028)** (15 Sept, night)
+- **What the ruling asked for.** Kogan's home PDS page 29 draws its covers as boxes, and one box holds a whole ticked
+  list - five covers, one with a bulleted sub-list of appliances - which the cell ran together on one line. POL1418DIR's
+  page 13 sets a ticked list beside a crossed list with no boxes, and the table built from its text lines cut every item
+  where it wraps. The owner ruled (D028) that a list is written as a list inside its cell, each entry a list element with
+  its tick or cross, and named the cut items as the fault that matters for meaning.
+- **Reading a list as the page sets it** (`truedoc/tables/cell_lists.py`). A cell's words are grouped into visual lines
+  as the ruled finder groups them, a drawn mark leading the line it sits beside. A line opening with a tick, a cross or
+  a bullet opens an entry, whose words start where the word after the mark starts - the hanging indent; a line starting
+  at that indent carries the entry on ("- $5,000 limit applies."); a mark set further in opens a sub-item; a line back at
+  the indent after a sub-list carries the entry on after it; and a line left of the marks, or left of the indent after a
+  paragraph's break, is a note (BOM's "An additional excess of $250 ... applies to each earthquake", POL1418DIR's "You
+  must report the incident to police"). A line wrapped back under its bullet with no break above still carries the
+  entry on. A cell takes a list with two entries or more, or with one entry holding a sub-list of two or more, and only
+  when the list's words are the cell's words, so nothing the cell says changes - only its shape. The renderer writes it
+  as `<ul><li>`, sub-lists nested, the note as a paragraph, each element on a line of its own because the benchmark's
+  scorer takes a cell's text whole.
+- **Two lists side by side** (`truedoc/tables/list_columns.py`). A text-built table is read again column by column: a
+  column holding nothing but marks joins the column to its right, a lone label in the first column opens a section
+  ("Structures"), a top row the finder took for a heading but which opens with a tick is an entry. Each column of each
+  section is read as a list, and the table is rebuilt - headings, a band per section, one row of list cells - only where
+  every column opens with an entry, one column is a list, and the rebuilt table holds exactly the words the cut one did
+  (287 of 287 on POL1418DIR's page 13). Page 13 now reads six covered and eleven excluded items whole: "Any hotel, motel,
+  hostel, guest house, boarding house, dormitory, nursing home or commercial building", and the condition on
+  residential flats back in its own item.
+- **One entry with a sub-list is a list too.** POL1418DIR's page 28 sets its covered impact damage as one ticked entry
+  over five bulleted kinds of impact. Taken as a list only with two entries or more, that column came out as plain text
+  with its bullets left to list elements that were never written, so the five ran on; the first insurance run of the
+  combined work showed it, and an entry holding a sub-list of two or more now makes a list (`cell_lists.is_list`).
+- **The checks.** A check can no longer ask for one entry of a list as a cell of its own, so `bench/tools/insurance_score.py`
+  gains a check of its own kind, `list_item`: the entry, with its mark, among the list elements of a table cell under its
+  column heading. Five checks were rewritten to it: Kogan's two the ruling named, and on POL1418DIR's page 13 the two
+  already quoting their mark and a third of the same shape, "Replacement of water". The files as they stood are in
+  `bench/out/insurance_set/checks_a_before_list_checks/`.
+- **Measured, code against code** (against the wrapped-entry rule). Insurance set: 224 -> 226 of 229 with the five
+  checks rewritten as list checks, the three misses left being Budget Direct's cover cards. Six pages change, each
+  read: Kogan's page 29 and POL1418DIR's page 13 read as lists, and POL1418DIR's page 28 and BOM's pages 22, 31 and 6
+  take lists no check looks at; every other page is byte for byte the wrapped-entry rule's. Key Facts Sheets: byte for
+  byte the same on all 190 sheets, both with the boxed-cells rule and the arrow reader in the same tree and with the
+  lists alone before their last two refinements, so header whole stays at 95% tuned on and 97% held out with every
+  answer carried. Benchmark: no check moves in any subset against the wrapped-entry rule's full pool. The markdown
+  differs on four of the 1,403 pages, each read and each converting byte for byte the same with the lists alone: a
+  chemical supply spec sheet whose bulleted operating conditions, gases and supplies become lists, an Oracle manual's
+  accessibility option (a lead paragraph and five items), a child-labour report's education measures (a lead and four
+  items) and a French HR audit's checkbox questions. Those tables are written as HTML now, which also shows the row
+  spans a pipe table had left as empty cells ("Coordination and Enforcement" over four rows).
+- **Tests:** a ticked list with a sub-list reads as a list; the words after a sub-list carry the entry on and a line at
+  the box's edge is a note; one entry with a sub-list is a list, and one entry alone is not; a paragraph under an entry
+  is a note while a line wrapped under its bullet is not; a cell holding a list is written as one; a list drawn in one
+  box comes out as a list, converted end to end; lists set side by side are rebuilt as lists; and a table holding words
+  the page does not is left as it is. Suite 579.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings

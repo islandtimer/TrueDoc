@@ -425,3 +425,10 @@ stands in a row of its own and the strata-title condition on residential flats l
 Reading an item as the page sets it - a tick or cross, then lines at the item's own indent - is the same work as writing
 the list, and the two are built together.
 
+**Built** (15 September, night). A list inside a table cell is written as a list (`truedoc/tables/cell_lists.py`), and
+lists set side by side are read column by column (`truedoc/tables/list_columns.py`). The two list checks, and three on
+POL1418DIR page 13 whose items are now list elements (two of them among the six above), were rewritten as `list_item`
+checks - the item with its mark among a table cell's list elements, under its column heading; the files as they stood
+are in `bench/out/insurance_set/checks_a_before_list_checks/`.
+With the wrapped-entry rule in the tree the set scores 226 of 229 on them.
+

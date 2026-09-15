@@ -51,6 +51,11 @@ PDF page
   v
   |  6b. marks.py                 ticks, crosses and bullets drawn as shapes or tiny images are
   |                              rendered, matched to templates and written into the cell or line
+  |     tables/list_columns.py    then, the marks in place: lists set side by side with no boxes, cut at their lines by a
+  |                               text-built table, are read column by column and rebuilt as one row of list cells under
+  |                               their headings (rebuild_side_by_side_lists)
+  |     tables/cell_lists.py      a list inside a table cell - entries opened by a tick, cross or bullet at a hanging
+  |                               indent, sub-lists, a note - is kept as a list and written as <ul><li> (list_cells; D028)
   |  6c. vision/ (optional)     pages with no usable text are read from their image by a served
   |                              model (olmOCR 2 behind an OpenAI-style endpoint) or Anthropic's API
   |                              (`anthropic[:model]`, key from ANTHROPIC_API_KEY); then icon-only table

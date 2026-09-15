@@ -20,8 +20,10 @@ from truedoc.render.okf import RenderOptions, render_document
 from truedoc.segment.blocks import build_blocks
 from truedoc.segment.order import assign_reading_order
 from truedoc.tables.aligned import find_aligned_tables
+from truedoc.tables.cell_lists import list_cells
 from truedoc.tables.cells import clean_cell_text, runs_across_columns
 from truedoc.tables.fill_grid import redraw_tables
+from truedoc.tables.list_columns import rebuild_side_by_side_lists
 from truedoc.tables.ruled import find_ruled_tables
 
 
@@ -210,6 +212,13 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
 
     if opts.marks:
         _attach_marks(pdf_page, page, blocks)
+    if opts.tables:
+        # A list set inside a table cell is written as a list (D028): Kogan's boxed list of covers. After the marks, so a
+        # drawn tick at the head of an entry is in the cell's text as it is on the page. Lists set side by side with no
+        # boxes are rebuilt first, from the lines the text-built table cut them into (POL1418DIR's covered and
+        # not-covered lists).
+        rebuild_side_by_side_lists(page, blocks)
+        list_cells(page, blocks)
 
     if opts.math:
         blocks = _apply_math(page, blocks, regions)
