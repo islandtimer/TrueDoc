@@ -500,6 +500,38 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   code before it ("We ofer to fnd it"); the same page with a map that already spells the ligatures is left as it is;
   suite 555.
 
+**A table whose columns hold only drawn marks is read from its own rules** (15 Sept, after ccb5e1b)
+- **The fault** (`apply_layout` step 1, `truedoc/layout/fuse.py`). QBE's home PDS page 16 sets which cover each change
+  concerns: a column of situations ("Alterations, additions or renovations", "You buy jewellery, watches, artworks...")
+  beside two columns under "If you have buildings cover" and "If you have contents cover" that hold nothing but a drawn
+  tick or cross. The layout model boxes it as a table (0.95), and `truedoc/marks.py` reads all eight marks, six ticks
+  and two crosses; but the table is built from the text lines inside the box, the mark columns hold no text, and none
+  came out. The rows read as headings and paragraphs, the marks had no cell to go to, and a reader could no longer tell
+  that buying jewellery matters for contents cover and not for buildings cover. The page draws no vertical rules, so
+  the ruled finder builds no grid either.
+- **The rule** (`truedoc/tables/rule_grid.py`). Each rule on the page - one under the header, one under every row - is
+  stroked in pieces that meet at the two column edges, at the same x on every row: the page's own drawing of its
+  columns. Inside a table box the model scores 0.7 or more whose text builds no table, the rows are now the bands
+  between consecutive rules, with the text above the first rule as the header; the columns are where the pieces of at
+  least three rules meet, with no vertical rule drawn there; and each word goes to the cell its centre falls in, so a
+  wrapped entry stays whole and the header line the text layer runs across two columns ("buildings cover contents
+  cover") is divided where the columns divide. The marks then take their cells as they always have.
+- **Why so gated.** Rule pieces meeting at a shared x are also how pages draw decoration: they stand on 3,213 of the
+  insurance library's 23,870 pages, in 379 documents - AAMI's building PDS has them at its margins on nearly every page
+  - and on 33 of the benchmark's 1,403 (`bench/probes/joined_rules_census.py`). Of the 38 insurance and benchmark pages
+  that carry them, the rule would fire on one, QBE's page 16: on the rest the joins lie outside any confident table box
+  or under a table already built (`bench/probes/joins_under_tables.py`).
+- **A word read twice.** QBE's page 11 is the same layout, and there the reader gives "contents cover" inside the
+  header line and again as a line of its own, where the file draws it once: the heading read "If you have contents
+  cover contents cover". A word repeated at the same place is now taken once.
+- **Measured, code against code** (against ccb5e1b). Insurance set: 213 of 229, from 212: QBE's home PDS page 16 gains its table check on "Alterations, additions or renovations", tables 15 to 16 of 27, and it is the only one of the 25 pages whose markdown changed. Key Facts Sheets: byte for byte the same on all 190 sheets, header whole 95% tuned on and 97% held out with every answer carried, before and after.
+  Benchmark: set against 737012f's pool, the last one converted (ccb5e1b's reader differs from it only by the width cap and the ligature repair), every subset scores as it did - tables 848/1022, multi_column 682/884, long_tiny_text 357/442, headers_footers 739/760, arxiv_math 2594/2927, old_scans 110/526, old_scans_math 17/458, no page moved - and every page reads the same but two, a674cb40 in tables and 0722235b in headers_footers, whose spaces the width cap restored and which read there as the width cap's own pools read them. Thirteen library pages chosen for their columns of drawn marks: the rule changes QBE's page
+  11, now a table of eight rows with its ticks and crosses where the page has them, and leaves the other twelve byte
+  for byte as they were.
+- **Tests:** a drawn page of that layout, with the model's table box given, reads as a table with each mark in its
+  column, failing on the code before (no table); a word the reader reports twice at one place reads once in its cell,
+  failing without that step; suite 557.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
@@ -510,6 +542,13 @@ geometry and typography.
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
+- Drawn marks in a table whose text builds its columns without them. ALDI's household PDS page 31 sets fourteen
+  insured events with a tick under Home and another under Contents; the table is built from the events and their page
+  numbers, so both ticks land in one cell ("✓ 32 ✓"). Counting the marks inside the model's box as words builds the
+  Home and Contents columns, but the page's Limit column holds only a note spanning the middle rows, and its lines then
+  land beside the wrong events, so that note has to be read as one cell spanning rows first. On a one-in-ten sample of
+  the library, 541 drawn marks stood in columns that no cell or line took, on 141 pages of 93 documents (counted
+  without the layout model, `bench/probes/unplaced_marks_census.py`).
 - Ligatures a text layer spoils where TrueDoc cannot read the glyphs' codes: a font with two-byte codes, or text drawn
   inside a form XObject. No page of the insurance library needs either yet (`bench/probes/library_ligatures.py`).
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.

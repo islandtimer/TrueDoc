@@ -31,6 +31,9 @@ PDF page
   |     layout/fuse.py            model regions override kinds, split straddling blocks, add figures,
   |                               build tables inside table boxes (a header row the box missed is taken from
   |                               just above it, never a sentence crossing the columns on word spaces), veto false tables
+  |     tables/rule_grid.py       a confident table box whose text builds no table - its columns hold only drawn marks -
+  |                               is read from its own rules: rows between them, columns where their pieces meet at the
+  |                               same x on at least three rules, each word in the cell its centre falls in
   v
   |  5. math/extract.py           display formulas per equation line, inline maths runs
   |     math/reconstruct.py       glyphs + rules -> LaTeX (fractions, scripts, radicals, matrices, accents)

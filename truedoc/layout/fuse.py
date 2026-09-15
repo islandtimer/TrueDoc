@@ -15,6 +15,7 @@ from truedoc.classify.blocks import _CONTACT
 from truedoc.layout.base import Region, RegionKind
 from truedoc.model import BBox, Block, BlockKind, Line, Page
 from truedoc.tables.aligned import table_from_lines
+from truedoc.tables.rule_grid import table_from_rules
 from truedoc.tables.cells import runs_across_columns
 
 _MIN_SCORE = {
@@ -364,6 +365,18 @@ def apply_layout(page: Page, blocks: list[Block], regions: list[Region], pdf_pag
                 new_tables.append(Block(kind=BlockKind.TABLE, bbox=table.bbox, table=table, provenance="layout-table-ocr", confidence=min(tr.score, 0.7)))
             continue
         table = table_from_lines(inside, page.body_font_size, trusted=trusted)
+        if table is None and trusted and pdf_page is not None:
+            # The text inside a confident table box builds nothing, yet the box can still be a table: one whose
+            # columns hold only drawn marks, which no text line reaches (QBE's home PDS page 16). Its own rules then
+            # say where its rows and columns are (`rule_grid.table_from_rules`), and the marks find their cells later.
+            ruled = table_from_rules(page, pdf_page, tr.bbox, page.body_font_size)
+            if ruled is not None:
+                grid_table, taken = ruled
+                for l in taken:
+                    consumed_lines.add(id(l))
+                new_tables.append(Block(kind=BlockKind.TABLE, bbox=grid_table.bbox, table=grid_table,
+                                        provenance="layout-table-rules", confidence=tr.score))
+            continue
         if table is None:
             continue
         # A small aligned table inside this box (a fragment of it that the
