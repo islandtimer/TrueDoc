@@ -188,3 +188,174 @@ def text_for(tables: dict | None, font: str, code: int, advance_per_em: float | 
     # fold to the letters, which is what the MuPDF path delivers (ligatures expanded).
     import unicodedata
     return unicodedata.normalize("NFKC", text)
+
+
+def _to_unicode_map(font) -> dict[int, str]:
+    """A simple font's ToUnicode map, single codes and ranges (a range given as an array is not read)."""
+    stream = font.get("/ToUnicode")
+    if stream is None:
+        return {}
+    if hasattr(stream, "get_object"):
+        stream = stream.get_object()
+    try:
+        text = stream.get_data().decode("latin-1", "replace")
+    except Exception:
+        return {}
+    out: dict[int, str] = {}
+    for block in re.findall("beginbfchar(.*?)endbfchar", text, re.S):
+        for a, b in re.findall("<([0-9A-Fa-f]+)>[ ]*<([0-9A-Fa-f]+)>", block):
+            try:
+                out[int(a, 16)] = bytes.fromhex(b).decode("utf-16-be")
+            except ValueError:
+                continue
+    for block in re.findall("beginbfrange(.*?)endbfrange", text, re.S):
+        for a, b, c in re.findall("<([0-9A-Fa-f]+)>[ ]*<([0-9A-Fa-f]+)>[ ]*<([0-9A-Fa-f]+)>", block):
+            lo, hi, start = int(a, 16), int(b, 16), int(c, 16)
+            for k in range(lo, min(hi, lo + 255) + 1):
+                if start + k - lo < 0x110000:
+                    out[k] = chr(start + k - lo)
+    return out
+
+
+_LIGATURE_DOCS: dict[tuple, dict] = {}
+_LIGATURE_DOCS_MAX = 2
+
+
+def _ligature_document(path: str) -> dict | None:
+    """The file read once for the ligature reading and kept for its later pages: its pypdf reader, and each font
+    object's codes as `_font_codes` finds them, by object number. Read into memory, so no file handle is held.
+
+    Opening the file with pypdf for every page cost RAA's 60-page PDS about 600 ms a page, pages with nothing to mend
+    included - 44% of the reader's time."""
+    try:
+        import io
+
+        import pypdf
+
+        st = os.stat(path)
+        key = (os.path.abspath(path), st.st_mtime_ns, st.st_size)
+        doc = _LIGATURE_DOCS.get(key)
+        if doc is None:
+            with open(path, "rb") as fh:
+                data = fh.read()
+            doc = {"reader": pypdf.PdfReader(io.BytesIO(data)), "fonts": {}}
+            if len(_LIGATURE_DOCS) >= _LIGATURE_DOCS_MAX:
+                _LIGATURE_DOCS.pop(next(iter(_LIGATURE_DOCS)))
+            _LIGATURE_DOCS[key] = doc
+        return doc
+    except Exception:
+        return None
+
+
+def _font_codes(doc: dict, ref) -> tuple[dict[int, str], dict[int, str]] | None:
+    """A simple font's ToUnicode map and {code: letters} for each code whose glyph name gives more letters than the map,
+    beginning with the map's ("f_f" mapped to "f"); cached by object number. None for a font without /Differences or
+    with two-byte codes."""
+    number = getattr(ref, "idnum", None)
+    if number is not None and number in doc["fonts"]:
+        return doc["fonts"][number]
+    import unicodedata
+
+    from fontTools import agl
+
+    f = ref.get_object() if hasattr(ref, "get_object") else ref
+    found = None
+    if str(f.get("/Subtype", "")) != "/Type0":
+        enc = f.get("/Encoding")
+        if hasattr(enc, "get_object"):
+            enc = enc.get_object()
+        diffs = enc.get("/Differences") if isinstance(enc, dict) else None
+        if diffs:
+            unicode_map = _to_unicode_map(f)
+            spoiled: dict[int, str] = {}
+            code = 0
+            for item in diffs:
+                if isinstance(item, (int, float)):
+                    code = int(item)
+                    continue
+                letters = unicodedata.normalize("NFKC", agl.toUnicode(str(item).lstrip("/")) or "")
+                mapped = unicode_map.get(code)
+                if mapped and len(letters) > len(mapped) and letters.startswith(mapped):
+                    spoiled[code] = letters
+                code += 1
+            found = (unicode_map, spoiled)
+    if number is not None:
+        doc["fonts"][number] = found
+    return found
+
+
+def lossy_ligature_letters(path: str, page_number: int, pdfium_chars: list[tuple[int, str]]) -> dict[int, str]:
+    """{PDFium character index: letters} for the characters drawn with a ligature glyph the text layer spoils.
+
+    RAA's landlord PDS maps the codes of its ff and fi ligatures to "f" in its ToUnicode map, so the file's own text
+    reads "ofer", "fnd" and "Cooling-of"; the encoding still names those glyphs "f_f" and "fi". PDFium reports a
+    character's Unicode but not its code, and not in the content stream's order and number, so the content stream is
+    read here with pypdf, each code through its font's ToUnicode map, and that text aligned with PDFium's: a character
+    drawn with a code whose name gives more letters than the map, beginning with the map's, takes the name's letters.
+    On RAA's page 22 all 2,035 characters pair and all 14 such glyphs land on their f's. The file is read once per
+    document and each font's codes worked out once, so a page whose fonts spoil nothing costs a few lookups; only a page
+    that has such a code reads its content stream. An alignment that pairs fewer than nine in ten of PDFium's
+    characters is not trusted. Simple fonts only: a two-byte font's codes are not read, nor text inside a form XObject.
+
+    `pdfium_chars` is (index, text) for each character PDFium did not make up, in PDFium's order.
+    """
+    if not path or not pdfium_chars or not available():
+        return {}
+    try:
+        import difflib
+
+        from pypdf.generic import ByteStringObject, ContentStream, TextStringObject
+
+        doc = _ligature_document(path)
+        if doc is None:
+            return {}
+        reader = doc["reader"]
+        page = reader.pages[page_number - 1]
+        resources = page.get("/Resources") or {}
+        if hasattr(resources, "get_object"):
+            resources = resources.get_object()
+        fonts = resources.get("/Font") or {}
+        if hasattr(fonts, "get_object"):
+            fonts = fonts.get_object()
+        maps: dict[str, dict[int, str]] = {}
+        spoiled: dict[str, dict[int, str]] = {}
+        for key, ref in fonts.items():
+            codes = _font_codes(doc, ref)
+            if codes is None:
+                continue
+            maps[str(key)] = codes[0]
+            if codes[1]:
+                spoiled[str(key)] = codes[1]
+        if not spoiled:
+            return {}
+        stream: list[tuple[str, str | None, int]] = []     # (character, font resource, code), as drawn
+        font = None
+        for operands, op in ContentStream(page.get_contents(), reader).operations:
+            if op == b"Tf" and operands:
+                font = str(operands[0])
+                continue
+            if op in (b"Tj", b"'", b'"') and operands:
+                items = operands[-1:]
+            elif op == b"TJ" and operands:
+                items = [x for x in operands[0] if isinstance(x, (TextStringObject, ByteStringObject))]
+            else:
+                continue
+            for item in items:
+                data = bytes(item.original_bytes) if hasattr(item, "original_bytes") else bytes(item)
+                for code in data:
+                    for ch in maps.get(font, {}).get(code) or "?":
+                        stream.append((ch, font, code))
+        ours = [text for _, text in pdfium_chars]
+        blocks = difflib.SequenceMatcher(None, [s[0] for s in stream], ours, autojunk=False).get_matching_blocks()
+        if sum(b.size for b in blocks) < 0.9 * len(ours):
+            return {}
+        out: dict[int, str] = {}
+        for b in blocks:
+            for k in range(b.size):
+                _ch, font_key, code = stream[b.a + k]
+                letters = spoiled.get(font_key or "", {}).get(code)
+                if letters and ours[b.b + k] == maps[font_key].get(code):
+                    out[pdfium_chars[b.b + k][0]] = letters
+        return out
+    except Exception:
+        return {}

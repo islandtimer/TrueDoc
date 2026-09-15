@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-15, 09:51 (**Two scores, and they mean different things.** **Open weights: 84.1** (run 89; held-out 81.4, tuned-on 82.0) - your own machine plus olmOCR 2's saved readings, nothing leaving the building, reproducible by anyone with a rented GPU. This is the default: the deep reader is off unless asked for. **With a hosted service: 85.4** (run 91, CI 84.5-86.3; held-out 82.4 and tuned-on 83.5, both the best ever) - the same converter, with the 103 pages of 1,403 that have no text layer and that our own OCR can make nothing of read by Claude Sonnet 5 over the API. **That is the best score the project has had, and the whole interval sits above the previous best of 84.2.** Against the open-weight run: old scans +35, old-scan maths +11, tables +6, tiny text +4, headers -2, multi-column -1. The route there was not straight: run 90 scored 82.8 because D024 escapes every dollar sign outside our own delimiters and a general model writes its maths between dollar signs, so fourteen integrals on one page became literal text and old-scan maths fell 17 points. Fixed by translating a model's delimiters before anything else sees the text. **The method error mattered more than the fix: a change measured on one category was shipped to all eight, and the category it broke was the one never looked at; `bench/tools/compare_categories.py` now makes that impossible to miss.** Also settled this week: a paragraph of prompt beat moving from Sonnet to Opus, reading a page in overlapping bands measured 28 checks worse and is switched off, and the evidence for all of it is in `docs/MODEL_CHOICE.md`. **M7 is met**: 85.4 against a best published 83.1, and OmniDocBench was investigated on 13 September and declined as a measure of TrueDoc - every page in it is an image, so our text reader, formula rebuilder and both table builders never run and the score would belong to whichever model reads the pages (D026). **Your insurance library now has a score too, and it is a different measure: 207 of 229 checks, 90.4%**, written by a model reading 25 of your PDS pages as images and never seeing our output (tables are the weak spot at 15 of 27). **All 38 were ruled on: 31 fair, 7 unsure, nothing dropped**, so the score is confirmed and every failure is ours. Building the set already found five things the public benchmark cannot show, including a PDF whose own text layer has lost letters to its ligatures and which TrueDoc trusts anyway. The section below has them. **The Key Facts Sheets have become an oracle for table rules (D027)**: the prescribed header now reads whole on 95% of the sheets tuned on and 97% of the hidden fifth, from 34% and 16%, and the Yes/No answer sits in its own column for every prescribed event, tuned on and in the hidden fifth - every rule written in geometry, none of them knowing what an insurance document is. **A benchmark zero is no longer taken on trust**: on 14 September a rule that moved no score had changed 16 pages, and reading them against their images caught a false table and phrases cut in two, both fixed before anything was committed. Next: a text layer that has lost letters to its ligatures (RAA's landlord PDS page 22).)_
+_Last updated: 2026-09-15, 10:44 (**Two scores, and they mean different things.** **Open weights: 84.1** (run 89; held-out 81.4, tuned-on 82.0) - your own machine plus olmOCR 2's saved readings, nothing leaving the building, reproducible by anyone with a rented GPU. This is the default: the deep reader is off unless asked for. **With a hosted service: 85.4** (run 91, CI 84.5-86.3; held-out 82.4 and tuned-on 83.5, both the best ever) - the same converter, with the 103 pages of 1,403 that have no text layer and that our own OCR can make nothing of read by Claude Sonnet 5 over the API. **That is the best score the project has had, and the whole interval sits above the previous best of 84.2.** Against the open-weight run: old scans +35, old-scan maths +11, tables +6, tiny text +4, headers -2, multi-column -1. The route there was not straight: run 90 scored 82.8 because D024 escapes every dollar sign outside our own delimiters and a general model writes its maths between dollar signs, so fourteen integrals on one page became literal text and old-scan maths fell 17 points. Fixed by translating a model's delimiters before anything else sees the text. **The method error mattered more than the fix: a change measured on one category was shipped to all eight, and the category it broke was the one never looked at; `bench/tools/compare_categories.py` now makes that impossible to miss.** Also settled this week: a paragraph of prompt beat moving from Sonnet to Opus, reading a page in overlapping bands measured 28 checks worse and is switched off, and the evidence for all of it is in `docs/MODEL_CHOICE.md`. **M7 is met**: 85.4 against a best published 83.1, and OmniDocBench was investigated on 13 September and declined as a measure of TrueDoc - every page in it is an image, so our text reader, formula rebuilder and both table builders never run and the score would belong to whichever model reads the pages (D026). **Your insurance library now has a score too, and it is a different measure: 212 of 229 checks, 92.6%**, written by a model reading 25 of your PDS pages as images and never seeing our output (tables are the weak spot at 15 of 27). **All 38 were ruled on: 31 fair, 7 unsure, nothing dropped**, so the score is confirmed and every failure is ours. Building the set already found five things the public benchmark cannot show, including a PDF whose own text layer has lost letters to its ligatures, which TrueDoc now reads back from the glyphs' own names. The section below has them. **The Key Facts Sheets have become an oracle for table rules (D027)**: the prescribed header now reads whole on 95% of the sheets tuned on and 97% of the hidden fifth, from 34% and 16%, and the Yes/No answer sits in its own column for every prescribed event, tuned on and in the hidden fifth - every rule written in geometry, none of them knowing what an insurance document is. **A benchmark zero is no longer taken on trust**: on 14 September a rule that moved no score had changed 16 pages, and reading them against their images caught a false table and phrases cut in two, both fixed before anything was committed. Next: the hard tail - ligature codes in two-byte fonts and form XObjects wait until a document needs them; a never-tuned-on slice of your insurance set waits on your go-ahead, since a hosted model writes and checks its checks.)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -98,10 +98,10 @@ What moved across the runs, section by section: formulas 0 to 41 (rebuilt from t
 ## Where we are
 
 **15 September.** On the public exam TrueDoc scores **84.1 on open weights** (run 89) and **85.4 with the hosted deep
-reader** (run 91), against a best published 83.1: M7 is met. On your insurance library it scores **207 of 229 checks**,
+reader** (run 91), against a best published 83.1: M7 is met. On your insurance library it scores **212 of 229 checks**,
 a score your rulings confirmed. Your Key Facts Sheets have become an oracle for table rules (D027); where they stand
 is in their own section below. Every stage reads the PDF through PDFium, and the product path no longer imports
-PyMuPDF (D023). The unit tests pass at every commit: 553 on 15 September.
+PyMuPDF (D023). The unit tests pass at every commit: 555 on 15 September.
 
 ### As it stood on 8 September, kept for the record
 
@@ -242,11 +242,11 @@ read correctly in a second, independent reading of the page are already settled.
 
 Five things came out of building it, and none of them would have shown on the public benchmark:
 
-- **A lossy text layer sails straight through.** One RAA page's own font maps the "ff" and "fi"
+- **A lossy text layer sailed straight through.** One RAA page's own font maps the "ff" and "fi"
   ligatures to a single letter, so the PDF file itself says "ofer", "fnd" and "Certifcate" - we
-  checked the file, not the conversion. TrueDoc trusts a text layer whenever there is one, so a page
-  that has already lost letters is never read as an image. A cheap detector (impossible words) could
-  send such a page to the deeper read.
+  checked the file, not the conversion. Fixed on 15 September without guessing a word: the file still
+  names each ligature glyph, and TrueDoc now reads the letters from those names - on that page and on
+  every one of the 130 pages across your library, in six documents, that had lost letters the same way.
 - **Spaces went missing on that same page**, and that half was ours. The file says "If you",
   "Cooling-of Period", "of 21"; we wrote "Ifyou", "Cooling-ofPeriod", "of21". Fixed on 15 September:
   PDFium gave every "f" a ligature's width, and a character's box now stops at the next character the
@@ -353,6 +353,12 @@ page moved**.
   holds beside it. Your insurance set now scores 207 of 229: RAA's landlord page gains the check its lost spaces had failed, and no other page's markdown changed. Two earlier versions were caught before anything was committed: the first stopped at any
   next character and broke an Allianz page's tick lists (a line break PDFium makes up sits just after the letter before
   it); the second stopped maths letters at the accents set over them and cost three benchmark points. On the benchmark no score moves; two pages read better and no other page changed.
+- **Letters lost to ligatures, read back from the file (the same morning).** RAA's landlord PDS page 22 itself reads
+  "ofer", "fnd" and "Cooling-of": its font sends the ff and fi ligatures to a single f. The same file still names each
+  of those glyphs, so TrueDoc now finds the characters drawn with them - by lining the page's drawing up with its text -
+  and writes the letters the names give: "offer", "find", "Cooling-off". No word list is consulted. Your insurance set now scores 212 of 229: RAA's landlord page passes all nine of its checks, and no other page changed.
+  Across your whole library the same fault had spoiled 130 pages in six documents - two RAA PDSs and four CBA
+  documents - and TrueDoc now reads all of them whole. On the benchmark no score moves and no page changed.
 
 The scorer is `bench/tools/insurance_score.py` (it undoes markdown escapes first, or D024's "\$500"
 would fail every price check), and the dossier is built by `bench/tools/insurance_dossier.py`.
@@ -392,7 +398,7 @@ product - which is the reason your library is the test bed.
 
 - On a few of your Key Facts Sheets a prescribed event's Yes/No still runs into its label or its exclusions; the
   shapes left are named under Next in `docs/PROGRESS_LOG.md`.
-- A PDF whose own text layer has lost letters to its ligatures ("ofer", "fnd", "Certifcate") is trusted as it stands.
+- A PDF whose own text layer has lost letters to its ligatures is mended only where TrueDoc can read the glyphs' codes: not in a font with two-byte codes, nor in text drawn inside a form XObject. No page of your library needs either today.
 - The five limits below were written on 6 and 7 September and have not been measured again since.
 - Handwritten pages and old maths scans stay empty: the classical OCR engine cannot read them, and TrueDoc leaves such a page empty rather than fill it with nonsense (61 of the 79 benchmark pages that are still empty are handwriting). The optional vision stage reads them when you switch it on, with a rented GPU or an API key.
 - A sideways picture of a table on a page whose text layer holds only the table's title is not read: the title makes the page count as readable, so it is never OCR'd (one benchmark page).

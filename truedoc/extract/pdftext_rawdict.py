@@ -893,6 +893,14 @@ def _build(path: str, page_number: int) -> dict | None:
     except Exception:
         return None
     _rehome_accents(grouped, geom)
+    # A ligature the text layer spoils - RAA's landlord PDS maps the codes of its ff and fi glyphs to "f", and its text
+    # reads "ofer", "fnd", "Cooling-of" - is read back from the glyph's own name, each such character found by aligning
+    # the page's content stream with PDFium's characters (`glyph_names.lossy_ligature_letters`).
+    spoiled_ligatures = glyph_names.lossy_ligature_letters(path, page_number, sorted(
+        ((ch["char_idx"], str(ch.get("char", ""))) for block in grouped for line in block.get("lines") or []
+         for span in line.get("spans") or [] for ch in span.get("chars") or []
+         if isinstance(ch.get("char_idx"), int) and not (geom.get(ch["char_idx"]) or {}).get("generated")),
+        key=lambda pair: pair[0]))
 
     runs = []       # (block, direction, spans) per pdftext line, in order, before the joins and the gap cuts
     for block_index, block in enumerate(grouped):
@@ -936,6 +944,9 @@ def _build(path: str, page_number: int) -> dict | None:
                         # tip with no name came through as its bare code "$" (2503.05329), which opened
                         # a formula in the markdown that paired with every later one.
                         continue
+                    letters = spoiled_ligatures.get(ch.get("char_idx"))
+                    if letters and len(text) == 1 and letters.startswith(text):
+                        text = letters
                     named = None
                     if (g and g.get("map_error") and len(text) == 1 and ord(text) == g.get("code", -1)
                             and not is_extension_font(font_name)):

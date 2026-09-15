@@ -467,6 +467,39 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   the second; suite 553. A page built with PyMuPDF puts PDFium's made-up characters at the glyph's end, where
   no version cuts anything, so each test gives PDFium the fault seen on the real page.
 
+**A ligature the text layer spoils is read back from the glyph's own name** (15 Sept, after 4850331)
+- **The fault** (`glyph_names.lossy_ligature_letters`, `pdftext_rawdict._build`). RAA's landlord PDS page 22's ToUnicode
+  map sends the codes of its ff, fi, fl and ffi ligatures to "f", so the file's own text reads "ofer", "fnd",
+  "Certifcate" and "Cooling-of" (`bench/probes/ligature_codes.py`), and TrueDoc wrote what the file said. The encoding
+  still names those glyphs "f_f", "fi", "fl" and "f_f_i", and the content stream draws each by its code.
+- **The rule.** For a page whose simple fonts hold a code whose glyph name gives more letters than the ToUnicode map
+  does, beginning with the map's, the content stream is read with pypdf, each code through its font's map, and that
+  text aligned with PDFium's characters by sequence - PDFium reports no codes, and its characters come in another order
+  and number than the codes drawn. Each character drawn with such a code takes the name's letters, laid out on the
+  glyph's box as an expanded ligature is. No word list is consulted. An alignment that pairs fewer than nine in ten of
+  PDFium's characters is not trusted; a two-byte font's codes and text inside a form XObject are not read.
+- **What it costs.** A first version opened the file with pypdf for every page: on the first 30 pages of RAA's 95-page
+  landlord PDS that was about 600 ms a page, pages with nothing to mend included - 44% of the reader's time. The file is
+  now read once per document and each font's codes worked out once. The answers are the same as before on the PDS's
+  first 60 pages, and the insurance set converts byte for byte as it did: a page whose fonts spoil nothing costs about
+  17 ms, a page that needs mending about 390 ms (timed on a loaded machine). On those 60 pages the reading mends 247
+  characters.
+- **How far it reaches.** The 405 pages first searched for lost letters held one such page. Across the whole library -
+  1,176 PDFs, 23,870 pages - words that are no word until an f is expanded ("ofer", "Certifcate", "fnd") stand on 130
+  pages of 6 documents: RAA's landlord PDS (56 pages) and its home and contents PDS (60), two editions of a CBA home
+  insurance guide (6 each) and two CBA target market determinations (1 each). The reader now reads all 130 whole: no
+  such word is left, and each word it should have been is in the reader's text as often as the file lost it
+  (`bench/probes/library_ligatures.py`). The repair reads only simple fonts drawn by the page's own content and reaches
+  every one of these pages, so no page of the library yet needs the two cases it leaves out: two-byte fonts and text
+  inside form XObjects.
+- **Measured, code against code** (against 4850331). RAA's page 22 now reads "offer", "find", "different",
+  "offences", "Certificate" and "Cooling-off" nine times - its 14 ligature glyphs - and not one other word of the page
+  changed. Insurance set: 212 of 229, from 207: RAA's page 22 gains its last five checks - four passages holding "offences", "find", "offer" and "Cooling-off", and one order check - and now passes all nine; it is the only one of the 25 pages whose markdown changed. Key Facts Sheets: not one of the 190 sheets' markdown changed, byte for byte, and no grading moved: header whole 150 of 158 tuned on and 31 of 32 held out, answers 1,885 of 1,885 and 375 of 375. Benchmark: no score moves on any subset (tables 848 of 1,022, multi_column 682 of 884, long_tiny_text 357 of 442, headers_footers 739 of 760, arxiv_math 2,594 of 2,927, old_scans 110 of 526, old_scans_math 17 of 458). Measured as a pool of all 1,403 pages with the ligature reading on the width cap's second version (`plig`, against `pwidth`: no page changed), then, on this commit's base, the 50 pages the width commit reads differently from that version and the 2 it changed, converted again with the ligature reading: all 52 byte for byte as before; the markdown changed on
+  none of the 1,403 pages.
+- **Tests:** a hand-built page whose font maps its f_f and fi codes to "f" reads "We offer to find it", failing on the
+  code before it ("We ofer to fnd it"); the same page with a map that already spells the ligatures is left as it is;
+  suite 555.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
@@ -477,16 +510,8 @@ geometry and typography.
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
-- The lossy ligature text layer, and a way to mend it from the file. RAA's landlord PDS page 22's own Unicode map sends
-  the codes of its ff, fi, fl and ffi ligatures to "f" (`ofer`, `fnd`, `Certifcate`), and TrueDoc trusts the layer. The
-  encoding still names those glyphs (`f_f`, `fi`, `fl`, `f_f_i`; `bench/probes/ligature_codes.py`), and the content stream
-  draws each by its code. PDFium reports no codes and its characters come in another order and number than the codes
-  drawn, but aligned as text all 2,035 of the page's characters pair with a drawn code, and all 14 ligature glyphs land
-  on their f's: "offences", "different", "find", "offer", "Certificate", and "Cooling-off" nine times, which a word list
-  cannot see because "of" is a word (`bench/probes/ligature_align.py`). So the letters can be read back from the file,
-  not guessed; still to build: text inside form XObjects, fonts with two-byte codes, and dividing the f's box. A
-  word-list signal flagged only this page of 405 (`bench/probes/lossy_ligatures.py`). The spaces we lost beside those
-  letters were ours, and are fixed.
+- Ligatures a text layer spoils where TrueDoc cannot read the glyphs' codes: a font with two-byte codes, or text drawn
+  inside a form XObject. No page of the insurance library needs either yet (`bench/probes/library_ligatures.py`).
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
 
 ---
