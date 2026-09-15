@@ -799,7 +799,8 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         grid_rows.append(cells)
 
     bands = _band_segments(cand.rows, size)
-    grid_rows, grid_geom = _merge_wrapped_rows(grid_rows, cand.rows, size, columns)
+    joined: dict[str, tuple[str, str]] = {}
+    grid_rows, grid_geom = _merge_wrapped_rows(grid_rows, cand.rows, size, columns, joined)
     grid_rows, grid_geom = _fold_wrapped_heading(grid_rows, grid_geom)
     kept_columns = [c for c in range(n_cols) if any(row[c] for row in grid_rows)]
     grid_rows = _drop_empty_columns(grid_rows)
@@ -825,8 +826,13 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
     elif n_header == 1 and len(kept_columns) == n_cols and grid_geom:
         spans = _single_header_spans(grid_rows, grid_geom[0], col_bounds)
 
-    # Validation: tables are made of short cells, prose is not.
-    non_empty = [c for row in grid_rows for c in row if c]
+    # Validation: tables are made of short cells, prose is not. A wrapped entry joined to the line holding its values
+    # ("Standard rooms" over "(standard or double occupancy) | US $85.00") is counted as the two lines the page sets, and
+    # its row as two rows: the join says what the table holds, not whether the text is a table. Counted whole, two such
+    # entries took a conference flyer's accommodation list (0722235b) from 26 short cells of 29 to 22 of 27, under the
+    # two-column bar, and the whole price list came out as run-on text.
+    non_empty = [part for row in grid_rows for c in row if c for part in joined.get(c, (c,))]
+    folded_rows = sum(1 for row in grid_rows if row[0] in joined)
     if not non_empty:
         return None
     short = sum(1 for c in non_empty if len(c.split()) <= 4)
@@ -847,14 +853,16 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         # ("Distribution Code | Distribution Licensees | Separate Annex 5") also
         # carries six words a row, but under three a cell.
         n_words = sum(len(c.split()) for c in non_empty)
-        words_per_row = n_words / max(1, len(grid_rows))
+        words_per_row = n_words / max(1, len(grid_rows) + folded_rows)
         words_per_cell = n_words / max(1, len(non_empty))
         # The cuts carved the text layer's segments into pieces when the columns
         # filled on most rows outnumber the segments a row came with. Columns
         # filled on few rows (the tick columns of a checklist of names) are not
         # pieces of anything: they are why such a list has more columns than
         # segments, and they must not make it prose.
-        dense_cols = sum(1 for c in range(n_cols) if sum(1 for row in grid_rows if row[c]) >= 0.5 * len(grid_rows))
+        dense_cols = sum(1 for c in range(n_cols)
+                         if sum(1 for row in grid_rows if row[c]) + (folded_rows if c == 0 else 0)
+                         >= 0.5 * (len(grid_rows) + folded_rows))
         sliced = dense_cols > 1.5 * median_segments
         # Cells that carry a digit ("TP 120 µg l-1", a value with its unit) are not prose either,
         # whatever the number pattern says of them (a figure's value block, run 59).
@@ -1581,11 +1589,13 @@ def _label_carries_on(above: list[str], cells: list[str], filled: list[int]) -> 
 
 
 def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
-                        columns: list[tuple[float, float]] | None = None) -> tuple[list[list[str]], list[_Row]]:
+                        columns: list[tuple[float, float]] | None = None,
+                        joined: dict[str, tuple[str, str]] | None = None) -> tuple[list[list[str]], list[_Row]]:
     """Fold continuation lines of a wrapped cell into the row above.
 
     Returns the grid and the row geometry that goes with it (merged rows span
-    the lines they were folded from)."""
+    the lines they were folded from). A wrapped entry joined to the line that
+    holds its values is recorded in `joined`, when given, as its two lines."""
     if not grid:
         return grid, list(rows)
     grid = [list(cells) for cells in grid]
@@ -1656,6 +1666,26 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
                 prev[i] = prev[i] + " " + cells[i]
             out_rows[-1] = _Row(segments=prev_row.segments + row.segments, y0=prev_row.y0, y1=row.y1)
             took_statistics.add(len(out) - 1)
+            continue
+        # A wrapped entry whose value is set against its last line: "What you're covered for" over "under each of
+        # the insured events", the page number 16 beside the second line only, on BOM's home PDS contents page. The
+        # upper row fills its label alone, the lower row's label carries it on and holds the values, and the row
+        # after starts an entry of its own, so the two are one entry. A heading over a group reads the same way
+        # until the row after it: "Demographics" over "age (years)" is followed by "sex (male %)", which carries on
+        # too, so a group stands there and nothing is joined. A label closed by ".?!:;" or a bracket ("Patient
+        # outcomes (n %)") is whole, and a tick or cross opens an entry.
+        if (k < len(grid) and prev[0] and not any(prev[1:]) and cells[0] and any(cells[1:])
+                and gap <= 0.6 * size and prev[0].rstrip()[-1:] not in ".?!:;)"
+                and not _BULLET_START.match(prev[0]) and not _BULLET_START.match(cells[0])
+                and len(cells[0].split()) <= 8 and _continues(prev[0], cells[0])
+                and grid[k][0] and not _continues(cells[0], grid[k][0])
+                and not _is_band(here, grid, rows, columns, bands, size)):
+            lower = cells[0]
+            cells[0] = _join_lines(prev[0], lower)
+            if joined is not None:
+                joined[cells[0]] = (prev[0], lower)
+            out[-1] = cells
+            out_rows[-1] = _Row(segments=prev_row.segments + row.segments, y0=prev_row.y0, y1=max(prev_row.y1, row.y1))
             continue
         # (A continuation whose own column is empty in the row above - "or commercial building"
         # under the empty half of a side-by-side pair of lists - was tried here, folding into the

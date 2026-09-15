@@ -22,7 +22,8 @@ PDF page
   |                               cell into its row, and _label_carries_on carries a label on to its second line when
   |                               the short value beside it is left empty (a capitalised second line only when the
   |                               row's other cells carry on too; never one holding a digit unless it starts in lower
-  |                               case)
+  |                               case), and an entry wrapped with its value on its last line becomes one row when the
+  |                               row after it starts an entry of its own (counted as its lines when the table is judged)
   v
   |  3. segment/blocks.py         lines -> paragraph blocks (gap, overlap, size, typeface rules)
   |     classify/blocks.py        heuristic kinds: heading, header/footer, page/line numbers, list, caption

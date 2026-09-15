@@ -645,6 +645,49 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   the same reading writes a boxed list as a list. A looser fix for exactly this was tried and cost 48 benchmark checks
   across 21 pages (the note in `_merge_wrapped_rows`), so the indent is the evidence, not the empty cell.
 
+**A wrapped entry whose value sits on its last line is one row** (15 Sept, after fb091fb)
+- **The fault** (`_merge_wrapped_rows`, `truedoc/tables/aligned.py`). BOM's home PDS contents page sets "What you're
+  covered for" over "under each of the insured events" with the page number 16 beside the second line only, and the
+  same for "If this insurance has been issued through an" / "insurance intermediary" and "Your responsibilities - duty
+  to take reasonable care" / "not to make a misrepresentation". The aligned finder made each two rows, the first with
+  no page number, so a reader met an entry that pointed nowhere and a fragment that pointed to page 16. The merger
+  already folds a line that continues the cell above when it leaves the other columns empty, and `_label_carries_on`
+  joins a label's second line when that line leaves a value empty; here it is the first line that leaves the value
+  empty, because the number is set against the last.
+- **The rule.** An upper row that fills its label alone, a lower row whose label carries that label on (`_continues`:
+  a lower-case start, or the upper ending on a connector) and that fills a value, and a row after them that starts an
+  entry of its own, are one entry: the labels join and the row takes the lower row's values. The row after is what
+  tells a wrap from a heading over a group, which reads the same for two rows - "Demographics" over "age (years)" is
+  followed by "sex (male %)", which carries on too. A label closed by ".?!:;" or a bracket ("Patient outcomes (n %)")
+  is whole; a tick or cross opens an entry; the lower label is at most eight words, the gap a line's, and a band laid
+  across the table is never joined.
+- **Why those guards.** A census of converted markdown before the rule was written found the bare shape - a label alone
+  over a carried-on label with a value - as 35 row pairs on 16 pages across the benchmark, the Key Facts Sheets and the
+  insurance set, most of them headings over a group: "Teachers by Ethnicity and Sex:" over "African American",
+  "discrete decoding" over "unbalanced (k=4, l=5)". With the guards it leaves 15 on 7, and the bracket guard one fewer.
+- **A join must not decide whether the text is a table.** The rule's first benchmark run found a conference flyer
+  (0722235b) whose accommodation price list sets "Standard rooms" over "(standard or double occupancy) US $85.00". The
+  joins read right, and the whole list vanished: the aligned finder's prose test asks that a two-column table's cells
+  be four words or fewer, 85% of them, and it counted the joined six-word labels whole - short cells went from 26 of 29
+  to 22 of 27, and the list came out as run-on text, the Mayfair Hotel's five rooms in one run and their prices in
+  another. A joined entry is now counted as the two lines the page sets, and its row as two rows: joining says what a
+  table holds, not whether the text is one. Counted that way every figure the test reads is what it was before the
+  rule, so the rule cannot make or unmake a table.
+- **Measured, code against code** (against fb091fb). Insurance set: 216 -> 218 of 229 on the checks as they stood,
+  BOM's contents page gaining both its checks and no other page changing; 224 of 229 on the six checks D028 rewrote.
+  The repair changed no insurance page: its pages are, byte for byte, the rule's before it. Benchmark (full pool
+  against `prules`): tables 848 -> 852 of 1,022 and every other subset unchanged. Of the four, bdb0c069's two are the
+  drawn-cells rule's - its page converts byte for byte the same at fb091fb - and b773892d's two this rule's, its two
+  wrapped topics whole. The markdown differs on five of the 1,403 pages, bdb0c069 and four of this rule's, each read
+  and right: 1801ca1d ("50% Kernel home range"), b773892d, 065d792c's German index entries whole with their hyphens
+  mended, and 0722235b's price list, kept as a table with its entries joined. Key Facts Sheets: byte for byte the same
+  on all 190 sheets, before the repair and after it, so header whole stays at 95% tuned on and 97% held out with every
+  answer carried.
+- **Tests:** a contents entry wrapped with its page number on the second line is one row, failing on the code before;
+  a heading over a group of lower-case entries, a label closed by a bracket or a colon, and a label opened by a tick
+  are each left as they were; and a price list of the flyer's shape stays a table with its entries joined - failing on
+  the code before the rule, which joins nothing, and on the rule before its repair, which makes no table. Suite 570.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
@@ -655,9 +698,10 @@ geometry and typography.
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
-- Text that wraps inside a card or a contents entry read as a new row, behind five of the insurance misses: Budget
-  Direct's cover cards read two-line names as table rows, and BOM's contents page gives each wrapped entry two rows.
-  GIO's limits table, the same fault in a table drawn as filled cells, is read from its cells now.
+- Text that wraps inside a card read as a new row, behind three of the insurance misses: Budget Direct's cover cards
+  read two-line names as table rows ("Unspecified | Specified" over "Personal Effects | Personal Effects"). Each card is
+  a stroked box holding its own two lines, which is the evidence a rule would read. BOM's wrapped contents entries and
+  GIO's limits table, the same fault in other shapes, are mended.
 - Drawn marks that no table cell takes. ALDI's household PDS page 31, the example that stood here, is read from the
   cells its page draws since the drawn-cells rule: each tick under Home and under Contents, and the Limit note one cell
   spanning the fourteen rows. The rest of that census - 541 drawn marks in columns no cell or line took, on 141 pages of
