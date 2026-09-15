@@ -39,6 +39,10 @@ PDF page
   |                               (tiled fills and the rules among them) is read again from the drawing, spans and
   |                               header included - only where words of one text cell lie on both sides of a drawn
   |                               edge (redraw_tables)
+  |     tables/boxed_cells.py     then: rows of a text-built table that one box the page strokes holds as one run of text
+  |                               - a cover's name on two lines in a card - are one row; never a list, a sentence and the
+  |                               next, stacked values or a key's entries, and never where the box holds every row
+  |                               (join_boxed_rows)
   |     classify/page_numbers.py  after the layout model and the margin clean-up: a margin line taken for the page's
   |                               number is text again when the pages beside it number themselves at a distance it does
   |                               not fit and none prints the same line at the same place (release_pointers)

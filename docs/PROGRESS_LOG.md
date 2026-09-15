@@ -740,6 +740,46 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   box comes out as a list, converted end to end; lists set side by side are rebuilt as lists; and a table holding words
   the page does not is left as it is. Suite 579.
 
+**A name set on two lines inside one drawn box is one cell** (15 Sept, night)
+- **The fault** (Budget Direct's home PDS page 8). The optional covers are cards: each cover's name in a green box, on
+  one line or two ("Unspecified" over "Personal Effects", "Motor" over "Burnout"), with a link to its page under the
+  box. The aligned finder read each row of cards as a table and gave each line of a name a row of its own, so
+  "Unspecified Personal Effects" was nowhere in the markdown: a reader met "Unspecified | Specified" over "Personal
+  Effects | Personal Effects". The break is not forced by the width - "Unspecified Personal" is 100pt and the box 148pt -
+  so the lines say nothing about belonging together. The box does.
+- **The rule** (`truedoc/tables/boxed_cells.py`, `join_boxed_rows` in `process_page` right after the drawn-cells
+  redraw). A rectangle whose four sides the page draws, holding whole cells of one column across consecutive rows of a
+  text-built table and no other text, folds those rows into one, where every other column holds text in at most one of
+  them or has a box of its own over the same rows. Only a single run of text is folded: no line opening a list item, no
+  sentence closed before the last line, no line that is a value (as many digits as letters), one size of type, the
+  lines a line apart and no rule drawn across them - so a ticked list in one box, or a paragraph over a "Go to page"
+  line, stays as the table has it. And the box must divide the table's rows: a frame round the whole table, or round
+  each whole column, says nothing about which rows belong together.
+- **Found on the way.** Its first insurance run changed nothing: boxes were sought among the edges near the table, which
+  dropped the right-hand card's far side, and the strokes of an icon drawn between a name's two lines counted as a rule
+  dividing them. Boxes are now sought across the page, and a rule divides two lines only where it runs under half the
+  narrower one; each fix is pinned by a test that fails on the behaviour before it, and so is the value guard, which
+  keeps a box of stacked amounts from reading as one run.
+- **A legend is not a card.** The benchmark pool of the combined work changed one page by this rule: arxiv 2503.04674's
+  convergence plots, whose legends are stroked boxes of short lines - "Gauss (s=1)" over "Radau IIA (s=2)" over "Gauss
+  (s=2)" - that passed every test of a wrapped name, so each legend became one cell and each method lost the marker drawn
+  beside it. No check moved; the pairing did. A key draws a sample before each of its lines, a stroke ending just short
+  of the words, which a card's wrapped name never has (Budget Direct draws its icons to the right of the name): two lines
+  or more each led by one are entries, not a run, and the legends read as they did.
+- **Measured, code against code** (against the D028 lists). Insurance set: 226 -> 229 of 229, Budget Direct's page 8
+  gaining its three order checks ("This Home and Contents policy is made up of different covers", "Unspecified
+  Personal Effects", "Motor Burnout") and no other page changing; every kind of check now passes in full. Key Facts
+  Sheets: byte for byte the same on all 190 sheets, measured with the D028 lists and the arrow reader in the same
+  tree, so header whole stays at 95% tuned on and 97% held out with every answer carried. Benchmark: no page of the
+  1,403 changes. The full pool of the combined work changed one page by this rule, arxiv 2503.04674's legends, and
+  with the key guard that page converts byte for byte as it did; the guard only ever leaves rows unfolded, so no check
+  moves.
+- **Tests:** a name on two lines in one box is one cell; an icon drawn beside the name is not a rule between its lines;
+  a frame round the whole table or round each whole column joins nothing; a list or two sentences in one box are left
+  apart; a rule across the lines or a change of size keeps them apart; a column whose rows keep their own values is not
+  folded; boxes of stacked values are rows, not a run; and a key with a sample before each line is not one run, while an
+  icon beside a name leads no line - the first failing without the guard. Suite 588.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
@@ -750,10 +790,6 @@ geometry and typography.
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
-- Text that wraps inside a card read as a new row, behind three of the insurance misses: Budget Direct's cover cards
-  read two-line names as table rows ("Unspecified | Specified" over "Personal Effects | Personal Effects"). Each card is
-  a stroked box holding its own two lines, which is the evidence a rule would read. BOM's wrapped contents entries and
-  GIO's limits table, the same fault in other shapes, are mended.
 - Drawn marks that no table cell takes. ALDI's household PDS page 31, the example that stood here, is read from the
   cells its page draws since the drawn-cells rule: each tick under Home and under Contents, and the Limit note one cell
   spanning the fourteen rows. The rest of that census - 541 drawn marks in columns no cell or line took, on 141 pages of

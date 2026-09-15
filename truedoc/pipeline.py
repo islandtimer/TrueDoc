@@ -20,6 +20,7 @@ from truedoc.render.okf import RenderOptions, render_document
 from truedoc.segment.blocks import build_blocks
 from truedoc.segment.order import assign_reading_order
 from truedoc.tables.aligned import find_aligned_tables
+from truedoc.tables.boxed_cells import join_boxed_rows
 from truedoc.tables.cell_lists import list_cells
 from truedoc.tables.cells import clean_cell_text, runs_across_columns
 from truedoc.tables.fill_grid import redraw_tables
@@ -203,6 +204,9 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
     if opts.tables:
         # A table the text built across the cells its page draws is read again from the drawing (GIO's limits table).
         blocks = redraw_tables(page, pdf_page, blocks)
+        # The rows of a text table that one box the page strokes holds as one run of text are one row (Budget Direct's
+        # cover cards, a name on two lines in each box).
+        blocks = join_boxed_rows(page, pdf_page, blocks)
     blocks = _merge_label_headings(blocks, page.body_font_size)
     blocks = _merge_wrapped_headings(blocks, page.body_font_size)
 
