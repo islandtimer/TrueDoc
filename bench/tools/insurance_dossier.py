@@ -73,8 +73,10 @@ GROUPS = [
     ("celltext", "The cell is nearly right",
      "We built a table with this cell in it, but the cell does not read word for word the way the check "
      "quotes it, and the check demands an exact cell. Most of these are the same thing: the tick or "
-     "cross that says whether the item is covered has been swept into the label beside it instead of "
-     "staying in its own column, so our cell reads “✘ Loss or damage caused by lightning.”."),
+     "cross that marks an item covered or not is the item's list marker, set in a hanging indent inside "
+     "the cell, and our cell keeps it where the check quotes the words alone, so ours reads "
+     "“✘ Loss or damage caused by lightning.”. (Corrected 15 September: this card first said the mark "
+     "stands in a column of its own. On all three pages it does not.)"),
     ("neighbour", "Right cell, wrong neighbour",
      "We found the cell and built a table around it, but the cell next to it is not the one the check "
      "expects. Read the page: if our grid matches what a person sees, the check has the geometry wrong."),

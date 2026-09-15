@@ -251,10 +251,13 @@ Five things came out of building it, and none of them would have shown on the pu
   "Cooling-of Period", "of 21"; we wrote "Ifyou", "Cooling-ofPeriod", "of21". Fixed on 15 September:
   PDFium gave every "f" a ligature's width, and a character's box now stops at the next character the
   file holds beside it.
-- **A tick or a cross gets swept into the label beside it.** Our cell reads "X Loss or damage caused
-  by lightning." where the page keeps the mark in its own column. Five checks across three insurers.
-  The meaning survives for a person reading it; an exact-match test fails, and so would anything
-  parsing the table.
+- **A tick or a cross stays at the head of its item's cell.** Our cell reads "✔ Loss or damage caused
+  by lightning."; the check quotes the words alone. Correction, 15 September: this said the page keeps
+  the mark in its own column, and it does not - on all three pages the tick or cross is the item's list
+  marker, set in a hanging indent inside the cell, like a bullet. So there is no column to move it to,
+  and five checks across three insurers turn on whether a list marker belongs in the cell's text:
+  keeping it shows what the page shows, dropping it matches the checks. That is your call; the dossier
+  card you ruled on repeated the wrong description.
 - **A table row can vanish while its words survive.** On the Seniors page 25 the page has a limits
   grid with $5,000 and $10,000 in it; our output has "Limits Essential Top Landlords $5,000 $10,000
   Not covered" as flattened text and a two-cell table beside it. The amounts are all there and the
