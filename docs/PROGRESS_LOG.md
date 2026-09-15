@@ -555,6 +555,39 @@ was stashed in place for the gate - each is identical to the pool's own reading 
 - **Found on the way, with no check to see it:** Budget Direct's page 8 also drops the pointer "page 52" under its
   Landlord Options card, taken for the page's own number.
 
+**A number in the margin is the page's own only if it counts pages** (15 Sept, after the misses were read)
+- **The fault** (`classify/blocks.py`, then the layout model). Budget Direct's home PDS ends the Landlord Options card
+  on PDF page 8 with a pointer, "page 52", 41pt above the foot. The zone rule takes any block reading just "page N",
+  "N" or "N of M" in the top or bottom strip for the page's own number, the layout model called the line a page
+  footer (0.65), and the renderer leaves both out: the card lost where its cover is described, while "page 53", 28pt
+  higher on the same page, stood. Allianz's renter PDS lost "PAGE 25" and "PAGE 32" from the foot of its snapshot
+  page the same way.
+- **The rule** (`truedoc/classify/page_numbers.py`). A page's own number counts pages, so the pages beside it print
+  theirs at the same distance from their place in the file: Budget Direct prints 4, 5, 7 and 8 at the top of PDF
+  pages 6, 7, 9 and 10, and 6 on page 8. The nearest page before and the nearest after that print a number in their
+  strips, up to two pages each way, are read through PDFium by the file's path. A margin line taken for the page's
+  number that is not at the distance both share, and that no page within two prints at the same place, goes back to
+  the text - after the layout model and the margin clean-up, so whichever rule took it. With nothing beside the page
+  to ask - a file of one page, pages beside it with no numbers, or numbers that disagree - the zone rule stands.
+- **Why it must not run either.** A first version gave back every margin number that counts no pages, and on RACQ's
+  household PDS that put a stray "1" at the head of page 11: the numeral of the section tab printed down the page's
+  edge, which counts no pages but runs - PDF page 13 prints it at the same place. A running head is known the way
+  `layout/fuse.py` already knows a running foot (`_repeated_beside`), so the line must also not repeat.
+- **Where it can act.** Only where pages lie on both sides. Every benchmark file is a single page (all 1,403
+  counted), so the benchmark cannot move. `kfs_grade.py` converts pages 1 and 2 of each sheet, so only page 2 of the
+  five sheets of three pages or more could change, and all five convert byte for byte as before. Across the insurance
+  library, 3,591 margin lines in 198 documents count no pages (`bench/probes/folio_pointer_census.py`) - lines, not
+  TrueDoc's blocks, so an over-count: many sit inside blocks the zone rule never takes, and many are the printers'
+  slug along the foot of Allianz-family PDSs ("...indd 29 ... 5/8/2024 11:53 am"), which does not change.
+- **Measured, code against code** (against ccb5e1b's reader). Insurance set: 212 of 229 either way, the same
+  failures; the one page changed is Budget Direct's page 8, which gains "page 52" under Landlord Options - and on the
+  main tree, with the rule grid, 213 of 229, the rule grid's own run differing only on that page. Twenty
+  library pages, one per document from the census, among them Kogan's and Allianz's with a printers' slug along the
+  foot: a first version changed three - Qantas's copy of Budget Direct's page 8 gained "page 52", Allianz's snapshot "PAGE 25" and "PAGE 32", each where the page image prints it, and RACQ's page 11 a stray "1" from its section tab - and the rule as committed changes the first two and leaves the other eighteen byte for byte as they were.
+- **Tests:** a pointer in the foot of a page whose neighbours count pages is kept, failing with the release switched
+  off; a number that counts pages is still left out; a tab printed again two pages each way stays out, failing without
+  the repetition check; a one-page file keeps the zone rule; pages that disagree say nothing. Suite 562.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings

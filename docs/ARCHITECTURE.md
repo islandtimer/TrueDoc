@@ -34,6 +34,9 @@ PDF page
   |     tables/rule_grid.py       a confident table box whose text builds no table - its columns hold only drawn marks -
   |                               is read from its own rules: rows between them, columns where their pieces meet at the
   |                               same x on at least three rules, each word in the cell its centre falls in
+  |     classify/page_numbers.py  after the layout model and the margin clean-up: a margin line taken for the page's
+  |                               number is text again when the pages beside it number themselves at a distance it does
+  |                               not fit and none prints the same line at the same place (release_pointers)
   v
   |  5. math/extract.py           display formulas per equation line, inline maths runs
   |     math/reconstruct.py       glyphs + rules -> LaTeX (fractions, scripts, radicals, matrices, accents)

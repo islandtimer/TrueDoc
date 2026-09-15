@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass, field
 
 from truedoc.classify.blocks import _assign_heading_levels, classify_blocks
+from truedoc.classify.page_numbers import release_pointers
 from truedoc.extract import render as page_render
 from truedoc.extract.handle import open_pdf
 from truedoc.extract.textlayer import extract_page
@@ -200,6 +201,8 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
     blocks = _merge_wrapped_headings(blocks, page.body_font_size)
 
     _margin_cleanup(page, blocks)
+    # A number in the margin that counts no pages and does not run is text, not furniture (Budget Direct's "page 52").
+    release_pointers(pdf_page, page, blocks)
 
     if opts.marks:
         _attach_marks(pdf_page, page, blocks)
