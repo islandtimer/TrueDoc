@@ -992,15 +992,33 @@ def _heading_wraps_on(grid: list[list[str]], i: int) -> bool:
     Written in typography, not in subject matter: a cell of more than six words that closes on no
     full stop, with a lowercase line beneath it in its own column, is one sentence set over two
     lines. A body row's long cell is a finished statement, so this never fires on one.
+
+    Where a heading's columns wrap by different amounts their lines interleave, and the line that
+    carries a column on can sit a row further down, under an empty cell: Budget Direct's 2019 Key
+    Facts Sheets set "... limits that apply" over "Yes/No", then "Event/Cover" beside "to events/
+    covers ...". That row's other text must stand in columns empty in both rows above it, where a
+    column's own heading starts. A heading's second level ("n | % | n | %" under group headings,
+    tables 0cda549c) and a body row's wrapped cells beside the next entry (tables 508eb272) fill
+    columns the rows above already hold, and were folded into one row when this was not asked.
     """
     if i + 1 >= len(grid):
         return False
-    row, below = grid[i], grid[i + 1]
-    for k, text in enumerate(row):
+    for k, text in enumerate(grid[i]):
         if not text or len(text.split()) <= 6 or text.rstrip()[-1:] in ".?!":
             continue
-        under = below[k] if k < len(below) else ""
-        if under and under.lstrip()[:1].islower() and not _ENUMERATED.match(under):
+        for j in (i + 1, i + 2):
+            if j >= len(grid):
+                break
+            under = grid[j][k] if k < len(grid[j]) else ""
+            if not under:
+                continue
+            if not under.lstrip()[:1].islower() or _ENUMERATED.match(under):
+                break
+            if j == i + 1:
+                return True
+            above = (grid[i], grid[i + 1])
+            if any(cell and c != k and any(c < len(row) and row[c] for row in above) for c, cell in enumerate(grid[j])):
+                break
             return True
     return False
 

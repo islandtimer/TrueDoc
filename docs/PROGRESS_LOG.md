@@ -915,7 +915,42 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   Apia's arrow and Suncorp's bullet, one not as wide at each height as at its mirror and one so; and a heavy tick is a
   tick only as a glyph - failing with the room given to drawn marks. Suite 611.
 
-**Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
+**A heading line carried on under an empty cell joins the heading: Auto & General's Key Facts Sheets read whole** (16 Sept, morning)
+- **Where the loop went.** With the rule grid and private-use glyphs committed, the Key Facts Sheets' last failures were
+  read by cause. Header whole failed on 8 of the 158 sheets tuned on and 1 of the 32 held out, and a row that is only a
+  continuation stood in 7 and 1 - the same sheets. Seven tuned-on ones are one Auto & General design: Budget Direct's
+  and Qantas's sheets and ING's pair. The eighth, Defence Service Homes, heads its table "Risk | Covered?" where the
+  grader looks for "event" and "yes"; its table is right, and the grader's limit is left alone.
+- **The fault** (`truedoc/tables/aligned.py`). The layout model boxes the table and the text builds it. The design
+  centres each heading cell in a blue band, and the third column's heading runs to three lines, so the lines
+  interleave: "Some examples of specific conditions, exclusions or limits that apply", "Yes/No", "Event/Cover" beside
+  "to events/covers (see PDS and other policy documentation for details", "Optional", "of others)*" - five rows, the
+  last graded as a continuation. `_heading_hangs_open` was written for this layout as other sheets break it, on "apply
+  to" and "details of", a line ending on a word that cannot end a heading. These break one word earlier, and
+  `_heading_wraps_on`, which looks one row down, found an empty cell there.
+- **The rule.** A long heading cell that closes on no full stop is carried on, too, by a lowercase line one row further
+  down, under an empty cell of its column, when that row's other text stands only in columns empty in both rows above
+  it - where a column's own heading starts, as "Event/Cover" does. The five rows fold into "Event/Cover | Yes/No
+  Optional | Some examples of specific conditions, exclusions or limits that apply to events/covers (see PDS and other
+  policy documentation for details of others)*".
+- **Tried and dropped.** The first version took any lowercase line two rows down whose row kept an empty cell. The
+  benchmark pool found it folding a two-level heading - group headings over "n | % | n | %" - into one row, "12-" and
+  "n" read as "12n" (tables 0cda549c), and fusing two studies of a review table, Cheng et al. (2020) and
+  Gholipour-Kanani et al. (2012), into one row (tables 508eb272); no check moved on either. Both second rows fill
+  columns the rows above already hold, and under the rule as it stands both pages are as they were, byte for byte.
+- **Measured, code against code** (against the private-use glyph commit). Key Facts Sheets, graded afresh under this
+  rule: header whole 150 to 157 of 158 tuned on and 31 to 32 of 32 held out; rows that are only a continuation 7 to 0
+  and 1 to 0; every event and answer carried. Exactly eight sheets change, each its heading folded, and the other 182
+  are byte for byte the same - every sheet as the first version wrote it. Insurance set: 229 of 229 either way, and no
+  page of it changes. Benchmark: no page of the 1,403 changes. Converted on every page, the first version changed
+  three - the two tables pages above and a stray table under a case split on an arXiv page (2503.05177, page 10), its
+  "n | 1" folded into the row above - and all three are byte for byte as they were under this rule, which acts only
+  where the first version did.
+- **Tests** (`tests/test_heading_interleave.py`): the five-line heading folds into one row with the body untouched -
+  failing without the rule; a body row under an empty cell is not taken into the heading; and a two-level heading and
+  a review table's wrapped entries stay as they are - both failing on the first version. Suite 615.
+
+**Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
 buried inside an exclusion 63 sheets -> 0. Every rule is
