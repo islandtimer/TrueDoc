@@ -532,6 +532,29 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   column, failing on the code before (no table); a word the reader reports twice at one place reads once in its cell,
   failing without that step; suite 557.
 
+**The seventeen insurance misses, read against their pages** (15 Sept, after the rule grid)
+- **Asked by the owner, answered page by page.** At 212 of 229 every failing check was read beside its page image and
+  our markdown, sorted first by `insurance_dossier.evidence`'s computed reason (`bench/probes/insurance_triage.py`).
+  The rule grid has since mended one, QBE's page 16. The sixteen left are two kinds of thing, eight each.
+- **Eight are reading faults on four pages, and three of the pages share one fault: text that wraps inside a table or
+  a card is read as a new row.** GIO's page 26 cuts its limits table at text lines rather than at the rules it draws,
+  so "Paintings, pictures, works of art," is an item of its own ($10,000 and $20,000, no Platinum limit) and
+  "antiques, sculptures, ornaments and art objects" a second ("$200,000 in total"); its two-line heading puts "Item"
+  in a body row beside the first line of every Jewellery limit ("Classic $2,000 per item"), leaving Jewellery's own
+  row "or set up to a total of $4,000" - two checks, and none sees the Jewellery row. Budget Direct's page 8 reads its
+  two-line cover names as table rows, "Unspecified | Specified" over "Personal Effects | Personal Effects" (three
+  order checks, whose phrases never appear whole). BOM's contents page gives each wrapped entry two rows, the first
+  without its page number (two). The Seniors page 25 flattens a Limits grid nested in its "We cover" cell into run-on
+  text, though the same-shaped grid above it comes out as a table (one).
+- **Eight turn on one ruling: whether a table cell is everything drawn inside its box.** Our cell holds what the box
+  holds and the check wants less: the tick or cross heading an item (five, the list markers of ccb5e1b); a whole
+  ticked list drawn in one box, where the check wants "Solar panels" and "Grass or lawn..." as cells of their own
+  (two, Kogan's POL1439FI page 29); a "Go to page 32." line at the foot of BOM's "Contents cover" box (one). Keeping
+  them is faithful to the page; the checks as written want each item alone. STATUS puts it to the owner as one
+  question.
+- **Found on the way, with no check to see it:** Budget Direct's page 8 also drops the pointer "page 52" under its
+  Landlord Options card, taken for the page's own number.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
@@ -542,6 +565,9 @@ geometry and typography.
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
+- Text that wraps inside a table or a card read as a new row, behind seven of the insurance misses. GIO's home PDS
+  page 26 draws a rule under each row of its limits table, and TrueDoc cuts the rows at text lines instead, so one
+  item becomes two with different limits; BOM's contents page and Budget Direct's cover cards break the same way.
 - Drawn marks in a table whose text builds its columns without them. ALDI's household PDS page 31 sets fourteen
   insured events with a tick under Home and another under Contents; the table is built from the events and their page
   numbers, so both ticks land in one cell ("✓ 32 ✓"). Counting the marks inside the model's box as words builds the
