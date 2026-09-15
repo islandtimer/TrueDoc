@@ -950,6 +950,43 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   failing without the rule; a body row under an empty cell is not taken into the heading; and a two-level heading and
   a review table's wrapped entries stay as they are - both failing on the first version. Suite 615.
 
+**In progress: a line at the head of a page is taken for a running head only if it runs** (16 Sept, morning; paused for a reboot before it was measured)
+- **What was found.** Honey's household PDS names each peril at the top of its page - "Animal damage", "Explosion",
+  "Flood", 14 pt in red - and TrueDoc publishes none of them: the layout model labels the name a page header, so page
+  33 opens on "# Included for:" and no peril's page says which peril its cover, limit and exclusions belong to. The
+  insurance set's checks on that page quote its sentences, not the name, so 229 of 229 never saw it. The page's ringed
+  tick, dollar and cross icons stand beside headings that say "You are covered for:", "Limit:" and "You are not
+  covered for:", so under the owner's icons ruling they are illustration; the name is the loss.
+- **How far it reaches.** A census of what TrueDoc takes out at the head and foot of a page, each block's pages beside
+  it asked whether they print most of its words at the same height, read 210 pages of 168 documents before it was
+  stopped - the first 210 of the 1,237 pages of a one-in-fifty sample of the library, in file-name order, so mostly
+  AAMI, ALDI and Apia. Of the heads the rules take out that the pages beside can judge, 28 blocks on 23 pages are
+  printed on no page beside them and 15 are. Fifteen of the 28 were labelled page headers by the layout model: the
+  cover titles of ten AAMI guides and a landlord PDS's "Your excess". Thirteen were taken by the pipeline's own margin
+  clean-up: the defined term at the top of a definitions page ("Incident", "Illegal drugs", "Computer", "Joint
+  policyholders", Apia's "Loss or damage"), two complaint steps' headings, a proofs table's title, the covers of four
+  supplementary PDSs, and a building PDS's "This guarantee does not apply:", without which nothing says the guarantee
+  does not apply to the four cases listed under it. Nine of the 28, on seven pages, were read against their page
+  images, and every one is the page's own; the other nineteen are more of the same kinds by their text.
+- **The change, built but not yet measured** (`bench/out/wt_runhead`, on c95d559). Every rule that takes a line out as
+  a running head first asks whether it runs: the zone rule for small lines in the top margin (`classify_blocks`), the
+  layout model's page-header label and its margin tie (`apply_layout`), and the margin clean-up's heading in the
+  outermost strip, top strip and header stack (`_margin_cleanup`). The question is the foot rule's
+  (`_repeated_beside`), now measured down from each page's head for a block in the upper half of its page. A line
+  printed beside it stays a head; with no page beside it to ask - a one-page file, or scanned pages beside it - each
+  rule decides as before, and every benchmark file is one page, so the benchmark cannot move. A released page header
+  keeps the kind its text gave it: Honey's page 33 gains "# Explosion", at the level of "# Fire" below it, and nothing
+  else on the page changes. Text inside a picture at the top (the banner rule) and rotated side tabs make other claims
+  and are not asked. Eleven tests (`tests/test_running_head.py` in the worktree): four fail with only the model's
+  label asked; the zone rule's, the top strip's, the margin heading's and the header stack's each fail with that guard
+  alone taken out; and with the classification, clean-up and foot tests 22 pass.
+- **Left to do after the reboot.** Port it onto the heading commit; the full suite; the Key Facts Sheets graded afresh;
+  the insurance set; the rest of the census, in shuffled order; every page whose markdown changes read against its
+  image; then the commit. Page feet are left as they are: the ones no page beside them repeats are mostly a cover's
+  issuer line ("AAI Limited ABN 48 005 297 807 AFSL 230859 trading as AAMI"), "Continued on next page." and a
+  document's preparation date, and publishing a cover's issuer is the owner's 13 September ruling, to be measured
+  both ways.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
