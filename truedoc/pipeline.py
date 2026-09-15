@@ -21,6 +21,7 @@ from truedoc.segment.blocks import build_blocks
 from truedoc.segment.order import assign_reading_order
 from truedoc.tables.aligned import find_aligned_tables
 from truedoc.tables.cells import clean_cell_text, runs_across_columns
+from truedoc.tables.fill_grid import redraw_tables
 from truedoc.tables.ruled import find_ruled_tables
 
 
@@ -197,6 +198,9 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
         page.meta["layout_regions"] = regions
         if regions:
             blocks = apply_layout(page, blocks, regions, pdf_page=pdf_page, ocr=opts.ocr)
+    if opts.tables:
+        # A table the text built across the cells its page draws is read again from the drawing (GIO's limits table).
+        blocks = redraw_tables(page, pdf_page, blocks)
     blocks = _merge_label_headings(blocks, page.body_font_size)
     blocks = _merge_wrapped_headings(blocks, page.body_font_size)
 

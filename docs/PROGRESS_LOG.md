@@ -588,6 +588,37 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   off; a number that counts pages is still left out; a tab printed again two pages each way stays out, failing without
   the repetition check; a one-page file keeps the zone rule; pages that disagree say nothing. Suite 562.
 
+**Tables read again from the cells their page draws** (15 Sept, after ffc9594)
+- **The fault.** GIO's home PDS page 26 draws its limits table as tiled filled cells - a blue header of two bands, the
+  first a cell spanning the three cover levels, then grey cells meeting at every row's edge - and TrueDoc built it from
+  its text lines inside the layout model's box: the header's second band shared a row with the first line of every
+  Jewellery limit, and "Paintings, pictures, works of art," and "antiques, sculptures, ornaments and art objects" became
+  two items with different limits. The Seniors home PDS nests a grid of limits inside its "We cover" cell, and the ruled
+  finder read the nest as one cell of run-on text. The benchmark's German dishwasher fault table (bdb0c069 pg42), grey
+  cells with one cause spanning nine rows, was cut and run together the same way.
+- **The rule** (`truedoc/tables/fill_grid.py`, `redraw_tables` in `process_page` after the layout step). Filled
+  rectangles that share edges are a drawn grid: its lines are their edges and the rules among them; a fill covering
+  several intervals is one cell spanning them; open positions join across any stretch of line nothing draws; grid lines
+  no cell starts or ends at come out (sub-fills had inflated every span); rows too low for a line of the table's text,
+  holding only empty cells of their own, are gaps; groups whose cells mostly hold no letter or digit are decoration;
+  the header is the run of top rows drawn in colours no lower row uses, with two rows under it. A text table is read
+  again from that grid only where words of one of its cells lie on both sides of a drawn cell edge, at least twice,
+  and the drawing holds nine in ten of the table's words. Spans and a two-row header are written as HTML: a first
+  version left `has_merged` unset, and the pipe table repeated "Limits for any one incident" in three columns.
+- **Why only on a crossing.** Every table the ruled finder built on the eighteen benchmark and insurance pages checked
+  agrees with its drawing; a text table that keeps labelled sub-rows inside one shaded band (8160caa0's "# Fibres",
+  "Passband", "Velocity accuracy") shows no crossing and stays; and a crossing judged by a cell's box rather than its
+  own words raised 41 false ones on an aligned table whose boxes run past their text (9d800d5e). Drawn tables stand on
+  24 of the benchmark's 1,403 pages and on 83 of the 380 Key Facts Sheet pages converted - the only pages the rule can
+  change, since `drawn_grids` reads nothing elsewhere (`bench/probes/drawn_census.py`).
+- **Measured, code against code** (against ffc9594). Insurance set: 216 of 229, from 213: GIO's page 26 gains both its table checks ("Item" heading the column over "Carpet or rugs that are hand woven or hand knotted", and "Paintings, pictures, works of art, antiques, sculptures, ornaments and art objects" whole beneath it) and the Seniors page 25 its "$10,000" beside "$5,000", tables 16 to 19 of 27; no other page's markdown changed. Benchmark, those 24 pages converted and
+  scored against the `prules` pool's markdown (`bench/probes/fills_bench_compare.py`): one page changed - the dishwasher fault table bdb0c069 pg42, from 0 to 2 of its 3 table checks, the third still failing on an arrow its text layer gives as "~" - and the other 23 read byte for byte as the pool read them, so tables go from 848 to 850 of 1022 and every other subset stays as it was (80 to 82 of the 91 checks on those pages). Key Facts Sheets: byte for byte the same on all 190 sheets, though 83 of the 380 pages converted hold a drawn grid - none of their tables crosses its drawing - so header whole stays at 95% tuned on and 97% held out, with every answer carried. ALDI's household PDS page 31
+  (library), where both ticks shared a cell and the Limit note fell beside the wrong events, now reads as its page
+  draws it: five columns, each tick in its own, the Limit note one cell spanning the fourteen rows.
+- **Tests:** a hand-made text table crossing a drawn header's foot is read from the fills with its header marked,
+  failing with the crossing count switched off; a band spanning both columns keeps its span and renders once; a table
+  that agrees with its drawing is left alone. Suite 565.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
@@ -598,16 +629,14 @@ geometry and typography.
 - Six table checks on two benchmark pages fail only because a pipe table writes a literal dollar as `\$` (D024) and
   the check compares the cell's text exactly, where an HTML cell writes `$`: under a tenth of a point overall, and a
   question about D024 rather than a table rule.
-- Text that wraps inside a table or a card read as a new row, behind seven of the insurance misses. GIO's home PDS
-  page 26 draws a rule under each row of its limits table, and TrueDoc cuts the rows at text lines instead, so one
-  item becomes two with different limits; BOM's contents page and Budget Direct's cover cards break the same way.
-- Drawn marks in a table whose text builds its columns without them. ALDI's household PDS page 31 sets fourteen
-  insured events with a tick under Home and another under Contents; the table is built from the events and their page
-  numbers, so both ticks land in one cell ("✓ 32 ✓"). Counting the marks inside the model's box as words builds the
-  Home and Contents columns, but the page's Limit column holds only a note spanning the middle rows, and its lines then
-  land beside the wrong events, so that note has to be read as one cell spanning rows first. On a one-in-ten sample of
-  the library, 541 drawn marks stood in columns that no cell or line took, on 141 pages of 93 documents (counted
-  without the layout model, `bench/probes/unplaced_marks_census.py`).
+- Text that wraps inside a card or a contents entry read as a new row, behind five of the insurance misses: Budget
+  Direct's cover cards read two-line names as table rows, and BOM's contents page gives each wrapped entry two rows.
+  GIO's limits table, the same fault in a table drawn as filled cells, is read from its cells now.
+- Drawn marks that no table cell takes. ALDI's household PDS page 31, the example that stood here, is read from the
+  cells its page draws since the drawn-cells rule: each tick under Home and under Contents, and the Limit note one cell
+  spanning the fourteen rows. The rest of that census - 541 drawn marks in columns no cell or line took, on 141 pages of
+  93 documents in a one-in-ten sample of the library (`bench/probes/unplaced_marks_census.py`) - has not been
+  measured again.
 - Ligatures a text layer spoils where TrueDoc cannot read the glyphs' codes: a font with two-byte codes, or text drawn
   inside a form XObject. No page of the insurance library needs either yet (`bench/probes/library_ligatures.py`).
 - Then hold back a never-tuned-on slice of the insurance set, as `bench/holdout.txt` does for the benchmark; then the hard tail.
