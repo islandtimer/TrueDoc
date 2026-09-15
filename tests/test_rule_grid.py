@@ -6,6 +6,10 @@ column edges, and no vertical rules. The layout model boxed it as a table, but t
 mark columns hold no text - so the rows came out as headings and paragraphs and the marks were lost. Each test draws
 such a page with PyMuPDF; the first gives the pipeline the model's table box (the model itself is not run) and converts
 it, the second asks the grid for its cells directly.
+
+RAC's premium, excess and discount guide sets the same kind of table another way: each rule stroked in three pieces
+that stop 1.5pt short of one another at the column edges, and the header in a filled band with no rule under it, so
+the first rule lies under the first row. The rest of the tests draw that page.
 """
 import pymupdf
 
@@ -88,3 +92,73 @@ def test_a_word_the_reader_reports_twice_at_one_place_is_read_once(tmp_path):
     assert result is not None
     table, _ = result
     assert next(c.text for c in table.cells if c.row == 0 and c.col == 2) == "Contents"
+
+
+BAND = (58, 80)                 # the header's filled band
+ROW_RULES = [102, 122, 142]     # a rule under each row, none under the header
+BANDED_REGION = BBox(38, 56, 372, 146)
+PRICING = [("Location of your building", 94), ("The sum you are insured for", 114), ("Your age", 134)]
+
+
+def _banded_pdf(tmp_path, gap):
+    doc = pymupdf.open()
+    page = doc.new_page(width=400, height=300)
+    page.draw_rect(pymupdf.Rect(EDGES[0], BAND[0], EDGES[3], BAND[1]), color=None, fill=(0.47, 0.55, 0.6))
+    page.draw_rect(pymupdf.Rect(EDGES[0], BAND[1], EDGES[3], ROW_RULES[-1]), color=None, fill=(0.91, 0.91, 0.91))
+    page.insert_text((44, HEADER_Y), "Pricing factors", fontsize=10)
+    page.insert_text((234, HEADER_Y), "Buildings", fontsize=10)
+    page.insert_text((304, HEADER_Y), "Contents", fontsize=10)
+    for y in ROW_RULES:
+        # each rule in three strokes that stop `gap` short of one another at the column edges
+        page.draw_line((EDGES[0], y), (EDGES[1] - gap / 2, y), color=(0.4, 0.4, 0.4), width=0.5)
+        page.draw_line((EDGES[1] + gap / 2, y), (EDGES[2] - gap / 2, y), color=(0.4, 0.4, 0.4), width=0.5)
+        page.draw_line((EDGES[2] + gap / 2, y), (EDGES[3], y), color=(0.4, 0.4, 0.4), width=0.5)
+    for label, baseline in PRICING:
+        page.insert_text((44, baseline), label, fontsize=10)
+        _tick(page, 261, baseline - 8)
+        _tick(page, 331, baseline - 8)
+    path = tmp_path / f"banded_grid_{gap}.pdf"
+    doc.save(str(path))
+    doc.close()
+    return str(path)
+
+
+def _banded_grid(tmp_path, gap):
+    doc = pymupdf.open(_banded_pdf(tmp_path, gap))
+    try:
+        pdf_page = doc[0]
+        page = process_page(pdf_page, 1, ConvertOptions(layout=False, ocr=False, marks=False, math=False))
+        result = table_from_rules(page, pdf_page, BANDED_REGION, page.body_font_size)
+    finally:
+        doc.close()
+    if result is None:
+        return None
+    table, _ = result
+    return [[c.text for c in sorted((c for c in table.cells if c.row == r), key=lambda c: c.col)]
+            for r in range(table.n_rows)]
+
+
+def test_rule_pieces_a_little_apart_still_meet_at_a_column_edge(tmp_path):
+    grid = _banded_grid(tmp_path, gap=1.5)
+    assert grid is not None
+    assert grid[0] == ["Pricing factors", "Buildings", "Contents"]
+
+
+def test_rule_pieces_standing_well_apart_do_not_meet(tmp_path):
+    # 6pt apart at 10pt text is more than a word space: the pieces are separate rules, not one stroked in pieces.
+    assert _banded_grid(tmp_path, gap=6.0) is None
+
+
+def test_a_header_set_in_a_filled_band_ends_where_the_band_does(tmp_path):
+    # The pieces touch, so only the band can keep the first row out of the header.
+    grid = _banded_grid(tmp_path, gap=0.0)
+    assert grid == [["Pricing factors", "Buildings", "Contents"]] + [[label, "", ""] for label, _ in PRICING]
+
+
+def test_a_banded_table_of_marks_is_read_from_its_rules(tmp_path, monkeypatch):
+    path = _banded_pdf(tmp_path, gap=1.5)
+    region = Region(kind=RegionKind.TABLE, bbox=BANDED_REGION, score=0.85, source="test")
+    monkeypatch.setattr(pipeline, "_detect_layout", lambda pdf_page, opts: [region])
+    md = convert(path, ConvertOptions(frontmatter=False, layout=True, ocr=False))
+    rows = _rows(md)
+    assert rows == [["Pricing factors", "Buildings", "Contents"]] + [[label, "✓", "✓"] for label, _ in PRICING], md

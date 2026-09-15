@@ -13,6 +13,13 @@ meet, and each word goes to the cell its centre falls in - so a wrapped entry st
 runs across two columns is divided where the columns divide. It is asked only where the model is confident of a table and
 the text builds none, because pieces meeting at a shared x are also how pages draw their decoration: a census found such
 joins on 3,213 of the insurance library's 23,870 pages, most of them nowhere near a table.
+
+RAC's premium, excess and discount guide sets the same kind of table on its first page - pricing factors beside columns
+of ticks under "Buildings" and "Contents" - and draws it another way. Each rule is dotted and stroked in three pieces
+that stop 1.5pt short of one another at the column edges, and the header sits in a filled band with no rule under it.
+Pieces that met only by touching found no column edge there, and the first rule lies under the first row, so that row
+would have joined the header. Pieces that stop short of one another by less than a word space meet, and a filled band
+drawn across the table divides its rows as a rule does wherever it has text on both sides.
 """
 from __future__ import annotations
 
@@ -20,7 +27,7 @@ from truedoc.extract import pdfium_objects
 from truedoc.model import BBox, Page, Table, TableCell
 from truedoc.tables.aligned import _join_lines
 
-_TOUCH = 1.0        # the next piece starts no more than this after the last one ends
+_GAP = 0.25         # the next piece starts no more than this many text sizes after the last one ends: a word space
 _OVERLAP = 3.0      # ... or overlaps it by no more than this
 _MIN_PIECE = 10.0   # a dash of a dashed rule is not a piece of a rule
 _SAME_Y = 0.75      # pieces within this of one another in y make one rule
@@ -58,13 +65,15 @@ def _rules(pdf_page, region: BBox) -> tuple[list[list[dict]], list[dict]]:
     return rules, verticals
 
 
-def _column_edges(rules: list[list[dict]], verticals: list[dict]) -> list[float]:
-    """Where the pieces of at least `_MIN_RULES` rules meet at one x, with no vertical rule drawn there."""
+def _column_edges(rules: list[list[dict]], verticals: list[dict], gap: float) -> list[float]:
+    """Where the pieces of at least `_MIN_RULES` rules meet at one x, with no vertical rule drawn there.
+
+    A piece meets the next where it overlaps it a little or stops short of it by no more than `gap`."""
     joins: list[tuple[float, float]] = []
     for rule in rules:
         ordered = sorted(rule, key=lambda e: e["x0"])
         for a, b in zip(ordered, ordered[1:]):
-            if -_OVERLAP <= b["x0"] - a["x1"] <= _TOUCH:
+            if -_OVERLAP <= b["x0"] - a["x1"] <= gap:
                 joins.append(((a["x1"] + b["x0"]) / 2.0, round(a["top"], 1)))
     joins.sort()
     edges: list[float] = []
@@ -82,6 +91,23 @@ def _column_edges(rules: list[list[dict]], verticals: list[dict]) -> list[float]
     return edges
 
 
+def _band_edges(pdf_page, region: BBox, left: float, right: float, size: float) -> list[float]:
+    """The top and bottom of every filled shape drawn inside the region across the table - from within a text size of
+    its left end to within a text size of its right - in order."""
+    from truedoc.tables import ruled_pdfium as rp
+
+    M = pdf_page.rotation_matrix if pdf_page.rotation else None
+    ys: list[float] = []
+    for o in pdfium_objects.page_objects(pdf_page.parent.name, pdf_page.number + 1) or []:
+        if o.kind != "path" or o.fill is None or o.fill_alpha <= 0.0:
+            continue
+        x0, y0, x1, y1 = rp._turned(o.bbox, M)
+        if x0 < region.x0 - _SLACK or x1 > region.x1 + _SLACK or x0 > left + size or x1 < right - size:
+            continue
+        ys.extend(y for y in (y0, y1) if region.y0 - _SLACK <= y <= region.y1 + _SLACK)
+    return sorted(ys)
+
+
 def table_from_rules(page: Page, pdf_page, region: BBox, size: float) -> tuple[Table, list] | None:
     """The table the region's own rules describe, with the lines it takes, or None where they describe none."""
     try:
@@ -93,13 +119,28 @@ def table_from_rules(page: Page, pdf_page, region: BBox, size: float) -> tuple[T
     size = size or 10.0
     left = min(p["x0"] for rule in rules for p in rule)
     right = max(p["x1"] for rule in rules for p in rule)
-    xs = [x for x in _column_edges(rules, verticals) if left + size < x < right - size]
+    xs = [x for x in _column_edges(rules, verticals, _GAP * size) if left + size < x < right - size]
     if not xs:
         return None
     ys = [sum(p["top"] for p in rule) / len(rule) for rule in rules]
     lines = sorted((l for l in page.lines if not l.rotated and region.contains_point(l.bbox.cx, l.bbox.cy)),
                    key=lambda l: (round(l.bbox.cy, 1), l.bbox.x0))
     words = [(li, w) for li, l in enumerate(lines) for w in l.words if w.text.strip() and left <= w.bbox.cx <= right]
+    # A filled band drawn across the table divides its rows as a rule does, where there is text between its edge and
+    # the rule or edge either side of it: RAC's header band ends above the first row, and the first rule lies under that
+    # row. Above the last rule only, so the rules still close the table.
+    centres = [w.bbox.cy for _, w in words]
+    try:
+        band_edges = _band_edges(pdf_page, region, left, right, size)
+    except Exception:
+        band_edges = []
+    for y in band_edges:
+        if y >= ys[-1] or any(abs(y - c) <= _SAME_Y for c in ys):
+            continue
+        before = max((c for c in ys if c < y), default=float("-inf"))
+        after = min(c for c in ys if c > y)
+        if any(before < c < y for c in centres) and any(y < c < after for c in centres):
+            ys = sorted(ys + [y])
     above = [w for _, w in words if w.bbox.cy < ys[0]]
     bands = ([(min(w.bbox.y0 for w in above), ys[0])] if above else []) + list(zip(ys, ys[1:]))
     cols = [left] + xs + [right]

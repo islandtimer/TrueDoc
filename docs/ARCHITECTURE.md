@@ -35,6 +35,7 @@ PDF page
   |     tables/rule_grid.py       a confident table box whose text builds no table - its columns hold only drawn marks -
   |                               is read from its own rules: rows between them, columns where their pieces meet at the
   |                               same x on at least three rules, each word in the cell its centre falls in
+  |                               - pieces a word space apart meet, and a filled band across the table edges a row
   |     tables/fill_grid.py       after the layout model: a table the text built across the cells its page draws
   |                               (tiled fills and the rules among them) is read again from the drawing, spans and
   |                               header included - only where words of one text cell lie on both sides of a drawn

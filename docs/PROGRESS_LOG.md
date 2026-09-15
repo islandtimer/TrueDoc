@@ -836,6 +836,34 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   text, not maths, while the same arrow set in a maths font is still maths - the first failing without the guard.
   Suite 597.
 
+**Dotted rules drawn in pieces, and a header set in a filled band: the rule grid reads RAC's pricing table** (16 Sept, early morning)
+- **Where the loop went.** The unplaced-marks census builds pages without the layout model, so a mark a model-boxed table
+  takes counts as lost there. Every page of the library's one-in-ten sample with marks standing in columns - 139 pages of
+  93 documents - was converted in full instead, and the marks the reader finds set against the mark characters written:
+  761 read, 465 written, 74 pages short. Their marks were looked at cut from the pages, one page for each template, 49
+  standing for the 74: logos, cover art, category icons, the "!" of a note and the "$" of a limit - illustration under
+  the owner's ruling, since the words beside them carry the meaning - and one table whose meaning was lost.
+- **The fault** (`truedoc/tables/rule_grid.py`). RAC's premium, excess and discount guide sets ten pricing factors on its
+  first page, each with a tick under "Buildings" and under "Contents". The layout model boxes the table (0.85) and its
+  text builds none, so the rule grid is asked, and it found no column edge: every dotted rule is stroked in three pieces
+  that stop 1.5pt short of one another at the column edges, where a piece had to start within 1pt of the last. The
+  header sits in a dark filled band with no rule under it, and the first rule lies under the first row, so with the
+  edges found that row would have joined the header. The factors came out as paragraphs, the header words as loose
+  lines, and all twenty ticks were lost.
+- **The rule.** A piece of a rule meets the next where it stops short of it by less than a word space, a quarter of the
+  body text size. A filled shape drawn across the table - from within a text size of the rules' left end to within one
+  of their right - divides its rows as a rule does, where text lies between its edge and the rule or edge either side of
+  it, and only above the last rule, so the rules still close the table. RAC's page now writes its ten rows, each with its
+  two ticks, and QBE's page 16, the page the rule grid was built for, is the same byte for byte.
+- **Measured, code against code** (against dda1240). Insurance set: 229 of 229 either way, and no page of it changes.
+  Key Facts Sheets: byte for byte the same on all 190 sheets, header whole 95% tuned on and 97% held out, every answer
+  carried. Benchmark: both code states converted all 1,403 pages, and not one page's markdown differs - tables,
+  multi-column, tiny text, headers and footers, arxiv and both scanned subsets alike, with the same pages empty on
+  both sides - so no check can move.
+- **Tests:** a rule's pieces 1.5pt apart meet at a column edge, and pieces 6pt apart are separate rules; a header set in
+  a filled band ends where the band does; and a banded table of ticks converted in full writes every tick in its row -
+  all but the rule about pieces standing apart failing without the change. Suite 601.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
