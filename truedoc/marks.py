@@ -144,11 +144,39 @@ def _candidates(pdf_page: "pymupdf.Page", page: Page, M) -> list[BBox]:
 
 # ------------------------------------------------------------- classification
 
-def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None) -> Mark | None:
-    """Render the box and say what is drawn in it."""
+def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None, glyph: bool = False) -> Mark | None:
+    """Render the box and say what is drawn in it.
+
+    `glyph` says the box is a font glyph's, and its mark must stand on its own there. Ink reaching the edge of the crop
+    belongs to something else drawn there - Suncorp's flow arrow, a solid triangle set in ZapfDingbats with a rule under
+    it, read as a cross with the rule - and a dot, a square or a box is as wide at each height as at its mirror height,
+    where Apia's flow arrows, a Wingdings 3 shaft standing on a head, read as dots.
+    """
     mask, colour = _ink(pdf_page, box, M)
     if mask is None:
         return None
+    if glyph and (any(mask[0]) or any(mask[-1]) or any(row[0] or row[-1] for row in mask)):
+        return None
+    mark = _read_ink(mask, box, colour, glyph)
+    if glyph and mark is not None and mark.kind in ("dot", "square", "box") and not _same_upside_down(mask):
+        return None
+    return mark
+
+
+def _same_upside_down(mask) -> bool:
+    """Whether the ink, cut to its own box, is about as wide at each height as at the height mirroring it, as a disc, a
+    square and a frame are: the differences come to less than a third of all the width. Bullets set as private-use
+    glyphs differ by 0.03 to 0.24 of it, Apia's block arrows by 0.41."""
+    m = _tight(_drop_specks(mask))
+    rows = [y for y, row in enumerate(m) if any(row)]
+    if not rows:
+        return True
+    widths = [sum(m[y]) for y in range(rows[0], rows[-1] + 1)]
+    return 3 * sum(abs(a - b) for a, b in zip(widths, reversed(widths))) < sum(widths)
+
+
+def _read_ink(mask, box: BBox, colour: str, glyph: bool = False) -> Mark | None:
+    """What the ink in a mark's grid is."""
     n = len(mask)
     filled = sum(sum(row) for row in mask)
     if filled < 0.02 * n * n:
@@ -188,7 +216,7 @@ def classify_mark(pdf_page: "pymupdf.Page", box: BBox, M=None) -> Mark | None:
     # A shafted arrow is read from the whole ink or from a shape cut out of a solid one, never from what erasing a ring
     # leaves: a bold letter touches the ring's band all round, and the middle of an "m" - a stroke with two arches
     # bending onto it - is a shaft with two arms closing on its end (CBA's "Commonwealth", Woolworths' "Home").
-    kind, score = _best_template(mask, shafts=not ring)
+    kind, score = _best_template(mask, shafts=not ring, glyph=glyph)
     if kind is None:
         return Mark(bbox=box, kind="unknown", score=0.0, colour=colour)
     return Mark(bbox=box, kind=kind, score=score, colour=colour)
@@ -533,7 +561,7 @@ def _shafted_arrow(mask):
     return None
 
 
-def _best_template(mask, shafts: bool = True):
+def _best_template(mask, shafts: bool = True, glyph: bool = False):
     """Say what shape the ink is.
 
     Ticks and crosses are told by where their ink lies (a tick leaves the
@@ -541,7 +569,9 @@ def _best_template(mask, shafts: bool = True):
     fills all four quarters along the diagonals), which holds for any stroke
     weight or font. Discs, squares and boxes are matched against templates
     with checks that a glyph in a ring ("$") cannot pass. `shafts` false leaves
-    the shafted arrow out, for what is left once a ring is erased.
+    the shafted arrow out, for what is left once a ring is erased. `glyph` reads
+    the ink of an icon font's glyph, whose tick may be heavy enough to carry into
+    the upper-left quarter where its strokes meet.
     """
     mask = _tight(_drop_specks(mask))
     n = len(mask)
@@ -552,7 +582,10 @@ def _best_template(mask, shafts: bool = True):
     thin = fill < 0.5
     # A tick: (almost) nothing upper-left, the long arm upper-right, the short
     # arm lower-left. What is left of a ring adds a little ink everywhere.
-    if thin and ul < 0.12 and ur >= 0.25 and ll >= 0.12 and lr <= 0.35 and ll + ur >= 0.6:
+    # A heavy tick's strokes carry a little into that quarter where they meet: FontAwesome's check, set in every cell of
+    # RAC's 2021 pricing tables, puts 12 to 13 per cent of its ink there. Only a glyph's tick has that room: given to
+    # drawn marks too, two pieces of an Allianz illustration, a hand and a pen, read as ticks.
+    if thin and ul < (0.15 if glyph else 0.12) and ur >= 0.25 and ll >= 0.12 and lr <= 0.35 and ll + ur >= 0.6:
         return "tick", round(1.0 - ul - max(0.0, lr - 0.1), 2)
     # An arrow head, before the cross test because the two are easily confused: both are two
     # strokes crossing the middle. The difference is at the corners - an X reaches all four, a

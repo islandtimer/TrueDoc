@@ -864,6 +864,57 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   a filled band ends where the band does; and a banded table of ticks converted in full writes every tick in its row -
   all but the rule about pieces standing apart failing without the change. Suite 601.
 
+**A private-use character is read by what its font draws** (16 Sept, early morning)
+- **The fault** (`truedoc/extract/textlayer.py`). A code in Unicode's private-use area means nothing of itself; only the
+  font's drawing says what it is. RAC's 2021 premium, excess and discount guides tick every pricing factor under
+  "Buildings" and "Contents" with FontAwesome's check, U+F00C; an RAA landlord policy bullets the causes a table cell
+  excludes with a Wingdings square; Suncorp's contents policies bullet sub-items with a Wingdings 2 dot, and RACQ's
+  supplementary PDS with Symbol's. The renderer strips every such code with the raw glyph codes of maths fonts, so the
+  pricing table's two columns came out empty, the cell's list ran on as one line and the sub-items lost their nesting.
+  The symbol-font tables read Wingdings and Webdings codes by the font's name, and nothing read the rest.
+- **The rule.** A private-use character those tables do not know - outside maths and extension fonts and hidden OCR
+  layers, and only in a font the page sets as marks, each of its private-use characters a word of its own - is drawn and
+  read as a drawn mark is (`truedoc.marks.classify_mark`, given `glyph=True`), and a tick, cross, dot, circle, square or
+  box becomes that character. An arrow, or a shape the reader cannot name, stays as it was: where such an arrow points
+  is the owner's open question about reading order. A mark so read that stands alone on its line starts the words beside
+  it on its row, by the measures that place a drawn mark at the head of a line.
+- **Found on the way**, on the 24 pages of the library's one-in-ten sample and the 134 of the benchmark that hold such
+  characters. A glyph's box is its font's, and a bullet's is a line tall and a third as wide: drawn onto the reader's
+  square grid the dot came out flattened and was not read - a glyph is read through a square around its box. Suncorp's
+  flow arrows, solid triangles set in ZapfDingbats over a rule, read as crosses with the rule - a glyph's ink must stand
+  alone, touching no edge of its crop. Apia's block arrows, a Wingdings 3 shaft standing on a head, read as a dot in one
+  render of three - a dot, square or box must be about as wide at each height as at its mirror height (bullets differ by
+  0.03 to 0.24 of their width, the arrows by 0.41). FontAwesome's check is heavy enough to put 12 to 13 per cent of its
+  ink in the upper-left quarter, past the tick test's 12 - a glyph's tick is given 15; given to drawn marks as well, the
+  insurance census turned Honey's ringed ticks right and two pieces of an Allianz illustration into ticks, so drawn
+  marks read as before. RACQ's bullets stand 13pt before their words, the text layer gives each as a line of its own,
+  and every one came out as an empty list item above its words - hence the join.
+- **Tried and dropped.** Taking the ink of the characters around a glyph out of its crop was meant to free RAA's seven
+  squares that sit so close to their words a first letter reaches the crop's edge. It freed none - the letter's ink
+  reaches a hair left of its own box - and it let letters read as marks on four benchmark pages: 34 of txfonts'
+  private-use small capitals as boxes, crosses and ticks, 39 codes of an Advent journal font, and more. Every such
+  letter sits inside a word, where every mark on the library pages stands as a word of its own; a font is read as marks
+  now only where the page sets all its private-use characters that way, and RAA's seven stay unread, as before.
+- **What it reads:** on the library pages, all 40 of RAC's ticks, RACQ's 8 bullets and Suncorp's 7, and 16 of RAA's 23
+  squares; CGU's and Bendigo's page-link triangles, Suncorp's and Apia's flow arrows and Woolworths' zero-width markers
+  stay as they were. In full: RAC's two pricing tables gain their twenty ticks each, RAA's causes become lists inside
+  their cells, Suncorp's sub-items become list items, and RACQ's two lists read "- Mobile Phones;" and so on.
+- **Measured, code against code** (against the rule-grid commit). Insurance set: 229 of 229 either way, and no page of
+  it changes. Key Facts Sheets: byte for byte the same on all 190 sheets, measured on the reader before its line join
+  and its font rule, which only take a reading away or act where one was made, so header whole stays at 95% tuned on
+  and 97% held out with every answer carried. Benchmark: 134 of the 1,403 pages hold private-use characters, most of
+  them the glyph codes of maths fonts and of embedded text fonts; the text layer changes on two - a slide whose three
+  Wingdings square bullets now lead its headings, which drop a level from # to ##, and a form whose 21 FontAwesome
+  ticked checkboxes fill its attributes table's empty first column with ✓ - and no check moves on either (0 of 2 and 7
+  of 7 before and after). On the other 132 the reader reads nothing, and those pages are as they were.
+- **Tests** (`tests/test_private_glyphs.py`, which cannot import on dda1240): a private-use tick is a tick, and so is a
+  heavy one; a private-use bullet leads its line as the square it draws; a bullet in a box as tall as its line is a dot;
+  a bullet set 13pt before its words starts their line - failing without the join; a triangle stays as it was; a font
+  that spells a word with its private-use codes is not read, even where one of them stands alone - failing without the
+  font rule, which read that one as a tick; a glyph with a rule inside its crop is not read; the reader's own grids of
+  Apia's arrow and Suncorp's bullet, one not as wide at each height as at its mirror and one so; and a heavy tick is a
+  tick only as a glyph - failing with the room given to drawn marks. Suite 611.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 95% tuned on, 16% -> 97% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings

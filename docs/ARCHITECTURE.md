@@ -7,6 +7,7 @@ PDF page
   |
   |  1. extract/textlayer.py      characters (with visibility: hidden text is set aside), words, lines (re-joined
   |                               around scripts, never across column gutters), rulings, images, text-layer quality
+  |                               - a private-use character its font draws as a tick, cross, bullet or box is that mark
   |     ocr/rapid.py              (only if the page has no usable text) RapidOCR -> same evidence shapes; a page read sideways is turned and read again
   v
   |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;
@@ -59,6 +60,7 @@ PDF page
   |                              rendered, matched to templates and written into the cell or line
   |                              - a shafted arrow, drawn or cut out of a square, before a chevron (_shafted_arrow):
   |                                its head meeting on the shaft's line, never from what erasing a ring leaves
+  |                              - a glyph's mark (glyph=True): alone in its box, a dot the same upside down
   |     tables/list_columns.py    then, the marks in place: lists set side by side with no boxes, cut at their lines by a
   |                               text-built table, are read column by column and rebuilt as one row of list cells under
   |                               their headings (rebuild_side_by_side_lists)

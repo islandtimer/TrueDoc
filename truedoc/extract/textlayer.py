@@ -656,6 +656,8 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
     page.hidden_text = visibility.grouped()
     page.words = [w for l in lines for w in l.words]
     page.lines = lines
+    if not visibility.ocr_layer:
+        _read_private_glyphs(pdf_page, page)
     page.images = _extract_images(pdf_page, M)
     page.quality = _assess_quality(page, visibility)
     if page.quality.kind == "ocr":
@@ -1011,6 +1013,78 @@ def _symbol_font_mark(font: str, text: str) -> str:
         if name in f:
             return table.get(ord(text) - 0xF000, text)
     return text
+
+
+_READ_GLYPHS = ("tick", "cross", "dot", "circle", "square", "box")
+
+
+def _read_private_glyphs(pdf_page: "pymupdf.Page", page: Page) -> None:
+    """A private-use character the tables above do not know is read by what its font draws.
+
+    A code in Unicode's private-use area means nothing of its own; only the drawing says what it is. RAC's 2021 premium,
+    excess and discount guides tick every pricing factor under "Buildings" and "Contents" with FontAwesome's check,
+    U+F00C, and an RAA landlord policy bullets the causes a cell excludes with a Wingdings square: both were stripped
+    with the raw glyph codes, so the pricing table's columns came out empty and the cell's list ran on as one line. The
+    glyph is drawn and read as a drawn mark is (`truedoc.marks.classify_mark`): a tick, cross, dot, circle, square or
+    box becomes that character. An arrow, a shape the reader cannot name, or a glyph with other drawing reaching into
+    its box stays as it was - Suncorp's flow arrows sit on a rule, and read with it as a cross. Maths fonts are left
+    alone: their private-use codes are pieces of brackets and letters that the formula code maps back.
+    """
+    from truedoc.marks import MARK_TEXT, classify_mark
+    from truedoc.math.reconstruct import is_math_font
+
+    def private(c) -> bool:
+        return len(c.text) == 1 and 0xE000 <= ord(c.text) <= 0xF8FF
+
+    # A font of marks sets each private-use character as a word of its own; a font that spells words with them sets them
+    # inside words. On the benchmark every private-use character of txfonts' small capitals (rtxsc, 218 on one page),
+    # of an Advent journal font and of three unnamed embedded fonts sits in a word, where every tick and bullet on the
+    # library sample's 24 pages stands alone - and a letter read on its own can pass for a box or a cross.
+    spelled = {c.font for line in page.lines for word in line.words
+               if sum(1 for ch in word.chars if ch.text and not ch.text.isspace()) > 1
+               for c in word.chars if private(c)}
+    read: set[int] = set()
+    for line in page.lines:
+        for word in line.words:
+            for c in word.chars:
+                if not private(c) or c.font in spelled or _needs_ink(c.font) or is_math_font(c.font):
+                    continue
+                # Read through a square around the glyph's box. The box is the font's: a bullet's is as tall as its
+                # line and a third as wide, and drawn onto the reader's square grid the dot inside came out flattened.
+                side = max(c.bbox.width, c.bbox.height)
+                square = BBox(c.bbox.cx - side / 2, c.bbox.cy - side / 2, c.bbox.cx + side / 2, c.bbox.cy + side / 2)
+                try:
+                    mark = classify_mark(pdf_page, square, glyph=True)
+                except Exception:
+                    continue
+                if mark is not None and mark.kind in _READ_GLYPHS:
+                    word.text = word.text.replace(c.text, MARK_TEXT[mark.kind])
+                    c.text = MARK_TEXT[mark.kind]
+                    read.add(id(word))
+    # A mark read from a glyph that makes a line of its own starts the words beside it on its row, as a drawn mark does
+    # (`pipeline._attach_marks`, by the same measures): RACQ's supplementary PDS sets each Symbol bullet 13pt before its
+    # words, the text layer gives the two as separate lines, and every bullet came out as an empty list item. Another
+    # line holding only such a mark is never the one joined, so two columns of ticks stay two columns.
+    alone = {id(l): l for l in page.lines if not l.rotated and len(l.words) == 1 and id(l.words[0]) in read}
+    joined: set[int] = set()
+    for key, mark_line in alone.items():
+        m = mark_line.words[0]
+        best = None
+        for l in page.lines:
+            if id(l) in alone or l.rotated or l.bbox.y1 < m.bbox.y0 or l.bbox.y0 > m.bbox.y1:
+                continue
+            if abs(l.bbox.cy - m.bbox.cy) > 0.7 * max(l.bbox.height, m.bbox.height):
+                continue
+            gap = l.bbox.x0 - m.bbox.x1
+            if -1.0 <= gap <= 3.0 * max(m.size, 1.0) and (best is None or gap < best[0]):
+                best = (gap, l)
+        if best is not None:
+            best[1].words.insert(0, m)
+            best[1].bbox = best[1].bbox.union(m.bbox)
+            joined.add(key)
+    if joined:
+        page.lines = [l for l in page.lines if id(l) not in joined]
+        page.words = [w for l in page.lines for w in l.words]
 
 
 def _chars_to_words(chars: list[Char], ocr_layer: bool = False) -> list[Word]:
