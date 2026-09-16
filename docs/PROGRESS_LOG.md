@@ -1341,6 +1341,47 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   disc the reader writes. A bullet says nothing a list element does not already say, so it should go the way the
   others do.
 
+**A column of labels is not a heading wrapping onto the rows below** (16 Sept, c3ed2ce)
+- **What the page showed.** QBE's financial services guide sets "Phone:", "Email:", "Online:", "Post:" down a column
+  with their values beside them. The conversion published "Phone: Email: Online: Post:" as one paragraph and every
+  value as another, so nothing said which value belonged to which label. The next page of the same document sets the
+  same shape and builds it as a table, which is what made the fault worth tracing rather than guessing at.
+- **Where it went.** `_heading_wraps_on` reads a cell of more than six words that closes on no full stop, with a
+  lowercase line beneath it in its own column, as one heading set over two lines. The first value - "1300 650 503
+  (Monday to Friday, 9am-5pm AEST/AEDT)", seven words - stood over "complaints@qbe.com", which starts in lower case,
+  so the fold ran three times and put three labels in one cell. The table was then refused altogether, and the labels
+  and the values fell out as two paragraphs.
+- **The rule.** A colon closes what it follows, so a cell ending in one is a label, whole. Where the row below fills a
+  column whose cell above ends in a colon, it is a row of its own and not the heading carrying on. The same reading
+  of a colon is already in `_label_carries_on` and in the merger's label branch; this makes the third place agree.
+- **What a wider version cost, measured before it was narrowed.** Refusing the fold whenever the row below filled any
+  column the row above filled - the test the code already used one row further down - took WFI's classic home
+  building Key Facts Sheet's header apart: its heading interleaves "... that apply to" over "Yes/No" over
+  "Event/Cover | Optional | events/covers ...", and "Optional" under "Yes/No" is exactly that shape. The colon
+  narrows it to labels, and the sheet is whole again.
+- **Measured.** Key Facts Sheets 157 of 158 tuned on and 32 of 32 held out, 1885 of 1885 and 375 of 375 answers -
+  identical to before the change, sheet by sheet (`kfs_three.py`). Insurance set 229 of 229 with no page changed.
+  Benchmark tables 852 of 1022 and headers_footers 739 of 760 either way, with all 454 pages byte-identical. Of 47
+  library pages converted for this reading, one changed: QBE's page 3, now four rows pairing each label with its
+  value and the postal address after them, as its page 4 already read. Suite 669 -> 673.
+
+**Two more shapes measured, and what the numbers said to do with them** (16 Sept, evening)
+- **A paragraph opening with a character markdown reads as syntax: refused, population zero.** RACV's landlord
+  premium guide footnotes with "#", so "#Excludes Travel, Business, and Farm Insurance products." is published as a
+  first-level heading. Over 217 pages of 40 library documents, with the layout model running, there are **no other
+  instances** - not one paragraph opening with "#", ">" or "|". One page in a hundred and forty is not a rule; it is
+  noted here and left.
+- **A chevron standing alone as a list's marker: measured at 11 markers on 2 pages of one document in sixty**, where
+  the bullets shipped this evening were 16 pages and 9 documents. `_MARK_GLYPHS` holds the round and square bullets
+  only, so RAC's legal rights guide still sets its "»" apart from the words it marks. The same one-line change would
+  cover it; at a sixth of the population it waits until something else brings it, rather than spending a quartet of
+  measurements on one document.
+- **A list set at two levels, flattened to one: 20 pages of 217 and 11 documents of 40.** CGU's landlord PDS sets
+  "there is any change to:" over four items an em further in, and both levels come out as "- " at one level, so a
+  sub-item reads as a sibling of the item it belongs to. `Block.level` already carries list nesting and the heading
+  renderer already reads it; what is missing is setting it from the marker's own indent and indenting the element.
+  That is the next thing to build, and the largest of the three.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
