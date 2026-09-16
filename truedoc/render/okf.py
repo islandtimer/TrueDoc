@@ -278,7 +278,7 @@ def render_block(block: Block) -> str:
         level = max(1, min(6, block.level or 2))
         return "#" * level + " " + re.sub(r"\s+", " ", text)
     if k == BlockKind.LIST_ITEM:
-        return _render_list_item(text)
+        return _render_list_item(text, block.level or 1)
     if k == BlockKind.FIGURE:
         if block.meta.get("transcribed"):
             # D015, D019: a picture that held text or a table, transcribed by a model: the
@@ -305,15 +305,18 @@ def _alt_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).replace("[", "(").replace("]", ")").strip()
 
 
-def _render_list_item(text: str) -> str:
+def _render_list_item(text: str, level: int = 1) -> str:
+    # A sub-list is indented under the entry it belongs to, two spaces a level, which is what markdown reads as
+    # nesting. The level is the marker's own place on the page (`pipeline._list_levels`).
+    pad = "  " * max(0, min(level, 4) - 1)
     m = re.match(r"^\s*([\u2022\u25e6\u25aa\u25cf\u2023\u2043\u25a0\u25a1\u00b7\-\u2013\u2014\*])\s*(.*)$", text, re.S)
     if m:
-        return "- " + m.group(2).strip()
+        return pad + "- " + m.group(2).strip()
     m = re.match(r"^\s*\(?(\d{1,3})[.)]\s*(.*)$", text, re.S)
     if m:
-        return f"{m.group(1)}. " + m.group(2).strip()
+        return pad + f"{m.group(1)}. " + m.group(2).strip()
     # Letter and roman-numeral markers ("(a)", "iv.") are kept verbatim: they carry meaning.
-    return text.strip()
+    return pad + text.strip()
 
 
 _DANGLING_END = r"(?:=|\+|-|<|>|\\leq|\\geq|\\le|\\ge|\\neq|\\to|\\rightarrow|\\times|\\cdot|\\pm|\\approx|\\sim|\\subset|\\in)"

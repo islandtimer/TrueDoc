@@ -9,7 +9,7 @@ import pathlib
 import re
 from dataclasses import dataclass, field
 
-from truedoc.classify.blocks import _assign_heading_levels, classify_blocks
+from truedoc.classify.blocks import _LIST_START, _assign_heading_levels, classify_blocks
 from truedoc.classify.page_numbers import release_pointers
 from truedoc.extract import render as page_render
 from truedoc.extract.handle import open_pdf
@@ -263,9 +263,87 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
         _ocr_text_pictures(pdf_page, page, blocks)
 
     assign_reading_order(blocks, page.width, page.body_font_size)
+    _list_levels(blocks, page.body_font_size or 10.0)
     _record_imprint(page, blocks, pdf_page)
     page.blocks = blocks
     return page
+
+
+# A sub-list is set further in than the entry it belongs to, and no further in than a list goes: three steps is a deep
+# list, and anything past that is a column, not a level.
+_LEVEL_STEP = 0.5       # of an em: two markers this close start at the same place
+_LEVEL_REACH = 8.0      # in ems: a marker further in than this from the list's own edge is another column
+_LEVELS = 4
+# A marker with words after it, in the classifier's own reading of what a marker is: an author's initial
+# ("J. A. Melero. 1989. ...", the second line of a reference in a numbered bibliography) is not one, and a first
+# version of this that took any letter with a dot indented that line as a sub-item of the reference above it.
+_MARKED_ITEM = re.compile(_LIST_START.pattern + r".*\S")
+
+
+def _list_levels(blocks: list[Block], size: float) -> None:
+    """A list item set further in than the item above it opens a sub-list, and is written as one.
+
+    The owner's D028 says this already for a list inside a table cell: "a mark set further in than the entry's own
+    opens an item of a sub-list". The body had no such rule, so CGU's landlord PDS - "there is any change to:" over
+    four items an em further in - published both levels as siblings, and a reader could not tell which items belonged
+    to the entry above them. Over 217 pages of forty library documents, 20 pages and 11 documents set a list at two
+    levels or more.
+
+    The levels are read from the page: within a run of list items uninterrupted by anything else, the markers'
+    left edges are gathered into places half an em apart, and an item's level is which place it starts at. A marker
+    more than eight ems in from the run's own edge is in another column of the page, not deeper in a list, and stays
+    at the first level; nothing goes past four levels.
+    """
+    run: list[Block] = []
+    # A block that was a heading before the layout model called it a list item still carries the heading's level
+    # (Australian Seniors' claim steps are numerals in dark squares, read as headings first), and an indent read off
+    # that is an indent the page does not have. Every list item starts level with the others here.
+    for b in blocks:
+        if b.kind == BlockKind.LIST_ITEM:
+            b.level = 1
+
+    def levels(group: list[Block]) -> None:
+        # Only an item that carries its own marker and words after it takes a level. The layout model calls a
+        # paragraph a list item often enough - Australian Seniors' numbered claim steps are a numeral in a dark
+        # square and a sentence beside it, filed as three list items - and indenting those says something about
+        # the page that is not there.
+        group = [b for b in group if _MARKED_ITEM.match(" ".join(b.text.split()))]
+        if len(group) < 3:
+            return
+        starts = sorted({round(b.bbox.x0, 1) for b in group})
+        places: list[float] = []
+        for x in starts:
+            if not places or x - places[-1] > _LEVEL_STEP * size:
+                places.append(x)
+        for b in group:
+            level = 1
+            for i, x in enumerate(places):
+                if b.bbox.x0 >= x - _LEVEL_STEP * size:
+                    level = i + 1
+            b.level = min(_LEVELS, level)
+
+    def close() -> None:
+        # A list that carries on in the next column of the page starts again there: a marker further in than a list
+        # ever goes is another column, not a deeper level, and each column's levels are read on their own.
+        group: list[Block] = []
+        base = 0.0
+        for b in run:
+            if group and abs(b.bbox.x0 - base) > _LEVEL_REACH * size:
+                levels(group)
+                group = []
+            if not group:
+                base = b.bbox.x0
+            base = min(base, b.bbox.x0)
+            group.append(b)
+        levels(group)
+        run.clear()
+
+    for b in sorted(blocks, key=lambda b: b.order):
+        if b.kind == BlockKind.LIST_ITEM:
+            run.append(b)
+        elif b.kind not in (BlockKind.HEADER, BlockKind.FOOTER, BlockKind.PAGE_NUMBER):
+            close()
+    close()
 
 
 def _record_imprint(page: Page, blocks: list[Block], pdf_page=None) -> None:
