@@ -1316,6 +1316,31 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   university's committee names and a Finnish advisory's paragraphs, each now under its own marker instead of after a
   row of empty ones. Suite 650 -> 656.
 
+**A dingbat font's letter is a code, not a letter** (16 Sept, 4bc6a51)
+- **The shape.** Wingdings, Webdings, ZapfDingbats, Marlett and Monotype Sorts hold no letters at all: their "n" draws
+  a filled square, their "l" a circle, their "o" an empty checkbox. The letter is what reached the reader - "n admit
+  guilt, fault or liability except to the police" in Australian Seniors' landlord PDS - and Woolworths' target market
+  determination bullets with Wingdings U+009F, which renders as nothing at all, so its items lost their markers
+  entirely. Sixty documents of the library, twelve pages each: **242 such characters over 27 pages and seven distinct
+  documents**, every one of them opening a line.
+- **The rule is the private-use rule's own.** `_read_private_glyphs` already reads a glyph by what its font draws;
+  these join it, with the same guards - a font that spells words is left alone, and so is a glyph another drawing
+  reaches into. A character whose code is already a mark keeps what it says, so SymbolMT's 157 bullets in the same
+  sample and a form's dingbat boxes are untouched, and the Symbol family, which spells Greek and mathematics, is not
+  a dingbat font.
+- **Measured.** Library: lines opening with the raw letter **170 -> 31**, pages **18 -> 5**, documents **5 -> 1**. Of
+  the 31 left, 29 are GIO's ZapfDingbats chevrons, whose own code (U+203A, a right-pointing angle) already looks like
+  what the font draws and which read as arrows - a kind this reader deliberately does not name; the other two read as
+  arrows because other drawing reaches into their box. Insurance set 229 of 229 with one page changed, Qantas's
+  Wingdings circle becoming a list item. Key Facts Sheets 99% tuned on and 100% held out, unchanged. Of the
+  benchmark's 1,403 pages eleven hold such a character: 41 of 48 either way, four pages changed, every change read -
+  "FEMALE o MALE o" into checkboxes, "l 78% of cases" into a list item, three Wingdings squares in a heading. Suite
+  662 -> 669.
+- **One thing this turns up for later:** a cell's list now carries its bullet in the element's own text
+  ("<li>&#9679; Fire and explosion;</li>"), because `cell_lists.BULLETS` knows the small bullets but not the filled
+  disc the reader writes. A bullet says nothing a list element does not already say, so it should go the way the
+  others do.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
