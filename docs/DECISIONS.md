@@ -492,3 +492,28 @@ without seeing TrueDoc's output, and the owner rules on the doubtful ones - and 
 the tuned-on set, as the benchmark's held-out fifth is. The list is `bench/insurance_holdout.txt`, which carries the
 rule and the warning in its own header; `scratchpad/seal_holdout.py` regenerates it.
 
+
+## D031 - A conversion says which of its stages could not run (2026-09-17, mine; the owner can overrule)
+
+**What went wrong twice.** A measurement is only worth what the code state behind it is worth. On 15 September a
+figure was quoted from a probe that builds its pages with the layout model off by design; on 16 September three
+"defects" were read off library pages converted by the interpreter on the PATH, where the model cannot load at all
+(docling pins `tokenizers` below 0.22 and the machine's Python has 0.22.2). Both numbers had to be withdrawn. The
+common cause is not carelessness about which Python to type: it is that `_detect_layout` swallowed the failure into
+one log line and the output said nothing, so a page read without the model is indistinguishable, in the markdown,
+from the converter's own answer.
+
+**The decision.** A stage that was asked for and could not run is named in the front matter, under
+`truedoc.warnings`: "the layout model was asked for and could not run, so N page(s) were read without it: <reason>".
+The conversion still succeeds - the model is optional and always was - but it no longer passes itself off as
+complete. This is provenance of the same kind as D015's inferred markers and D011's hidden text: the output says what
+was done to it.
+
+**What it costs.** Nothing that any measure can see: every scorer converts with `frontmatter=False`, and a test pins
+the body byte-identical with the warning present (`tests/test_layout_unavailable.py`). Checked on ING's home SPDS
+page 4: `warnings: []` under `.venv/Scripts/python`, the reason named under the interpreter that cannot load the
+model.
+
+**What it asks of anyone measuring.** Before trusting a conversion you are about to count, look at
+`truedoc.warnings`. An empty list is the product's own answer; anything in it is a different state, and a number
+taken from it belongs to that state, not to TrueDoc.

@@ -7,7 +7,9 @@ PDF page
   |
   |  1. extract/textlayer.py      characters (with visibility: hidden text is set aside), words, lines (re-joined
   |                               around scripts, never across column gutters), rulings, images, text-layer quality
-  |                               - a private-use character its font draws as a tick, cross, bullet or box is that mark
+  |                               - a character whose code cannot mean what it draws is read by its drawing: a
+  |                                 private-use one, and a Latin letter in a dingbat font (Wingdings' "n" is a square)
+  |                               - a mark alone on a line, drawn or named by the text layer, joins the words beside it
   |     ocr/rapid.py              (only if the page has no usable text) RapidOCR -> same evidence shapes; a page read sideways is turned and read again
   v
   |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;
@@ -64,6 +66,9 @@ PDF page
   v
   |  6. segment/order.py          reading order: column split when a full-height gap exists, else peel
   |                               the topmost spanning block, else horizontal cut
+  |     pipeline._list_levels     then, in reading order: a list item set further in than the item above opens a
+  |                               sub-list, read from where the markers start (D028's rule for a cell, in the body);
+  |                               a list carrying on in the next column starts again there
   v
   |  6b. marks.py                 ticks, crosses and bullets drawn as shapes or tiny images are
   |                              rendered, matched to templates and written into the cell or line
@@ -106,6 +111,9 @@ PDF page
   |                               `truedoc.imprint` with its page, never in the body (D029)
   |                               - a drawn mark no cell, line or picture takes is kept under
   |                               `truedoc.marks_not_placed` with its page and box, and published nowhere
+  |                               - a stage asked for that could not run is named under `truedoc.warnings`
+  |                               ("the layout model was asked for and could not run..."), so no one reads a
+  |                               conversion made without it as the converter's own answer
   v
 OKF markdown
 ```
