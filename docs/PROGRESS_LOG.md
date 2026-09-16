@@ -1241,6 +1241,29 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   grid, should be left as text. That needs the benchmark's table pool measured on both sides, and a candidate that
   fires more than once.
 
+**Correction: the unplaced-marks census counts a state the product does not produce** (16 Sept, evening)
+- **What was written, an hour before this.** STATUS named the next item as the table the reader never builds, on the
+  strength of `bench/probes/unplaced_marks_census.py`: 541 readable marks standing in columns on 141 pages of 93
+  documents in a one-in-ten sample, with QBE's home PDS page 16 losing eight yes-or-no answers. The figure was taken
+  from the probe's own docstring, written on 15 September, and repeated as though it described today's conversions.
+- **What is true.** The probe builds its pages **without the layout model**, which its docstring says plainly and I
+  did not read: tables are found before the model runs, so the census sees a state no conversion produces. QBE page
+  16 today, asked both ways through `truedoc.marks_not_placed`: with the model off, eight marks are placed nowhere;
+  with it on, **none**, and the page's table converts whole - four rows, six ticks and two crosses, each in its own
+  cell.
+- **The population, re-measured on today's code.** Five pages the census names, asked both ways: GIO's landlord PDS
+  page 41 four marks to none, AAMI's fire and theft page 41 three to none, AAMI's home contents page 41 two to none -
+  the model builds the table and the marks reach their cells. Two keep them: Bank of Melbourne's financial services
+  guide page 1 (four either way) and a RACQ supplementary PDS page 1 (eleven to nine). A sixth page the census names
+  is in the sealed slice (D030) and was not opened.
+- **What the survivors are.** Bank of Melbourne's four crosses, read against the page, are the quadrants of the
+  bank's shield logo - decoration, and no meaning lost. They are what `marks_not_placed` is for: listed, published
+  nowhere, and recognisable as decoration by their kind and their box.
+- **What this changes.** The next item is not the missed table. On the product's own measure - the model on, as it
+  runs - 245 readable marks are placed nowhere over 40 documents' first twelve pages, 21 of them ticks, and the ones
+  read so far are logos. The lesson is narrower than the correction: **a probe's numbers describe the options it was
+  run with**, and a figure lifted from a docstring is a recalled number, not a measured one.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
