@@ -1382,6 +1382,31 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   renderer already reads it; what is missing is setting it from the marker's own indent and indenting the element.
   That is the next thing to build, and the largest of the three.
 
+**A list item set further in than the item above opens a sub-list** (17 Sept, a9cf7e8)
+- **The shape.** The owner's D028 says this already for a list inside a table cell: "a mark set further in than the
+  entry's own opens an item of a sub-list". The body had no such rule. CGU's landlord PDS sets "there is any change
+  to:" over four items an em further in, and both levels came out as "- " at one level, so a sub-item read as a
+  sibling of the entry it belongs to. Over 217 pages of forty library documents, 20 pages and 11 documents set a list
+  at two levels or more.
+- **The rule, read off the page.** Within a run of list items uninterrupted by anything else, the markers' left edges
+  are gathered into places half an em apart, and an item's level is which place it starts at, to four levels. A list
+  that carries on in the next column starts again there: a marker more than eight ems in from the run's own edge is
+  another column, not a deeper level. `Block.level` already carried list nesting and the renderer already read it for
+  headings; an item is now indented two spaces a level, which is what markdown reads as nesting.
+- **Three things the pages caught before this was measured.** Only an item carrying a marker the classifier itself
+  knows, with words after it, takes a level: the first version's own pattern took any letter with a dot, and indented
+  "J. A. Melero. 1989. ..." - the second line of a reference in a numbered bibliography - as a sub-item of the
+  reference above it. The layout model calls a paragraph a list item often enough that Australian Seniors' claim
+  steps, a numeral in a dark square beside a sentence, were being indented as though the page set them that way. And
+  a block that was a heading before the model called it a list item still carried the heading's level, which the
+  renderer then read as an indent.
+- **Measured.** Insurance set 229 of 229 with no page changed. Key Facts Sheets 157 of 158 tuned on and 32 of 32 held
+  out, **zero sheets moved**. Benchmark over four categories and 747 pages - tables 852 of 1022, headers_footers 739
+  of 760, multi_column 682 of 884, long_tiny_text 357 of 442 - every score identical, four pages changed, and each
+  read against its image is the page's own shape: a Polish numbered list with lettered sub-items, an Indonesian b),
+  a Finnish sub-list under a green bullet, a patent's (b) and (c) clauses. Of 47 library pages, two changed - CGU's
+  page 4 and Bendigo's page 7, each sub-list under the entry it belongs to, across both columns. Suite 673 -> 677.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
