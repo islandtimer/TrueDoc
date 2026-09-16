@@ -101,6 +101,8 @@ PDF page
   |      Tried and reverted: writing sized brackets plain around line-high content (run 15: +2 checks, -6))
   |  7. render/okf.py             markdown body (hyphenation repair, cross-column joins, tables,
   |                               empty output for unreadable pages) + YAML front matter
+  |                               - furniture no page beside prints is the document's imprint: kept under
+  |                               `truedoc.imprint` with its page, never in the body (D029)
   v
 OKF markdown
 ```

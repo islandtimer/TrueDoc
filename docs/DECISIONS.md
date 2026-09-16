@@ -432,3 +432,39 @@ checks - the item with its mark among a table cell's list elements, under its co
 are in `bench/out/insurance_set/checks_a_before_list_checks/`.
 With the wrapped-entry rule in the tree the set scores 226 of 229 on them.
 
+## D029 - A line at a page's edge that no page beside prints is the document's imprint (2026-09-16, owner's decision)
+
+**The question.** A running head or foot runs: the same words, at the same height, page after page. At the edge of a
+first page nothing runs, and what stands there is the document's imprint - a copyright line, a journal's "Downloaded
+from ... by guest" stamp, a standard's issuing body, an insurance cover's issuer, ABN and licence ("AAI Limited ABN 48
+005 297 807 AFSL 230859 trading as AAMI"). TrueDoc dropped all of it as furniture. Four ways of telling the meaningful
+lines from the worthless were tried on the library's census and all four failed - repetition, position on the page,
+type size, and length. The fourth was an overfit the owner caught: counted by copies, every stamp stopped at ten words
+and every issuer block started at twelve, but counted by distinct wording the two overlap at ten, and 23 of the 41
+"issuer blocks" were one AAMI template.
+
+**Why it does not divide.** The division is not in the document, it is in the reader. olmOCR-bench's 753 header and
+footer checks want every such line absent - "Copyright 1975 American Mathematical Society", "FI-02180 Espoo, Finland",
+"Please cite this article as: ..." - and a reader comparing two insurance products needs to know who underwrites them.
+Both are right for their reader. The owner's own insurance set holds both positions: two of its 31 absent checks are a
+document's own stamps ("PDS preparation date 25/11/2020" on GIO page 2, "NRMAHOMPDS REV2 09/2023" on NRMA's cover), so
+publishing imprint into the body would contradict checks he ruled fair.
+
+**The decision.** Neither the body nor the bin. A line at a page's edge that no page beside prints there stays out of
+the body, exactly as before, and is kept in the front matter under `truedoc.imprint` with the page it came from.
+Nothing the document says is thrown away, no block changes kind, and the body of every document is byte for byte what
+it was - so the three measures, which all convert with `frontmatter=False`, cannot move. A page number is left out: a
+folio counts the artifact's pages, not the document's matter. No threshold is involved, so nothing is fitted to a
+corpus.
+
+**Built** (16 September, midday). `_record_imprint` in `truedoc/pipeline.py` asks `_repeated_beside` of every block
+already filed as a header or footer, after every furniture decision is final; `load_document` gathers the entries as
+it gathers hidden text (D011); `truedoc/render/okf.py` writes them under the `truedoc` key. Tests in
+`tests/test_imprint.py` (6).
+
+**Measured** (against 9c39679). Every page of the insurance set, all 190 Key Facts Sheets and all 266 pages of
+the benchmark's headers-and-footers pool are byte for byte what they were, and the suite is 642. Over 200 documents
+of the library's census sample 60 keep an imprint - 67 lines, 51 distinct, none of them a page number. It costs
+nothing that can be measured: 20 pages convert in 6.99s before and 6.84s after, best of five with the layout model
+off.
+

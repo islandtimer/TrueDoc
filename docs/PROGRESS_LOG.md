@@ -1095,6 +1095,51 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   foot; a stamp alone at the foot stays a foot, as does a short line and as does the sentence in a one-page file.
   Taking either half of the condition out fails a different one of them. Suite 636.
 
+**A line at a page's edge that no page beside prints is the document's imprint** (16 Sept, midday, after 9c39679)
+- **What was found.** A running head or foot runs: the same words, at the same height, page after page. At the edge of
+  a first page nothing runs, and what stands there is the document's imprint - an insurance cover's issuer, ABN and
+  licence ("AAI Limited ABN 48 005 297 807 AFSL 230859 trading as AAMI"), a preparation date, a document code. TrueDoc
+  dropped all of it. Four ways of separating the meaningful from the worthless were tried on the census and all four
+  failed: repetition (neither kind repeats), where it sits on the page (184 of the 197 unrepeated feet are on a first
+  page), type size (7pt issuer against 6pt date), and length. The fourth was an overfit, and the owner caught it:
+  counted by copies every stamp stopped at ten words and every issuer block started at twelve, but counted by distinct
+  wording the two overlap at ten - and 23 of the 41 "issuer blocks" were one AAMI template repeated across documents.
+- **Why it does not divide.** Because the division is not in the document, it is in the reader. olmOCR-bench's 753
+  header and footer checks want every such line absent - "Copyright 1975 American Mathematical Society", "FI-02180
+  Espoo, Finland", "Please cite this article as: ..." - while a reader comparing two insurance products needs to know
+  who underwrites them. The owner's own insurance set holds both positions: two of its 31 absent checks are a
+  document's own stamps ("PDS preparation date 25/11/2020" on GIO page 2, "NRMAHOMPDS REV2 09/2023" on NRMA's cover),
+  so publishing imprint into the body would contradict checks he ruled fair.
+- **The rule** (`truedoc/pipeline.py`, `truedoc/render/okf.py`). Neither the body nor the bin. `_record_imprint` runs
+  at the end of `process_page`, after every furniture decision is final, and asks `_repeated_beside` of each block
+  already filed as a header or footer: when no page beside prints it there, its text is kept with its page.
+  `load_document` gathers the entries as it gathers hidden text (D011) and the renderer writes them under
+  `truedoc.imprint`. Nothing changes kind, so the body is untouched; a page number is left out, because a folio counts
+  the artifact's pages rather than the document's matter; and no threshold is involved, so nothing is fitted.
+- **Measured, code against code** (against 9c39679). Insurance set: every one of its 25 pages is byte for byte the
+  page main writes at 9c39679, so its 229 of 229 cannot move - the change adds to the front matter and every scorer
+  converts without it. Key Facts Sheets: all 190 graded fresh under the change and not one sheet's markdown differs
+  from the committed output; every figure stands where it stood - 157 headers whole of the 158 tuned on (99%) and 32
+  of 32 held out (100%), 1,885 of 1,885 and 375 of 375 prescribed events opening a row of their own and carrying their
+  Yes / No / Optional, no band swallowed and no row that is only a continuation. Benchmark: 739 of 760 on the
+  headers-and-footers pool under both code states, with not one of its 266 pages differing byte for byte - and no
+  benchmark page could gain an imprint entry in any case, since every one of its 1,403 files is a single page and no
+  page beside can be asked. What it keeps: 200 documents of the census sample read under the change, their first two
+  pages with the pages beside them still there to answer: 60 keep an imprint - 67 lines, 51 of them distinct, every
+  one on page 1 or 2, and not one a page number. Nineteen name who issues the product ("Australian Pensioners
+  Insurance Agency Pty Ltd ABN 14 099 650 996 is an agent and authorised representative ...", "AAI Limited ABN 48 005
+  297 807 AFSL 230859 trading as GIO", RACT's and QBE's issuer paragraphs), twelve carry a date ("This PDS came into
+  effect on the 1 September 2021", "Underwritten by Hollard Prepared 6 December 2023"), and the rest are a document
+  code, a web or phone line, a strapline or a fragment ("TMDHL_HBC099 10/24", "raa.com.au/insurance", "The over 50s
+  specialists", "Provided by") - kept as they stand, labelled rather than published, because the reading that
+  separates them is the reader's and not the document's. It costs nothing that can be measured: 20 pages of an AAMI
+  PDS convert in 6.99s at 9c39679 and 6.84s with the pass, best of five with the layout model off so its seconds
+  cannot hide the difference, and the markdown is identical to the byte.
+- **Tests** (`tests/test_imprint.py`, 6): a cover's imprint no page beside prints is kept; it stays out of the body;
+  a running foot is not imprint; a page number is not imprint, nor is a folio the layout model has labelled a page
+  footer - taking that one test out of the pass fails that one test and nothing else; and with no page beside to ask,
+  as in every olmOCR-bench file, nothing is claimed. Suite 642.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings

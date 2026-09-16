@@ -481,8 +481,9 @@ def render_frontmatter(doc: Document, body: str = "") -> str:
     OKF requires `type`; recommends `title`, `description`, `resource`, `tags`;
     records production under `generated` and provenance under `sources`; a
     conversion nobody has reviewed is `status: draft`. TrueDoc's own details
-    (checksum, page count, confidence, OCR pages, hidden text, warnings) live
-    under the `truedoc` key, which the format allows as an extension.
+    (checksum, page count, confidence, OCR pages, hidden text, imprint,
+    warnings) live under the `truedoc` key, which the format allows as an
+    extension.
     """
     now = _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat()
     resource = doc.metadata.get("resource") or doc.metadata.get("file_name", "")
@@ -502,6 +503,7 @@ def render_frontmatter(doc: Document, body: str = "") -> str:
         "inferred": doc.metadata.get("inferred") or None,
         "corroboration": _corroboration_summary(doc) or None,
         "hidden_text": doc.metadata.get("hidden_text") or None,
+        "imprint": doc.metadata.get("imprint") or None,
         "warnings": list(doc.warnings),
     }
     fm = {

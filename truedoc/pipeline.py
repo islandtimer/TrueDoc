@@ -106,6 +106,11 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
     regions = [dict(page=p.number, **r) for p in doc.pages for r in (p.meta.get("ocr_regions") or [])]
     if regions:
         doc.metadata["ocr_regions"] = regions[:200]
+    # The document's imprint: what sits at a page's edge that no page beside prints there (D029). Out of the body,
+    # as it always was, but kept - a cover's issuer and licence, a copyright line, a preparation date.
+    imprint = [dict(page=p.number, **e) for p in doc.pages for e in (p.meta.get("imprint") or [])]
+    if imprint:
+        doc.metadata["imprint"] = imprint[:200]
     unreadable = [p.number for p in doc.pages if not p.quality.usable and p.quality.kind != "ocr-truedoc"]
     if unreadable:
         doc.warnings.append(f"pages without readable text: {unreadable}")
@@ -244,8 +249,44 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
         _ocr_text_pictures(pdf_page, page, blocks)
 
     assign_reading_order(blocks, page.width, page.body_font_size)
+    _record_imprint(page, blocks, pdf_page)
     page.blocks = blocks
     return page
+
+
+def _record_imprint(page: Page, blocks: list[Block], pdf_page=None) -> None:
+    """Furniture that no page beside prints there is the document's imprint; keep it, out of the body (D029).
+
+    A running head or foot runs: the same words, at the same height, page after page. At the edge of a first page
+    there is nothing to run from, and what sits there is the document's imprint - a copyright line, a journal's
+    "Downloaded from ..." stamp, an issuing body, an insurance cover's "AAI Limited ABN 48 005 297 807 AFSL 230859
+    trading as AAMI". Conversion conventions disagree about it: olmOCR-bench's 753 header and footer checks want
+    every such line absent, and a reader comparing two products needs to know who issues them. It is kept out of
+    the body, as before, and recorded here with its page, so nothing the document says is thrown away.
+
+    Nothing below changes a block's kind: the body is what it was. Page numbers are left out by the same test that
+    names one, because the layout model labels some folios page footers ("Page 1 of 3" on a two-page TMD) and a
+    folio counts the artifact's pages, not the document's matter; so are turned stamps, whose bands this question
+    cannot read.
+    """
+    if pdf_page is None:
+        return
+    from truedoc.classify.blocks import _PAGE_NUMBER
+    from truedoc.layout.fuse import _repeated_beside
+
+    seen: set[str] = set()
+    kept: list[dict] = []
+    for b in blocks:
+        if b.kind not in (BlockKind.HEADER, BlockKind.FOOTER):
+            continue
+        text = " ".join(b.text.split())
+        if not text or text in seen or any(l.rotated for l in b.lines) or _PAGE_NUMBER.match(text):
+            continue
+        if _repeated_beside(b, page, pdf_page) is False:
+            seen.add(text)
+            kept.append({"text": text[:500], "provenance": b.provenance})
+    if kept:
+        page.meta["imprint"] = kept
 
 
 _HEADING_LABEL = re.compile(r"^(?:[IVXLC]{1,6}\.?|\d{1,2}(?:\.\d{1,2}){0,3}\.?|[A-Z]\.)$")
