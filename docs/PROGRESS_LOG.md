@@ -1264,6 +1264,58 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   read so far are logos. The lesson is narrower than the correction: **a probe's numbers describe the options it was
   run with**, and a figure lifted from a docstring is a recalled number, not a measured one.
 
+**Correction: three defects that were never there, and the interpreter that hid the layout model** (16 Sept, evening)
+- **What was read.** Step two of the library plan, on the owner's instruction: twelve documents drawn from the library
+  by a hash of their names, two pages each, converted and read against their page images. Three defects were written
+  down within the hour - QBE's three-column insured-events table lost, BankSA's ticked list run together inside its
+  cell, ALDI's six thumb-index tabs published in the body.
+- **None of the three is real.** Every conversion had been run with the interpreter on the path rather than the
+  project's own, and there the layout model cannot load: docling pins `tokenizers` below 0.22 and the machine's
+  Python has 0.22.2. The run says so once, in a log line, and carries on without it. Under `.venv/Scripts/python` the
+  same three pages convert correctly - QBE's table is built with every exclusion in its own column and the row header
+  spanning ten rows, BankSA's cell is a list of eight ticked entries, ALDI's tabs never reach the body.
+- **The figure that came out of it is withdrawn.** A census of lists whose bullets stand on lines of their own
+  counted 361 empty list items over 52 pages of a sixty-document sample. With the model running it is **54 over 16
+  pages and 9 documents** - one seventh of the claim.
+- **Two withdrawals in two days, and both have the same shape:** a number measured in a state the product does not
+  produce. On 15 September it was a probe that builds its pages without the layout model; today it was an interpreter
+  that cannot load it. The lesson is not "be careful" - it is that a conversion must say what did not run, which is
+  the next entry.
+
+**A stage that was asked for and could not run says so** (16 Sept, b7f53c4)
+- `_detect_layout` swallowed every failure into a log line, and the conversion carried on without the model. A page
+  read that way is indistinguishable, in the output, from the product's own work. The reason is now kept on the page
+  and reported once in the front matter: "the layout model was asked for and could not run, so N page(s) were read
+  without it: <reason>". Checked on ING's home SPDS page 4: `warnings: []` under the project's interpreter, and the
+  reason named under the one that cannot load the model.
+- It cannot move a score - every scorer converts with `frontmatter=False` - and a test pins the body byte-identical
+  with the warning present. Six tests; the two that monkeypatch `_detect_layout` now pass the page through.
+  Suite 656 -> 662.
+
+**A bullet alone on a line marks the words beside it** (16 Sept, e43c06e)
+- **The shape.** Some PDFs draw a list's bullets in a text run apart from their items, an em or more before the words
+  they mark; the line splitter cuts at the gap, so each bullet becomes a line holding one glyph. The orphan is then
+  published as an empty list item - "- " with nothing after it - and the items it marked run together with nothing to
+  tell them apart. Measured over sixty documents of the library, twelve pages each, with the layout model running:
+  **16 pages of 386 and 9 documents of 60, 54 empty items** - Chubb's two Masterpiece wordings, Budget Direct's SPDS,
+  RAA's home and contents PDS, two Key Facts Sheets, AAMI, NAB and Qantas among them.
+- **The rule already existed for the marks read from their drawing.** `_read_private_glyphs` ends by joining a mark
+  that stands alone on a line to the nearest line within three ems to its right, because RACQ's supplementary PDS
+  sets its Symbol bullets 13pt before their words. A bullet the text layer names for itself is the same thing in the
+  same place, so it joins that set: one line of code, one place, one reach. Ticks and crosses are left out - a column
+  of them is a table's answers, not a list's markers (D028).
+- **Measured.** On the 52 pages that hold the shape: empty items **54 -> 4**, pages **16 -> 2**, documents **9 -> 2**.
+  The two left are Key Facts Sheets whose bullets stand 4.1 ems from their words, beyond the reach the drawn marks
+  were measured at; widening a measured constant is a separate question, and the remainder is named here rather than
+  tuned away. Twenty of 47 pages changed at all, and every change read is the same one: the orphan gone and its words
+  under their own marker.
+- **Nothing else moved.** Insurance set 229 of 229 with all 25 pages byte-identical. Key Facts Sheets 99% tuned on
+  and 100% held out, 1885 of 1885 and 375 of 375 answers - the record, unchanged. The benchmark barely sees it: over
+  all 1,403 pages there are 135 lone markers on 76 pages, 93 of them with no words beside them at all, and only
+  **three pages** hold one with words within reach. Those three score 4 of 7 either way, and two read better - a
+  university's committee names and a Finnish advisory's paragraphs, each now under its own marker instead of after a
+  row of empty ones. Suite 650 -> 656.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
