@@ -43,6 +43,19 @@ def classify_blocks(page: Page, blocks: list[Block], pdf_page=None) -> None:
         """Not shown to stop at this page: a page beside it prints it at its head, or none can be asked."""
         from truedoc.layout.fuse import _repeated_beside    # imported here: fuse imports this module
         return _repeated_beside(b, page, pdf_page) is not False
+
+    def sentence(text: str) -> bool:
+        """Words enough to be a sentence, and hardly a digit among them.
+
+        At the foot of a page a line that no page beside prints is as often the document's own stamp as the page's
+        own words: a code, a folio, a date, an issuer's ABN. Over the whole one-in-fifty sample of the library the
+        194 such feet hold three sentences and 191 stamps, and this tells them apart - a supplementary PDS's "The
+        insured event ... is deleted." against "TMDHL_LLP015 12/25", "Prepared on: 27 February 2026" and "AAI
+        Limited ABN 48 005 297 807 AFSL 230859 trading as AAMI".
+        """
+        lower = sum(1 for c in text if c.islower())
+        digits = sum(1 for c in text if c.isdigit())
+        return len(text.split()) >= 8 and digits <= 0.05 * max(1, lower + digits)
     top_zone = 0.09 * page.height
     bottom_zone = page.height - 0.09 * page.height
 
@@ -74,8 +87,12 @@ def classify_blocks(page: Page, blocks: list[Block], pdf_page=None) -> None:
         if b.bbox.y1 <= top_zone and n_lines <= 2 and len(text) <= 160 and size <= body * 1.3 and runs(b):
             b.kind = BlockKind.HEADER
             continue
-        # Running footers: short text in the bottom margin (footnotes are longer, handled below).
-        if b.bbox.y0 >= bottom_zone and n_lines <= 3 and len(text) <= 200 and size <= body * 1.05:
+        # Running footers: short text in the bottom margin (footnotes are longer, handled below) - unless the line
+        # is a sentence no page beside prints there, which is the page's own: a supplementary PDS says all it has to
+        # say at the foot of its cover ("The insured event ... is deleted.", SPDS654DIR page 1). Both halves are
+        # needed: the pages beside print fifteen sentences of their own at their feet, every one a running foot.
+        if (b.bbox.y0 >= bottom_zone and n_lines <= 3 and len(text) <= 200 and size <= body * 1.05
+                and not (sentence(text) and not runs(b))):
             if size < body * 0.9 and n_lines >= 2 and len(text) > 90:
                 b.kind = BlockKind.FOOTNOTE
             else:

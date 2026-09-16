@@ -1054,6 +1054,47 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   one-line issuer the model calls a page footer, and a cover's block of contact details - stay furniture, which is
   what the measurements above decided. Suite 631.
 
+**A sentence standing alone at the foot of a page is the page's own** (16 Sept, late morning, after c48e2ce)
+- **What was found.** c48e2ce left the zone rule's bottom branch alone and a supplementary PDS's one sentence of
+  substance with it. SPDS654DIR ends its cover "The insured event 'Flood and/or run-off' under the heading What you're
+  covered for is deleted." at the very foot, with the folio joined to the block, and the branch files it as a running
+  foot; SPDS652DIR and an EXQL supplementary PDS lose theirs the same way. Asking the pages beside was measured and
+  refused: GIO's "PDS preparation date 25/11/2020" stands as alone at its foot as that sentence does, and publishing
+  it cost the insurance set a check (229 of 229 to 228).
+- **What tells them apart.** Not where they sit, nor whether they run, but what they are. The census of the whole
+  one-in-fifty sample of the library - 1,237 pages of 978 documents - holds 194 feet that no page beside prints: three
+  sentences and 191 stamps, codes, folios, dates and issuer lines ("TMDHL_LLP015 12/25", "Page 1 of 11", "Prepared on:
+  27 February 2026", "AAI Limited ABN 48 005 297 807 AFSL 230859 trading as AAMI"). "At least eight words, with digits
+  no more than a twentieth of the lower-case letters and digits" picks out those three and nothing else, and the
+  selection does not move across eight, ten or twelve words, or a twentieth, a tenth or a seventh of digits - the two
+  sides are far apart, not divided by a fitted constant.
+- **The rule** (`truedoc/classify/blocks.py`). A line in the bottom margin is a running foot unless it is a sentence
+  that no page beside prints there. Both halves are needed, and both were measured: among the feet the pages beside
+  do print, the sentence test fires on fifteen - "Insurance products issued by RACQ Insurance Limited. Conditions may
+  apply. This is general advice only ...", "Home Insurance | Product Disclosure Statement and Policy Booklet", a
+  Huddle booking line - every one a running foot that must stay out; and among the feet no page beside prints, the
+  repetition question alone gave back 191 stamps with the three sentences. With no page beside to ask - a one-page
+  file, or scanned pages beside it - the zone decides as it did, so no benchmark page can change.
+- **Measured, code against code** (against c48e2ce). Insurance set: 229 of 229 either way, and no page of it changes -
+  none of its 25 pages ends on a sentence at its foot, and GIO's preparation-date stamp stays out, which is the check
+  this rule had to keep. Key Facts Sheets: all 190 graded fresh under the rule, and not one sheet's markdown differs
+  from the committed output: the 158 tuned on stay at 157 headers whole (99%), 1,885 of 1,885 prescribed events
+  opening a row of their own and 1,885 of 1,885 carrying their Yes / No / Optional; the 32 held out stay at 32 headers
+  whole (100%), 375 of 375 and 375 of 375, with no band swallowed by the cell above and no row that is only a
+  continuation on either side. Benchmark: every one of its 1,403 files is a single page, so no page beside a line can
+  be asked and no benchmark page can change; counted rather than assumed - every one of the 1,969 PDFs under `bench`,
+  the 1,403 among them, opens at one page - and the headers-and-footers pool, the 266 pages this rule is most exposed
+  on, scores 739 of 760 under both code states with not one page's markdown differing. Library: the pages the census
+  points at, read under both code states - the three sentences and twenty whose feet are stamps, 23 pages of 23
+  documents - with every block either state takes out, at a head or a foot, compared block by block: 20 pages
+  unchanged, three blocks published now, none taken out now. The three are the three sentences; the stamps stay out,
+  among them AAMI's "AAI Limited ABN 48 005 297 807 AFSL 230859 trading as AAMI" on three covers, ALDI's "Prepared on:
+  12 April 2024", WFI's three-line ABN block and the Qantas SPDS's own "Page 1 of 5" beneath its sentence.
+- **Tests** (`tests/test_foot_sentence.py`, 5): a supplementary PDS's sentence at the foot is published when no page
+  beside prints one there, failing on the code before it; a sentence the pages beside do print at their feet stays a
+  foot; a stamp alone at the foot stays a foot, as does a short line and as does the sentence in a one-page file.
+  Taking either half of the condition out fails a different one of them. Suite 636.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings

@@ -30,6 +30,8 @@ PDF page
   |  3. segment/blocks.py         lines -> paragraph blocks (gap, overlap, size, typeface rules)
   |     classify/blocks.py        heuristic kinds: heading, header/footer, page/line numbers, list, caption
   |                               - a line at a page's head is a running head only if a page beside it prints it there
+  |                               - a line at its foot is a running foot unless it is a sentence (eight words, hardly
+  |                               a digit) that no page beside prints there
   v
   |  4. layout/docling_layout.py  RT-DETR layout model on the rendered page (CPU, ~3 s)
   |     layout/fuse.py            model regions override kinds, split straddling blocks, add figures,
