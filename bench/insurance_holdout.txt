@@ -1,7 +1,6 @@
 # A never-tuned-on slice of the insurance library, sealed 2026-09-16 on the owner's instruction.
 # Membership is int(sha1(file name)[:8], 16) % 50 == 0, a pure function of the name, so it never
-# moves as the library grows. Documents already used - the insurance set's 25 pages and the
-# one-in-fifty census sample - were excluded before the rule was applied.
+# moves as the library grows.
 # Excluded before the rule was applied: the insurance set's own pages, every Key Facts Sheet (the
 # table oracle, D027), and every document whose pages have been converted and read while building
 # rules. The one-in-fifty census sample is NOT excluded: it looked only at what a page's margins
