@@ -32,8 +32,13 @@ import re
 from truedoc.model import BBox, Block, BlockKind, CellItem, CellList
 
 TICKS = frozenset("✓✔✗✘☑☒")
-BULLETS = frozenset("•◦▪‣·")
-MARKS = TICKS | BULLETS | frozenset("●■□○")
+# A filled disc or square is a bullet wherever it is drawn: it says nothing a list element does not already say, so it
+# belongs to the element, like the small bullets. The hollow ones are left with their words - an empty box or circle is
+# how a form draws an answer not given, and dropping it would be dropping the answer. The glyph reader writes "●" for a
+# dot and "■" for a square (`marks.MARK_TEXT`), so a Wingdings bullet read from its drawing arrives here as one of
+# these: Woolworths' target market determination and Australian Seniors' landlord PDS set every cell list this way.
+BULLETS = frozenset("•◦▪‣·●■")
+MARKS = TICKS | BULLETS | frozenset("□○")
 SLACK = 0.3          # of a line's height: two lines start at one place when their starts are this close
 EDGE = 1.0           # a line starting this far left of the entries' marks, or further, is out at the box's edge
 PARAGRAPH = 0.4      # of a line's height: a gap this wide above a line, or wider, is a paragraph's break
