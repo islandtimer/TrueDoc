@@ -1407,6 +1407,19 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   a Finnish sub-list under a green bullet, a patent's (b) and (c) clauses. Of 47 library pages, two changed - CGU's
   page 4 and Bendigo's page 7, each sub-list under the entry it belongs to, across both columns. Suite 673 -> 677.
 
+**A filled disc or square is a bullet, and belongs to the list element** (17 Sept, 5146686)
+- **What the dingbat rule exposed.** D028 already says it - "a bullet's own glyph is left to the list element; a tick
+  or a cross stays with its words, because it says whether the entry is covered" - but `cell_lists` knew the small
+  bullets and not the marks the glyph reader writes, which are "●" for a dot and "■" for a square. So from the
+  moment a Wingdings bullet was read by its drawing, every entry of Woolworths' target market determination came out
+  as `<li>● Fire and explosion;</li>`, the glyph saying twice what the element already says. Over the library pages
+  converted for this reading: **31 discs and 21 squares inside list elements, on 6 pages of 4 documents**.
+- **The line.** A filled disc or square is a bullet wherever it is drawn. The hollow ones stay with their words: an
+  empty box or circle is how a form draws an answer not given, and dropping it would drop the answer.
+- **Measured.** Those 52 glyphs are gone from the elements and every tick and cross is untouched. Insurance set 229
+  of 229 with no page changed; Key Facts Sheets 157 of 158 tuned on and 32 of 32 held out, zero sheets moved; the
+  benchmark's table category 852 of 1022 with **not one of its 188 pages changed**. Suite 677 -> 682.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
