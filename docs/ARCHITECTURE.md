@@ -38,9 +38,10 @@ PDF page
   |                               build tables inside table boxes (a header row the box missed is taken from
   |                               just above it, never a sentence crossing the columns on word spaces), veto false tables
   |                               - a page header, or a long page footer, that no page beside it prints at the same
-  |                               height is the page's own (_repeated_beside, two pages each way), and so is a line
-  |                               the clean-up files as furniture for repeating a running head's words, asked at the
-  |                               height the line stands (pipeline._margin_cleanup)
+  |                               height is the page's own (_repeated_beside, two pages each way; the same line, its
+  |                               words in the same order, not the same bag of words), and so is a line the clean-up
+  |                               files as furniture for repeating a running head's words, asked at the height the
+  |                               line stands (pipeline._margin_cleanup)
   |     tables/rule_grid.py       a confident table box whose text builds no table - its columns hold only drawn marks -
   |                               is read from its own rules: rows between them, columns where their pieces meet at the
   |                               same x on at least three rules, each word in the cell its centre falls in

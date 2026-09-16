@@ -1140,6 +1140,44 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   footer - taking that one test out of the pass fails that one test and nothing else; and with no page beside to ask,
   as in every olmOCR-bench file, nothing is claimed. Suite 642.
 
+**A running head is the same line page after page, not the same bag of words** (16 Sept, afternoon, after 93b68fb)
+- **What was found, and how.** The owner asked for his arrows question to be measured - directional chevrons that tell
+  a reader which text applies - and the page he named, AAMI's home building PDS printed page 75, turned out to lose
+  three separate things. One of them is a heading: "If your policy has a building sum insured", the line that says
+  when the whole settlement tree applies, is not in the output at all. `_repeated_beside` asked whether 60% of a
+  line's distinct words turned up anywhere in the same band on a page within two, and two pages on a *different*
+  heading reads "When you have a building sum insured and we settle your building claim we will not:", which shares
+  building, if, insured, sum and your - five of the seven, 71%. Ordinary words collide; a line does not.
+- **The rule** (`truedoc/layout/fuse.py`). Every word of the line must appear in the band in its own order: the same
+  line, not the same bag. Extra words between them - a folio, a section number - do not matter, so a running head
+  set with its page number still runs. `_same_line` is asked wherever `_repeated_beside` was, which is every rule
+  that takes a line out at a head or a foot, and the imprint pass (D029) that keeps what none of them will publish.
+- **Measured over the census before anything was built.** Of the 106 heads the whole one-in-fifty sample calls
+  repeated, the order test gives back 13, and all 13 were read against their pages: "You are not covered for:" over
+  an exclusions list (four sheets), the definitions entries "Same passageway or hallway" (three) and "Broken glass -
+  home", and five cover titles. Of the 307 feet, it gives back 20, every one an issuer line - "The issuer of this
+  Product is RACT Insurance Pty Ltd ABN 96 068 167 804", "ABN 62 004 478 960 AFSL 700014 trading as WFI." - which
+  the imprint keeps rather than publishes. A symmetric test (60% each way) was measured and refused: it gives back
+  30 heads and 107 feet, among them "Page 1 of 9", "1 of 3" and a claims phone number.
+- **Measured, code against code** (against 93b68fb). Insurance set: 229 of 229 with every kind of check at 100% -
+  present 113, order 58, absent 31, table 22, list items 5 - and one page of the 25 differs: BOM's home contents page
+  6 promotes "Your cover options" from a second-level heading to a first, which is what the page sets it as (the
+  margin tie that had demoted it gives the tie to the margin only when the line runs, and it does not). Key Facts
+  Sheets: every figure as it was - 157 headers whole of the 158 tuned on (99%), 32 of 32 held out (100%), 1,885 of
+  1,885 and 375 of 375 prescribed events opening a row and carrying their answer - and 12 sheets gain the statement
+  the Australian Government prescribes ("The content of this Key Facts Sheet is prescribed by the Australian
+  Government and is a requirement under the Insurance Contracts Act 1984"), which was being dropped as a running head
+  because both pages of a sheet print it. 46 lines added across the twelve, and not one line removed on any sheet.
+  Benchmark: 739 of 760 on the headers-and-footers pool under both code states, with not one of its 266 pages
+  differing byte for byte - and no benchmark page can move in any case, since every one of its files is a single page
+  and no page beside it can be asked. Library: the census's own verdicts re-asked from the PDFs, which needs no
+  conversion: of the 106 heads the whole one-in-fifty sample calls repeated, 13 come back, and all 13 were read
+  against their pages; of the 307 feet, 20 come back, every one an issuer line that the imprint keeps rather than
+  publishes (D029). The symmetric test measured beside it would have given back 30 heads and 107 feet.
+- **Tests** (`tests/test_same_line.py`, 4): a heading whose words collide with another heading two pages on is
+  published; a running head printed beside stays furniture, and still does when the pages beside it add a section
+  number; a head whose words run in another order is published. Two of the four fail on the code before this. Suite 646.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings

@@ -253,8 +253,21 @@ def _table_from_picture(page: Page, pdf_page, box: BBox):
 _WORD = re.compile("[a-z]{2,}")
 
 
+def _same_line(words: list[str], band: list[str]) -> bool:
+    """Every word of the line, in its own order, somewhere in the band: the same line, not the same bag of words.
+
+    Sixty per cent of a line's distinct words turning up anywhere in the band was enough, and ordinary words
+    collide: AAMI's "If your policy has a building sum insured" shares building, if, insured, sum and your with a
+    different heading two pages on ("When you have a building sum insured and we settle your building claim we
+    will not:"), and the page lost its heading. A running head is the same line page after page, so its words run
+    in the same order, and extra words between them - a folio, a section number - do not matter.
+    """
+    seen = iter(band)
+    return all(any(word == other for other in seen) for word in words)
+
+
 def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
-    """Whether the pages beside this one print most of this block's words in the same band at their head or foot.
+    """Whether the pages beside this one print this block's line in the same band at their head or foot.
 
     A running head or foot runs: the same words at the same height, page after page. Up to two pages each side
     are asked, so a head or foot set differently on facing pages is still seen, in the band the block fills
@@ -266,7 +279,7 @@ def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
     """
     path = getattr(getattr(pdf_page, "parent", None), "name", None)
     index = getattr(pdf_page, "number", None)
-    words = set(_WORD.findall(b.text.lower()))
+    words = _WORD.findall(b.text.lower())
     if not path or index is None or not words:
         return None
     size = b.size or page.body_font_size or 10.0
@@ -297,7 +310,7 @@ def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
             finally:
                 textpage.close()
                 other.close()
-            if len(words & set(_WORD.findall(band.lower()))) >= 0.6 * len(words):
+            if _same_line(words, _WORD.findall(band.lower())):
                 return True
     except Exception:
         return None
