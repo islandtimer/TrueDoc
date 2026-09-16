@@ -959,19 +959,19 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   covered for:", so under the owner's icons ruling they are illustration; the name is the loss.
 - **How far it reached.** A census of every block the conversion takes out at the head and foot of a page
   (`bench/probes/running_head_census.py`), each asked whether a page within two either side prints most of its words
-  at the same height, has read 210 pages of 168 documents in file-name order - the first of the 1,237 pages of a
-  one-in-fifty sample of the library, mostly AAMI, ALDI and Apia - then 132 pages of 129 documents in shuffled order,
-  a random sample of the rest. In file-name order the rule gives back 28 heads on 23 pages; 13 stay out, printed
-  beside them, and 9 have no page beside to ask. Fifteen of those 28 the layout model had labelled page headers - the
-  cover titles of ten AAMI guides and a landlord PDS's "Your excess" - and thirteen the pipeline's own margin clean-up
-  had taken: the defined term at the top of a definitions page ("Incident", "Illegal drugs", "Computer", "Joint
-  policyholders", Apia's "Loss or damage"), two complaint steps' headings, a proofs table's title, the covers of four
-  supplementary PDSs, and a building PDS's "This guarantee does not apply:", without which nothing said the guarantee
-  does not apply to the four cases listed under it. In the shuffled pages it gives back 1 head on 1 of the 132 pages;
-  5 stay out, printed beside them, and 4 have no page beside to ask. Nine of the heads given back in file-name order,
-  on seven pages, were read against their page images and every one is the page's own; so was the one given back in
-  the shuffled pages, the title of Apia's village supplementary PDS; and converted under this rule, the 24 pages the
-  first read found heads on no longer take out any of them.
+  at the same height, read the whole one-in-fifty sample of the library: 210 pages of 168 documents in file-name
+  order - mostly AAMI, ALDI and Apia - and then the other 1,027, of 810 documents, in shuffled order. In file-name
+  order the rule gives back 28 heads on 23 pages; 13 stay out, printed beside them, and 9 have no page beside to ask.
+  Fifteen of those 28 the layout model had labelled page headers - the cover titles of ten AAMI guides and a landlord
+  PDS's "Your excess" - and thirteen the pipeline's own margin clean-up had taken: the defined term at the top of a
+  definitions page ("Incident", "Illegal drugs", "Computer", "Joint policyholders", Apia's "Loss or damage"), two
+  complaint steps' headings, a proofs table's title, the covers of four supplementary PDSs, and a building PDS's
+  "This guarantee does not apply:", without which nothing said the guarantee does not apply to the four cases listed
+  under it. In the shuffled pages it gives back 45 heads on 39 of the 1,027 pages; 68 stay out, printed beside them,
+  and 28 have no page beside to ask. Ten of the heads given back were read against their page images - nine in
+  file-name order, on seven pages, and one of the shuffled ones, the title of Apia's village supplementary PDS - and
+  every one is the page's own; the rest were not read one by one. Converted under this rule, the 24 pages that first
+  read found heads on no longer take out any of them.
 - **The rule** (`truedoc/layout/fuse.py`, `truedoc/classify/blocks.py`, `truedoc/pipeline.py`). A running head runs:
   the same words at the same height, page after page. Every rule that takes a line out as a running head now asks
   first whether it runs - the zone rule for small lines in the top margin, the layout model's page-header label and
