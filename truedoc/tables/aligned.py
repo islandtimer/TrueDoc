@@ -1014,6 +1014,17 @@ def _heading_wraps_on(grid: list[list[str]], i: int) -> bool:
                 continue
             if not under.lstrip()[:1].islower() or _ENUMERATED.match(under):
                 break
+            # A colon closes what it follows, so a cell ending in one is a label, whole. Where the row below fills
+            # a column whose cell above is such a label, it is a row of its own and not the heading carrying on:
+            # QBE's financial services guide sets "Phone:" over "Email:" over "Online:" with their values beside
+            # them, and the first value - seven words, closing on no full stop, over an email address that starts in
+            # lower case - read as a heading wrapping onto the rows below. Three labels were folded into one cell,
+            # the table was then refused altogether, and the page published the labels and the values as two
+            # paragraphs with nothing to pair them. The same reading of a colon is already in `_label_carries_on`
+            # and in the merger's label branch.
+            if any(cell and c != k and c < len(grid[i]) and grid[i][c].rstrip().endswith(":")
+                   for c, cell in enumerate(grid[j])):
+                break
             if j == i + 1:
                 return True
             above = (grid[i], grid[i + 1])
