@@ -1420,6 +1420,28 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   of 229 with no page changed; Key Facts Sheets 157 of 158 tuned on and 32 of 32 held out, zero sheets moved; the
   benchmark's table category 852 of 1022 with **not one of its 188 pages changed**. Suite 677 -> 682.
 
+**Two rules the library asked for and the census refused** (17 Sept, small hours)
+- **"A block whose every line stops short of the measure is a list of records": refused.** RAA's home and contents
+  PDS ends with seven shop addresses, each its own line, joined into one paragraph so that "Colonnades" reads as part
+  of the Adelaide address. The signal proposed was typographic and general - a paragraph's lines reach the measure,
+  a list of records' lines do not. Measured over 217 pages of forty documents: **33 blocks on 22 pages and 16
+  documents** hold the shape, and the ones read are ordinary prose - "Your insurance premium generally reflects the
+  likelihood of a claim", five lines of it, in a column narrower than the widest line beside it. The measure a block
+  is judged against is the difficulty: a block's own right edge is its longest line, so it is always flush with
+  itself, and the column's measure taken from its neighbours is wrong wherever a figure or a narrower column sits
+  beside it. A rule on this signal would break paragraphs to save address lists. Not built.
+- **"A heading band drawn outside a table's rules is its header row": refused as proposed.** RAC's premium guide sets
+  "Alarm type | Discount" in a coloured band with no rule under it, so the ruled finder builds only the body rows:
+  the first data row is published as the table's heading and "Discount" ends up at the foot of the page, far from the
+  column it names. `_adopt_ruled_headers` already reaches for a heading above a box, but only when the box is one row
+  or its first row plainly looks like data. Widening it by alignment alone was measured first: over the same 217
+  pages, **47 of 104 tables have a line of text just above them whose words all fall inside their columns**, and
+  reading them shows what they are - "Landlord Insurance policies are subject to stamp duty...", "We offer the
+  following types of..." - introductions, not headings, over tables whose own first row is already a proper heading
+  ("Membership Card Colour | Years of Membership | Annual Discount"). Adopting those would wreck four tables for
+  every one it fixed. **What a later attempt needs is the band's own typography, not its alignment:** the fill drawn
+  behind it, which `page.drawings` carries and the boxed-row rules already read.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
