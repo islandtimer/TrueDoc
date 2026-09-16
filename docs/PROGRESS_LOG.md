@@ -4,7 +4,9 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
-## 2026-09-14 - Table rules drawn from the Key Facts Sheets, and every page a rule moves read against its image
+## 2026-09-14 to 2026-09-17 - Table rules from the Key Facts Sheets, the imprint, and the library read against its images
+
+_Entries in this section run oldest first, the newest just above **Where the Key Facts Sheets stand**._
 
 **Two more rules, and the oracle sorted the work rather than leaving it to guesswork** (13-14 Sept)
 After the first heading fold, 99 sheets still lost their header. `bench/tools/kfs_why.py` sorted them by
