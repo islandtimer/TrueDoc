@@ -1016,6 +1016,9 @@ def _symbol_font_mark(font: str, text: str) -> str:
 
 
 _READ_GLYPHS = ("tick", "cross", "dot", "circle", "square", "box")
+# The marks a text layer names for itself: a bullet of one of these on a line of its own marks the line beside it,
+# exactly as a mark read from its drawing does. Ticks and crosses are left out: a column of them is a table's answers.
+_MARK_GLYPHS = frozenset("•◦▪●‣⁃·")
 
 
 def _read_private_glyphs(pdf_page: "pymupdf.Page", page: Page) -> None:
@@ -1065,7 +1068,14 @@ def _read_private_glyphs(pdf_page: "pymupdf.Page", page: Page) -> None:
     # (`pipeline._attach_marks`, by the same measures): RACQ's supplementary PDS sets each Symbol bullet 13pt before its
     # words, the text layer gives the two as separate lines, and every bullet came out as an empty list item. Another
     # line holding only such a mark is never the one joined, so two columns of ticks stay two columns.
-    alone = {id(l): l for l in page.lines if not l.rotated and len(l.words) == 1 and id(l.words[0]) in read}
+    # A bullet the text layer already names is in the same position as one read from its drawing: ING's home SPDS, and
+    # eighteen of sixty documents sampled from the library, set their bullets in a text run apart from their items, so
+    # the line splitter leaves each one on a line of its own. With the layout model running, sixteen pages of that
+    # sample's 386 still publish the orphan as an empty list item - 54 of them - while the items they marked run
+    # together with nothing to tell them apart. The mark joins its words here, on the same measures.
+    alone = {id(l): l for l in page.lines
+             if not l.rotated and len(l.words) == 1
+             and (id(l.words[0]) in read or l.words[0].text.strip() in _MARK_GLYPHS)}
     joined: set[int] = set()
     for key, mark_line in alone.items():
         m = mark_line.words[0]
