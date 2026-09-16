@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-16, 16:30 (**Two scores, and they mean different things.** **Open weights: 84.1** (run 89; held-out 81.4, tuned-on 82.0) - your own machine plus olmOCR 2's saved readings, nothing leaving the building, reproducible by anyone with a rented GPU. This is the default: the deep reader is off unless asked for. **With a hosted service: 85.4** (run 91, CI 84.5-86.3; held-out 82.4 and tuned-on 83.5, both the best ever) - the same converter, with the 103 pages of 1,403 that have no text layer and that our own OCR can make nothing of read by Claude Sonnet 5 over the API. **That is the best score the project has had, and the whole interval sits above the previous best of 84.2.** Against the open-weight run: old scans +35, old-scan maths +11, tables +6, tiny text +4, headers -2, multi-column -1. The route there was not straight: run 90 scored 82.8 because D024 escapes every dollar sign outside our own delimiters and a general model writes its maths between dollar signs, so fourteen integrals on one page became literal text and old-scan maths fell 17 points. Fixed by translating a model's delimiters before anything else sees the text. **The method error mattered more than the fix: a change measured on one category was shipped to all eight, and the category it broke was the one never looked at; `bench/tools/compare_categories.py` now makes that impossible to miss.** Also settled this week: a paragraph of prompt beat moving from Sonnet to Opus, reading a page in overlapping bands measured 28 checks worse and is switched off, and the evidence for all of it is in `docs/MODEL_CHOICE.md`. **M7 is met**: 85.4 against a best published 83.1, and OmniDocBench was investigated on 13 September and declined as a measure of TrueDoc - every page in it is an image, so our text reader, formula rebuilder and both table builders never run and the score would belong to whichever model reads the pages (D026). **Your insurance library now has a score too, and it is a different measure: 229 of 229 checks, 100.0%**, written by a model reading 25 of your PDS pages as images and never seeing our output (nine were rewritten on 15 and 16 September under your ruling on what a table cell holds, D028: six to quote a cell's mark or line, and five, two of those among them, to find an item in its cell's list; tables stand at 22 of 22 and list items at 5 of 5). **All 38 were ruled on: 31 fair, 7 unsure, nothing dropped**, so the score is confirmed and every failure is ours. Building the set already found five things the public benchmark cannot show, including a PDF whose own text layer has lost letters to its ligatures, which TrueDoc now reads back from the glyphs' own names. The section below has them. **The Key Facts Sheets have become an oracle for table rules (D027)**: the prescribed header now reads whole on 99% of the sheets tuned on and all of the hidden fifth, from 34% and 16%, and the Yes/No answer sits in its own column for every prescribed event, tuned on and in the hidden fifth - every rule written in geometry, none of them knowing what an insurance document is. **A benchmark zero is no longer taken on trust**: on 14 September a rule that moved no score had changed 16 pages, and reading them against their images caught a false table and phrases cut in two, both fixed before anything was committed. **A never-tuned-on slice of your library is now sealed** (D030): 19 documents from 10 insurers, chosen by a hash of the file name so no judgement of mine can reach them, never opened while a rule is being built, and scored once at a milestone with the score reported separately - `bench/insurance_holdout.txt`.)_
+_Last updated: 2026-09-16, 17:44 (**Two scores, and they mean different things.** **Open weights: 84.1** (run 89; held-out 81.4, tuned-on 82.0) - your own machine plus olmOCR 2's saved readings, nothing leaving the building, reproducible by anyone with a rented GPU. This is the default: the deep reader is off unless asked for. **With a hosted service: 85.4** (run 91, CI 84.5-86.3; held-out 82.4 and tuned-on 83.5, both the best ever) - the same converter, with the 103 pages of 1,403 that have no text layer and that our own OCR can make nothing of read by Claude Sonnet 5 over the API. **That is the best score the project has had, and the whole interval sits above the previous best of 84.2.** Against the open-weight run: old scans +35, old-scan maths +11, tables +6, tiny text +4, headers -2, multi-column -1. The route there was not straight: run 90 scored 82.8 because D024 escapes every dollar sign outside our own delimiters and a general model writes its maths between dollar signs, so fourteen integrals on one page became literal text and old-scan maths fell 17 points. Fixed by translating a model's delimiters before anything else sees the text. **The method error mattered more than the fix: a change measured on one category was shipped to all eight, and the category it broke was the one never looked at; `bench/tools/compare_categories.py` now makes that impossible to miss.** Also settled this week: a paragraph of prompt beat moving from Sonnet to Opus, reading a page in overlapping bands measured 28 checks worse and is switched off, and the evidence for all of it is in `docs/MODEL_CHOICE.md`. **M7 is met**: 85.4 against a best published 83.1, and OmniDocBench was investigated on 13 September and declined as a measure of TrueDoc - every page in it is an image, so our text reader, formula rebuilder and both table builders never run and the score would belong to whichever model reads the pages (D026). **Your insurance library now has a score too, and it is a different measure: 229 of 229 checks, 100.0%**, written by a model reading 25 of your PDS pages as images and never seeing our output (nine were rewritten on 15 and 16 September under your ruling on what a table cell holds, D028: six to quote a cell's mark or line, and five, two of those among them, to find an item in its cell's list; tables stand at 22 of 22 and list items at 5 of 5). **All 38 were ruled on: 31 fair, 7 unsure, nothing dropped**, so the score is confirmed and every failure is ours. Building the set already found five things the public benchmark cannot show, including a PDF whose own text layer has lost letters to its ligatures, which TrueDoc now reads back from the glyphs' own names. The section below has them. **The Key Facts Sheets have become an oracle for table rules (D027)**: the prescribed header now reads whole on 99% of the sheets tuned on and all of the hidden fifth, from 34% and 16%, and the Yes/No answer sits in its own column for every prescribed event, tuned on and in the hidden fifth - every rule written in geometry, none of them knowing what an insurance document is. **A benchmark zero is no longer taken on trust**: on 14 September a rule that moved no score had changed 16 pages, and reading them against their images caught a false table and phrases cut in two, both fixed before anything was committed. **A never-tuned-on slice of your library is now sealed** (D030): 19 documents from 10 insurers, chosen by a hash of the file name so no judgement of mine can reach them, never opened while a rule is being built, and scored once at a milestone with the score reported separately - `bench/insurance_holdout.txt`.)_
 
 ## Scoreboard (olmOCR-bench, higher is better)
 
@@ -102,7 +102,7 @@ reader** (run 91), against a best published 83.1: M7 is met. On your insurance l
 a score your rulings confirmed, nine of those checks rewritten on 15 and 16 September under your ruling on what a
 table cell holds (D028). Your Key Facts Sheets have become an oracle for table rules (D027); where they stand
 is in their own section below. Every stage reads the PDF through PDFium, and the product path no longer imports
-PyMuPDF (D023). The unit tests pass at every commit: 646 on 16 September.
+PyMuPDF (D023). The unit tests pass at every commit: 650 on 16 September.
 
 ### As it stood on 8 September, kept for the record
 
@@ -139,20 +139,21 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## What is being worked on right now
 
-**16 September: your arrows question, and the three things it found.** You asked me to measure the
-directional chevrons that tell a reader which text applies, and the page you named - AAMI's home building PDS,
-printed page 75 - loses three separate things, not one. The first is fixed here: the heading "If your policy has a
-building sum insured", which says when the whole settlement tree applies, was dropped as a running head because a
-different heading two pages on shares five of its seven words. A running head is the same line page after page, so
-the words must now run in the same order; thirteen headings across your library come back, and twelve of your Key
-Facts Sheets gain the statement the Government prescribes. Two remain, and they are what is measured next. The five
-chevrons are found as marks and then dropped, because no block takes them - the unplaced-marks problem that has been
-on the list since the ALDI census. And the branching is flattened: the layout model writes the three branches as a
-table but leaves the two conditions above it as loose paragraphs, so which outcome follows which condition is lost,
-while with the model off the reading order is right. Also today, on your instruction: a never-tuned-on slice of your
-library is sealed (D030) - 19 documents, chosen by a hash of their names, never opened while a rule is being built.
-`docs/PROGRESS_LOG.md` has each change with its numbers; the table rules drawn from your Key Facts Sheets, and where
-the sheets stand, are in their own section below.
+**16 September: the three losses on your page 75, two answered and one still open.** You asked for the
+arrows to be measured, and the page you named loses three separate things. The heading is back: a running head is
+now the same line page after page rather than the same bag of words, which gives thirteen headings across your
+library and twelve Key Facts Sheets their prescribed statement. The chevrons are not back, and that is a refusal
+rather than an oversight - a rule to publish an arrow standing between two blocks was measured over 59 of your
+documents and would print ten arrows, being a benefit table's marks, a list of tradespeople and a section number
+drawn so large the reader takes it for an arrow. What a mark means is not in where it sits. So no mark is published,
+and every mark found and placed nowhere is kept in the front matter with its page instead, as a line at a page's
+edge is (D029). **The third loss is what is measured next:** the layout model reads that decision tree row by row,
+writing its three branches as a table and leaving the two conditions above them as loose paragraphs, so which
+outcome follows which condition is lost - and with the model switched off the reading order is right, which makes it
+a question about the model rather than the page. Also today, on your instruction, a never-tuned-on slice of your
+library is sealed (D030): 19 documents, never opened while a rule is being built. `docs/PROGRESS_LOG.md` has each
+change with its numbers; the table rules drawn from your Key Facts Sheets, and where the sheets stand, are in their
+own section below.
 
 ### Earlier work, kept for the record
 
@@ -489,6 +490,15 @@ page moved**.
   "Broken glass - home", and five cover titles. Your insurance set stays at 229 of 229, and one page now reads its own
   top heading as its top heading. Your Key Facts Sheets grade the same, and twelve of them gain the statement the
   Government prescribes, which was being dropped for appearing on both pages. On the benchmark no page changes.
+- **The chevrons that point you at the text that applies (evening).** The last of the three losses on that AAMI page,
+  and the one I could not repair. Your document chains its settlement statements with a chevron carrying the word
+  "then", and TrueDoc reads the shape correctly and then drops it, because nothing on the page will take it: it falls
+  inside the box the layout model calls a table, and no cell claims it. I measured a rule to publish such a mark and
+  refused it - over 59 of your documents it would print ten arrows, and they are a benefit table's marks, a list of
+  tradespeople and a section number drawn so large the reader takes it for an arrow. What a mark means is not in where
+  it sits. So the mark is not published, but it is no longer lost without trace: every mark found and placed nowhere
+  is now kept in the document's front matter with its page. Your insurance set is unchanged, page for page. Your Key
+  Facts Sheets are untouched, every score and every sheet. On the benchmark no page changes.
 
 The scorer is `bench/tools/insurance_score.py` (it undoes markdown escapes first, or D024's "\$500"
 would fail every price check), and the dossier is built by `bench/tools/insurance_dossier.py`.

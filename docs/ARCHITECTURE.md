@@ -104,6 +104,8 @@ PDF page
   |                               empty output for unreadable pages) + YAML front matter
   |                               - furniture no page beside prints is the document's imprint: kept under
   |                               `truedoc.imprint` with its page, never in the body (D029)
+  |                               - a drawn mark no cell, line or picture takes is kept under
+  |                               `truedoc.marks_not_placed` with its page and box, and published nowhere
   v
 OKF markdown
 ```

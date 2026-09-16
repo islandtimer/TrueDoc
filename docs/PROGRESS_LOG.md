@@ -1178,6 +1178,42 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   published; a running head printed beside stays furniture, and still does when the pages beside it add a section
   number; a head whose words run in another order is published. Two of the four fail on the code before this. Suite 646.
 
+**A mark nothing takes is kept, not lost** (16 Sept, evening, after bda7609)
+- **What was found.** The third of the three losses on AAMI's printed page 75, and the one that could not be repaired.
+  The page chains its settlement statements with a chevron in a grey disc, carrying the word "then", and all five are
+  dropped. TrueDoc reads the shape correctly - `find_marks` returns arrow-down - and then loses it at placement:
+  `_attach_marks` has three ways to place a mark, a table cell, the start of a line, or being the whole content of a
+  picture, and on that page the chevrons fall inside the region the layout model calls a table, so none applies. On
+  printed page 20 the same chevrons sit in pictures of their own and reach the body as arrows, which is why the chain
+  survives there and not here.
+- **The fourth way, measured and refused.** A readable mark standing between two blocks in its own column, with none
+  beside it, looked like a flow marker: on the two AAMI pages it picks out seven chevrons and nothing else, and the
+  count is stable from six times the body size to twelve. Over 59 documents of the library it publishes ten arrows,
+  and they are Apia's benefit-table marks ("Limit >> We", four of them), two pointing into a list of tradespeople,
+  one on a Key Facts cover, and - read against its page - a section numeral drawn so large that the reader takes it
+  for an arrow. The chain the rule was built for occurs in one document of the 59. A mark's meaning is not in its
+  geometry, which is the same wall the issuer lines met in D029.
+- **What is kept instead** (`truedoc/pipeline.py`, `truedoc/render/okf.py`). `_attach_marks` already recorded every
+  mark it found; it now records whether anything took it, `load_document` gathers the ones nothing took, and the
+  renderer writes them under `truedoc.marks_not_placed` with the page and the box each was drawn in. A shape the
+  reader cannot name is left out. Nothing is published and no block changes kind, so the body of every document is
+  what it was - as D029 keeps a line at a page's edge that nothing places, this keeps the mark.
+- **Measured, code against code** (against bda7609). Insurance set: every one of its 25 pages is byte for byte the
+  page main writes at bda7609 - nothing is published, so nothing can move. Key Facts Sheets: every figure as it was -
+  157 headers whole of the 158 tuned on (99%), 32 of 32 held out (100%), 1,885 of 1,885 and 375 of 375 - and against
+  bda7609 not one sheet's markdown differs. The twelve sheets that differ from the cache taken before bda7609 differ
+  by that commit's prescribed statement, the same 46 lines added and none removed, and by nothing this change does.
+  Benchmark: 739 of 760 on the headers-and-footers pool under both code states, with not one of its 266 pages
+  differing byte for byte. What it keeps: 40 documents of the census sample read under the change, their first twelve
+  pages each: 23 of them keep a mark nothing placed, 245 marks in all - 93 dots, 46 boxes, 76 arrows (31 up, 25 right,
+  15 down, 5 left), 21 ticks and 5 squares. The heaviest document carries 43 and the median of those that carry any is
+  5, against a cap of 200 a document. Keeping only the arrows would cut it to 76, and was refused: an unplaced tick is
+  the missed-table loss that costs a reader a yes or a no (QBE's page 16 loses eight), so deciding which shapes matter
+  is the judgement geometry cannot make - which is what the rule above tried to do.
+- **Tests** (`tests/test_marks_kept.py`, 4): a mark nothing takes is kept with its page; one that leads a line
+  reaches the text instead and is not kept; the mark nothing takes stays out of the body; a page with no marks
+  records none. The first fails on the code before this. Suite 650.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings

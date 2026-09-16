@@ -111,6 +111,13 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
     imprint = [dict(page=p.number, **e) for p in doc.pages for e in (p.meta.get("imprint") or [])]
     if imprint:
         doc.metadata["imprint"] = imprint[:200]
+    # Marks found and placed nowhere: a tick the table missed, a chevron between two statements. Kept with the page
+    # and the box they were drawn in, so nothing found is lost without trace. A shape we cannot read is left out.
+    marks = [{"page": p.number, "kind": m["kind"], "bbox": m["bbox"]}
+             for p in doc.pages for m in (p.meta.get("marks") or [])
+             if not m.get("placed") and m.get("kind") != "unknown"]
+    if marks:
+        doc.metadata["marks_not_placed"] = marks[:200]
     unreadable = [p.number for p in doc.pages if not p.quality.usable and p.quality.kind != "ocr-truedoc"]
     if unreadable:
         doc.warnings.append(f"pages without readable text: {unreadable}")
@@ -880,8 +887,8 @@ def _attach_marks(pdf_page: "pymupdf.Page", page: Page, blocks: list[Block]) -> 
         return
     if not marks:
         return
-    page.meta["marks"] = [{"kind": m.kind, "colour": m.colour, "score": round(m.score, 2), "bbox": [round(v, 1) for v in (m.bbox.x0, m.bbox.y0, m.bbox.x1, m.bbox.y1)]} for m in marks]
     size = page.body_font_size or 10.0
+    took: set[int] = set()
     tables = [b for b in blocks if b.kind == BlockKind.TABLE and b.table is not None]
     lines = [l for b in blocks if b.kind not in (BlockKind.TABLE, BlockKind.FIGURE) for l in b.lines]
     taken: set[int] = set()
@@ -904,6 +911,7 @@ def _attach_marks(pdf_page: "pymupdf.Page", page: Page, blocks: list[Block]) -> 
                     elif not cell.text:
                         cell.text = m.text  # an icon-only cell keeps a placeholder
                     placed = True
+                    took.add(id(m))
                     break
             if placed:
                 break
@@ -932,6 +940,7 @@ def _attach_marks(pdf_page: "pymupdf.Page", page: Page, blocks: list[Block]) -> 
             ch = Char(text=m.text, bbox=m.bbox, font="mark", size=lsize, origin_y=l.bbox.y1)
             l.words.insert(0, Word(text=m.text, bbox=m.bbox, chars=[ch]))
             l.bbox = l.bbox.union(m.bbox)
+            took.add(id(m))
             continue
         # A mark standing on its own in a picture region, with no line on its baseline to lead:
         # the arrow an insurance policy puts between two statements, carrying the word "then".
@@ -944,7 +953,15 @@ def _attach_marks(pdf_page: "pymupdf.Page", page: Page, blocks: list[Block]) -> 
                 continue
             if sum(1 for o in marks if b.bbox.contains_point(o.bbox.cx, o.bbox.cy)) == 1:
                 b.meta["mark_only"] = m.text
+                took.add(id(m))
             break
+    # Every mark found, and whether anything took it. A mark nothing takes is not published: a rule that published
+    # one standing between two blocks was measured over 59 documents of the library and refused, because the ten
+    # arrows it would publish are a benefit table's marks, a list of tradespeople and a section numeral drawn large
+    # enough to read as an arrow. It is kept here instead, as D029 keeps a line at a page's edge that nothing places.
+    page.meta["marks"] = [{"kind": m.kind, "colour": m.colour, "score": round(m.score, 2),
+                           "bbox": [round(v, 1) for v in (m.bbox.x0, m.bbox.y0, m.bbox.x1, m.bbox.y1)],
+                           "placed": id(m) in took} for m in marks]
 
 
 def _insert_before_line(cell, page: Page, m) -> str:
