@@ -1,0 +1,29 @@
+# A never-tuned-on slice of the insurance library, sealed 2026-09-16 on the owner's instruction.
+# Membership is int(sha1(file name)[:8], 16) % 50 == 0, a pure function of the name, so it never
+# moves as the library grows. Documents already used - the insurance set's 25 pages and the
+# one-in-fifty census sample - were excluded before the rule was applied.
+# Excluded before the rule was applied: the insurance set's own pages, every Key Facts Sheet (the
+# table oracle, D027), and every document whose pages have been converted and read while building
+# rules. The one-in-fifty census sample is NOT excluded: it looked only at what a page's margins
+# hold, never at a document's body, and no rule was fitted to any document in it by name.
+# DO NOT open, convert, read or tune on these. They are scored once, at a milestone, and the
+# score is reported separately.
+AAMI/building-insurance/aami-home-building-insurance-pds_edf835ce.pdf
+AAMI/landlord-insurance/aami-landlord-insurance-pds_ee5f7de2.pdf
+AAMI/landlord-insurance/aami-landlord-tmd-a03782-071223_80070b10.pdf
+AAMI/landlord-insurance/pds-landlord_cd5523c2.pdf
+ANZ Home Insurance/home-insurance/anz-home-ped_3f4646cd.pdf
+Apia/assisted-living-insurance/apia-assisted-living-tmd-ap03840-21-06-25-a.pdf
+Apia/assisted-living-insurance/ped-apia-assisted-living-25-10-18.pdf
+Apia/assisted-living-insurance/ped-assisted-living-21-05-16.pdf
+Apia/home-and-contents-insurance/apia-home-and-contents-insurance-aig-ap03265-19-01-26-a-lr.pdf
+Apia/landlord-insurance/apia-landlord-insurance-aig-ap03267-17-04-24.pdf
+Bendigo Bank/home-insurance/Silver-with-Flood.pdf
+Budget Direct/home-insurance/20230504_SPDSBUDD_4612f5b1.pdf
+Everyday Insurance (Woolworths)/home-insurance/woolworths-home-derogation-notice-aug-20_c565123c.pdf
+GIO/home-insurance/gio-combined-dod-class-order_3069b9c9.pdf
+GIO/home-insurance/gio-product-development-and-distribution-policy_0ee29593.pdf
+QBE/contents-insurance/QBE - Contents-Strata - QM9135-0125 QBE Contents Insurance TMD for QM8698.pdf
+RACT/home-insurance/1670370606-racti-investor-plus-and-basic-tmd-nov-2022-v3_ec2b8737.pdf
+RACT/home-insurance/1694059081-ract9258-ppg-home-contents-guide-a4-may-2023-web-op4_a7cc9958.pdf
+RACV/landlord-insurance/racv-landlord-pds-G018386-0323_6d25c1e2.pdf

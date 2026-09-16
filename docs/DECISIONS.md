@@ -468,3 +468,27 @@ of the library's census sample 60 keep an imprint - 67 lines, 51 distinct, none 
 nothing that can be measured: 20 pages convert in 6.99s before and 6.84s after, best of five with the layout model
 off.
 
+## D030 - A never-tuned-on slice of the insurance library, sealed before it is looked at (2026-09-16, owner's decision)
+
+**The question.** The insurance set scores 229 of 229, but its 25 pages have been in front of me for every rule
+written this fortnight, so the score says TrueDoc handles the pages I have been looking at - not that it handles a
+document it has never seen. The benchmark has held a fifth back since the beginning (`bench/holdout.txt`) and the Key
+Facts Sheets hold a fifth back by a hash of the file name (D027); the owner's own library had no such guard. He asked
+whether running more of the library through TrueDoc first would gain anything. It does - one page read against its
+image this afternoon found three defects, at no cost but machine time - but exploring first and carving a held-out
+slice out afterwards would destroy the guarantee, because a page that has been read is a page that has been tuned on.
+
+**The decision.** Seal the slice first, blind, and explore everything else afterwards. Membership is
+`int(sha1(file name)[:8], 16) % 50 == 0`, a pure function of the name, so it never moves as the library grows and no
+judgement of mine can reach it. Excluded before the rule was applied: the insurance set's own pages, every Key Facts
+Sheet (the table oracle), and every document whose pages have been converted and read while building rules - 712 of
+the library's 1,176 PDFs were eligible, and **19 are sealed, from 10 insurers**. The one-in-fifty census sample is
+not excluded, and that is a judgement worth knowing: it looked only at what a page's margins hold, never at a
+document's body, so two sealed documents have each had one margin line of theirs appear in a list I read.
+
+**What happens to them.** They are never opened, converted or read while a rule is being built. They are scored once,
+at a milestone, by the method the first 25 pages were scored by - a hosted model writes checks from the page images
+without seeing TrueDoc's output, and the owner rules on the doubtful ones - and the score is reported separately from
+the tuned-on set, as the benchmark's held-out fifth is. The list is `bench/insurance_holdout.txt`, which carries the
+rule and the warning in its own header; `scratchpad/seal_holdout.py` regenerates it.
+
