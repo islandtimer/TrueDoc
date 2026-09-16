@@ -1214,6 +1214,33 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   reaches the text instead and is not kept; the mark nothing takes stays out of the body; a page with no marks
   records none. The first fails on the code before this. Suite 650.
 
+**A decision tree read as a table: three signals measured, none of them enough** (16 Sept, evening, nothing shipped)
+- **The loss.** AAMI's home building PDS printed page 75 sets how a building claim is settled as a decision tree: two
+  conditions across the top, three branches under them, the outcomes under two of those. The layout model calls the
+  region a table and the reader builds one - the three branches as a header row, the outcomes beneath - and leaves the
+  two conditions above it as loose paragraphs. Which outcome follows which condition is lost, and a reader of the
+  markdown cannot recover it. With the model switched off the reading order is right (condition, branch, outcome,
+  branch, outcome, condition, outcome), so the model costs meaning on this page rather than adding it.
+- **Signal one: a row that cuts a sentence.** The built table reads "The builder we engage will be authorised to" in
+  one row and "complete the repair or rebuild on a 'new for old' basis." in the next, a boundary the page does not
+  draw. Counted over markdown already converted - 481 files, 162 tables, 1,792 rows: the 190 Key Facts Sheets, the
+  insurance set and the benchmark's headers-and-footers pool - using `_CONNECTIVE_END`, the reader's own test for a
+  line that cannot end: **5 rows, 0.28%, none of them in the owner's documents** (three on one Indonesian medical
+  page, two on a garbled one). Too rare to earn a rule that merges table rows, and merging risks the table checks.
+- **Signal two: the table is unusually empty.** A tree is not a grid, and a grid fills itself: the built table leaves
+  its third column empty in two of three rows. Over the same 163 tables, 53% have no empty cell and 30% under a
+  tenth - but AAMI's tree sits at **22% empty, inside a band that holds legitimate tables at 20 to 33%**, among them
+  BOM's home contents page 22 from the insurance set. A threshold there vetoes two dozen real tables. Refused.
+- **Signal three: a connector inside the table.** A flow chart draws arrows and a grid does not, and since 73d39ff
+  every mark nothing takes is recorded. Over 40 documents of the census sample, their first twelve pages, 76 arrows
+  are placed nowhere and **not one of them stands inside a table the reader built**. The pattern is, so far, this one
+  page: a rule keyed on it would fire once, could not be measured, and would put the benchmark's table checks at
+  risk. Refused.
+- **What is left.** The loss stands, recorded rather than repaired. What would settle it is not another geometric
+  signal but a decision about the layout model: whether a region it calls a table, whose rows do not line up into a
+  grid, should be left as text. That needs the benchmark's table pool measured on both sides, and a candidate that
+  fires more than once.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
