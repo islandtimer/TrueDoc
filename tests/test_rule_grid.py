@@ -70,7 +70,7 @@ def _rows(md):
 def test_a_table_of_marks_is_read_from_its_own_rules(tmp_path, monkeypatch):
     path = _pdf(tmp_path)
     region = Region(kind=RegionKind.TABLE, bbox=REGION, score=0.95, source="test")
-    monkeypatch.setattr(pipeline, "_detect_layout", lambda pdf_page, opts: [region])
+    monkeypatch.setattr(pipeline, "_detect_layout", lambda pdf_page, opts, page=None: [region])
     md = convert(path, ConvertOptions(frontmatter=False, layout=True, ocr=False))
     rows = _rows(md)
     assert ["Alterations or renovations", "✓", "✓"] in rows, md
@@ -158,7 +158,7 @@ def test_a_header_set_in_a_filled_band_ends_where_the_band_does(tmp_path):
 def test_a_banded_table_of_marks_is_read_from_its_rules(tmp_path, monkeypatch):
     path = _banded_pdf(tmp_path, gap=1.5)
     region = Region(kind=RegionKind.TABLE, bbox=BANDED_REGION, score=0.85, source="test")
-    monkeypatch.setattr(pipeline, "_detect_layout", lambda pdf_page, opts: [region])
+    monkeypatch.setattr(pipeline, "_detect_layout", lambda pdf_page, opts, page=None: [region])
     md = convert(path, ConvertOptions(frontmatter=False, layout=True, ocr=False))
     rows = _rows(md)
     assert rows == [["Pricing factors", "Buildings", "Contents"]] + [[label, "✓", "✓"] for label, _ in PRICING], md

@@ -121,6 +121,13 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
     unreadable = [p.number for p in doc.pages if not p.quality.usable and p.quality.kind != "ocr-truedoc"]
     if unreadable:
         doc.warnings.append(f"pages without readable text: {unreadable}")
+    # A stage that was asked for and could not run is said out loud, so no one reads this conversion as the
+    # converter's own answer (see `_detect_layout`).
+    without = [p.number for p in doc.pages if p.meta.get("layout_unavailable")]
+    if without:
+        why = next(p.meta["layout_unavailable"] for p in doc.pages if p.meta.get("layout_unavailable"))
+        doc.warnings.append(f"the layout model was asked for and could not run, so {len(without)} "
+                            f"page(s) were read without it: {why}")
     # Text a reader cannot see is kept out of the body and recorded here (D011).
     hidden: list[dict] = []
     for p in doc.pages:
@@ -209,7 +216,7 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
 
     regions = []
     if opts.layout:
-        regions = _detect_layout(pdf_page, opts)
+        regions = _detect_layout(pdf_page, opts, page)
         page.meta["layout_regions"] = regions
         if regions:
             blocks = apply_layout(page, blocks, regions, pdf_page=pdf_page, ocr=opts.ocr)
@@ -479,7 +486,17 @@ def _apply_math(page: Page, blocks: list[Block], regions) -> list[Block]:
     return blocks
 
 
-def _detect_layout(pdf_page: "pymupdf.Page", opts: ConvertOptions):
+def _detect_layout(pdf_page: "pymupdf.Page", opts: ConvertOptions, page: Page | None = None):
+    """The layout model's regions, or none of them with the reason kept where the conversion can report it.
+
+    The model is optional and a conversion never fails for want of it; what it must not do is fall back in silence.
+    An environment whose installed libraries the model cannot load - a different interpreter, a package upgraded
+    under it - converts every page without it and says nothing, and the markdown that comes out is a state the
+    product does not produce: on ING's home SPDS page 4 the two-column list of exclusions reads as two paragraphs
+    with its bullets stranded, and with the model the same page reads as two lists. Twice in two days a measurement
+    of mine was taken from such a run and had to be withdrawn (16 September). So the reason is kept on the page and
+    reported in the front matter, where a later reader of the conversion can see what did not run.
+    """
     try:
         from truedoc.extract.render import render_page
         from truedoc.layout.docling_layout import get_detector
@@ -490,6 +507,8 @@ def _detect_layout(pdf_page: "pymupdf.Page", opts: ConvertOptions):
         import logging
 
         logging.getLogger("truedoc").warning("layout detection failed: %s", exc)
+        if page is not None:
+            page.meta["layout_unavailable"] = repr(exc)[:200]
         return []
 
 
