@@ -1019,10 +1019,21 @@ _READ_GLYPHS = ("tick", "cross", "dot", "circle", "square", "box")
 # The marks a text layer names for itself: a bullet of one of these on a line of its own marks the line beside it,
 # exactly as a mark read from its drawing does. Ticks and crosses are left out: a column of them is a table's answers.
 _MARK_GLYPHS = frozenset("•◦▪●‣⁃·")
+# Fonts that draw symbols and spell nothing: a Latin letter of theirs is a code, not a letter. "Symbol" is deliberately
+# absent - it spells Greek and maths, and its own bullets already arrive as bullets.
+_DINGBAT_FONTS = ("wingding", "webding", "dingbat", "marlett", "monotypesorts", "zapfdingbat")
+# What a text layer can already name for itself: a character that is one of these means what it says.
+_DRAWN_MARKS = frozenset("•◦▪●‣⁃·○□■✓✔✗✘☑☒"
+                         "☐❏❐❑❒")   # and the dingbat boxes, which a form's empty checkbox already draws
+
+
+def _dingbat_font(font: str) -> bool:
+    name = (font or "").split("+")[-1].lower().replace("-", "").replace(" ", "").replace("_", "")
+    return any(key in name for key in _DINGBAT_FONTS)
 
 
 def _read_private_glyphs(pdf_page: "pymupdf.Page", page: Page) -> None:
-    """A private-use character the tables above do not know is read by what its font draws.
+    """A character whose code cannot mean what it draws is read by what its font draws.
 
     A code in Unicode's private-use area means nothing of its own; only the drawing says what it is. RAC's 2021 premium,
     excess and discount guides tick every pricing factor under "Buildings" and "Contents" with FontAwesome's check,
@@ -1032,12 +1043,24 @@ def _read_private_glyphs(pdf_page: "pymupdf.Page", page: Page) -> None:
     box becomes that character. An arrow, a shape the reader cannot name, or a glyph with other drawing reaching into
     its box stays as it was - Suncorp's flow arrows sit on a rule, and read with it as a cross. Maths fonts are left
     alone: their private-use codes are pieces of brackets and letters that the formula code maps back.
+
+    A dingbat font's Latin letter is the same problem wearing a different code. Wingdings, Webdings, ZapfDingbats,
+    Marlett and Monotype Sorts hold no letters at all: their "n" draws a filled square, their "l" a circle, and the
+    letter is what reaches the reader - "n admit guilt, fault or liability except to the police" in Australian Seniors'
+    landlord PDS, and a marker that renders as nothing at all in Woolworths' target market determination, whose bullet
+    is Wingdings U+009F. Over sixty documents of the owner's library, twelve pages each: 242 such characters over 27
+    pages and seven distinct documents, every one of them opening a line. They are read by their drawing like any
+    other, and a character whose code is already a mark is left alone, so a font that names its bullet correctly
+    (SymbolMT's U+2022, 157 of them in the same sample) keeps what it says. The Symbol family itself is not a dingbat
+    font - it spells Greek and maths - and is not included.
     """
     from truedoc.marks import MARK_TEXT, classify_mark
     from truedoc.math.reconstruct import is_math_font
 
     def private(c) -> bool:
-        return len(c.text) == 1 and 0xE000 <= ord(c.text) <= 0xF8FF
+        if len(c.text) != 1:
+            return False
+        return 0xE000 <= ord(c.text) <= 0xF8FF or (_dingbat_font(c.font) and c.text not in _DRAWN_MARKS)
 
     # A font of marks sets each private-use character as a word of its own; a font that spells words with them sets them
     # inside words. On the benchmark every private-use character of txfonts' small capitals (rtxsc, 218 on one page),
