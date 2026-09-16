@@ -807,12 +807,14 @@ def _margin_cleanup(page: Page, blocks: list[Block], pdf_page=None) -> None:
     # A short line in a running head's or foot's own size that repeats its text is furniture
     # wherever it sits, whatever the layout model called it (a form's label at the foot of its
     # box, "Schedule A (Form 990) 2022", 8e953483); a title in display type that repeats it
-    # is the title.
+    # is the title. It must run as well, at its own height: a contents PDS heads a grey box
+    # "We do not cover" in the words its pages run at their head, and no page beside prints
+    # them where the box stands.
     furniture = {re.sub(r"\s+", " ", b.text).strip().lower(): (b.size or body) for b in blocks if b.kind in (BlockKind.HEADER, BlockKind.FOOTER) and b.text.strip()}
     for b in blocks:
         if b.kind in (BlockKind.TEXT, BlockKind.HEADING) and b.lines and len(b.lines) <= 2 and len(b.text) <= 80:
             fsize = furniture.get(re.sub(r"\s+", " ", b.text).strip().lower())
-            if fsize is not None and (b.size or body) <= 1.2 * fsize:
+            if fsize is not None and (b.size or body) <= 1.2 * fsize and runs(b):
                 b.kind = BlockKind.HEADER if b.bbox.y0 < H / 2 else BlockKind.FOOTER
                 b.provenance = "repeated-head"
 

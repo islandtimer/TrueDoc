@@ -1015,6 +1015,45 @@ was stashed in place for the gate - each is identical to the pool's own reading 
   heading repeated at the top of every page stay heads. `bench/probes/running_head_census.py` lists every block a
   conversion takes out at a page's head or foot, the rule that took it and whether it runs. Suite 626.
 
+**A line filed as furniture for repeating a running head must run where it stands** (16 Sept, morning, after 66bdf98)
+- **What was found.** 66bdf98 asked the pages beside a line whether a head runs. Read at the foot, the same census
+  (`bench/probes/running_head_census.py read --kind FOOTER`) showed the margin clean-up losing a page's own heading to
+  a rule that asks nothing of the pages beside: a short line whose words repeat a running head's is filed as furniture
+  wherever it sits. Two contents policies head a grey box "We do not cover" over "additional features on pages 26 to
+  35, additional covers on pages 36 to 45, any incident not covered by your contents policy", and a home policy marks
+  a section "Optional cover" beside "Commercial Storage" - all three in the words their pages run at the head, none of
+  them printed where the box stands on any page beside. The rule was written for a form's label at the foot of its box
+  ("Schedule A (Form 990) 2022"), which does run there.
+- **The rule** (`truedoc/pipeline.py`). The line must run at the height it stands: the clean-up files it as furniture
+  only when a page within two either side prints most of its words in the band it fills, which is 66bdf98's question
+  (`_repeated_beside`) asked where the line is rather than at the page's head. With no page beside it to ask - a
+  one-page file, or scanned pages beside it - the rule decides as it did, so no benchmark page can change.
+- **Tried and dropped, each measured before it was dropped.** Asking the same question of the other rules that take a
+  line out at a foot gave back furniture as often as content. The layout model's page-footer label, asked without its
+  length test, published the sheet's own document code or file name and its folio as a heading on 127 of the 190 Key
+  Facts Sheets. The zone rule's bottom branch published GIO's "PDS preparation date 25/11/2020" with its folio, which
+  a check wants absent - and that branch is where a supplementary PDS's one sentence of substance sits ("The insured
+  event 'Flood and/or run-off' ... is deleted."), so that sentence stays lost. The contact rule gave back four issuer
+  blocks and a sentence about the Code of Practice against five "Effective Date" stamps. The margin heading's foot
+  branch gave back two product names against three brand straplines and a "Continued next page...". The two bottom
+  strips gave back nothing at all in 1,237 pages. What separates a sentence from a stamp is not what "does it run"
+  asks, and it wants a measured step of its own.
+- **Measured, code against code** (against 66bdf98). Insurance set: 229 of 229 either way, and no page of it changes -
+  none of its 25 pages heads a box in the words its running head uses. Key Facts Sheets: graded afresh, every measure
+  as it was - header whole 157 of 158 tuned on and 32 of 32 held out, every event and answer carried, no band
+  swallowed, no row only a continuation - and not one of the 190 sheets' markdown differs by a character: no sheet
+  heads a box in the words its pages run at the head. Benchmark: every one of its 1,403 files is a single page, so no
+  page beside a line can be asked and no benchmark page can change; converted under this rule, the headers-and-footers
+  section comes out byte for byte as it did on all 266 of its pages, 739 of 760 checks either way. Library: over the
+  whole one-in-fifty sample of the library, 1,237 pages of 978 documents, the rule gives back three lines on three
+  pages, and each was read against its page image: the grey box "We do not cover" on two contents policies and
+  "Optional cover" on a home policy.
+- **Tests** (`tests/test_repeated_head.py`, 5): a box heading in a running head's words is published when no page
+  beside prints it there, failing on the code before it; the same line stays furniture when the pages beside do print
+  it at that height, and when there is no page beside to ask; and the two feet the rule leaves alone - a cover's
+  one-line issuer the model calls a page footer, and a cover's block of contact details - stay furniture, which is
+  what the measurements above decided. Suite 631.
+
 **Where the Key Facts Sheets stand:** header whole **34% -> 99% tuned on, 16% -> 100% held out**; the Yes/No in
 its own answer column for every prescribed event, tuned on and held out (94.9% and 93.6% before the
 answer column was cut, by the corrected grader); exclusions severed from their events 51 -> 0; section headings
