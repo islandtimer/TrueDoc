@@ -12,25 +12,101 @@ Both benchmarks are downloaded into `bench/data/` (git-ignored) and scored with 
 
 ### olmOCR-bench (overall, higher is better)
 
-Source: `allenai/olmocr` README, fetched 2026-09-02. Sections: ArXiv maths, old-scan maths, tables, old scans, headers and footers, multi-column, long tiny text, base. Chandra's code is Apache-2.0 but its model weights carry a modified OpenRAIL-M licence (research, personal use, startups under $2M; not competitively with Datalab's API), checked 7 September: a competitor to measure, not a component to adopt.
+**Correction, 17 September 2026: TrueDoc is no longer top of this benchmark.** Every document here has
+said "against a best published 83.1" since 13 September. That figure came from `allenai/olmocr`'s README,
+fetched 2 September, and it is out of date: the dataset now carries its own leaderboard, and two tools on
+it score above TrueDoc's best run. **We are third.** M7 is no longer met - see `docs/ROADMAP.md`.
+
+Source: the leaderboard on `huggingface.co/datasets/allenai/olmOCR-bench`, read 17 September 2026, 17
+entries. Every number below was then confirmed a second way, against the `.eval_results/olmocrbench.yaml`
+file in the model's own repository, which is what the leaderboard reads; and each tool's eight section
+scores were averaged to check they give the overall it claims. TrueDoc is not on the leaderboard: our two
+numbers are our own runs of the official scorer over the same 1,403 pages and 7,010 checks.
+
+| # | Tool | Overall | What it is |
+|---|---|---|---|
+| 1 | infly/Infinity-Parser2-Pro | **87.6** | a vision-language model, on a GPU |
+| 2 | datalab-to/chandra-ocr-2 | **85.8** | a vision-language model, on a GPU |
+| - | **TrueDoc run 91, the hosted deep reader** | **85.4** (CI 84.5-86.3) | ours: the CPU converter, with 103 pages of 1,403 read by a paid model |
+| - | **TrueDoc run 89, open weights - the number we quote** | **84.1** (CI 83.3-85.1) | ours: the CPU converter, with olmOCR 2's saved readings |
+| 3 | dots-studio/dots.mocr | 83.9 | |
+| 4 | datalab-to/surya-ocr-2 | 83.3 | |
+| 5 | onnx-community/Surya-Ocr-2-Onnx | 83.3 | the same model, exported to ONNX |
+| 6 | lightonai/LightOnOCR-2-1B | 83.2 \* | \* seven sections of eight; 75.2 over all eight |
+| 7 | datalab-to/chandra | 83.1 | the tool we passed on 8 September |
+| 8 | infly/Infinity-Parser-7B | 82.5 | |
+| 9 | tiiuae/Falcon-OCR | 80.3 \* | \* the English subset, not the whole set |
+| 10 | baidu/Qianfan-OCR | 79.8 | |
+| 11 | dots-studio/dots.ocr | 79.1 | |
+| 12 | deepseek-ai/DeepSeek-OCR-2 | 76.3 | |
+| 13 | lightonai/LightOnOCR-1B-1025 | 76.1 \* | \* seven sections of eight; 71.1 over all eight |
+| 14 | deepseek-ai/DeepSeek-OCR | 75.7 | |
+| 15 | opendatalab/MinerU2.5-2509-1.2B | 75.2 | |
+| 16 | zai-org/GLM-OCR | 75.2 \* | \* seven sections of eight; 77.8 over all eight |
+| 17 | small-models-for-glam/kraken-ppocrv6-medium | 36.8 | a classical pipeline run end to end and published with its method |
+
+**Three of those overalls are not the same exam as ours, and the asterisk says so.** The leaderboard lets
+a submitter attach a note to a score, and prints a small star when there is one. LightOnOCR leaves the
+headers-and-footers section out of its own average, with the reason in its file: that section asks
+whether a running head is *absent*, so a tool that prints nothing at all scores 100 on it. Their model is
+trained to transcribe the whole page and scores 19.7 there, and over all eight sections its 83.2 becomes
+**75.2**. GLM-OCR drops the same section and loses by doing it: over all eight its 75.2 would be 77.8.
+Falcon-OCR's run is the English subset. TrueDoc's numbers are the plain average of all eight, on the
+whole set, so the comparison to hold in mind is with the unstarred rows.
+
+The section scores, in the same order the benchmark reports them:
 
 | Tool | ArXiv | OldScanMath | Tables | OldScans | Hdr/Ftr | MultiCol | TinyText | Base | **Overall** |
 |---|---|---|---|---|---|---|---|---|---|
+| Infinity-Parser2-Pro | 88.1 | 91.3 | 91.2 | 58.2 | 95.8 | 83.7 | 92.5 | 99.9 | **87.6** |
+| Chandra OCR 2 | 86.9 | 89.1 | 92.1 | 51.1 | 91.4 | 82.1 | 93.7 | 99.9 | **85.8** |
+| **TrueDoc run 91 (hosted deep reader)** | 88.6 | 83.2 | 88.3 | 53.6 | 96.7 | 83.5 | 89.6 | 99.8 | **85.4** |
+| **TrueDoc run 89 (open weights)** | 88.6 | 80.8 | 87.7 | 47.0 | 97.0 | 83.6 | 88.7 | 99.8 | **84.1** |
+| dots.mocr | 85.9 | 85.5 | 90.7 | 48.2 | 94.0 | 85.3 | 81.6 | 99.7 | **83.9** |
+| Surya OCR 2 | 88.3 | 81.4 | 86.6 | 41.8 | 92.5 | 82.4 | 93.7 | 99.7 | **83.3** |
+| LightOnOCR-2-1B | 89.6 | 85.6 | 89.0 | 42.2 | 19.7 | 84.8 | 91.4 | 99.6 | **83.2** \* |
 | Chandra OCR 0.1.0 | 82.2 | 80.3 | 88.0 | 50.4 | 90.8 | 81.2 | 92.3 | 99.9 | **83.1** |
 | Infinity-Parser 7B | 84.4 | 83.8 | 85.0 | 47.9 | 88.7 | 84.2 | 86.4 | 99.8 | **82.5** |
 | olmOCR v0.4.0 | 83.0 | 82.3 | 84.9 | 47.7 | 96.1 | 83.7 | 81.9 | 99.7 | **82.4** |
+| Falcon-OCR (English subset) | 80.5 | 69.2 | 90.3 | 43.5 | 94.0 | 87.1 | 78.5 | 99.5 | **80.3** \* |
 | PaddleOCR-VL | 85.7 | 71.0 | 84.1 | 37.8 | 97.0 | 79.9 | 85.7 | 98.5 | **80.0** |
+| Qianfan-OCR | 80.1 | 73.1 | 81.6 | 42.0 | 92.2 | 80.4 | 89.1 | 99.6 | **79.8** |
+| LightOnOCR-1B-1025 | 81.4 | 71.6 | 76.4 | 35.2 | 35.5 | 80.0 | 88.7 | 99.6 | **76.1** \* |
 | Marker 1.10.1 | 83.8 | 66.8 | 72.9 | 33.5 | 86.6 | 80.0 | 85.7 | 99.3 | **76.1** |
 | DeepSeek-OCR | 77.2 | 73.6 | 80.2 | 33.3 | 96.1 | 66.4 | 79.4 | 99.8 | **75.7** |
 | MinerU 2.5.4 (VLM) | 76.6 | 54.6 | 84.9 | 33.7 | 96.6 | 78.2 | 83.5 | 93.7 | **75.2** |
+| GLM-OCR | 80.7 | 68.3 | 77.6 | 37.6 | 95.8 | 76.7 | 86.9 | 98.8 | **75.2** \* |
 | Mistral OCR API | 77.2 | 67.5 | 60.6 | 29.3 | 93.6 | 71.3 | 77.1 | 99.4 | **72.0** |
 | Nanonets-OCR2-3B | 75.4 | 46.1 | 86.8 | 40.9 | 32.1 | 81.9 | 93.0 | 99.6 | **69.5** |
 | GPT-4o (anchored), original paper | 53.5 | 74.5 | 70.0 | 40.7 | 93.8 | 69.3 | 60.6 | 96.8 | **69.9** |
 | Gemini Flash 2 (anchored), original paper | 54.5 | 56.1 | 72.1 | 34.2 | 64.7 | 61.5 | 71.5 | 95.6 | **63.8** |
 | MinerU v1.3.10 (pipeline), original paper | 75.4 | 47.4 | 60.9 | 17.3 | 96.6 | 59.0 | 39.1 | 96.6 | **61.5** |
 | Marker v1.6.2, original paper | 24.3 | 22.1 | 69.8 | 24.3 | 87.1 | 71.0 | 76.9 | 99.5 | **59.4** |
+| kraken + PP-OCRv6 medium | 0.0 | 0.0 | 0.2 | 24.1 | 37.5 | 57.9 | 74.4 | 100.0 | **36.8** |
 
-Not yet found on olmOCR-bench: Docling, Adobe Extract, OvisOCR2 (a third-party blog reports Docling around 64 on born-digital pages [recalled, unverified]). These will be measured here if the tools can be run locally, or their published numbers added when found.
+Rows without a leaderboard entry (olmOCR v0.4.0, PaddleOCR-VL, Marker, MinerU 2.5.4, DeepSeek-OCR,
+Nanonets, Mistral, GPT-4o, Gemini, the two original-paper rows) are as fetched on 2 September from
+`allenai/olmocr`'s README and its published tables, and are kept because they are the tools the owner
+named. Chandra's code is Apache-2.0 but its model weights carry a modified OpenRAIL-M licence (research,
+personal use, startups under $2M; not competitively with Datalab's API), checked 7 September: a
+competitor to measure, not a component to adopt.
+
+**Where the 2.2 points to the top are.** Against Infinity-Parser2-Pro, TrueDoc's hosted run is *ahead* on
+two sections - arXiv maths 88.6 against 88.1, and headers and footers 96.7 against 95.8 - and the whole
+gap sits in four: old-scan maths -8.1, old scans -4.6, tables -2.9, long tiny text -2.9. Three of those
+four are photographs of paper, which is the part of the exam a vision-language model is built for and the
+part where our own reading of the page has least to work with. On the open-weight number the same two
+scan sections account for 21.7 of the 27.5 points of section-by-section difference.
+
+**Against Chandra OCR 2 the gap is 0.4, and it is not a difference we can claim to see.** 85.8 sits
+inside our hosted run's own confidence interval (84.5-86.3), so on this evidence the two are level; we
+lead four of the eight sections (arXiv +1.7, old scans +2.5, headers +5.3, multi-column +1.4) and lose
+four (old-scan maths -5.9, tiny text -4.1, tables -3.8, base -0.1). Infinity-Parser2-Pro's 87.6 is above
+the top of that interval, so that one is a real gap.
+
+Not yet found on olmOCR-bench: Docling, Adobe Extract, OvisOCR2 (a third-party blog reports Docling
+around 64 on born-digital pages [recalled, unverified]). These will be measured here if the tools can be
+run locally, or their published numbers added when found.
 
 ### OmniDocBench v1.6 (overall, higher is better)
 

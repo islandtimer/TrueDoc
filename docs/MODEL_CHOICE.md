@@ -377,7 +377,7 @@ MIT, 3B) and **Infinity-Parser2-Flash** (overall 86.0, old scans not published, 
 ## Open questions for the owner
 
 - Whether to spend the rental on a **stronger general model** (more parameters) or a **specialist** whose
-  published olmOCR-bench score is higher than olmOCR-2's 82.4.
+  published olmOCR-bench score is higher than olmOCR-2's 82.4. **17 Sept: there are now several - Infinity-Parser2-Pro 87.6, Chandra OCR 2 85.8, dots.mocr 83.9, Surya OCR 2 83.3 - and the two scan sections are where TrueDoc loses to them, which is exactly what this reader is for.**
 - Whether handwriting matters: a large part of the old-scans pool is handwritten letters, and no page-to
   -markdown model reads those well.
 - Whether to re-read only the 98 old-scan pages first (the cheapest, most concentrated test) or all 278.

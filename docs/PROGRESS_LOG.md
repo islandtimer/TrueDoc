@@ -1465,6 +1465,43 @@ geometry and typography.
 
 ---
 
+**The leaderboard moved, and TrueDoc is third** (17 Sept, 11:00; nothing built, three claims corrected)
+- **What the owner found.** `huggingface.co/datasets/allenai/olmOCR-bench` now carries its own leaderboard -
+  17 entries, each fed by an `.eval_results/olmocrbench.yaml` file inside the model's own repository - and
+  TrueDoc is no longer at the top of it. **Infinity-Parser2-Pro scores 87.6 and Chandra OCR 2 scores 85.8,
+  against TrueDoc's 85.4 hosted (run 91) and 84.1 open weights (run 89).** The check is right.
+- **Correction, and it is three claims, not one.** Every standing document has said "against a best
+  published 83.1" since 13 September. That number was Chandra 0.1.0's, read from `allenai/olmocr`'s README
+  on 2 September, and the README is no longer where this field publishes. Stale with it went **M3** ("tables
+  88.2, the best published figure for the section": Chandra OCR 2 now publishes 92.1, Infinity-Parser2-Pro
+  91.2, dots.mocr 90.7, against our 88.3) and **M4** ("arXiv maths above every published figure":
+  LightOnOCR-2-1B publishes 89.6 against our 88.6). **M7 is not met.** All three rows now say so.
+- **Checked two ways before any of it was written down.** The leaderboard's own table first; then, for every
+  number in it, the YAML in the model's repository that the leaderboard reads; then each tool's eight
+  section scores averaged to confirm they give the overall it claims. Infinity-Parser2-Pro's eight average
+  to 87.59, Chandra OCR 2's to 85.79, ours to 85.41 and 84.15. Our existing row for Infinity-Parser 7B
+  matched its published file section for section, which is what proved the column order was read right.
+- **Three of the seventeen are not sitting the same exam, and the leaderboard stars them.** A submitter can
+  attach a note to a score; a small star appears when there is one. LightOnOCR leaves the
+  headers-and-footers section out of its own average and says plainly why: that section asks whether a
+  running head is *absent*, so a tool that prints nothing at all scores 100 on it, and their model is
+  trained to transcribe the whole page (it scores 19.7 there). Over all eight sections their 83.2 is
+  **75.2**. GLM-OCR drops the same section and loses 2.6 points by doing it. Falcon-OCR's run is the English
+  subset. **Neither tool above us carries a note**, so the ranking stands.
+- **Where the gap is, section by section.** Against Infinity-Parser2-Pro the hosted run is *ahead* on two -
+  arXiv maths 88.6 to 88.1, headers and footers 96.7 to 95.8 - and the whole 2.2 points sit in four:
+  old-scan maths -8.1, old scans -4.6, tables -2.9, long tiny text -2.9. Three of those four are photographs
+  of paper. On the open-weight number the two scan sections alone are 21.7 of the 27.5 points of
+  section-by-section difference. **Against Chandra OCR 2 the gap is 0.4 and we cannot claim to see it:**
+  their 85.8 sits inside run 91's interval of 84.5-86.3, and we lead four sections of eight (arXiv +1.7, old
+  scans +2.5, headers +5.3, multi-column +1.4).
+- **Nothing was changed in the code.** `docs/BENCHMARKS.md` holds the leaderboard as read, with the section
+  scores, the asterisk explained, both TrueDoc rows placed in the ranking and the rows that are not on the
+  leaderboard kept and labelled. What to do about it is the owner's call; the numbers point one way, which
+  is that the gap is in scans and tables rather than in the digital pages this converter was built for.
+
+---
+
 ## 2026-09-13 - The insurance library gets a score, and a dossier rebuilt so a decision takes seconds
 
 **Done**
