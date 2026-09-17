@@ -181,4 +181,5 @@ about 2,900 pages where session 2 read 281. At 32 pages at a time Pro costs abou
 The recipe and the traps are in `bench/gpu/README.md`, the results in `docs/PROGRESS_LOG.md` and
 `docs/BENCHMARKS.md`, the comparison of readers and where each can run in `docs/MODEL_CHOICE.md`. Every reading
 is in `bench/gpu/out5/`, so what follows - tracing seven old-scan-maths checks our own handling loses, a general
-clean-up of a model's maths, the two-tier runs 94 and 95 - needs no rental.
+clean-up of a model's maths - needs no rental. The two-tier runs were scored the same evening: Flash alone 85.6
+(run 94), and Flash with Pro behind D025's router 86.4 (run 95), Pro reading 102 pages of 1,403.

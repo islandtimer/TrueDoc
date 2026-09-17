@@ -136,7 +136,43 @@ small model can do both jobs, and olmOCR 2 be retired, is open.
 **Not finished.** Pro alone over all 1,403 pages, which would check the 87.6 end to end, hung in the scorer twice
 under load and was stopped; to be re-run a category at a time. Runs 94 (Flash alone) and 95 (Flash on every scan
 page, Pro on the pages the converter's own D025 router flags, through `--vision-deep file:`) were launched at 19:07
-on the same tree. The second reading of the old scans has not been compared with the first.
+on the same tree.
+
+**Runs 94 and 95, scored 20:59: two tiers reach Pro's score with Pro reading a third of the pages.**
+
+| | Run 92, olmOCR 2 | Run 94, Flash | Run 95, Flash with Pro behind the router | Run 93, Pro |
+|---|---|---|---|---|
+| **overall** | 84.2 | **85.6** (CI 84.8-86.5) | **86.4** (CI 85.4-87.3) | 86.4 (CI 85.5-87.3) |
+| checks passed, of 8,413 | 7,375 | 7,432 | 7,465 | 7,466 |
+| **held-out** | 81.5 (1,071) | 84.8 (1,088) | **86.0 (1,096), the best yet** | 84.8 (1,090) |
+| old scans | 47.0 (247) | 51.5 (271) | 58.4 (307) | 58.6 (308) |
+| old-scan maths | 80.8 (370) | 84.1 (385) | 83.2 (381) | 81.9 (375) |
+| long tiny text | 88.7 (392) | 91.4 (404) | 91.4 (404) | 92.5 (409) |
+| tables | 88.6 (905) | 89.3 (913) | 89.3 (913) | 89.6 (916) |
+| headers and footers | 97.0 (737) | 96.4 (733) | 96.7 (735) | 96.8 (736) |
+| multi-column | 83.6 (739) | 83.7 (740) | 83.6 (739) | 83.1 (735) |
+| arXiv maths | 88.6 (2,594) | 88.6 (2,594) | 88.6 (2,594) | 88.6 (2,594) |
+
+Run 95 is `--vision-endpoint file:<inf2flash_raw>+<olmocr2c> --vision-deep file:<inf2pro_raw>`: D025's router,
+exactly as built on 13 September, with nothing in it changed - a page goes to the deep reader when it has no text
+layer and our own OCR of it finds nothing word-like. It sent Pro **102 of the 1,403 pages** (counted as the pages
+whose markdown differs between runs 94 and 95: 64 old scans, 14 headers and footers, 10 tables, 7 old-scan maths, 6
+multi-column, 1 tiny text) and Flash the other 179 that have no digital text layer. The result is one check short of
+Pro reading all 281, and ahead of it on the held-out pages and on old-scan maths, where Flash is the better reader
+and keeps most of the pages. I had said beforehand that two tiers would earn their place if they recovered most of
+the 0.8 between Flash and Pro, and that under half would argue for one reader: they recovered all of it. With a
+second reading moving a section by about three checks (below), runs 93 and 95 are level, not ranked. **Flash alone,
+at 85.6, is level with Chandra OCR 2's 85.8 on a model of 2.2B.** The reader is still the owner's decision; this is
+the evidence for it.
+
+**How much a second reading moves (measured the same evening).** Pro read the 134 old-scan pages twice, greedy
+decoding both times, 8 pages at a time and then 32. Only 80 of the 134 readings are the same character for
+character; 54 differ, six of them by more than a twentieth of their words and one almost wholly. Scored the same way
+(candidate `bake_pro_repeat`): old scans 305 against the first reading's 307, old-scan maths 385 against 382. **So a
+fresh reading of the same pages moves a section by about three checks either way, and the overall by less than a
+tenth.** Our runs replay saved readings and are exact; what this sizes is how far to trust a small difference
+between readers - Pro's 61 checks over olmOCR 2 on old scans is far outside it, Flash's 10 over Pro on raw old-scan
+maths only modestly so.
 
 **The owner's rulings this session.** The rental (approved); his library's documents may go to a rented machine
 for a model to read, never the sealed nineteen (D032); the laptop test parked (below).

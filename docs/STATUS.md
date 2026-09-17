@@ -6,7 +6,9 @@ place of olmOCR 2: **86.4 (CI 85.5-87.3), held-out 84.8**, against **84.2** for 
 ninety-one checks better, the never-tuned-on pages gaining more than the rest. That would stand second on the
 leaderboard, above Chandra OCR 2's 85.8 and above our own hosted 85.4, on open weights with nothing leaving the
 machine; the leader's 87.6 is still above the top of the interval, a gap of 1.2 where it was 3.5. Its smaller
-sibling Flash (2.2B) scored 85.6 in a quick merge. **Nothing in the product has changed yet: which reader ships, and
+sibling Flash (2.2B) scores **85.6** as the only reader (run 94), and **Flash with Pro behind it, reading only the
+102 pages the converter itself flags as beyond its own OCR, scores 86.4 too (run 95), with the best held-out
+figure the project has had, 86.0**. **Nothing in the product has changed yet: which reader ships, and
 whether there are two tiers of them, is your decision, listed below.** The leader's 87.6 is scored after
 post-processing keyed on the benchmark's own folder names, which a product cannot do; we measured its raw reading.
 The same session had Pro read 505 pages of your library (never the sealed 19): on your Key Facts Sheets it reads the
@@ -107,6 +109,8 @@ day and still holds, except that "third" now has a second place within reach.** 
 | GPU session 4 (experiment, not a TrueDoc run): the densest pages read a band at a time, 8 Sept 20:52 | 84.2 (CI 83.3-85.1; eleven net checks where 3.0 points were projected; held-out unchanged at 80.9, so none of it generalised; `docs/GPU_PLAN.md` has the breakdown) |
 | Runs 81 to 91, 12 and 13 Sept (the licence swap finished, D024, the hosted deep reader) | in `docs/BENCHMARKS.md`; run 89 **84.1** on open weights, run 91 **85.4** with the hosted reader |
 | TrueDoc run 92 (today's code, olmOCR 2's saved readings - the first full run since 13 Sept), 17 Sept 18:18 | 84.2 (CI 83.4-85.2; held-out 81.5; against run 89 nothing moved but tables, 896 to 905: the week of rules from the owner's library cost the benchmark nothing) |
+| TrueDoc run 94 (the same code, Infinity-Parser2-Flash, 2.2B, as the only reader of those 281 pages), 17 Sept 20:59 | 85.6 (CI 84.8-86.5; held-out 84.8; level with Chandra OCR 2's 85.8 on a model a quarter of olmOCR 2's size) |
+| **TrueDoc run 95 (two tiers: Flash reads every scanned page, Pro the 102 the converter's own router flags), 17 Sept 20:59** | **86.4** (CI 85.4-87.3; **held-out 86.0, the best yet**; one check short of Pro reading all 281) |
 | **TrueDoc run 93 (the same code, Infinity-Parser2-Pro's readings on the 281 pages without a digital text layer; GPU session 5), 17 Sept 18:18** | **86.4** (CI 85.5-87.3; **held-out 84.8**; old scans 47.0 to 58.6, tiny text 88.7 to 92.5, tables 88.6 to 89.6; 91 checks net; not the default - the reader is the owner's decision) |
 
 Note on run 1: about 6 points of it were an accident. Pages we could not read at all were written as a file holding one blank line, and the marking script treats a one-character answer as matching any phrase. That is fixed; every number since is honest.
@@ -152,16 +156,19 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## Things you may need to do
 
-- **Decide which open reader TrueDoc ships with (17 Sept).** Measured on our own pages: olmOCR 2 (8B, what we run)
-  84.2; Infinity-Parser2-Flash (2.2B) about 85.6 by a quick merge, its full run (94) converting as this is written;
-  Infinity-Parser2-Pro (35B) 86.4. All three are Apache-2.0. Pro needs a 140 GB card, so it is a service's model and
+- **Decide which open reader TrueDoc ships with (17 Sept).** Measured on our own pages, four full runs of the same
+  code: olmOCR 2 (8B, what we run) 84.2; Infinity-Parser2-Flash (2.2B) 85.6; Infinity-Parser2-Pro (35B) 86.4; Flash
+  with Pro behind it 86.4. All three are Apache-2.0. Pro needs a 140 GB card, so it is a service's model and
   nobody's own; Flash is a quarter of olmOCR 2's size. None of them runs on a laptop without an NVIDIA card as we
   ran them - yours included - so "which reader" is a question about a service, or a technical user's own card, and
   the mechanical tier stays the product on an ordinary machine. `docs/MODEL_CHOICE.md` has the table.
 - **Decide whether there are two tiers of reader.** The arrangement exists already (D025): one reader for every
   scanned page, a stronger one for the pages the converter flags as beyond its own OCR - handwriting, in practice,
-  which is exactly where Pro beats Flash. Run 95 measures Flash with Pro behind it; if it recovers most of the 0.8
-  between them, two tiers earn their place, and if less than half, one reader is simpler. With Pro at about a quarter
+  which is exactly where Pro beats Flash. **Measured (run 95): the router, unchanged, sends Pro 102 of the 1,403
+  pages and the score is 86.4, one check short of Pro reading everything, with the best held-out figure yet
+  (86.0).** I had said two tiers would earn their place if they recovered most of the 0.8 between Flash and Pro; they
+  recovered all of it. Against that: two models to serve, the second needing a 140 GB card, for a gain that is
+  handwriting, which your own documents do not contain. With Pro at about a quarter
   of a cent a page and ahead of the hosted reader on old scans (58.6 against 53.6), every tier could be open weights.
 - **Decide whether 86.4 becomes the number we quote**, as run 93, once the reader is chosen. Until then the quoted
   open-weight number stays run 89's 84.1 (run 92's 84.2 is the same code state a week on).
@@ -182,8 +189,8 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 **17 September, evening: a rented GPU answered the morning's question, and the answers are on disk.** The leaderboard
 said the gap was on the pages a model reads, so two stronger open models read those pages - and Pro read the whole
 benchmark and 505 pages of your library besides - in one session of two hours and ten minutes. The reader swap is
-worth 2.2 points (runs 92 and 93, above). **Open from that session, none of it needing another rental:** runs 94
-and 95 (Flash alone; Flash with Pro behind it), converting now; a loss of our own on old-scan maths, where the
+worth 2.2 points (runs 92 and 93, above), and two tiers reach the same 86.4 with Pro reading 102 pages (runs 94 and
+95). **Open from that session, none of it needing another rental:** a loss of our own on old-scan maths, where the
 converter scores seven checks below the raw readings it was handed, to be traced; a general form of the authors'
 maths clean-up, worth perhaps 26 checks, to be measured on every category a model reads; Pro alone over all 1,403
 pages, which hung in the scorer and will be re-run a category at a time, to check the 87.6; the fifteen cells where

@@ -391,8 +391,9 @@ client; `docs/PROGRESS_LOG.md` has the session and `bench/gpu/out5/` the reading
 | reader | size | what it needs | TrueDoc's score with it | old scans | old-scan maths | held-out |
 |---|---|---|---|---|---|---|
 | olmOCR 2 (what we run) | 8B | a 12 GB recent card | **84.2** (run 92) | 47.0 | 80.8 | 81.5 |
-| Infinity-Parser2-Flash | 2.2B | about 4.5 GB of weights; ran here on the rented card, the smallest card that serves it is unmeasured | about **85.6** (quick merge; run 94 converting) | 51.3 | 85.6 | 84.5 |
+| Infinity-Parser2-Flash | 2.2B | about 4.5 GB of weights; ran here on the rented card, the smallest card that serves it is unmeasured | **85.6** (run 94, CI 84.8-86.5) | 51.5 | 84.1 | 84.8 |
 | Infinity-Parser2-Pro | 35B | a 140 GB card, or two of 80 GB | **86.4** (run 93, CI 85.5-87.3) | 58.6 | 81.9 (its raw pages merge to 83.4, and to 87.6 with its authors' clean-up) | 84.8 |
+| **Two tiers: Flash on every scanned page, Pro on the 102 of 1,403 that D025's router flags** | both | both | **86.4** (run 95, CI 85.4-87.3), one check short of Pro alone | 58.4 | 83.2 | **86.0, the best yet** |
 | Claude Sonnet 5 on the 103 hardest pages, olmOCR 2 on the rest | hosted | an API key, and every page leaves the machine | 85.4 (run 91) | 53.6 | 83.2 | 82.4 |
 
 All three open models are Apache-2.0, clean under D007.
@@ -430,4 +431,6 @@ not asked our question at all - my omission on the day. Until Flash is, shipping
 crops or losing run 58's picture-text gains.
 
 **Still open for the owner**, and listed in `docs/STATUS.md`: which reader ships; whether there are two tiers
-(run 95 measures Flash with Pro behind it through the existing router); and whether 86.4 becomes the number we quote.
+(run 95 measured it: the existing router, unchanged, sends Pro 102 pages and recovers all of the 0.8 between Flash
+and Pro - the case for; two models to serve and a 140 GB card for a gain that is handwriting - the case against);
+and whether 86.4 becomes the number we quote.
