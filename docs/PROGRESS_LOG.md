@@ -4,6 +4,150 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-17, afternoon and evening - GPU session 5: a stronger open reader, measured on our own pages
+
+**Why.** The leaderboard read that morning put two tools above us and the gap to the first, 2.2 points, sat in four
+sections, three of them photographs of paper (`docs/BENCHMARKS.md`). Those are the pages TrueDoc hands to a model, so
+the score there is the reader's, and M17 had already concluded that no rule reaches them. The owner approved a rental.
+
+**A miss of mine, found while preparing.** `docs/MODEL_CHOICE.md` had listed Infinity-Parser2-Pro at 87.6 and
+Chandra 2 at 85.8 since 12 September (dcd4d35), marked "least verifiable" because neither published its sections.
+M7 was written up as met against 83.1 the next day. Two documents in one repository disagreed for five days; the
+stale README was only half of it.
+
+**What the leader's 87.6 is made of.** The authors' own evaluation script
+(`INF-MLLM/Infinity-Parser2/evaluation/olmocr-bench`, commit 5089819) scores their readings after post-processing
+keyed on the benchmark's category folder names. `infer.py`, read in full: `convert_latex_in_markdown` and
+`apply_synonym_map` on `multi_column` and `tables`, `latex_formula_normalization` on the two maths sets, handed the
+category. `utils.py`, read only through a fetch tool's summary [so tagged]: about 850 lines, LaTeX turned to
+Unicode, adjacent formulas merged, and aligned environments split into single formulas only when the folder is
+called `old_scans_math`. A product cannot know a page's benchmark category.
+Their script keeps the raw reading beside the processed one, so everything below is measured both ways.
+
+**The session.** One H200 NVL (141 GB, Czechia, US$4.37 an hour), 15:03 to 17:13; **US$12.03 all in**, the disk and
+some 80 GB of downloads included - I quoted the GPU time alone at one point (about $9.50), which is the wrong
+number to give an owner. Read through the authors' client, vLLM 0.17.1, greedy decoding:
+
+| set | pages | Flash (2.2B) | Pro (35B) |
+|---|---|---|---|
+| every page without a digital text layer | 281 | read | read |
+| the picture crops (92 on failing pages, 107 more) | 199 | read | read |
+| the rest of the benchmark | 1,122 | - | read |
+| the owner's own pages (25 insurance set, 380 Key Facts Sheet, 100 library; the sealed 19 excluded by name) | 505 | - | read |
+| the 134 old-scan pages a second time | 134 | - | read |
+| the crops under TrueDoc's own picture-text prompt | 199 | - | read |
+
+No page failed. Everything is in `bench/gpu/out5/` (c12dadd), with `environment.txt` holding every package version
+and both model snapshots; the owner's pages' readings are on disk there and deliberately not in git.
+
+**Quick merges first (minutes each): a reader's raw pages over run 89's, all 281, scored.**
+
+| | olmOCR 2 | Flash raw | Pro raw | Pro + authors' post-processing |
+|---|---|---|---|---|
+| overall | 84.0 | 85.6 | 86.4 | 86.9 |
+| old scans | 46.6 | 51.3 | 58.4 | 58.4 |
+| old-scan maths | 80.8 | 85.6 | 83.4 | 87.6 |
+| long tiny text | 88.7 | 91.4 | 92.5 | 92.5 |
+| tables | 87.3 | 88.5 | 88.8 | 88.8 |
+| headers and footers | 96.8 | 96.1 | 95.9 | 95.9 |
+| multi-column | 83.6 | 83.8 | 83.3 | 83.5 |
+| held-out | 80.9 | 84.5 | 84.5 | 85.5 |
+
+Pro's 58.4 on old scans reproduces the 58.2 its authors publish. Its 87.6 on old-scan maths does not reproduce their
+91.3. The post-processing is worth 0.5 to us and all of it is on that one section.
+
+**Then the number that counts: two full runs of today's code, the reader the only difference.**
+
+| | Run 92, olmOCR 2 | Run 93, Pro raw | |
+|---|---|---|---|
+| **overall** | **84.2** (CI 83.4-85.2) | **86.4** (CI 85.5-87.3) | +2.2 |
+| held-out | 81.5 (1,071/1,255) | 84.8 (1,090/1,255) | +3.3 |
+| tuned-on | 82.1 (4,913/5,764) | 84.4 (4,983/5,764) | |
+| old scans | 47.0 (247) | 58.6 (308) | +61 |
+| long tiny text | 88.7 (392) | 92.5 (409) | +17 |
+| tables | 88.6 (905) | 89.6 (916) | +11 |
+| old-scan maths | 80.8 (370) | 81.9 (375) | +5 |
+| multi-column | 83.6 (739) | 83.1 (735) | -4 |
+| headers and footers | 97.0 (737) | 96.8 (736) | -1 |
+| arXiv maths | 88.6 (2,594) | 88.6 (2,594) | 0 |
+| baseline | 99.8 (1,391) | 99.9 (1,393) | +2 |
+
+Both: `--vision-endpoint file:<whole pages>+<olmocr2c>`, the crop readings left as olmOCR 2's so that one thing
+changes. Run 92 was validated by the launcher at 15:59 (suite passing, gate 100, samples 46 and 61) and run 93
+converted the same tree. **Run 92 is also the first full run since 13 September, and the week of rules drawn from
+the owner's library cost nothing: 84.2 against run 89's 84.1, every category identical to the check but tables,
+896 to 905.** Run 93's 86.4 would stand second on the leaderboard, above Chandra OCR 2's 85.8 and above our own
+hosted 85.4 with no paid service in the loop; its interval stops at 87.3, so 87.6 is still a real gap, of 1.2
+where it was 3.5.
+
+**A loss of our own, not yet traced.** On old-scan maths the converter scores 375 with Pro's readings and the plain
+merge of the same readings scores 382: something in how TrueDoc handles a model's maths costs seven checks, and a
+step of ours should never score below the raw reading. The authors' clean-up reaches 401 on those pages. Tracing the
+loss and measuring a general form of that clean-up - on all six categories that have model-read pages, which is the
+lesson of run 90 - is CPU work on readings already on disk.
+
+**Traps met on the rented machine, so they are not met twice.**
+- A fresh vLLM server takes about fifteen seconds over its first request and the authors' client gives up its
+  connection check after five: Flash's first pass wrote nothing and said nothing, because my own filter on the log
+  hid the traceback. The script now sends the first request itself, and shows the client's last lines.
+- `pkill -f run_bakeoff` kills the shell that runs it, whose command line holds the same words. `pkill -f
+  '[r]un_bakeoff'` does not.
+- The image's system pip refuses to install (PEP 668) and ships `uv`; the script uses it.
+- pip reports vLLM 0.17.1 as wanting transformers below 5 and installs 5.17 anyway. That is the authors' documented
+  pairing and it serves both models.
+- Sending 32 pages at a time, not 8, tripled Pro's rate (about 31 pages a minute on the dense arXiv pages, 42 on the
+  owner's): **about a quarter of a US cent a page** at this rental's price.
+- The owner's uplink carries about 50 KB a second: 89 MB of pages took 27 minutes. Anything public should be fetched
+  by the rented machine itself, as `fetch_pages.py` does for the benchmark.
+- The authors' client hands back the model's layout JSON untouched when it can make no markdown of it - a picture
+  with nothing to read, a page of running heads alone, a reading its parser chokes on. `place_bakeoff.py` turns
+  those back into the text they hold (2 of 281 whole pages, 71 of 92 crops).
+
+**The owner's own documents: two independent readers, and what their disagreements found.** Pro's pages 1 and 2 of
+all 190 Key Facts Sheets, graded by `kfs_grade.grade` exactly as TrueDoc's are (`bench/tools/kfs_two_readers.py`):
+
+| | TrueDoc | Pro, never tuned on anything of ours |
+|---|---|---|
+| header whole, 158 tuned on | 157 (99%) | 157 (99%) |
+| header whole, 32 held out | 32 (100%) | 32 (100%) |
+| answers attached, tuned on | 1,885 / 1,885 | 1,891 / 1,893 |
+| answers attached, held out | 375 / 375 | 374 / 374 |
+
+On a clean modern table the leader reads the shape as well untuned as TrueDoc does after three days of rules. Then
+the words, which the shape grader cannot see: of 2,256 event rows both found, the Yes / No / Optional is identical on
+2,253 (the three are one AAMI-family template, not yet read against its page), and the third column is identical on
+2,221 and materially different on 15. **Every one of the fifteen read so far against TrueDoc's own markdown is
+TrueDoc's fault, on sheets the grader passes as perfect:** a wrapped cell line that opens with a capital becomes a row
+of its own ("...cover can be purchased to cover" and then a row holding only "Accidental Damage." - the orphan test
+only looks for lowercase continuations); a stray word from elsewhere lands in a cell ("...with your consent.
+entered" on two GIO sheets, "loss or damage that item. occurs more than 72 hours" on two Apia sheets); and one sheet
+writes "[icon]" in five third-column cells where Pro has nothing. None is built; each is a candidate to measure in
+the usual way. This is M11's disagreement mining working for the first time, and it cost minutes.
+`bench/gpu/out5/pro/own/kfs_text_diffs.json` and `kfs_answer_diffs.json` hold the lists.
+
+**The picture crops.** Asked its authors' layout question, Pro calls 71 of the 92 failing-page crops a figure and
+transcribes nothing; olmOCR 2 read 54. Asked TrueDoc's own question it reads 53 (olmOCR 2: 52; three of olmOCR 2's
+are descriptions of plots, which the prompt forbids; one of Pro's is an invented image address, so its answers need
+a guard). Not yet scored through the converter. **Flash was not asked our question - my omission** - so whether one
+small model can do both jobs, and olmOCR 2 be retired, is open.
+
+**Not finished.** Pro alone over all 1,403 pages, which would check the 87.6 end to end, hung in the scorer twice
+under load and was stopped; to be re-run a category at a time. Runs 94 (Flash alone) and 95 (Flash on every scan
+page, Pro on the pages the converter's own D025 router flags, through `--vision-deep file:`) were launched at 19:07
+on the same tree. The second reading of the old scans has not been compared with the first.
+
+**The owner's rulings this session.** The rental (approved); his library's documents may go to a rented machine
+for a model to read, never the sealed nineteen (D032); the laptop test parked (below).
+
+**"Everyday" was the wrong word, and the owner caught it.** I called Flash an everyday reader because it fits a
+24 GB card. His own laptop - a Core Ultra 7 with Intel graphics and 32 GB, no NVIDIA card - can run none of these
+as we ran them, and that is most people's machine. The tiers are about where a model runs, not which card: the
+mechanical tier on any laptop; a reader behind a service (or a technical user's own card). What survives of the
+idea, in the owner's words, is a note to help a user decide what they need: Flash on small documents might be
+possible on a laptop, and nothing else is. The timing test that would say how slow is parked.
+
+---
+
 ## 2026-09-14 to 2026-09-17 - Table rules from the Key Facts Sheets, the imprint, and the library read against its images
 
 _Entries in this section run oldest first, the newest just above **Where the Key Facts Sheets stand**._

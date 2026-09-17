@@ -381,3 +381,53 @@ MIT, 3B) and **Infinity-Parser2-Flash** (overall 86.0, old scans not published, 
 - Whether handwriting matters: a large part of the old-scans pool is handwritten letters, and no page-to
   -markdown model reads those well.
 - Whether to re-read only the 98 old-scan pages first (the cheapest, most concentrated test) or all 278.
+
+## Measured, 17 September: two of the candidates read our pages (GPU session 5)
+
+The open questions above are answered by a rental the owner approved that morning, after the leaderboard put
+two tools above us. Infinity-Parser2-Flash and -Pro read every page we send a model, through their authors' own
+client; `docs/PROGRESS_LOG.md` has the session and `bench/gpu/out5/` the readings and the exact environment.
+
+| reader | size | what it needs | TrueDoc's score with it | old scans | old-scan maths | held-out |
+|---|---|---|---|---|---|---|
+| olmOCR 2 (what we run) | 8B | a 12 GB recent card | **84.2** (run 92) | 47.0 | 80.8 | 81.5 |
+| Infinity-Parser2-Flash | 2.2B | about 4.5 GB of weights; ran here on the rented card, the smallest card that serves it is unmeasured | about **85.6** (quick merge; run 94 converting) | 51.3 | 85.6 | 84.5 |
+| Infinity-Parser2-Pro | 35B | a 140 GB card, or two of 80 GB | **86.4** (run 93, CI 85.5-87.3) | 58.6 | 81.9 (its raw pages merge to 83.4, and to 87.6 with its authors' clean-up) | 84.8 |
+| Claude Sonnet 5 on the 103 hardest pages, olmOCR 2 on the rest | hosted | an API key, and every page leaves the machine | 85.4 (run 91) | 53.6 | 83.2 | 82.4 |
+
+All three open models are Apache-2.0, clean under D007.
+
+**A correction to "My view", point 5.** I wrote that with the hard tail going to a frontier API, "the choice
+between olmOCR-2, dots.mocr and Infinity-Parser2 barely matters". Measured, it is worth 2.2 points overall and 61
+checks on old scans alone, and the open model now beats the frontier API on the pages the API was brought in for
+(58.6 against 53.6). Pro's section scores were unpublished on 12 September; the view should have said "unknown",
+not "barely matters".
+
+**What each reading cost.** Pro, 32 pages at a time on one H200 NVL at US$4.37 an hour: 1,122 dense pages in 36
+minutes, about **a quarter of a US cent a page** [derived from the run log]. The hosted reader was "a few dollars"
+for 98 pages. Eight pages at a time on the same card, Flash read the 281 pages in about 17 minutes to Pro's 26,
+so about one and a half times the rate (I said "twice" on the day; the log says less); its cost on a cheap card
+is unmeasured.
+
+**Where a reader can run - the owner's correction.** I called Flash an "everyday reader" because it fits a 24 GB
+card. The owner's own laptop (Core Ultra 7, Intel graphics, 32 GB, no NVIDIA card) runs none of these as we ran
+them, and that is the ordinary user's machine. So the tiers are about where a model runs:
+
+| where | what runs there |
+|---|---|
+| any laptop | the mechanical tier: digital text, tables, formulas. The owner's whole insurance library is this. A scanned page is flagged, or sent to a service. |
+| a service, or a technical user's own NVIDIA card | one reader for every scanned page (olmOCR 2 today; Flash is a quarter of its size) |
+| a service with a 140 GB card | a deep reader for the pages the converter flags as beyond its own OCR (D025's router; Claude over the API today, Pro the candidate) |
+
+Kept from the laptop idea, in the owner's words, as guidance to help a user decide what they need: **Flash on
+small documents might be possible on a laptop; nothing larger is.** The timing test is parked (17 Sept).
+
+**The picture crops decide whether olmOCR 2 can be retired.** Asked their authors' layout question, the Infinity
+models call a picture a figure and transcribe nothing (Pro: 21 of 92 crops with any text, olmOCR 2: 54). Asked
+TrueDoc's own picture-text question through the same client, Pro reads 53 of the 92 to olmOCR 2's 52, with one
+invented image address among them, so its answers need a guard. Not yet scored through the converter, and Flash was
+not asked our question at all - my omission on the day. Until Flash is, shipping it means keeping olmOCR 2 for the
+crops or losing run 58's picture-text gains.
+
+**Still open for the owner**, and listed in `docs/STATUS.md`: which reader ships; whether there are two tiers
+(run 95 measures Flash with Pro behind it through the existing router); and whether 86.4 becomes the number we quote.

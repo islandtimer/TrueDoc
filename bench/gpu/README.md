@@ -121,3 +121,57 @@ model has seen them; together they hold about twenty failing table checks.
         --also-whole f5e5d540,fbeb6edc,94f7559a,3d780cdc,4db371ae,8bb41f19,9921f236,8160caa0
 
 A page sent whole arrives as a single band, so the stitcher passes its reading straight through.
+
+## Session 5 (17 September 2026): two stronger open readers, and how to run it again
+
+The question: the leaderboard's gap sits on the pages a model reads, so what do Infinity-Parser2-Flash (2.2B) and
+-Pro (35B), both Apache-2.0, score as TrueDoc's reader? The answer is in `docs/PROGRESS_LOG.md` (run 93: 86.4
+against run 92's 84.2). This is the recipe.
+
+**The machine.** Pro's weights are about 70 GB, so one card of 140 GB or two of 80 GB (the script shards across
+whatever it finds). We used 1x H200 NVL, vast.ai, Czechia datacentre, US$4.37 an hour, `PyTorch (Vast)` template,
+200 GB disk, Max CUDA 13.0. Choose the host by Max CUDA 12.8 or more, x86 (never a GH200, which is ARM), a download
+speed in the gigabits, and reliability; not by the template's CUDA badge, which is only the image's toolkit and
+is not used. **Cost: US$12.03 for 2 h 10 min, disk and some 80 GB of downloads included - quote the owner the
+all-in figure, not the GPU time.** Flash alone fits a 24 GB card.
+
+**The files.**
+- `run_bakeoff.sh <pdf_root> <out_root> [flash] [pro] [dots]` - the remote job. Builds a Python 3.12 venv with the
+  image's `uv`, installs the model card's own pins (torch 2.10.0 cu128, vLLM 0.17.1, `infinity_parser2`), fetches
+  the pages, starts Pro's download behind the first model, serves each model with the flags of its authors'
+  olmOCR-bench guide and reads each page set through their `infer.py`. `SETS="rest own repeat"` chooses the page
+  sets (folders under `<pdf_root>`), `BATCH=32` how many pages go at once, and `CUSTOM_PROMPT=<file>` reads the crops
+  again under a prompt of ours through `infer_custom.py`. The `dots` stage was written and never run.
+- `pages.txt` (the 281 pages without a digital text layer) and `pages_rest.txt` (the other 1,122): the rented
+  machine fetches both from Hugging Face itself.
+- `build_own_sets.py <folder>` - one-page PDFs of the owner's library (insurance set, Key Facts Sheets pages 1 and
+  2, 100 random pages), the sealed slice excluded by name, with the `manifest.json` that names every page. The
+  owner agreed these may go to a rented machine (D032). They have to be uploaded, at about 50 KB a second.
+- `poll_bakeoff.sh <port> <host>` - the watch for the Monitor tool: stage markers, anything that reads as a
+  failure, a line per hundred pages.
+- `place_bakeoff.py infinity <set folder> <name>` - writes `<name>_raw` (the model's own markdown, from
+  `inference.jsonl`) and `<name>_post` (after the authors' category-keyed post-processing) as benchmark candidates.
+  Then `merge_by_list.py truedoc88 <name>_raw <out> all --score` for a number in minutes, and a full run with
+  `--vision-endpoint file:<name>_raw+<olmocr2c>` for the number that counts. `--vision-deep file:<folder>` replays
+  a second reader through D025's router the same way.
+
+**Start it** with stdin detached, the log where the watch looks, and an exit line:
+
+    ssh -n ... "(nohup bash -c 'SETS=... bash ~/gpu/run_bakeoff.sh ~/gpu/pdfs ~/gpu/out flash pro; echo \"== exit \$? \$(date +%H:%M:%S)\"' > ~/gpu/run.log 2>&1 < /dev/null &)"
+
+Upload a changed script under a new name while a job is running: bash reads a script as it goes.
+
+**What went wrong, once each.** A fresh vLLM server takes fifteen seconds over its first request and the authors'
+client gives up its connection check after five, so the first pass wrote nothing - and a filter of mine on the log
+hid the traceback (the script now warms the server and shows the client's last lines). `pkill -f run_bakeoff`
+killed the shell that ran it; write `'[r]un_bakeoff'`. The image's system pip refuses to install (PEP 668). pip
+reports vLLM 0.17.1 as wanting transformers below 5 and the authors' package installs 5.17; that pairing is
+theirs and it works. Eight pages at a time left the card idle; 32 tripled the rate. The authors' client hands
+back raw layout JSON when it cannot make markdown (a picture with nothing to read, a page of running heads, a
+reading its parser chokes on): `place_bakeoff.py` turns it back into text. The scorer hung twice, for over two
+hours, on the Pro-alone candidate while two conversions shared the machine: score one category at a time.
+
+**What is on disk** (`out5/`, in git except the owner's pages): Flash and Pro on the 281 pages and the 199 crops;
+Pro on the other 1,122 pages, on 505 pages of the owner's library, on the 134 old-scan pages a second time, and on
+the crops under TrueDoc's picture-text prompt; `environment.txt` (every package, both model snapshots); the logs.
+**Not done:** Flash under our picture-text prompt; dots.mocr; Flash on a small card, or on none.

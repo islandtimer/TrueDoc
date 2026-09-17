@@ -517,3 +517,29 @@ model.
 **What it asks of anyone measuring.** Before trusting a conversion you are about to count, look at
 `truedoc.warnings`. An empty list is the product's own answer; anything in it is a different state, and a number
 taken from it belongs to that state, not to TrueDoc.
+
+## D032 - The owner's library may be read by a model on a rented machine; the sealed slice never (2026-09-17, owner's decision)
+
+**The question.** GPU session 5 had the leaderboard's strongest open model loaded on a rented H200, and the most
+useful thing it could read was not the benchmark but the owner's own documents: his Key Facts Sheets grade a
+reader with nobody writing a check, and two independent readers of the same page show where one of them is wrong.
+That means copying his library's PDFs to a third party's machine, which is his call and not mine, so it was put to
+him as one: "may your library's documents (never the sealed 19) go to the rented machine?"
+
+**The decision.** Yes. His words: "yes they can, go ahead". The documents are insurers' public Product Disclosure
+Statements and Key Facts Sheets, not private papers.
+
+**The limits, which are part of it.**
+- **The sealed slice (D030) is never sent and never opened**, by the same rule that keeps it out of every
+  measurement. `bench/gpu/build_own_sets.py` excludes it by file name from `bench/insurance_holdout.txt` and
+  asserts that no insurance-set page is on that list.
+- The pages go to a machine that is destroyed at the end of the session - destroyed, not stopped, because a
+  stopped instance keeps its disk. The owner destroyed this one at 17:13.
+- **The readings stay out of git** (`bench/gpu/out5/pro/own/`, ignored, with the reason in `.gitignore`): they are
+  the words of insurers' documents, and this repository may one day be published. They stay on disk beside the
+  benchmark's readings, with the manifest that names each page.
+- This covers a rented machine running an open model under our control. It does not cover a hosted service that
+  keeps what it is sent: that is a different question and would be asked again.
+
+**What it bought.** 505 pages read (25 of the insurance set, 380 of Key Facts Sheets, 100 at random) for about
+two dollars of the session: the shape comparison and the fifteen disagreeing cells in `docs/PROGRESS_LOG.md`.

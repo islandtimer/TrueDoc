@@ -165,3 +165,20 @@ were sent whole because `select_regions.py` cannot see them — it looks for ima
 there are none — and they won 5 checks. Their readings are on disk. That is a product rule worth
 building on the CPU, with no rental: a digital page whose content is a vector-drawn table goes to
 the model, exactly as picture-text regions already do.
+
+## Result of session 5 (17 September 2026): a stronger reader is worth 2.2 points
+
+Session 4 ended with one question, a stronger model, and the leaderboard of 17 September named candidates.
+Infinity-Parser2-Pro (35B) and -Flash (2.2B), both Apache-2.0, read every page TrueDoc sends a model, on one
+rented H200 NVL: 2 h 10 min, **US$12.03 all in**. **Run 93, today's code with Pro's raw readings on the 281 pages
+without a digital text layer: 86.4 (CI 85.5-87.3, held-out 84.8), against run 92's 84.2 with olmOCR 2** - old scans
+47.0 to 58.6, tiny text 88.7 to 92.5, tables 88.6 to 89.6, 91 checks net, the held-out pages gaining more than the
+tuned-on. Flash merges to about 85.6. Pro also read the other 1,122 benchmark pages and 505 pages of the owner's
+library (D032), which is M11's disagreement mining run for the first time.
+
+This was not a sub-dollar session and was not meant to be: a 35B model needs a 140 GB card, and the session read
+about 2,900 pages where session 2 read 281. At 32 pages at a time Pro costs about a quarter of a US cent a page.
+The recipe and the traps are in `bench/gpu/README.md`, the results in `docs/PROGRESS_LOG.md` and
+`docs/BENCHMARKS.md`, the comparison of readers and where each can run in `docs/MODEL_CHOICE.md`. Every reading
+is in `bench/gpu/out5/`, so what follows - tracing seven old-scan-maths checks our own handling loses, a general
+clean-up of a model's maths, the two-tier runs 94 and 95 - needs no rental.
