@@ -1,0 +1,7 @@
+Replacement of locks
+
+<table><tr><td>We cover</td><td colspan="3">When your building and contents are insured and we accept a claim for theft and, as part of that theft, the key(s) to an external door are stolen, we will pay the reasonable cost of replacing the related lock(s). This benefit is in addition to your building and/or contents sum insured.</td></tr><tr><td></td><td colspan="3">Limits</td></tr><tr><td></td><td>Essential</td><td>Top</td><td>Landlords</td></tr><tr><td></td><td>$500</td><td>$1,000</td><td>Not covered</td></tr></table>
+
+Funeral expenses
+
+<table><tr><td>We cover</td><td colspan="3">We will contribute towards the funeral expenses of any person who dies while living at your home provided the death occurred accidentally as a result of loss or damage at the site which we have accepted as a claim covered under the policy. This benefit is in addition to your building and/or contents sum insured.</td></tr><tr><td></td><td colspan="3">Limits</td></tr><tr><td></td><td>Essential</td><td>Top</td><td>Landlords</td></tr><tr><td></td><td>$5,000</td><td>$10,000</td><td>Not covered</td></tr><tr><td>You are not covered for</td><td colspan="3">Funeral expenses if the death occurred 90 days or more after the Insured event.</td></tr></table>

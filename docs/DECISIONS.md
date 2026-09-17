@@ -518,7 +518,7 @@ model.
 `truedoc.warnings`. An empty list is the product's own answer; anything in it is a different state, and a number
 taken from it belongs to that state, not to TrueDoc.
 
-## D032 - The owner's library may be read by a model on a rented machine; the sealed slice never (2026-09-17, owner's decision)
+## D032 - The owner's library may be read by a model on a rented machine, and the readings kept; the sealed slice never (2026-09-17, owner's decision)
 
 **The question.** GPU session 5 had the leaderboard's strongest open model loaded on a rented H200, and the most
 useful thing it could read was not the benchmark but the owner's own documents: his Key Facts Sheets grade a
@@ -535,9 +535,10 @@ Statements and Key Facts Sheets, not private papers.
   asserts that no insurance-set page is on that list.
 - The pages go to a machine that is destroyed at the end of the session - destroyed, not stopped, because a
   stopped instance keeps its disk. The owner destroyed this one at 17:13.
-- **The readings stay out of git** (`bench/gpu/out5/pro/own/`, ignored, with the reason in `.gitignore`): they are
-  the words of insurers' documents, and this repository may one day be published. They stay on disk beside the
-  benchmark's readings, with the manifest that names each page.
+- **The readings are kept in git with the rest** (`bench/gpu/out5/pro/own/`, with the manifest that names each
+  page). I first left them out, reasoning that they are the words of insurers' documents and this repository may one
+  day be published; the owner overruled that the same evening - "They are publicly available documents, so no
+  issues" - and they were committed. The caution was mine to raise and his to decide.
 - This covers a rented machine running an open model under our control. It does not cover a hosted service that
   keeps what it is sent: that is a different question and would be asked again.
 

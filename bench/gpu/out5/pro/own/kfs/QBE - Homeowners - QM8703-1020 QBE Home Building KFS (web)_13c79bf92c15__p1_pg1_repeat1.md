@@ -1,0 +1,19 @@
+KEY FACTS ABOUT THIS HOME BUILDING POLICY
+
+Home Insurance
+
+Prepared on: 18 September 2020
+
+THIS IS NOT AN INSURANCE CONTRACT
+
+STEP 1 Understanding the Facts Sheet
+
+This Key Facts Sheet sets out some of the events covered and not covered by this policy and other information you should consider. This sheet does not provide a complete statement of the cover offered, exclusions, conditions and limits that apply under the policy. You should carefully read the Product Disclosure Statement (PDS) and all policy documentation for more details.
+
+STEP 2 Check the maximum level of cover and the events covered
+
+Under this policy you set the maximum level of cover and your payout is limited to that amount (Sum insured).
+
+<table><tr><td>Event/cover</td><td>Yes/No Optional</td><td>Some examples of specific conditions, exclusions or limits that apply to events/covers (see PDS and other policy documentation for details of others)*</td></tr><tr><td>Fire and Explosion</td><td>Yes</td><td>We cover this under two events, “Fire” and “Explosion”. We do not cover loss or damage from charring, melting or scorching caused by heat generated from an item in the ordinary course of its use.</td></tr><tr><td>Flood</td><td>Yes</td><td>We do not cover loss or damage to retaining walls.</td></tr><tr><td>Storm</td><td>Yes</td><td>We refer to this event as “Storm, storm surge, rain, hail or flood”. We do not cover damage caused by water, rain, wind, hail or debris entering your home through an opening made for the purpose of alterations, additions, renovations or repairs, even if the opening was covered by a tarpaulin or similar.</td></tr><tr><td>Accidental breakage</td><td>Yes</td><td>We refer to this event as “Accidental breakage of glass or sanitary fixtures”. We do not cover damage to part of a glass house or conservatory. We offer a separate option for accidental damage to your home.</td></tr><tr><td>Earthquake</td><td>Yes</td><td>We refer to this event as “Earthquake or Tsunami”. We only cover damage caused by landslide and/or subsidence that happens within 72 hours of, and as a direct result of, the earthquake or tsunami.</td></tr><tr><td>Lightning</td><td>Yes</td><td>We only cover damage caused by a direct lightning strike.</td></tr><tr><td>Theft and Burglary</td><td>Yes</td><td>We refer to this event as “Theft or burglary”. We do not cover theft by someone who was on your property with your consent.</td></tr><tr><td>Actions of the sea</td><td>No</td><td>We do not cover loss or damage caused by tidal wave, high tide, king tide or any other movement of the sea except for tsunami and storm surge.</td></tr><tr><td>Malicious Damage</td><td>Yes</td><td>We refer to this event as “Vandalism or malicious act”. We do not cover damage caused by a malicious act by someone who was on your property with your consent.</td></tr><tr><td>Impacts</td><td>Yes</td><td>We cover this under three events, “Collision”, “Falling tree or branch” and “Damage by animals”. We do not cover damage caused by wheels, tyres or the weight of a vehicle to driveways.</td></tr><tr><td>Escape of liquid</td><td>Yes</td><td>We refer to this event as “Escape of water or other liquid”. We do not cover the cost to repair or replace defective parts or items that caused the damage.</td></tr><tr><td>Removal of debris</td><td>Yes</td><td>We cover the reasonable and necessary costs to remove debris resulting from damage to your buildings for which we’ve agreed to pay a claim.</td></tr><tr><td>Alternative accommodation</td><td>Yes</td><td>We refer to this cover as “Temporary accommodation costs”. The most we will pay is the lesser of costs incurred up to 24 months from the time of the incident or 20% of the buildings sum insured.</td></tr></table>
+
+* This Key Facts Sheet is a guide only. The examples provided are only some of the conditions, exclusions and limits in this policy. You must read the PDS and policy documentation for all information about this policy.

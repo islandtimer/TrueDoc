@@ -38,7 +38,9 @@ number to give an owner. Read through the authors' client, vLLM 0.17.1, greedy d
 | the crops under TrueDoc's own picture-text prompt | 199 | - | read |
 
 No page failed. Everything is in `bench/gpu/out5/` (c12dadd), with `environment.txt` holding every package version
-and both model snapshots; the owner's pages' readings are on disk there and deliberately not in git.
+and both model snapshots. **Correction, the same evening:** I first kept the readings of the owner's pages out of
+git, as insurers' words in a repository that may one day be published; the owner ruled that they are publicly
+available documents, and they are committed with the rest (D032).
 
 **Quick merges first (minutes each): a reader's raw pages over run 89's, all 281, scored.**
 

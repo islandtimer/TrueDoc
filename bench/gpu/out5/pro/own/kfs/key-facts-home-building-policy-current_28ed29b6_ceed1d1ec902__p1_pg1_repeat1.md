@@ -1,0 +1,19 @@
+KEY FACTS ABOUT THIS HOME BUILDING POLICY
+
+Home Buildings Insurance
+
+Prepared on: 10 October 2023
+
+THIS IS NOT AN INSURANCE CONTRACT
+
+Step 1 Understanding the Facts Sheet
+
+This Key Facts Sheet sets out some of the events covered and not covered by this policy and other information you should consider. This sheet does not provide a complete statement of the cover offered, exclusions, conditions and limits that apply under the policy. You should carefully read the Product Disclosure Statement (PDS) and all policy documentation for more details.
+
+Step 2 Check the maximum level of cover and the events covered
+
+Under this policy you set the maximum level of cover and your payout is limited to that amount (Sum insured).
+
+<table><tr><td>Event/Cover</td><td>Yes / No Optional</td><td>Some examples of specific conditions, exclusions or limits that apply to events/ covers (see PDS and other policy documentation for details of others)*</td></tr><tr><td>Fire and Explosion</td><td>Yes</td><td>Covered as separate events. Fire – not covered for damage which results from scorching or melting where there was no flame. Explosion – not covered if there is no physical evidence of the explosion or for the item that exploded.</td></tr><tr><td>Flood</td><td>Yes/ Optional</td><td>You may be eligible to remove flood cover and if you do so, you will also remove cover for rainwater run-off and storm surge. Not covered for loss or damage to retaining walls.</td></tr><tr><td>Storm</td><td>Yes</td><td>We cover rainwater run-off as a separate event to storm. Not covered for loss or damage to retaining walls.</td></tr><tr><td>Accidental breakage</td><td>Yes</td><td>We cover broken glass in fixtures and vitreous china, acrylic or fiberglass fixed shower bases, baths, spas, basins, sinks, toilets, bidets or sanitary fixtures, provided the fracture extends through the entire thickness. You can also purchase optional cover for ‘Accidental damage’ to your home.</td></tr><tr><td>Earthquake</td><td>Yes</td><td>Covered for loss or damage by earthquake, or landslide or subsidence that happens within 72 hours of, and as a direct result of, an earthquake.</td></tr><tr><td>Lightning</td><td>Yes</td><td>Covered for loss or damage as a result of lightning.</td></tr><tr><td>Theft and Burglary</td><td>Yes</td><td>Not covered for theft or attempted theft by you or someone who lives in your home, including a tenant.</td></tr><tr><td>Actions of the sea</td><td>No</td><td>We cover loss or damage caused by tsunami and by storm surge (unless you have removed cover for flood, rainwater run-off and storm surge). Not covered for actions of the sea including waves and normal movement or changes in sea levels (including high tides and king tides).</td></tr><tr><td>Malicious Damage</td><td>Yes</td><td>Not covered for vandalism or a malicious act by you or someone who lives in your home, including a tenant.</td></tr><tr><td>Impacts</td><td>Yes</td><td>Covered for loss or damage caused by impact by certain items. Not covered for costs to cut down or remove a tree if it didn’t cause damage to your home.</td></tr><tr><td>Escape of liquid</td><td>Yes</td><td>Not covered for water leaking or escaping from a shower recess or shower base, or the costs to repair or replace the item water or oil escapes from.</td></tr><tr><td>Removal of debris</td><td>Yes</td><td>We must agree to pay the costs before you make any arrangements.</td></tr><tr><td>Alternative accommodation</td><td>Yes</td><td>Covered for temporary accommodation costs up to 12 months from when the listed event took place if you are unable to live in your home. We must agree to pay the costs before you make any arrangements.</td></tr></table>
+
+* This Key Facts Sheet is a guide only. The examples provided are only some of the conditions, exclusions and limits in this policy. You must read the PDS and policy documentation for all information about this policy.

@@ -42,11 +42,9 @@ bench/gpu/bands/
 # disk through --vision-endpoint file:. Losing them would make every score since unreproducible
 # without renting a GPU again, and the repository has no remote to fall back on.
 #
-# One folder of out5/ IS ignored: a model's readings of the owner's own library pages. They are
-# the words of insurers' documents, and a repository that may one day be published is not the
-# place for them. They stay on disk beside the rest (bench/tools/kfs_two_readers.py reads them);
-# remaking them means a rental of about two dollars (bench/gpu/build_own_sets.py cuts the pages).
-bench/gpu/out5/pro/own/
+# That includes out5/pro/own/, a model's readings of 505 pages of the owner's own library. I had
+# ignored that folder as the words of insurers' documents; the owner ruled the same evening that
+# they are publicly available documents and the readings are kept like the rest (D032).
 
 # The OmniDocBench evaluation toolkit (cloned, Apache-2.0, not our code)
 bench/omnidocbench/

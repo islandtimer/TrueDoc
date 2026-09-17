@@ -1,0 +1,21 @@
+KEY FACTS ABOUT THIS HOME CONTENTS POLICY
+
+Accidental Damage Home; Listed Events Home: Fundamentals Home
+
+Prepared on: 1st August 2017
+
+THIS IS NOT AN INSURANCE CONTRACT
+
+STEP 1 Understanding the Facts Sheet
+
+This Key Facts Sheet sets out some of the risks covered and not covered by this policy and other information you should consider. This sheet does not provide a complete statement of the cover offered, exclusions, conditions and limits that apply under the policy. You should carefully read the Product Disclosure Statement (PDS) and all relevant policy documentation for more details.
+
+STEP 2 Check the maximum level of cover and the events covered
+
+Under this policy: You set the maximum level of cover and your payout is limited to that amount (sum insured).
+
+<table><tr><td>Event/Cover</td><td>Yes/No Optional</td><td>Some examples of conditions, exclusions and limits that apply to events/covers (see PDS and other relevant policy documentation for details of others.)*</td></tr><tr><td>Fire and Explosion</td><td>Yes</td><td>Covered for fire and explosion. Not covered for loss or damage caused by a bushfire or grassfire within 48 hours of the start of your policy. Exceptions apply.</td></tr><tr><td>Flood</td><td>Yes</td><td>We call this Storm, Flood, Rainwater or Wind: not covered for loss or damage as a result of flood within 14 days of the start of this policy. Exceptions apply.</td></tr><tr><td>Storm</td><td>Yes</td><td>We call this Storm, Flood, Rainwater or Wind: Not covered for loss or damage caused by named cyclone within 48 hours of the start of this policy. Exceptions apply.</td></tr><tr><td>Accidental breakage</td><td>Yes</td><td>Covered for accidental breakage of glass in furniture: not covered if it is part of a television screen or computer screen monitor. Our Accidental Damage Home policy covers your contents for accidental loss and damage including TV and computer screens.</td></tr><tr><td>Earthquake</td><td>Yes</td><td>We call this Earthquake or Tsunami: Additional earthquake excess of $250. Damage must have occurred within 72 hours of earthquake.</td></tr><tr><td>Lightning</td><td>Yes</td><td>We call this: Lightning or Thunderbolt: We will cover your contents for loss or damage as a result of lightning or thunderbolt.</td></tr><tr><td>Theft and Burglary</td><td>Yes</td><td>Covered for Burglary or Break-in, attempted burglary or break in, Theft or Attempted Theft. Not covered if the act was committed by a tenant. Our Fundamentals Home policy only covers Burglary or Break-in or attempted burglary or break in.</td></tr><tr><td>Actions of the sea</td><td>No</td><td>Covered for Tsunami, not covered for tidal wave, erosion, action of the sea.</td></tr><tr><td>Malicious Damage</td><td>Yes</td><td>We call this: Vandalism or a malicious act: Not covered for vandalism or malicious act by a tenant.</td></tr><tr><td>Impacts</td><td>Yes</td><td>Covered for impact damage by an aircraft, spacecraft or satellite, television or radio antenna or dish, vehicles and water craft, a falling tree. Not covered when the damage is caused when you cut down or remove a branch from the tree.</td></tr><tr><td>Escape of liquid</td><td>Yes</td><td>We call this Water or liquid damage: not covered for the cost of repairing the item that caused the damage.</td></tr></table>
+
+Cover for valuables, collections and items away from the insured address
+
+<table><tr><td rowspan="4">High value items and collections</td><td rowspan="4">Yes</td><td>Policy</td><td>Item Limit</td><td>Overall Limit</td></tr><tr><td>Accidental Damage Home</td><td>$2,500/item</td><td>20% of Contents SI or $7,500 (whichever is higher)</td></tr><tr><td>Listed Events Home</td><td>$2,500/item</td><td>20% of Contents SI or $5,000 (whichever is higher)</td></tr><tr><td>Fundamentals Home</td><td>$1,000/item</td><td>$2,000</td></tr><tr><td rowspan="3">Items away from insured address</td><td rowspan="3">Yes</td><td>Accidental Damage Home</td><td colspan="2">Australia &amp; New Zealand</td></tr><tr><td>Listed Events Home</td><td colspan="2">Australia up to 90 consecutive days</td></tr><tr><td>Fundamentals Home</td><td colspan="2">Not Covered</td></tr></table>

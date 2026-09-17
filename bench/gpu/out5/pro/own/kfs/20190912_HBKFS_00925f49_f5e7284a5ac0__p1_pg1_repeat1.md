@@ -1,0 +1,19 @@
+KEY FACTS ABOUT THIS HOME BUILDING POLICY
+
+Auto & General Home & Contents Insurance
+
+Prepared on: 12 September 2019
+
+THIS IS NOT AN INSURANCE CONTRACT
+
+STEP 1 Understanding the Fact Sheet
+
+This Key Facts Sheet sets out some of the events covered and not covered by this policy and other information you should consider. This sheet does not provide a complete statement of the cover offered, exclusions, conditions and limits that apply under the policy. You should carefully read the Product Disclosure Statement (PDS) and all policy documentation for more details.
+
+STEP 2 Check the maximum level of cover and the events covered
+
+Under this policy, you set the maximum level of cover and your payout is limited to that amount (Sum Insured).
+
+<table><tr><td>Event/Cover</td><td>Yes/No Optional</td><td>Some examples of specific conditions, exclusions or limits that apply to events/covers (see PDS and other policy documentation for details of others)*</td></tr><tr><td>Fire and Explosion</td><td>Yes</td><td>Excludes loss or damage caused by scorching or melting when there was heat but no flame. Excludes the cost of repairing or replacing an item that explodes.</td></tr><tr><td>Flood</td><td>Optional</td><td>Excludes damage to retaining walls, garden borders, driveways, paths, pavers or gardens.</td></tr><tr><td>Storm</td><td>Yes</td><td>Excludes loss or damage caused by rain, hail, wind, snow or dust due to defects in design, structure, materials, workmanship or construction.</td></tr><tr><td>Accidental breakage</td><td>Yes/ Optional</td><td>Yes – There is limited cover for accidental breakage of glass, ceramic and sanitary fixtures. Optional – A separate optional cover called ‘Accidental Damage’ is available to cover damage to other home building items</td></tr><tr><td>Earthquake or Tsunami</td><td>Yes</td><td>Includes earth movement that occurs within 72 hours as a result of an Earthquake or Tsunami.</td></tr><tr><td>Lightning</td><td>Yes</td><td>Includes loss or damage to your home caused by a direct lightning strike or thunderbolt.</td></tr><tr><td>Theft and Burglary</td><td>Yes</td><td>We refer to Theft and Burglary as theft or attempted theft. Excludes theft or resulting damage by you, your family, a household member, or someone who entered your home with your, your family’s or a household member’s consent.</td></tr><tr><td>Actions of the sea</td><td>No</td><td>Excludes loss or damage caused by high tide, king tide, tidal wave, storm surge or any other action of the sea.</td></tr><tr><td>Malicious Damage</td><td>Yes</td><td>Excludes loss or damage caused by you, your family, a household member or someone who entered your home with your, your family’s or a household member’s consent.</td></tr><tr><td>Impacts</td><td>Yes</td><td>Excludes loss or damage caused by lopping or felling of trees when this is performed or authorised by you, your family or household member.</td></tr><tr><td>Escape of liquid</td><td>Yes</td><td>Excludes loss or damage caused by leaking shower floors or bases, shower and bath combinations, tiled roman baths, or shower recess walls.</td></tr><tr><td>Removal of debris</td><td>Yes</td><td>We pay up to 10% of the Sum Insured for an insured event.</td></tr><tr><td>Alternative Accommodation</td><td>Yes</td><td>We refer to Alternative accommodation as Temporary accommodation. We pay up to 10% of the Sum Insured for an insured event.</td></tr></table>
+
+* This Key Facts Sheet is a guide only. The examples provided are only some of the conditions, exclusions and limits in this policy. You must read the PDS and policy documentation for all information about this policy.

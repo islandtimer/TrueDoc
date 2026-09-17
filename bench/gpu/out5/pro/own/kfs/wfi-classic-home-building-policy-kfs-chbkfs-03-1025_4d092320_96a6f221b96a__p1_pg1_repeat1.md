@@ -1,0 +1,20 @@
+KEY FACTS ABOUT THIS HOME BUILDING POLICY
+
+Classic home policy
+Prepared on: 1 October 2025
+
+THIS IS NOT AN INSURANCE CONTRACT
+
+Insurance
+
+Step 1 Understanding the Facts Sheet
+
+This Key Facts Sheet sets out some of the events covered and not covered by this policy and other information you should consider. This sheet does not provide a complete statement of the cover offered, exclusions, conditions and limits that apply under the policy. You should carefully read the Product Disclosure Statement (PDS) and all policy documentation for more details.
+
+Step 2 Check the maximum level of cover and the events covered
+
+Under this policy you set the maximum level of cover and the insurer may provide you with some agreed extra cover above that amount (Sum insured plus safety net).
+
+<table><tr><td>Event/Cover</td><td>Yes/No Optional</td><td>Some examples of specific conditions, exclusions or limits that apply to events/covers (see PDS and other policy documentation for details of others)*</td></tr><tr><td>Fire and Explosion</td><td>Yes</td><td>Refer to two separate events of ‘fire’ and ‘explosion’ in the PDS. Excludes damage directly caused by a process involving the deliberate application of heat (only the thing intended to be heated is not covered).</td></tr><tr><td>Flood</td><td>Optional</td><td>Excludes damage by flood if you have chosen not to have flood cover. Excludes damage to retaining walls, garden borders and freestanding walls even if you have chosen to have flood cover.</td></tr><tr><td>Storm</td><td>Yes</td><td>Excludes damage from: sea or tidal wave; storm surge; tsunami; hydrostatic pressure; subterranean seepage of water; lack of maintenance.</td></tr><tr><td>Accidental breakage</td><td>Yes</td><td>Cover for accidental breakage of fixed glass, bath tubs, shower recesses, wash basins, sinks, toilet bowls and cisterns. Excludes: glass forming part of a glasshouse or conservatory; a break not affecting the full thickness of the glass.</td></tr><tr><td>Earthquake</td><td>Yes</td><td>Excludes damage directly caused by: earth movement unless occurs within 72 hours of earthquake; tsunami; sea or tidal wave. All claims for damage within 72 hours of an earthquake have an excess of $500.</td></tr><tr><td>Lightning</td><td>Yes</td><td>Covered only if physical evidence of damage by lightning can be clearly seen.</td></tr><tr><td>Theft and Burglary</td><td>Yes</td><td>Refer to ‘theft or vandalism’ event in the PDS. Excludes theft: by you, a person living, staying or invited into your home, anyone acting with your consent or entitled to benefit under the policy; from common areas of flats, units or townhouses.</td></tr><tr><td>Actions of the sea</td><td>No</td><td>Excludes damage by sea, tidal wave or tsunami.</td></tr><tr><td>Malicious Damage</td><td>Yes</td><td>Refer to ‘theft or vandalism’ event in the PDS. Excludes: vandalism by a person living, invited into, or staying at your home; vandalism of common areas of flats, units or townhouses; damage by you or anyone acting with your consent or entitled to benefit under the policy.</td></tr><tr><td>Impacts</td><td>Yes</td><td>Excludes damage: from tree lopping unless caused by a professional tree lopper; by pets, birds or vermin.</td></tr><tr><td>Escape of liquid</td><td>Yes</td><td>Excludes damage directly caused by earth movement unless occurs within 72 hours of water overflowing, leaking or bursting from fixed pipe or system.</td></tr><tr><td>Removal of debris</td><td>Yes</td><td>Refer to ‘Removal of debris’ additional benefit in the PDS. Covers demolition costs and the cost to clear debris and make the site safe up to 20% of the ‘Building’ sum insured.</td></tr><tr><td>Alternative accommodation</td><td>Yes</td><td>Refer to ‘Temporary accommodation or loss of rent’ additional benefit in the PDS. Covers up to 52 weeks to a maximum up to 20% of the ‘Building’ sum insured.</td></tr></table>
+
+* This Key Facts Sheet is a guide only. The examples provided are only some of the conditions, exclusions and limits in this policy. You must read the PDS and policy documentation for all information about this policy.

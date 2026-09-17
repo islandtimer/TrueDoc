@@ -171,7 +171,8 @@ back raw layout JSON when it cannot make markdown (a picture with nothing to rea
 reading its parser chokes on): `place_bakeoff.py` turns it back into text. The scorer hung twice, for over two
 hours, on the Pro-alone candidate while two conversions shared the machine: score one category at a time.
 
-**What is on disk** (`out5/`, in git except the owner's pages): Flash and Pro on the 281 pages and the 199 crops;
+**What is on disk** (`out5/`, all of it in git, the readings of the owner's pages included - D032): Flash and Pro
+on the 281 pages and the 199 crops;
 Pro on the other 1,122 pages, on 505 pages of the owner's library, on the 134 old-scan pages a second time, and on
 the crops under TrueDoc's picture-text prompt; `environment.txt` (every package, both model snapshots); the logs.
 **Not done:** Flash under our picture-text prompt; dots.mocr; Flash on a small card, or on none.
