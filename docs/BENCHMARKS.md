@@ -17,6 +17,11 @@ said "against a best published 83.1" since 13 September. That figure came from `
 fetched 2 September, and it is out of date: the dataset now carries its own leaderboard, and two tools on
 it score above TrueDoc's best run. **We are third.** M7 is no longer met - see `docs/ROADMAP.md`.
 
+**18 September 2026: the quoted number is now run 95's 86.4, which would stand second.** The owner chose
+Infinity-Parser2-Flash as the standard reader of scanned pages (D033), kept two tiers with Infinity-Parser2-Pro as
+the deep reader (D034), and ruled that the arrangement those two decisions make is the one we quote (D035). Still
+behind the leader's 87.6, which is scored with post-processing a product cannot use (below); M7 stays not met.
+
 Source: the leaderboard on `huggingface.co/datasets/allenai/olmOCR-bench`, read 17 September 2026, 17
 entries. Every number below was then confirmed a second way, against the `.eval_results/olmocrbench.yaml`
 file in the model's own repository, which is what the leaderboard reads; and each tool's eight section
@@ -26,9 +31,11 @@ numbers are our own runs of the official scorer over the same 1,403 pages and 7,
 | # | Tool | Overall | What it is |
 |---|---|---|---|
 | 1 | infly/Infinity-Parser2-Pro | **87.6** | a vision-language model, on a GPU |
+| - | **TrueDoc run 95, open weights - the number we quote (D035, 18 September)** | **86.4** (CI 85.4-87.3; held-out 86.0) | ours: the CPU converter, with Infinity-Parser2-Flash reading the 281 pages that have no digital text layer and Infinity-Parser2-Pro the 102 of them the converter flags as beyond its own OCR |
 | 2 | datalab-to/chandra-ocr-2 | **85.8** | a vision-language model, on a GPU |
-| - | **TrueDoc run 91, the hosted deep reader** | **85.4** (CI 84.5-86.3) | ours: the CPU converter, with 103 pages of 1,403 read by a paid model |
-| - | **TrueDoc run 89, open weights - the number we quote** | **84.1** (CI 83.3-85.1) | ours: the CPU converter, with olmOCR 2's saved readings |
+| - | TrueDoc run 94, open weights, one reader | 85.6 (CI 84.8-86.5) | ours: the same, with Flash alone |
+| - | TrueDoc run 91, the hosted deep reader (history) | 85.4 (CI 84.5-86.3) | ours, 13 September: olmOCR 2's saved readings, with 103 pages of 1,403 read by a paid model |
+| - | TrueDoc run 89, open weights - the number quoted until 18 September | 84.1 (CI 83.3-85.1) | ours, 12 September: the CPU converter, with olmOCR 2's saved readings |
 | 3 | dots-studio/dots.mocr | 83.9 | |
 | 4 | datalab-to/surya-ocr-2 | 83.3 | |
 | 5 | onnx-community/Surya-Ocr-2-Onnx | 83.3 | the same model, exported to ONNX |

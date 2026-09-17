@@ -1,15 +1,19 @@
 # Status (plain English)
 
-_Last updated: 2026-09-17, 19:45 (**A stronger open reader, measured today on a rented GPU: 86.4.** Run 93 is
-today's code with Infinity-Parser2-Pro (35B, Apache-2.0) reading the 281 pages that have no digital text layer, in
+_Last updated: 2026-09-18 (**Three decisions of yours, made this morning, settle what yesterday measured: Flash is
+the standard reader of scanned pages (D033), Pro is the deep reader behind it and a live service lets its user
+choose (D034), and the number we quote is run 95's 86.4 on open weights, held-out 86.0 (D035) - second on the
+leaderboard as read on 17 September, behind 87.6.** What follows is yesterday evening's account, which those
+decisions rest on. **A stronger open reader, measured on a rented GPU: 86.4.** Run 93 is
+the 17 September code with Infinity-Parser2-Pro (35B, Apache-2.0) reading the 281 pages that have no digital text layer, in
 place of olmOCR 2: **86.4 (CI 85.5-87.3), held-out 84.8**, against **84.2** for the same code with olmOCR 2 (run 92) -
 ninety-one checks better, the never-tuned-on pages gaining more than the rest. That would stand second on the
 leaderboard, above Chandra OCR 2's 85.8 and above our own hosted 85.4, on open weights with nothing leaving the
 machine; the leader's 87.6 is still above the top of the interval, a gap of 1.2 where it was 3.5. Its smaller
 sibling Flash (2.2B) scores **85.6** as the only reader (run 94), and **Flash with Pro behind it, reading only the
 102 pages the converter itself flags as beyond its own OCR, scores 86.4 too (run 95), with the best held-out
-figure the project has had, 86.0**. **Nothing in the product has changed yet: which reader ships, and
-whether there are two tiers of them, is your decision, listed below.** The leader's 87.6 is scored after
+figure the project has had, 86.0**. **Nothing under `truedoc/` has changed yet: the readings are replayed from
+disk, and a provider that talks to a served Infinity-Parser2 model is still to be built.** The leader's 87.6 is scored after
 post-processing keyed on the benchmark's own folder names, which a product cannot do; we measured its raw reading.
 The same session had Pro read 505 pages of your library (never the sealed 19): on your Key Facts Sheets it reads the
 table's shape as well untuned as TrueDoc does after three days of rules, and comparing the two readers word for word
@@ -124,7 +128,8 @@ as it stands scores **84.2 with olmOCR 2** reading the scanned pages (run 92) an
 reading them (run 93); the hosted deep reader's 85.4 (run 91) is now below an open-weight number. The leaderboard's
 first place is 87.6, scored with post-processing a product cannot use; second is 85.8. On your insurance set,
 **229 of 229**; on your Key Facts Sheets, **99% and 100%**, where the leaderboard's top model, untuned, scores the
-same. The suite stands at 682. What ships as the reader is undecided and is yours to decide.
+same. The suite stands at 682. **18 September: you decided the reader (D033 to D035) - Flash as standard, Pro
+behind it, run 95's 86.4 the number we quote.**
 
 **15 September.** On the public exam TrueDoc scores **84.1 on open weights** (run 89) and **85.4 with the hosted deep
 reader** (run 91), against what was then a best published 83.1. **Corrected 17 September: that figure was stale. The best published is now 87.6 and TrueDoc is third, so M7 is not met** - see the leaderboard in `docs/BENCHMARKS.md`. On your insurance library it scores **229 of 229 checks**,
@@ -156,22 +161,21 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## Things you may need to do
 
-- **Decide which open reader TrueDoc ships with (17 Sept).** Measured on our own pages, four full runs of the same
-  code: olmOCR 2 (8B, what we run) 84.2; Infinity-Parser2-Flash (2.2B) 85.6; Infinity-Parser2-Pro (35B) 86.4; Flash
-  with Pro behind it 86.4. All three are Apache-2.0. Pro needs a 140 GB card, so it is a service's model and
-  nobody's own; Flash is a quarter of olmOCR 2's size. None of them runs on a laptop without an NVIDIA card as we
-  ran them - yours included - so "which reader" is a question about a service, or a technical user's own card, and
-  the mechanical tier stays the product on an ordinary machine. `docs/MODEL_CHOICE.md` has the table.
-- **Decide whether there are two tiers of reader.** The arrangement exists already (D025): one reader for every
-  scanned page, a stronger one for the pages the converter flags as beyond its own OCR - handwriting, in practice,
-  which is exactly where Pro beats Flash. **Measured (run 95): the router, unchanged, sends Pro 102 of the 1,403
-  pages and the score is 86.4, one check short of Pro reading everything, with the best held-out figure yet
-  (86.0).** I had said two tiers would earn their place if they recovered most of the 0.8 between Flash and Pro; they
-  recovered all of it. Against that: two models to serve, the second needing a 140 GB card, for a gain that is
-  handwriting, which your own documents do not contain. With Pro at about a quarter
-  of a cent a page and ahead of the hosted reader on old scans (58.6 against 53.6), every tier could be open weights.
-- **Decide whether 86.4 becomes the number we quote**, as run 93, once the reader is chosen. Until then the quoted
-  open-weight number stays run 89's 84.1 (run 92's 84.2 is the same code state a week on).
+- (Decided 18 Sept, D033: **Flash is the standard reader of scanned pages**, in place of olmOCR 2 - 85.6 against
+  84.2 on the same code, a quarter of the size, the same licence. Subject to two checks, both mine to do: Flash
+  asked our picture-text question, which needs a small rental of about 50 cents and your word to rent; and the
+  invented-text check run over its saved readings, which costs nothing. If it fails either, olmOCR 2 stays.)
+- (Decided 18 Sept, D034: **two tiers are kept, Pro is the deep reader we quote, and a live service lets the user
+  choose** - told what each deep reader costs, how long it takes and where the page goes. On the 102 hard pages
+  Pro and Claude are level, 348 and 344 of 568 checks; they differ in cost, waiting and privacy. No 140 GB card is
+  kept running: your suggestion, a machine started when there is work and destroyed after, is the hosting model to
+  work out before any service is built. Measured, a start costs about ten minutes and two to three dollars, so it
+  suits a batch of a hundred hard pages and not one letter; a provider that keeps the weights and bills by the
+  second would change that, and is unpriced.)
+- (Decided 18 Sept, D035: **the number we quote is run 95's 86.4** (CI 85.4-87.3, held-out 86.0), open weights,
+  with run 94's 85.6 for Flash alone and run 91's hosted 85.4 as history beside it. Second on the leaderboard as
+  read on 17 September.)
+- **When you want it: about 50 cents of rental** on a 24 GB card, for D033's first check.
 - **Parked, on your word (17 Sept): timing Flash on a laptop.** What is kept of it is a line of guidance for users:
   Flash on small documents might be possible without a graphics card, and nothing larger is.
 - (Done 3 Sept, evening: you agreed the "inferred" marker proposal as written, one tag for every model source, and confirmed the GPU instance is stopped.)

@@ -4,6 +4,43 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-18 - The owner decides the reader: Flash, Pro behind it, and run 95's 86.4 is the number
+
+Three decisions, put to the owner one at a time in plain terms and recorded as D033, D034 and D035.
+
+- **D033: Flash is the standard reader of scanned pages**, in place of olmOCR 2 ("yes, go with Flash"). Subject
+  to two checks that are mine to do: Flash asked TrueDoc's picture-text question (a small rental), and D021's
+  invented-text check over its saved readings (free). If it fails either, olmOCR 2 stays.
+- **D034: two tiers are kept, Pro is the deep reader we quote, and a live service lets its user choose** ("people
+  are given the information and can make a choice that suits their needs").
+- **D035: the number we quote is run 95's 86.4** (CI 85.4-87.3, held-out 86.0), with run 94's 85.6 and run 91's
+  hosted 85.4 beside it. It is the arrangement D033 and D034 make, so it is what a user would get.
+
+**Measured for the second decision, from runs already scored: Pro and Claude are level as the deep reader.** The
+router flags 102 pages carrying 568 checks (found as the pages whose markdown differs between runs 94 and 95). On
+them: olmOCR 2 alone 291, Flash alone 315, Claude behind olmOCR 2 344 (run 91 - the code of 13 September, so not
+quite a clean comparison), Pro behind Flash 348, Pro on everything 348. Page by page Pro is better on 24, Claude on
+15, level on 63. So the choice between them is cost, waiting and where the page goes, not quality: which is why
+the owner's answer - tell the user and let them choose - is the right shape and not a dodge.
+
+**The owner's question about hosting, and the arithmetic.** I had said an always-on 140 GB card is about US$105 a
+day and makes no sense for a small service. He asked why not temporary instances as needed, as we have been
+doing. It does remove the idle cost. From session 5's own log, a start costs about ten minutes and two to three
+dollars before the first page (the instance, 70 GB of weights, the load; the bill's disk and bandwidth share was
+real), then about a quarter of a cent a page: cheaper than the API from about 90 hard pages in a batch, dearer and
+far slower for a three-page letter. One such machine holds both models, so a batch gets Flash and Pro from a
+single start. What "as we have been doing" hides is that the owner rents and destroys by hand and I drive; a
+service needs that automated and needs never to forget an instance. Providers that keep the weights cached and
+bill by the second exist and would cut a start to cents; unpriced, an hour's research before any service is built.
+
+**To do, none of it started:** a provider that talks to a served Infinity-Parser2 model (its own prompt, layout
+JSON to markdown; today the readings are replayed from disk); D033's two checks; and the list already open from
+session 5 - the seven old-scan-maths checks our own handling loses, a general maths clean-up, Pro alone against
+the 87.6, the fifteen disagreeing Key Facts Sheet cells, Pro's other 125 pages of the library. The owner wants to
+talk about the downstream trial next.
+
+---
+
 ## 2026-09-17, afternoon and evening - GPU session 5: a stronger open reader, measured on our own pages
 
 **Why.** The leaderboard read that morning put two tools above us and the gap to the first, 2.2 points, sat in four

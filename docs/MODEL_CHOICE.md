@@ -430,7 +430,28 @@ invented image address among them, so its answers need a guard. Not yet scored t
 not asked our question at all - my omission on the day. Until Flash is, shipping it means keeping olmOCR 2 for the
 crops or losing run 58's picture-text gains.
 
-**Still open for the owner**, and listed in `docs/STATUS.md`: which reader ships; whether there are two tiers
-(run 95 measured it: the existing router, unchanged, sends Pro 102 pages and recovers all of the 0.8 between Flash
-and Pro - the case for; two models to serve and a 140 GB card for a gain that is handwriting - the case against);
-and whether 86.4 becomes the number we quote.
+**Decided by the owner, 18 September** (D033 to D035): Flash is the standard reader of scanned pages, subject to
+the picture-text check and the invented-text check; two tiers are kept with Pro as the deep reader, and a live
+service tells its user what each deep reader costs, how long it takes and where the page goes, and lets them
+choose; the number we quote is run 95's 86.4.
+
+**Pro and Claude as the deep reader, on the same pages (measured 18 September from runs already scored).** The
+router flags 102 pages carrying 568 checks. olmOCR 2 alone passes 291 of them, Flash alone 315, Claude behind
+olmOCR 2 344 (run 91, the code of 13 September, so close to a clean comparison and not quite one), Pro behind Flash
+348. Page by page Pro is better on 24, Claude on 15, level on 63. With a second reading worth about three checks a
+section, the two are level on quality and differ in everything else:
+
+| | Pro on a rented card | Claude over the API |
+|---|---|---|
+| a hard page costs | about a quarter of a US cent, while the card is busy | about three cents [recalled from 13 September] |
+| an idle hour costs | US$4.37 if the card is kept; nothing if it is destroyed | nothing |
+| before the first page | about ten minutes and two to three dollars a start, as measured on 17 September (the instance, 70 GB of weights, the load) | nothing, and seconds |
+| cheaper from | about 90 hard pages in one batch [derived] | below that |
+| where the page goes | a machine we control, destroyed afterwards | a third party; it refused one of 98 archival pages |
+| what the score counts as | open weights | "with a hosted service", its own row |
+
+The owner's suggestion for hosting, recorded in D034: no card kept running, a temporary machine per batch, as
+every session so far has been run by hand. One such machine holds both models (4.5 GB and 70 GB of weights on 141
+GB), so a batch could have Flash and Pro from a single start. A provider that keeps the weights cached and bills
+by the second would cut the cost of a start to cents and the break-even to a handful of pages: unpriced, an hour's
+research before any service is built.

@@ -544,3 +544,78 @@ Statements and Key Facts Sheets, not private papers.
 
 **What it bought.** 505 pages read (25 of the insurance set, 380 of Key Facts Sheets, 100 at random) for about
 two dollars of the session: the shape comparison and the fifteen disagreeing cells in `docs/PROGRESS_LOG.md`.
+
+## D033 - Infinity-Parser2-Flash becomes the standard reader of scanned pages, subject to two checks (2026-09-18, owner's decision)
+
+**The question.** Which model reads a page that has no digital text layer (D019)? Three were measured on 17
+September as TrueDoc's reader, the same code each time: olmOCR 2, what we run, 84.2 (run 92, held-out 81.5);
+Infinity-Parser2-Flash, 2.2B, 85.6 (run 94, held-out 84.8); Infinity-Parser2-Pro, 35B, 86.4 (run 93). All three are
+Apache-2.0. Pro needs a 140 GB card, so it can only ever be a service's model; Flash is a quarter of olmOCR 2's size.
+
+**The decision.** Flash. The owner's words: "yes, go with Flash." Better on the score, better still on the pages
+nothing was tuned on, smaller and cheaper to serve, the same licence. Pro is not a candidate for this slot; it
+belongs to the question of a second tier (D025).
+
+**Subject to two checks, both agreed with it.**
+1. **Text inside pictures on digital pages.** olmOCR 2 reads those regions today (run 58 onward) and Flash has
+   never been asked TrueDoc's picture-text question. Until it has, whole pages go to Flash and the picture regions
+   stay with olmOCR 2's readings, which is how runs 94 and 95 were made. The test needs a small rental.
+2. **Invented text.** D021's check on model-read pages, run over Flash's saved readings and compared with olmOCR
+   2's on the same pages. Pro invented an image address on one picture crop; Flash's rate is unmeasured.
+
+If Flash fails either - cannot read the picture regions, or shows noticeably more unsupported text - olmOCR 2 stays.
+
+**What it sets in motion.** Nothing ships differently today, because no reader has shipped to anyone. To be built:
+a provider that speaks to a served Infinity-Parser2 model directly (its own prompt, its layout JSON turned into
+markdown; the authors' client is Apache-2.0), since today the readings are replayed from disk.
+
+## D034 - Two tiers of reader are kept; Pro is the deep reader we quote; a live service lets the user choose (2026-09-18, owner's decision)
+
+**The question.** D025 built a second, stronger reader for the pages the converter flags as beyond its own OCR,
+with Claude over the API in that slot. On 17 September Infinity-Parser2-Pro was measured in it (run 95: Flash on
+every scanned page, Pro on the 102 of 1,403 the router flags - 86.4, held-out 86.0, one check short of Pro reading
+everything). Is Pro the deep reader?
+
+**What separated them, and what did not.** On those 102 pages and their 568 checks, from runs already scored:
+olmOCR 2 alone passes 291, Flash alone 315, Claude as the deep reader 344 (run 91, the code of 13 September), Pro as
+the deep reader 348. Page by page Pro is better on 24, Claude on 15, level on 63. A second reading of the same
+pages moves a section by about three checks, so the two are level on quality. They differ in everything else:
+Pro is about a quarter of a US cent a page while its card is busy and US$4.37 an hour whether or not a page
+arrives; Claude is about three cents a page [recalled from 13 September's note] and nothing when idle; a page sent
+to Pro stays on a machine we control, a page sent to the API leaves it, and the API refused one of 98 archival pages.
+
+**The decision.** The owner's words: "yes, agreed. we quote the Pro number, and for the live service, people are
+given the information and can make a choice that suits their needs."
+- Two tiers are kept, off unless asked for, as D025 built them.
+- **The number we quote is the open-weight one with Pro as the deep reader.**
+- **A live service does not choose for the user.** It says what each deep reader costs, how long it takes and where
+  the page goes, and the user picks - including picking none, in which case the hard pages are flagged as unread.
+- We do not keep a 140 GB card running. The owner's suggestion, to be worked out before any service is built: a
+  temporary machine started when there is work and destroyed after it, as every GPU session so far has been run by
+  hand. Measured on 17 September, a start costs about ten minutes and two to three dollars before the first page
+  (the instance, 70 GB of weights, the load), so it suits a batch of a hundred hard pages and not a single letter;
+  a provider that keeps the weights cached and bills by the second would change that arithmetic, and is unpriced.
+
+## D035 - The number we quote is run 95's 86.4, with two rows beside it (2026-09-18, owner's decision)
+
+**The question.** Two runs of 17 September scored 86.4 on open weights: run 93, where Pro reads all 281 pages
+without a digital text layer, and run 95, where Flash reads them and Pro reads the 102 the router flags. Which is
+"the number"? Until now it was run 89's 84.1 (D025).
+
+**The decision.** The owner's words: "yes, quote run 95 with those two rows beside it."
+- **Quoted: run 95, 86.4 (CI 85.4-87.3), held-out 86.0**, open weights. It is the arrangement D033 and D034 chose
+  - Flash as the standard reader, Pro as the deep one - so it is the configuration a user would actually get, which
+  is the only honest thing to quote. Run 93 is the same score from a configuration nobody would run.
+- **Beside it: run 94, 85.6**, Flash alone, for anyone who will not run a second tier.
+- **Beside it: run 91, 85.4**, the hosted deep reader, kept as history and still not an open-weight score.
+
+**How it is to be said.** Second on olmOCR-bench's leaderboard as read on 17 September, behind 87.6, and not on
+the leaderboard itself (ours are our own runs of the official scorer). The leader's 87.6 is scored after
+post-processing chosen by the benchmark's category folder names and ours uses none; say that plainly and without
+heat, because it is a legitimate way to enter a benchmark and simply not something a product can do. A second
+reading of the same pages moves a section by about three checks, so 86.4 is not to be argued to the tenth. Both
+readers' weights are other people's (Apache-2.0); what is ours is everything on the 1,122 pages no model reads,
+the routing, and what is done with a model's text.
+
+**Subject to D033's two checks.** If Flash fails either, the standard reader reverts to olmOCR 2 and the quoted
+arrangement has to be measured again with olmOCR 2 in front of Pro.
