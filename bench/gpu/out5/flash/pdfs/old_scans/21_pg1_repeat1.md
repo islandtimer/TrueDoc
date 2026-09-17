@@ -1,0 +1,3 @@
+J.R. #3)
+
+this device is none; but for advertising purposes it will be very catchy and as you will no doubt put out some kind of campaign advertisement I was sure like to leave part of your business: I wish I could see you in person, and thank you very very much for your kindness, consideration to this rather lengthy letter, and trusting that I may receive from you an early and favorable reply. I am sending under separate cover, a rough model and copy of my patent. I am also enclosing my Baby's picture, the one that I am working for, and the reason I am writing you regarding my novelty is to see if I can.

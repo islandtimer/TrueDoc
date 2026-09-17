@@ -1,0 +1,1 @@
+<table><tr><td>Keterangan :</td><td>Tidak Baik</td><td>Kurang Baik</td><td>Cukup Baik</td><td>Baik</td><td>Sangat Baik</td></tr></table>

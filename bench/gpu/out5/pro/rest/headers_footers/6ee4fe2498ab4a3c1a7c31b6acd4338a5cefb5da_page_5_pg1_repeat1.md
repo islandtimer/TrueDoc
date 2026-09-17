@@ -1,0 +1,11 @@
+Table 1: Students' response to major factors affecting they're practicing fluency in English speaking at home.
+
+<table> <thead> <tr> <th>No.</th> <th>Questions</th> <th>Variables</th> <th>Number of responses</th> <th>Proportion</th> </tr> </thead> <tbody> <tr> <td rowspan="3">1</td> <td rowspan="3">What are the major problems affecting your English speaking practice at home?</td> <td>Lack of partner</td> <td>11</td> <td>36.66 %</td> </tr> <tr> <td>Lack of time</td> <td>8</td> <td>26.66 %</td> </tr> <tr> <td>Lack of excellent study environment</td> <td>11</td> <td>36.66 %</td> </tr> <tr> <td>Total</td> <td></td> <td></td> <td>30</td> <td>100%</td> </tr> </tbody> </table>
+
+It is firmly noticeable that having a lack of a partner to practice speaking and having a lack of an excellent study environment were the main problems which students encountered when they studied at home, followed by 11 (36.66%) and 11 (36.66%). Besides that, the figure for having a lack of time for practicing speaking at home was just approximately 27%. This represented having a lack of partners & excellent study environment were key factors affecting the ability of oral fluency in English speaking of AV113 students.
+
+Table 2: Students respond to how often they practice speaking skills by following methods such as reading books, watching movies, and writing paragraphs.
+
+<table> <thead> <tr> <th>No.</th> <th>Questions</th> <th>Variables</th> <th>Number of responses</th> <th>Proportion</th> </tr> </thead> <tbody> <tr> <td rowspan="3">1</td> <td rowspan="3">How often do you practice speaking skills by following methods such as reading books, watching movies, and writing paragraphs?</td> <td>Always</td> <td>12</td> <td>40 %</td> </tr> <tr> <td>Sometimes</td> <td>8</td> <td>26.66 %</td> </tr> <tr> <td>Never</td> <td>10</td> <td>33.33 %</td> </tr> <tr> <td>Total</td> <td></td> <td></td> <td>30</td> <td>100%</td> </tr> </tbody> </table>
+
+As the information depicted in the above table, 12 (40%) and 10 (33.33%) students always answered and never, respectively. Plus, eight students who spent lack of time for those activities was just around 26.66%. Indeed, these figures led to the imbalance between helpful activities for English speaking practice, and it also wreaked havoc on the student's oral fluency improvement.

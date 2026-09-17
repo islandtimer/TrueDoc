@@ -1,0 +1,13 @@
+application sets respectively. In particular, employing a reduced set of templates for template selection leads to an average area reduction of over 27%.
+
+Finally, Table 3 reports on the efficiency that is obtained when the reduced set of templates and the full set of templates are used for template selection. The efficiency is calculated as shown in (8), where ESCS is the Effective Software Cycle Savings which accounts for the hardware execution delay of the custom instructions pᵢ ( TC(pᵢ) ), where i = 1, \dots, n , and is calculated as shown in (9). TC(pᵢ) is obtained by calculating the number of clusters in the critical path of the custom instructions. For example, TC of the custom instruction in Figure 4(a) is 2. Note that we have assumed that the delay of each cluster is equivalent to two software clock cycle executions. This is a reasonable assumption as the FPGA logic can generally execute at a significantly higher clock frequency than a commercially available soft processor core which is implemented on the same fabric [55].
+
+$$Efficiency = ESCS/ARFUK \quad (8)$$
+
+$$ESCS = ∑ᵢ=₁ⁿ F(pᵢ) × (TSW(pᵢ) - 2 . TC(pᵢ)) \quad (9)$$
+
+<table> <thead> <tr> <th rowspan="2">Domain</th> <th colspan="3">Reduced Templates</th> <th colspan="3">Full Templates</th> </tr> <tr> <th>ESCS</th> <th>Area</th> <th>Efficiency</th> <th>ESCS</th> <th>Area</th> <th>Efficiency</th> </tr> </thead> <tbody> <tr> <td>Automotive-Industrial</td> <td>14664576</td> <td>45182539.6</td> <td>0.325</td> <td>14814576</td> <td>64546485.15</td> <td>0.230</td> </tr> <tr> <td>Image</td> <td>1538018</td> <td>364687641.1</td> <td>0.004</td> <td>1559449</td> <td>416324829.2</td> <td>0.004</td> </tr> <tr> <td>Network</td> <td>102859967</td> <td>64546485.15</td> <td>1.594</td> <td>129603704</td> <td>80683106.43</td> <td>1.606</td> </tr> <tr> <td>Security</td> <td>19207719</td> <td>142002267.3</td> <td>0.135</td> <td>22467162</td> <td>264640589.1</td> <td>0.085</td> </tr> <tr> <td>Telecomm</td> <td>5823638</td> <td>41955215.34</td> <td>0.139</td> <td>6873517</td> <td>71001133.66</td> <td>0.097</td> </tr> <tr> <td>Generic</td> <td>146359636</td> <td>635782878.68</td> <td>0.230</td> <td>176180091</td> <td>761648524.7</td> <td>0.231</td> </tr> </tbody> </table>
+
+Table 3: Comparing the efficiency when reduced set and full set of templates are used for template selection
+
+It can be observed in Table 3 that the efficiency of the proposed method is higher than the case when the full set of templates is used in a number of application domains (with comparable results in the remaining domains). In particular, the average efficiency gain when a reduced set of templates is used is over 25%.

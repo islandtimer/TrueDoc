@@ -1,0 +1,11 @@
+Lilienthal as well—he was having fun. He was to describe his flights, especially the ones where he could eke out more distance, as an “indescribable pleasure.” It is not only likely, but probable, that some of these incredible photographs were seen by a particular duo of young men in Dayton, Ohio.
+
+Early Safety Analysis
+
+Lilienthal was relentless in his study of air movement and wind, and he recognized quickly what is common knowledge among hang gliders today—a sudden gust of wind can ruin your whole day. So meticulous and thorough was he that, from the time he first designed his sailing apparatus in 1888, he didn’t take his first
+
+flight until 1891. Before he flew, he published his theories on how man could fly in a book which was widely popular—“Der Vogelflug als Grundlage der Fliegekunst,” Birdflight as the Basis of Aviation. This book, published in 1889, consisted of the results of his various experiments with models in both natural wind and a crude wind device. Up to that point, it was all aerodynamic theory, but he was determined to put that theory into practice. That first flight, like most of his flights, was in a large large, monowing apparatus. He next experimented with increasing the square footage of the “wings” until the whole thing became too heavy to pick up. He even tried flapping the wings, just like a bird, before he settled on the practicality of “immovable wings.”
+
+Modern hang glider enthusiasts will also recognize and appreciate what these experiments revealed—he could control his direction of flight by shifting his center of gravity. The design of his mono-winged glider allowed his legs to be free and fully movable, and with practice, all his landings ended standing up.
+
+After a series of experiments to try and develop more lift to soar longer, Lilienthal opted to try bi-wing gliders. He first built small, scale models from heavy paper. Those “aircraft” surprised him with their stability, and he concluded that the full-size gliders would be stable as well and not as susceptible to the irregularities of wind currents. In all, he designed and built 15 different models of mono-wing gliders and three bi-wing gliders,

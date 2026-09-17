@@ -1,0 +1,28 @@
+sel, kerusakan DNA, instabilitas genomik, dan akhirnya menyebabkan proliferasi sel yang tidak terkontrol. 33 Kerusakan DNA oleh RONS terjadi melalui dua mekanisme, yaitu transversi asam amino G-T dan pembentukan DNA adducts (bagian DNA yang berikatan kovalen dengan karsinogen). Bila hal ini terjadi pada onkogen atau gen supresor tumor, akan terjadi inisiasi dan progresi kanker. 17 Pada satu sel kanker kolorektal diperkirakan terjadi sedikitnya 11 000 mutasi DNA yang mungkin disebabkan oleh RONS. 34
+
+Kadar premutagenic DNA adduct 8-hydroxydeoxy guanosine yang tinggi pada jaringan kolon dan plasma pasien IBD menunjukkan peran stres oksidatif dalam karsinogenesis kolorektal. 35 Beberapa penelitian menunjukkan bahwa stres oksidatif dapat menyebabkan aktivasi NF-κB. Hubungan antara RONS dan aktivasi NF-κB masih belum jelas, tetapi penelitian menunjukkan bahwa aktivasi NF-κB dapat ditekan oleh antioksidan. 36 Diduga RONS dapat mengaktifkan NF-κB melalui jalur TLR-4. 15 Aktivasi NF-κB akan merangsang produksi sitokin proinflamasi seperti IL-6 dan TNF-α yang merangsang pertumbuhan sel tumor dan selanjutnya kembali merangsang aktivasi NF-κB. 28 Selain itu beberapa sitokin proinflamasi seperti TNF-α dan IL-1β juga dapat meningkatkan produksi RONS, sehingga membentuk suatu positive feedback loop. 37
+
+NF-κB juga menekan apoptosis melalui induksi ekspresi gen anti-apoptotik seperti Bcl-2 family members and caspase inhibitor. 8 Selain itu, NF-κB juga dapat menginduksi produksi COX-2 dan inducible nitric oxide synthase (iNOS). COX-2 merupakan enzim yang berperan dalam sintesis prostaglandin, seperti prostaglandin E2 (PGE2) yang berperan sebagai regulator angiogenesis dan inhibitor apoptosis. Sedangkan iNOS menginduksi kerusakan DNA dan merangsang pembentukan mikrovaskulatur melalui produksi nitric oxide. Pada kanker kolorektal ditemukan peningkatan ekspresi COX-2 dan iNOS. Penghambatan keduanya terbukti menghambat tumorigenesis. 38 NF-κB juga diduga memiliki kemampuan untuk merangsang metastasis tumor dan angiogenesis. NF-κB menginduksi produksi matrix metalloproteinases (MMPs) dan enzim proteolitik yang merangsang invasi tumor ke jaringan sekitar. 6 Aktivasi NF-κB juga dapat menstimulasi angiogenesis melalui peningkatan ekspresi IL-8 dan vascular endothelial growth factor (VEGF). 39,40
+
+Buah merah merupakan sumber antioksidan eksogen yang kaya akan karotenoid dan α-tokoferol. Karotenoid yang terkandung dalam buah merah, antara lain α-karoten, β-karoten, dan β-kriptosantin. 21 Beberapa studi epidemiologis menunjukkan bahwa orang yang mengonsumsi sayur dan buah yang kaya akan karotenoid memiliki risiko terkena kanker kolorektal yang lebih rendah. 25 Pemberian vitamin E 200 IU/hari juga terbukti dapat menurunkan insiden kanker kolorektal. Alfa-tokoferol merupakan salah satu bentuk vitamin E dengan potensi antioksidan yang kuat. Mekanisme kerja vitamin E secara umum adalah dengan mencegah akumulasi radikal bebas dan aktivasi endonuklease. Selain itu, karena sifatnya
+
+yang larut dalam lemak, α-tokoferol terutama berfungsi untuk melindungi membran sel dari peroksidasi lipid. 36 Beberapa penelitian in vitro menunjukkan bahwa pemberian vitamin C dan vitamin E (α-tokoferol) pada sel dendritik yang distimulasi dengan lipopolisakarida (LPS) dapat menurunkan produksi RONS, menghambat fosforilasi IκB dan menghambat aktivasi NF-κB. 26 Pemberian N-acetylcystein dan α-tokoferol pada neutrofil yang dirangsang LPS dapat menghambat aktivasi IκB kinase, mencegah translokasi NF-κB ke dalam nukleus dan menurunkan produksi sitokin proinflamasi. 15
+
+Karotenoid dan asam retinoat diduga dapat meregulasi faktor transkripsi seperti NF-κB dan activator protein 1 (AP-1). Pemberian β-karoten pada makrofag yang distimulasi LPS menurunkan ekspresi iNOS, TNF-α, IL-1β, dan COX-2, serta menurunkan produksi NO dan PGE2 melalui mekanisme penghambatan aktivasi NF-κB. Penghambatan aktivasi NF-κB oleh β-karoten dicapai melalui dua mekanisme, yaitu melalui penghambatan degradasi IκB dan penghambatan akumulasi ROS. 41 Pemberian β-karoten pada sel yang mengalami stres oksidatif dapat menekan aktivasi NF-κB serta produksi sitokin proinflamasi seperti IL-6 dan TNF-α. 36 Selain itu, penelitian juga menunjukkan bahwa β-karoten dapat mengaktifkan protein proapoptotik caspase dan menghambat protein antiapoptotik Bcl-2 pada sel adenokarsinoma kolon HT-29. 42
+
+Pada penelitian ini didapatkan bahwa pada kelompok yang diinduksi CAC dan diberikan minyak buah merah (kelompok perlakuan buah merah), didapatkan rerata kadar NF-κB kolon yang lebih rendah secara bermakna dibandingkan kelompok yang diinduksi CAC tanpa diberikan minyak buah merah (kelompok kontrol AOM/DSS). Diduga antioksidan yang terkandung dalam buah merah dapat menghambat aktivasi NF-κB baik secara langsung melalui penghambatan aktivasi IκB kinase maupun melalui penghambatan RONS.
+
+Kesimpulan
+
+Dari hasil penelitian ini dapat disimpulkan bahwa pemberian minyak buah merah menurunkan kadar NF-κB kolon pada mencit model CAC.
+
+Ucapan Terima Kasih
+
+Kami mengucapkan terima kasih kepada Ibu Dr. Ingrid S. Surono dan Bapak Reinhard Thung untuk bahan uji minyak buah merah.
+
+Daftar Pustaka
+
+1. Danese S, Mantovani A. Inflammatory bowel disease and intestinal cancer: a paradigm of the yin–yang interplay between inflammation and cancer. Oncogene. 2010;29:3313-23.
+2. Balkwill F, Mantovani A. Inflammation and cancer: back to Virchow? Lancet. 2001;357(9255):539-45.
+3. Mantovani A, Allavena P, Sica A, Balkwill F. Cancer-related inflammation. Nature. 2008;454:436-44.
+4. Mantovani A. Cancer-related inflammation: the seventh hall-mark of cancer. Am Soc Clin Oncol. 2009;723-6.

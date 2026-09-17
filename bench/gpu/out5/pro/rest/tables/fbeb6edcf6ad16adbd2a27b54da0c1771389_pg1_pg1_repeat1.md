@@ -1,0 +1,10 @@
+<table><tr><td>NO.</td><td>SPECIFICATION</td><td>QTY</td><td>REMARK</td></tr><tr><td>1</td><td>H05VV-F 3G 1.0mm² BLACK</td><td>1PC</td><td></td></tr><tr><td>2</td><td>YP-61 PVC PLASTIC:60P BLACK</td><td>54g/PC</td><td></td></tr><tr><td>3</td><td>FRAME: BLACK</td><td>1PC</td><td></td></tr><tr><td>4</td><td>FUSE LID: BLACK</td><td>1PC</td><td></td></tr><tr><td>5</td><td>FRAME LID</td><td>1PC</td><td></td></tr><tr><td>6</td><td>FUSE:10A</td><td>1PC</td><td></td></tr><tr><td>7</td><td>SLEEVE WHITE</td><td>1PC</td><td></td></tr><tr><td>8</td><td>YC-12 INNER BODY</td><td>1PC</td><td></td></tr><tr><td>9</td><td>TER:97740BS-0</td><td>3PCS</td><td></td></tr><tr><td>10</td><td>YC-12 PVC PLASTIC:50P BLACK</td><td>18g/PC</td><td></td></tr><tr><td>11</td><td>MINI TIE:L=130mm BLACK</td><td>1PC</td><td></td></tr><tr><td>12</td><td>LABEL:135*35mm</td><td>1PC</td><td>LABEL-801</td></tr><tr><td>13</td><td>ZIP BAG:250X110X0.06mm</td><td>1PC</td><td></td></tr></table>
+
+Product: Non-rewireable fused plug
+Brand Name: YUNG LI
+Model: YP-61
+Electrical Rating: 10A 250V~
+Test Method: IEC 60884-1:2002+A1:2006+A2:2013
+Manufacturer: YUNG LI CO., LTD
+
+<table><tr><td rowspan="5">TOLERANCE &gt;0±0.30 &gt;1.0±0.50 &gt;10.0±1.0 &gt;20.0±2.0 Angle: ±1°</td><td>APPROVED</td><td></td><td>DATE</td><td colspan="2"></td><td colspan="4" rowspan="2">SPDS</td></tr><tr><td>CHECKED</td><td></td><td>DATE</td><td colspan="2"></td></tr><tr><td>DRAWN</td><td>SUKI</td><td>DATE</td><td>16.09.30</td><td>CUSTOMER</td><td colspan="4"></td></tr><tr><td>TYPE</td><td colspan="4">YP-61/YC-12</td><td>P/N</td><td colspan="3">P-6112-06B-1.0-GMark</td></tr><tr><td rowspan="2">DRAWING NO.</td><td rowspan="2">CY-B0212-04</td><td rowspan="2">REV</td><td rowspan="2">B</td><td>MATERIAL</td><td>P.V.C</td><td>UNIT</td><td>mm</td></tr><tr><td>SCALE</td><td></td><td>⊕</td><td>□</td></tr></table>

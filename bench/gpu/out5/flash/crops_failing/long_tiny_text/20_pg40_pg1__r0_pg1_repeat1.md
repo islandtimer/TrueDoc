@@ -1,0 +1,1 @@
+[{"bbox": [128, 0, 257, 18], "category": "header", "text": "JOHAN PERSSON"}, {"bbox": [128, 0, 1276, 891], "category": "figure", "text": ""}]

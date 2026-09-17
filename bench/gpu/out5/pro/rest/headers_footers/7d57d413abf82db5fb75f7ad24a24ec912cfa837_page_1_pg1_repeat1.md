@@ -1,0 +1,9 @@
+STUDENT AFFAIRS
+
+Student Affairs facilitates students' learning and development outside of the classroom utilizing various student development, learning, socio-cultural, and retention theories and nationally recognized high impact practices. Student Affairs provides student-centered programs and services to help students achieve their personal, academic and career goals. In collaboration with the academic deans, Student Affairs leads the university in recruiting a diverse student body. With the creative use of ongoing assessment, Student Affairs supports and develops programs and communities that contribute to the retention, success and leadership development of students.
+
+Student Affairs departments include the Office of Admissions; Associated Students of UAF (ASUAF); Athletics Department; Bookstore; Center for Student Rights and Responsibilities; Department of Military and Veteran Services; Nanook Recreation; Dining Services; Disability Services; Financial Aid; New Student Orientation; Office of the Registrar; Residence Life; Student Health and Counseling Center; Student Leadership and Involvement; Sustainability; and Wood Center.
+
+The Office of the Vice Chancellor for Student Affairs is a resource and referral center where students who don't know where to look for a solution to a problem at UAF will find help. Each department and office has its own web page detailing its student services, or students can visit http://www.uaf.edu/student-affairs/ for a complete list of all departments. For more information contact Student Affairs at uaf-student-affairs@alaska.edu or 907-474-2600.
+
+The Center for Student Rights and Responsibilities is also a resource and referral center where students can get help with concerns, issues or needs. You can get more information at http://www.uaf.edu/csrr/, uaf-studentrights@alaska.edu or 907-474-7317.

@@ -1,0 +1,9 @@
+The Homefront Crisis Management System (HCMS) was formed to coordinate between government agencies, forming a structure flexible and scalable to meet the full spectrum of threats Singapore is likely to face. 8 At the operational level, all government agencies work together to prepare contingency plans to address various threat scenarios, and run emergency preparedness exercises to ensure smooth inter-agency coordination and operational readiness.
+
+The Home team, SCDF and Police have also enhanced their ability to handle a wider spectrum of emergencies. SCDF officers and vehicles have been fully equipped with decontamination capabilities to handle chemical, biological and other hazardous agents. 9 All Police cars are equipped with Bomb Suppression Blankets. Police have also developed a post blast investigation capability to handle investigations into bombing incidents.
+
+Counter Ideological Measures
+
+Terrorism occurs when ideological motivation meets with operational capability. The way in which a terrorist group shapes its radical worldview and disseminates it to audiences worldwide plays an important role in the public interface between the group and its target audience. Using terrorist propaganda, a group can successfully indoctrinate public into terrorist sympathizers, mobilize terrorist supporters, and recruit terrorist members.
+
+To counter terrorism effectively, a multi-pronged approach is needed. Any effective blueprint for an ideological response to the “war on terrorism” should conceptualize counter terrorism not only as a military “shooting war” or law enforcement operation, but as a “war of ideas” as well. Measures to disrupt and degrade a terrorist group’s military and economic infrastructure should be supplemented with measures targeting the terrorist group’s political apparatus. If left unchecked, this apparatus will

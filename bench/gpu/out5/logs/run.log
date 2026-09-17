@@ -1,0 +1,77 @@
+== system
+name, memory.total [MiB], driver_version
+NVIDIA H200 NVL, 143771 MiB, 580.173.02
+overlay         204G   83G  122G  41% /
+shm             141G     0  141G   0% /dev/shm
+== link speed, because a slow host wastes more than it costs (lesson of 8 September)
+pypi: 200 25321597 B/s
+huggingface: 200 21607 B/s
+== dependencies
+Python 3.12.3
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+infinity-parser2 0.4.0 requires openai>=2.25.0, but you have openai 2.24.0 which is incompatible.
+infinity-parser2 0.4.0 requires transformers>=5.3.0, but you have transformers 4.57.6 which is incompatible.
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+vllm 0.17.1 requires openai<2.25.0,>=1.99.1, but you have openai 3.14.1 which is incompatible.
+vllm 0.17.1 requires transformers<5,>=4.56.0, but you have transformers 5.17.0 which is incompatible.
+torch 2.10.0+cu128 cuda True vllm 0.17.1 transformers 5.17.0
+INF-MLLM at 5089819
+== pages
+pages to fetch: 281
+fetched 281 of 281 in 0s
+pages to fetch: 1122
+fetched 1122 of 1122 in 0s
+rest: 1122 pdfs
+repeat: 134 pdfs
+== Pro weights downloading in the background (pid 22270)
+== waiting for the Pro weights
+[32m✓ Downloaded[0m
+  path: /workspace/.hf_home/hub/models--infly--Infinity-Parser2-Pro/snapshots/b27d470100514329fc6439aada8f16ccea5f9e2a
+== pro: serving infly/Infinity-Parser2-Pro
+== pro: server up 06:09:56
+-- pro rest
+  1) For 'figure', the text field must be an empty string.
+  2) For 'formula', format text as LaTeX.
+  3) For 'table', format text as HTML.
+  4) For all other categories (e.g., text, title), format text as Markdown.
+- The output text must be exactly the original text from the image, with no translation or rewriting.
+- Sort all layout elements in human reading order.
+- Final output must be a single JSON object.
+
+Batch 1/1:   0%|          | 0/2 [00:00<?, ?it/s]Batch 1/1:  50%|█████     | 1/2 [00:15<00:15, 15.25s/it]Batch 1/1: 100%|██████████| 2/2 [00:26<00:00, 13.02s/it]Batch 1/1: 100%|██████████| 2/2 [00:26<00:00, 13.36s/it]
+[infer] done. parsed=1122 skipped=0 failed=0 total=1122
+[infer] jsonl -> /root/gpu/out/markdown/pro/rest/inference.jsonl
+[infer] md    -> /root/gpu/out/markdown/pro/rest/<category>/*.md
+-- pro own
+  1) For 'figure', the text field must be an empty string.
+  2) For 'formula', format text as LaTeX.
+  3) For 'table', format text as HTML.
+  4) For all other categories (e.g., text, title), format text as Markdown.
+- The output text must be exactly the original text from the image, with no translation or rewriting.
+- Sort all layout elements in human reading order.
+- Final output must be a single JSON object.
+
+Batch 1/1:   0%|          | 0/25 [00:00<?, ?it/s]Batch 1/1:   4%|▍         | 1/25 [00:10<04:10, 10.42s/it]Batch 1/1:   8%|▊         | 2/25 [00:10<01:43,  4.48s/it]Batch 1/1:  12%|█▏        | 3/25 [00:12<01:08,  3.10s/it]Batch 1/1:  16%|█▌        | 4/25 [00:14<00:58,  2.77s/it]Batch
+[infer] done. parsed=505 skipped=0 failed=0 total=505
+[infer] jsonl -> /root/gpu/out/markdown/pro/own/inference.jsonl
+[infer] md    -> /root/gpu/out/markdown/pro/own/<category>/*.md
+-- pro repeat
+  1) For 'figure', the text field must be an empty string.
+  2) For 'formula', format text as LaTeX.
+  3) For 'table', format text as HTML.
+  4) For all other categories (e.g., text, title), format text as Markdown.
+- The output text must be exactly the original text from the image, with no translation or rewriting.
+- Sort all layout elements in human reading order.
+- Final output must be a single JSON object.
+
+Batch 1/1:   0%|          | 0/6 [00:00<?, ?it/s]Batch 1/1:  17%|█▋        | 1/6 [00:07<00:37,  7.47s/it]Batch 1/1:  33%|███▎      | 2/6 [00:09<00:17,  4.44s/it]Batch 1/1:  50%|█████     | 3/6 [00:10<00:07,  2.59s/it]Batch 1/1:  67%|██████▋   | 4/6 [00:13<00:0
+[infer] done. parsed=134 skipped=0 failed=0 total=134
+[infer] jsonl -> /root/gpu/out/markdown/pro/repeat/inference.jsonl
+[infer] md    -> /root/gpu/out/markdown/pro/repeat/<category>/*.md
+-- pro crops_failing, custom prompt
+[custom] done. parsed=92 failed=0 total=92
+-- pro crops, custom prompt
+[custom] done. parsed=107 failed=0 total=107
+== pro: done 07:11:10, 2241 markdown files
+== done: 2721 markdown files
+== exit 0 07:11:10

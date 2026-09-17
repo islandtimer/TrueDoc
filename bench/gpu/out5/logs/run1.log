@@ -1,0 +1,148 @@
+== system
+name, memory.total [MiB], driver_version
+NVIDIA H200 NVL, 143771 MiB, 580.173.02
+overlay         204G  104M  204G   1% /
+shm             141G     0  141G   0% /dev/shm
+== link speed, because a slow host wastes more than it costs (lesson of 8 September)
+pypi: 200 27550080 B/s
+huggingface: 200 23316 B/s
+== dependencies
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment with seed packages at: /root/venv-inf
+ + pip==26.2.1
+Activate with: source /root/venv-inf/bin/activate
+Python 3.12.3
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+vllm 0.17.1 requires openai<2.25.0,>=1.99.1, but you have openai 3.14.1 which is incompatible.
+vllm 0.17.1 requires transformers<5,>=4.56.0, but you have transformers 5.17.0 which is incompatible.
+torch 2.10.0+cu128 cuda True vllm 0.17.1 transformers 5.17.0
+INF-MLLM at 5089819
+== pages
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  200/281 after 173s
+  250/281 after 215s
+fetched 281 of 281 in 240s
+pdfs: 281 pdfs
+== Pro weights downloading in the background (pid 4638)
+== flash: serving infly/Infinity-Parser2-Flash
+== flash: server up 05:14:49
+-- flash pdfs
+find: ‘/root/gpu/out/markdown/flash’: No such file or directory
+== flash: done 05:15:14, 0 markdown files
+== waiting for the Pro weights
+[32m✓ Downloaded[0m
+  path: /workspace/.hf_home/hub/models--infly--Infinity-Parser2-Pro/snapshots/b27d470100514329fc6439aada8f16ccea5f9e2a
+== pro: serving infly/Infinity-Parser2-Pro
+== system
+name, memory.total [MiB], driver_version
+NVIDIA H200 NVL, 143771 MiB, 580.173.02
+overlay         204G   83G  122G  41% /
+shm             141G  4.0K  141G   1% /dev/shm
+== link speed, because a slow host wastes more than it costs (lesson of 8 September)
+pypi: 200 21548530 B/s
+huggingface: 200 18370 B/s
+== dependencies
+Python 3.12.3
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+infinity-parser2 0.4.0 requires openai>=2.25.0, but you have openai 2.24.0 which is incompatible.
+infinity-parser2 0.4.0 requires transformers>=5.3.0, but you have transformers 4.57.6 which is incompatible.
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+vllm 0.17.1 requires openai<2.25.0,>=1.99.1, but you have openai 3.14.1 which is incompatible.
+vllm 0.17.1 requires transformers<5,>=4.56.0, but you have transformers 5.17.0 which is incompatible.
+torch 2.10.0+cu128 cuda True vllm 0.17.1 transformers 5.17.0
+INF-MLLM at 5089819
+== pages
+pages to fetch: 281
+fetched 281 of 281 in 0s
+pdfs: 281 pdfs
+== Pro weights downloading in the background (pid 9713)
+== waiting for the Pro weights
+[32m✓ Downloaded[0m
+  path: /workspace/.hf_home/hub/models--infly--Infinity-Parser2-Pro/snapshots/b27d470100514329fc6439aada8f16ccea5f9e2a
+== pro: serving infly/Infinity-Parser2-Pro
+a server for infly/Infinity-Parser2-Pro is already running; using it
+== pro: server up 05:19:27
+-- pro pdfs
+  1) For 'figure', the text field must be an empty string.
+  2) For 'formula', format text as LaTeX.
+  3) For 'table', format text as HTML.
+  4) For all other categories (e.g., text, title), format text as Markdown.
+- The output text must be exactly the original text from the image, with no translation or rewriting.
+- Sort all layout elements in human reading order.
+- Final output must be a single JSON object.
+
+Batch 1/1:   0%|          | 0/1 [00:00<?, ?it/s]Batch 1/1: 100%|██████████| 1/1 [00:07<00:00,  7.86s/it]Batch 1/1: 100%|██████████| 1/1 [00:07<00:00,  7.86s/it]
+[infer] done. parsed=281 skipped=0 failed=0 total=281
+[infer] jsonl -> /root/gpu/out/markdown/pro/pdfs/inference.jsonl
+[infer] md    -> /root/gpu/out/markdown/pro/pdfs/<category>/*.md
+-- pro crops_failing
+  1) For 'figure', the text field must be an empty string.
+  2) For 'formula', format text as LaTeX.
+  3) For 'table', format text as HTML.
+  4) For all other categories (e.g., text, title), format text as Markdown.
+- The output text must be exactly the original text from the image, with no translation or rewriting.
+- Sort all layout elements in human reading order.
+- Final output must be a single JSON object.
+
+Batch 1/1:   0%|          | 0/4 [00:00<?, ?it/s]Batch 1/1:  25%|██▌       | 1/4 [00:00<00:01,  1.53it/s]Batch 1/1:  75%|███████▌  | 3/4 [00:01<00:00,  2.12it/s]Batch 1/1: 100%|██████████| 4/4 [00:06<00:00,  2.13s/it]Batch 1/1: 100%|███████
+[infer] done. parsed=92 skipped=0 failed=0 total=92
+[infer] jsonl -> /root/gpu/out/markdown/pro/crops_failing/inference.jsonl
+[infer] md    -> /root/gpu/out/markdown/pro/crops_failing/<category>/*.md
+-- pro crops
+  1) For 'figure', the text field must be an empty string.
+  2) For 'formula', format text as LaTeX.
+  3) For 'table', format text as HTML.
+  4) For all other categories (e.g., text, title), format text as Markdown.
+- The output text must be exactly the original text from the image, with no translation or rewriting.
+- Sort all layout elements in human reading order.
+- Final output must be a single JSON object.
+
+Batch 1/1:   0%|          | 0/3 [00:00<?, ?it/s]Batch 1/1:  33%|███▎      | 1/3 [00:03<00:06,  3.14s/it]Batch 1/1:  67%|██████▋   | 2/3 [00:03<00:01,  1.54s/it]Batch 1/1: 100%|██████████| 3/3 [00:05<00:00,  1.58s/it]Batch 1/1: 100%|███████
+[infer] done. parsed=107 skipped=0 failed=0 total=107
+[infer] jsonl -> /root/gpu/out/markdown/pro/crops/inference.jsonl
+[infer] md    -> /root/gpu/out/markdown/pro/crops/<category>/*.md
+== pro: done 05:47:36, 480 markdown files
+== flash: serving infly/Infinity-Parser2-Flash
+== flash: server up 05:48:47
+-- flash pdfs
+  1) For 'figure', the text field must be an empty string.
+  2) For 'formula', format text as LaTeX.
+  3) For 'table', format text as HTML.
+  4) For all other categories (e.g., text, title), format text as Markdown.
+- The output text must be exactly the original text from the image, with no translation or rewriting.
+- Sort all layout elements in human reading order.
+- Final output must be a single JSON object.
+
+Batch 1/1:   0%|          | 0/1 [00:00<?, ?it/s]Batch 1/1: 100%|██████████| 1/1 [00:04<00:00,  4.35s/it]Batch 1/1: 100%|██████████| 1/1 [00:04<00:00,  4.35s/it]
+[infer] done. parsed=281 skipped=0 failed=0 total=281
+[infer] jsonl -> /root/gpu/out/markdown/flash/pdfs/inference.jsonl
+[infer] md    -> /root/gpu/out/markdown/flash/pdfs/<category>/*.md
+-- flash crops_failing
+  1) For 'figure', the text field must be an empty string.
+  2) For 'formula', format text as LaTeX.
+  3) For 'table', format text as HTML.
+  4) For all other categories (e.g., text, title), format text as Markdown.
+- The output text must be exactly the original text from the image, with no translation or rewriting.
+- Sort all layout elements in human reading order.
+- Final output must be a single JSON object.
+
+Batch 1/1:   0%|          | 0/4 [00:00<?, ?it/s]Batch 1/1:  25%|██▌       | 1/4 [00:00<00:01,  2.81it/s]Batch 1/1:  75%|███████▌  | 3/4 [00:00<00:00,  5.32it/s]Batch 1/1: 100%|██████████| 4/4 [00:03<00:00,  1.01it/s]Batch 1/1: 100%|███████
+[infer] done. parsed=92 skipped=0 failed=0 total=92
+[infer] jsonl -> /root/gpu/out/markdown/flash/crops_failing/inference.jsonl
+[infer] md    -> /root/gpu/out/markdown/flash/crops_failing/<category>/*.md
+-- flash crops
+  1) For 'figure', the text field must be an empty string.
+  2) For 'formula', format text as LaTeX.
+  3) For 'table', format text as HTML.
+  4) For all other categories (e.g., text, title), format text as Markdown.
+- The output text must be exactly the original text from the image, with no translation or rewriting.
+- Sort all layout elements in human reading order.
+- Final output must be a single JSON object.
+
+Batch 1/1:   0%|          | 0/3 [00:00<?, ?it/s]Batch 1/1:  33%|███▎      | 1/3 [00:00<00:01,  1.63it/s]Batch 1/1: 100%|██████████| 3/3 [00:01<00:00,  1.49it/s]Batch 1/1: 100%|██████████| 3/3 [00:01<00:00,  1.50it/s]
+[infer] done. parsed=107 skipped=0 failed=0 total=107
+[infer] jsonl -> /root/gpu/out/markdown/flash/crops/inference.jsonl
+[infer] md    -> /root/gpu/out/markdown/flash/crops/<category>/*.md
+== flash: done 06:06:48, 480 markdown files
+== done: 960 markdown files
+== exit 0 06:06:48

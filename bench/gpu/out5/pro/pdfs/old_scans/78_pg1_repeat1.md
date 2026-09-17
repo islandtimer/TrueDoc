@@ -1,0 +1,9 @@
+began, and which God alone knows when, & how it will end —
+
+The above was a part of a letter written by me to a friend the morning after the news reached here of the reception of the Mass troops in the city of Baltimore the 19th, of April 1861 — M. E. Stone, P. M
+
+<table><tr><td rowspan="2">Free. No.</td><td colspan="6">PAID HERE.</td><td rowspan="2">Rater. Cents.</td></tr><tr><td colspan="3">In Money.</td><td colspan="3">By Stamps.</td></tr><tr><td></td><td>No.</td><td>Dolls.</td><td>Cents.</td><td>No.</td><td>Dolls.</td><td>Cents.</td></tr></table>
+
+them safely at Head quarters — I have no doubt but it has all been properly done, — A box for the 25th I had delivered to Capt. Atwood & Co — and heard with much satisfaction the gratification it afforded the various recipients — The men was looking splendidly, and I need not tell you that the 25th "is a live" regiment from its Col & Chaplain down. Worcester Co his just cause for pride.
+
+I come now to the expression in your excellent letter which I had all along feared — are our labors needed at all day or good? shall we "work" or shall we "failures" — for the fact I have dreaded lest a sense of vague uncertainty in regard to matters here should discourage the efforts of our patriotic [ladies women] ladies at home — it was this fear and only this which ever gave me courage to [renew] assemble address the worthy ladies of your committee (so worthy my superiors) [on every day] to confer upon a [subject] matter after which they seemed perfectly familiar with knowing so little. But even now I scarce know how to reply — It is said upon high authority that our Army is supplied — Well this may be so it is not for me to gainsay — and so far as our New England troops are concerned [this] it may be that in these days of quiet idleness they have really no pressing wants — But in the

@@ -1,0 +1,9 @@
+AIDE
+SOCIALE À
+L'ENFANCE
+
+"Tout le monde peut être en difficulté avec ses enfants"
+
+Tout est dit dans le titre... L'ASE, l'un des piliers de la mission Enfance Famille, déploie toute une panoplie de moyens matériels, éducatifs et psychologiques. Leur but est de soutenir les mineurs et les familles confrontés à des difficultés telles qu'ils ne peuvent les surmonter seuls. L'ASE, comme c'est le cas pour les autres dispositifs, s'appuie sur les Unités Territoriales qui détectent les situations de crise ou susceptibles de générer une crise. « Le Conseil départemental joue en quelque sorte le rôle d'une famille de substitution ». Mme Dominique Marie, chef du Service Enfance Famille, file la métaphore qui recouvre plusieurs réalités concrètes, de terrain... humain. En effet, lorsque les familles défaillent, démissionnent, la société dispose de ressources humaines et financières pour prendre en charge les enfants (protection, éducation)
+
+et soulager les familles (écoute, suivi, aide), l'essentiel étant de ne pas rompre le lien familial, de part et d'autre. Il existe tout d'abord le placement qui consiste à retirer l'enfant de son contexte familial. Le foyer départemental de l'enfance (à Lons) abrite les très jeunes enfants de 0 à 6 ans. Après cet âge, les MECS (Maison d'Enfants à Caractère Social) prennent le relais, les pensionnaires étant souvent en internat, avec retour en famille les week-ends. Les familles d'accueil (devenues assistants familiaux) offrent une alternative plus « affective » à ces modes collectifs. D'ailleurs, note Mme Marie, « nous sommes en recherche constante de familles (agréées aussi accueil spécifique enfants handicapés) et nous souhaitons également faire évoluer notre offre de placement vers des mini-unités, plus familiales. »

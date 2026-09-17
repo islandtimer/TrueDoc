@@ -1,0 +1,7 @@
+Figure 13. Firm value maximization with optimal capital structure. These plots correspond to the case in which the bankruptcy boundary is selected to maximize overall firm value (first best) given the coupon is selected to maximize firm value as well. The panels show the optimal bankruptcy boundary, the firm and equity values, and the credit spread as a percentage of the benchmark Leland (1994) model for various combinations of the debt forgiveness $\theta$ and distress cost $\omega$ . The values of the other parameters are provided in Table I.
+
+spreads as a percentage of the respective values in the Leland (1994) model. However, in contrast to Figure 3, every point that corresponds to a different value of the grace period $d$ , is computed based on a different optimal value of the coupon rate $c$ . For consistency, we select both $V^B$ and $c$ to maximize firm value.
+
+Two of our main conclusions with respect to the suboptimal coupon rate still hold. First, if Chapter 11 is available, a firm stops diluting equity before the equity value reaches zero and files for bankruptcy. Second, firm value increases relative to the Leland model because the Chapter 11 proceedings are less costly than outright liquidation.
+
+However, there is a difference between this case and the case in which the coupon is assumed to be the same for all parameters: While the bankruptcy boundary for the case $\theta = 50\%$ and $\omega = 0\%$ is the highest, it is one of the lower ones in Figure 3. This arises because the typical value of the optimal coupon

@@ -1,0 +1,9 @@
+Table 4 Fumigant and contact toxicity of essential oil of A. stolonifera aerial parts and its main components against L. serricorne adults.
+
+<table><thead><tr><th rowspan="2">Treatment</th><th colspan="3">Fumigant toxicity</th><th colspan="3">Contact toxicity</th></tr><tr><th>LC<sub>50</sub><sup>a</sup><br>(<img> air)</th><th>95% FL<sup>c</sup></th><th>Chi square<br>(<img>)</th><th>LD<sub>50</sub><sup>b</sup><br>(<img>/adult)</th><th>95% FL<sup>c</sup></th><th>Chi square<br>(<img>)</th></tr></thead><tbody><tr><td>Essential oil</td><td>0.99</td><td>1.58- 3.37</td><td>9.38</td><td>12.68</td><td>11.14-14.16</td><td>14.16</td></tr><tr><td>Eucalyptol*</td><td>5.18</td><td>4.63- 5.70</td><td>16.79</td><td>15.58</td><td>12.88-18.02</td><td>15.18</td></tr><tr><td>β-Pinene</td><td>29.03</td><td>26.38-31.79</td><td>17.48</td><td>65.55</td><td>58.13-76.09</td><td>21.62</td></tr><tr><td>Camphor</td><td>2.91</td><td>2.57- 3.26</td><td>13.11</td><td>11.30</td><td>7.78-14.07</td><td>16.13</td></tr><tr><td>Terpinen-4-ol</td><td>1.30</td><td>0.75- 1.70</td><td>12.44</td><td>5.42</td><td>3.99- 6.57</td><td>11.63</td></tr><tr><td>Phosphine**</td><td>9.23 × 10<sup>-3</sup></td><td>7.13 × 10<sup>-3</sup>-11.37 × 10<sup>-3</sup></td><td>11.96</td><td>–</td><td>–</td><td>–</td></tr><tr><td>Pyrethrins**</td><td>–</td><td>–</td><td>–</td><td>0.24</td><td>0.16- 0.35</td><td>17.36</td></tr></tbody></table>
+
+*Data from Zhang et al. 1) ; ** data from Yang et al. 31) ; a 50% of lethal concentration; b 50% of lethal dose; c fiducial limits.
+
+Fig. 2 Percentage repellency (PR) of the essential oil from A. stolonifera aerial parts and its constituents against T. castaneum at 2 h (A) and 4 h (B) after exposure a .
+
+a means in the same column followed by the same letters do not differ significantly ( $p > 0.05$ ) in ANOVA and Tukey's tests. PR was subjected to an arcsine square-root transformation before ANOVA and Tukey's tests.

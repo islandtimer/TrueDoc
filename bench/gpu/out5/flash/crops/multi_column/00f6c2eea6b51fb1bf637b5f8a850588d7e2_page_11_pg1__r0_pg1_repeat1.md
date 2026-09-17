@@ -1,0 +1,1 @@
+[{"bbox": [0, 0, 1897, 525], "category": "figure", "text": ""}]

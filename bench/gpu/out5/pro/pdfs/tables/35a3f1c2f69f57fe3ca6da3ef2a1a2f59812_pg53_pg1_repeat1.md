@@ -1,0 +1,5 @@
+Table 1: Adverse sanctions in year to September, 1999-2013
+
+<table> <thead> <tr> <th>Year to September</th> <th>Adverse sanction decisions, JSA claimants (thousands)</th> <th>Adverse JSA sanctions as proportion of JSA claimant count</th> </tr> </thead> <tbody> <tr> <td>2001</td> <td>280</td> <td>2.6%</td> </tr> <tr> <td>2002</td> <td>270</td> <td>2.7%</td> </tr> <tr> <td>2003</td> <td>260</td> <td>2.6%</td> </tr> <tr> <td>2004</td> <td>230</td> <td>2.5%</td> </tr> <tr> <td>2005</td> <td>240</td> <td>2.6%</td> </tr> <tr> <td>2006</td> <td>240</td> <td>2.4%</td> </tr> <tr> <td>2007</td> <td>320</td> <td>3.3%</td> </tr> <tr> <td>2008</td> <td>340</td> <td>3.9%</td> </tr> <tr> <td>2009</td> <td>400</td> <td>2.7%</td> </tr> <tr> <td>2010</td> <td>610</td> <td>3.7%</td> </tr> <tr> <td>2011</td> <td>710</td> <td>4.5%</td> </tr> <tr> <td>2012</td> <td>750</td> <td>4.4%</td> </tr> <tr> <td>2013</td> <td>870</td> <td>5.5%</td> </tr> </tbody> </table>
+
+Source Social Security Advisory Committee, 2014, p.13

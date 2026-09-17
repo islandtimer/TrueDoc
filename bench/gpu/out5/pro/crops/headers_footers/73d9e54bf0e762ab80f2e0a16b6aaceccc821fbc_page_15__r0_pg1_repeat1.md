@@ -1,0 +1,3 @@
+- Opt-In
+- Opt-in + Implied Consent
+- Opt-Out

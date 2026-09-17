@@ -1,0 +1,3 @@
+F.R. #2)
+
+that I will furnish you these Buttons at factory price plus 1 cent royalty each. I have something new in the Badge Button line. I will have the Eye lithographed on the press provided on the front of the button for same. also if you so desire. I will have a Bull moose put on the plane that slides up and down that causes the Eye to wink when the string is pulled: An order from you for 10,000 Buttons would mean an immediate sale of 1/2 interest in my patent; and that would certainly be highly appreciated. I am sure. Why not give me an order for 10,000 Buttons? We can put on any brief Witticism, Legend, or add. you may desire: While, I realize that the Value of

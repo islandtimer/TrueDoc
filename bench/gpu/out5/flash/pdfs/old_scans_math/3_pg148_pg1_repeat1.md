@@ -1,0 +1,12 @@
+is no longer an "affine" transformation, but a transformation to general curvilinear co-ordinates
+
+We again assume that when $(x, y)$ ranges over a region $R$ of the $xy$ -plane the corresponding point $(\xi, \eta)$ ranges over a region $B$ of the $\xi\eta$ -plane, and also that for each point of $B$ the corresponding $(x, y)$ in $R$ can be uniquely determined, in other words, that the transformation is one-to-one. The inverse transformation we again denote by $x = g(\xi, \eta) , y = h(\xi, \eta)$
+
+By the co-ordinates of a point $P$ in a region $R$ we can mean any number-pair which serves to specify the position of the point $P$ in $R$ uniquely. Rectangular co-ordinates are the simplest case of co-ordinates which extend over the whole plane. Another typical case is the system of polar co-ordinates in the $xy$ -plane, introduced by the equations
+
+$$\xi = r = \sqrt{(x^2 + y^2)},$$
+$$\eta = \theta = \text{arc tan } (y/x) \quad (0 \leq \theta < 2\pi).$$
+
+When we are given a system of functions $\xi = \phi(x, y) , \eta = \psi(x, y)$ as above, we can in general assign to each point $P (x, y)$ the corresponding values $(\xi, \eta)$ as new co-ordinates. For each pair of values $(\xi, \eta)$ belonging to the region $B$ uniquely determines the pair $(x, y)$ , and thus uniquely determines the position of the point $P$ in $R$ , this entitles us to call $\xi, \eta$ the co-ordinates of the point $P$ . The "co-ordinate lines" $\xi = \text{const} and \eta = \text{const}$ are then represented in the $xy$ -plane by two families of curves, which are defined implicitly by the equations $\phi(x, y) = \text{const} and \psi(x, y) = \text{const}$ respectively. These co-ordinate curves cover the region $R$ with a co-ordinate net (usually curved), for which reason the co-ordinates $(\xi, \eta)$ are also called curvilinear co-ordinates in $R$ .
+
+We shall once again point out how closely these two interpretations of our system of equations are interrelated. The curves in the $\xi\eta$ -plane which in the mapping correspond to straight lines parallel to the axes in the $xy$ -plane can be directly regarded as the co-ordinate curves for the curvilinear co-ordinates $x = g(\xi, \eta) , y = h(\xi, \eta)$ in the $\xi\eta$ -plane; conversely, the co-ordinate curves of the curvilinear co-ordinate system $\xi = \phi(x, y) , \eta = \psi(x, y)$ in the $xy$ -plane in the mapping are the images of the straight lines parallel to the axes in the $\xi\eta$ -plane. Even in the interpretation of $(\xi, \eta)$ as curvilinear co-ordinates in the $xy$ -plane

@@ -1,0 +1,11 @@
+was found, and the Capt. chided me for having left any thing behind, at the depot, as I told him I had done, = on reaching Falmouth Station we found another old friend, Capt. Bailey in charge who instituted himself as watch over the goods until he sent them all up to Head Quarters — My Ambulance came through that P.M, but for fear it might not, Genl Sturgis had his taken down for me, and had supper arranged and a splendid serenade; I don't know how we could have had a warmer "welcome home" as the officers termed it.
+
+Head Quarters are in the door yard of a farm house, one room of which is occupied by Miss G, and myself. — My wagons are a little way from me, out of sight, and I am wishing for a tent and stove to pitch and live near them. — the weather is cold, and the ground covered with snow, but I could make me comfortable with a good tent, floor and stove, and should prefer it to a room in a rebel house and one so generally occupied. —
+
+The 21st are a few rods from me, — many of
+
+the officers call to see me every day. Col Clerk is very neighborly, he is looking finely now he was in this P.M, and was going in search of Col Morse whom he thought to be a mile or two distant. I learned to night that the 15th are only some three miles away. the 36th I cannot find yet. I have searched hard for them and shall get on track soon I trust. —
+
+Of Army movements nothing can be said with certainty, no two persons, not even the Genls agree in reference to the future programme the snow appears to have deranged the plans very seriously. I have recd calls from two Genls today and in the course of conversation I discovered that their views were entirely different — Genl Burnside stood a long time in front of my door today but to my astonishment, he did not express his opinion. Strange!
+
+I have not suffered for want of the boots yet, but should find them convenient I presume, and shall be glad to see them. — the sore finger is much the same, not very troublesome, although somewhat, so,

@@ -1,0 +1,3 @@
+Brusades
+
+I must write a composition on the crusades showing the design with which they were undertaken, the goal with which all the Christian princes engaged in them & the good effect it produced in Europe by bringing the military art to perfection, polishing the manners of the people & destroying a great measure the feudal system the last war one of the greatest benefices it conferred upon the civilized world. — the historical part of these crusades may be found in an abridged form in Leyler's History.

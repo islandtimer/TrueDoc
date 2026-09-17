@@ -1,0 +1,29 @@
+Methodology:
+
+Measures:
+
+To test these hypotheses, a structured questionnaire was designed focusing on job satisfaction, internal marketing and brand orientation affecting employees internal brand equity. The first set of items for job satisfaction was derived from the existing measurement scales developed by Hackman and Oldham's (1974). The scale items relating to internal marketing were derived from Caruana and Calleya(1998) and Tsai (2008). The scale items for both brand orientation and internal brand equity were adopted from, Baumgrth and Schmidt (2009). To assess the content and face validity, the questionnaire was submitted to three marketing professionals who assessed each item for representativeness, specificity, and clarity. The final questionnaire was divided into two parts. The first part contained questions regarding respondents' demographics, and the second part focused on measurement scales. All variables in the second part of the questionnaire were closed-ended five-point scales, with 1 indicating "strongly disagree" and 5 indicating "strongly agree".
+
+Sampling and Data collection:
+
+The sample for this study was managers and marketing experts of food and pharmaceutical companies which have central offices in Tehran. The reason for selecting these kinds of companies is the competitive nature of the food and pharmaceutical industry and abundance of companies in comparison with other industries. A convenience sampling technique was used and a total number of 120 manager and marketing experts were selected from 60 companies. Because the focus of analysis in this study is companies (not individuals), responses were collected and combined so that the analysis was performed in accordance with the number of companies (n=60).
+
+The survey instrument was a self-administrated questionnaire including 43 items. 3 items were used to identify demographic characteristics of respondents. From the respondents' profile, 54.2% were men and 45.8% were women. The age of the respondents ranged from 20 to more than 50 years old, with the most common age groups consisting of 20-30-year olds (52.5% of respondents) and 30-40-year olds (40.8% of respondents). Furthermore, 23.3% of respondents were managers, 49.2% were experts and 25.8% had different occupations.
+
+1.2. Analysis and results
+
+Means standard deviation and correlation among research variable is reported in Table 1. The brand orientation has the highest mean (4.39) and job satisfaction with the mean of 3.18 has the lowest. As the results shows, internal marketing has strong positive correlation with both internal brand equity ( $r=.78$ , $p<.01$ ) and brand orientation ( $r=.77$ , $p<.01$ ). Correlation results show that there is positive relation between internal brand equity and brand orientation.
+
+Table 1: Means, Standard deviation and correlations.
+
+<table> <thead> <tr> <th>Variable</th> <th>Mean</th> <th>JS</th> <th>BO</th> <th>IBE</th> <th>MI</th> <th>S.D.</th> </tr> </thead> <tbody> <tr> <td>IM</td> <td>4.11</td> <td>0.31*</td> <td>0.77**</td> <td>0.78**</td> <td>____</td> <td>0.658</td> </tr> <tr> <td>IBE</td> <td>4.20</td> <td>0.302*</td> <td>0.709**</td> <td>____</td> <td>____</td> <td>0.514</td> </tr> <tr> <td>BO</td> <td>4.39</td> <td>0.200</td> <td>____</td> <td>____</td> <td>____</td> <td>0.569</td> </tr> <tr> <td>JS</td> <td>3.18</td> <td>____</td> <td>____</td> <td>____</td> <td>____</td> <td>0.561</td> </tr> </tbody> </table>
+
+Notes: IM= Internal Marketing; IBE= Internal Brand Equity; BO= Brand Orientation; JS= Job Satisfaction; ** $p<0.01$ ; * $p<0.05$
+
+In order to examine the proposed hypotheses, partial-least-squares regression (PLS) was employed. The number of usable questionnaires was the key factor for choosing PLS as the method for testing the model. PLS path models are categorized as inner and outer models. While the inner model specifies the relationship between latent variables, the outer model shows the relationship between a latent variable and its related observed variable. Furthermore, the outer model can be used for testing the hypothesis. As a result, the output of the PLS which is the outer model is provided in figure 1.
+
+The standardized path coefficients ( β ) support that brand orientation is an antecedent of internal brand equity and positively affects internal brand equity ( β=.23 , $t=2.06$ ). The results of the analysis indicate that job satisfaction has no significant relationship with internal brand equity ( β=-.039 , $t=-.579$ ). The argument that internal marketing is an antecedent and positively related to internal brand equity is supported by the findings ( β=.63 , $t=5.27$ ). Also, the argument that job satisfaction is an antecedent and that it is positively related to internal branding is supported in the findings ( β=1.57 , $t=2.44$ ). And finally results revealed that the path between internal marketing and brand orientation was indeed positive with strong relationship ( β=.85 , $t=12.19$ ).
+
+Table 2: Path coefficient of the research model.
+
+<table> <thead> <tr> <th>Hypothesis</th> <th>Path</th> <th>β</th> <th>t-value</th> <th>Result</th> </tr> </thead> <tbody> <tr> <td>H1</td> <td>BRDORT→INTERDVU</td> <td>.236</td> <td>2.069</td> <td>Supported</td> </tr> <tr> <td>H2</td> <td>INTMRK→INTERDVU</td> <td>.635</td> <td>5.276</td> <td>Supported</td> </tr> <tr> <td>H3</td> <td>INTMRK→BRDORT</td> <td>.859</td> <td>12.195</td> <td>Supported</td> </tr> <tr> <td>H4</td> <td>JOBSAT→INTERDVU</td> <td>-0.039</td> <td>-0.579</td> <td>Not supported</td> </tr> <tr> <td>H5</td> <td>JOBSAT→BRDORT</td> <td>.157</td> <td>.2444</td> <td>Supported</td> </tr> </tbody> </table>

@@ -1,0 +1,1 @@
+[{"bbox": [283, 99, 910, 158], "category": "header", "text": "John Bibb Tate Memoir, 1921-1983"}, {"bbox": [1825, 99, 2397, 158], "category": "header", "text": "Manuscript Collection No. 117"}, {"bbox": [1246, 2983, 1295, 3052], "category": "footer", "text": "3"}]

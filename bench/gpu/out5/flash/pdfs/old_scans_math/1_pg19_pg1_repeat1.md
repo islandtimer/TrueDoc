@@ -1,0 +1,5 @@
+$$\text{Let } \frac{x^2}{(x^2+1)(x^2+4)} = \frac{\text{A}}{(x^2+1)} + \frac{\text{B}}{(x^2+4)} x^2 = \text{A}(x^2+4) + \text{B}(x^2+1).$$
+
+Let $x = \sqrt{-1}$ , or $x^2 = -1$ ,
+
+$$\therefore -1 = 3\text{A}, \quad \therefore \text{A} = -\frac{1}{3}, \therefore x^2 + \frac{1}{3}(x^2+4) = \text{B}(x^2+1), \therefore \frac{4(x^2+1)}{3} = \text{B}(x^2+1), \quad \therefore \text{B} = \frac{4}{3} \int \frac{x^2 dx}{(x^2+1)(x^2+4)} = -\frac{1}{3} \int \left\{ \frac{dx}{(x^2+1)} - \int \frac{4 dx}{(x^2+4)} \right\} = \frac{1}{3} \int \left\{ \frac{dx}{(1+x^2)} - \frac{dx}{\left(1 + \frac{x^2}{4}\right)} \right\} = \frac{1}{3} \left\{ 2 \tan^{-1} \frac{x}{2} - \tan^{-1} x \right\}. \text{Or thus, } \int \frac{x^2 dx}{(x^2+1)(x^2+4)} = \frac{1}{3} \int \frac{3x^2 dx}{(x^2+1)(x^2+4)} = \frac{1}{3} \int \frac{\{4x^2 + 4 - (x^2 + 4)\} dx}{(x^2+1)(x^2+4)} = \frac{1}{3} \int \left( \frac{4 dx}{(x^2+4)} - \frac{dx}{x^2+1} \right) = \frac{1}{3} \left( 2 \tan^{-1} \frac{x}{2} - \tan^{-1} x \right) (5.) \quad du = \frac{(3x^2 + x - 2) dx}{(x-1)^3 (x^2+1)}.$$

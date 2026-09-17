@@ -1,0 +1,1 @@
+Abbildung 1: Hauptlaichplätze der Sprotte in der Ostsee

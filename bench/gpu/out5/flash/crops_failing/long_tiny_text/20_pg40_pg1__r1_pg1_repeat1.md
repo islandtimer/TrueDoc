@@ -1,0 +1,1 @@
+Pick up your copy of i from Monday 7 January 2019

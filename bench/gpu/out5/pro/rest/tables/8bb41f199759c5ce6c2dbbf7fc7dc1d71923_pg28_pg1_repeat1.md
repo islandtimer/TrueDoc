@@ -1,0 +1,7 @@
+Service Importance & Satisfaction: Community Programs
+
+<table><tr><td>Question - - Satisfaction on scale of 10</td><td>Response</td><td>Resident Sample</td><td>Business Sample</td></tr><tr><td rowspan="3">Planning for and managing residential, commercial and industrial development</td><td>Rating of 8, 9 or 10</td><td>13%</td><td>11%</td></tr><tr><td>Average rating</td><td>6.4</td><td>5.7</td></tr><tr><td>Don&#x27;t know responses</td><td>11%</td><td>6%</td></tr><tr><td rowspan="3">Environmental protection, support for green projects (e.g. green grants, building retrofits programs, zero waste)</td><td>Rating of 8, 9 or 10</td><td>35%</td><td>34%</td></tr><tr><td>Average rating</td><td>8.0</td><td>7.5</td></tr><tr><td>Don&#x27;t know responses</td><td>8%</td><td>6%</td></tr><tr><td rowspan="3">Providing and maintaining parks and green spaces</td><td>Rating of 8, 9 or 10</td><td>42%</td><td>41%</td></tr><tr><td>Average rating</td><td>7.7</td><td>7.3</td></tr><tr><td>Don&#x27;t know responses</td><td>1%</td><td>1%</td></tr></table>
+
+Base: Resident respondents (n=1,315) and Business respondents (n=397)
+
+How important do you believe the following services/programs are to the larger community? Below is a list of specific services that the City of Vancouver provides its residents/businesses. Please rate the job you think the City of Vancouver is doing in providing each type of service.

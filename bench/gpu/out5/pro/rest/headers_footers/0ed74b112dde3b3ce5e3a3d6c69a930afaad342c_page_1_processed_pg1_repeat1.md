@@ -1,0 +1,5 @@
+Physics Minor (Non-Teaching)
+
+<table> <tr> <td>PHSX 240<br>or PHSX 220</td> <td>Honors Gen & Mod Phys I (Recommended)<br>Physics I (w/ calculus)</td> <td>4</td> </tr> <tr> <td>PHSX 242<br>or PHSX 222</td> <td>Honors Gen & Mod Phys II (Recommended)<br>Physics II (w/ calculus)</td> <td>4</td> </tr> <tr> <td>PHSX 224</td> <td>Physics III</td> <td>4</td> </tr> <tr> <td>PHSX 301</td> <td>Intro Theoretical Physics</td> <td>3</td> </tr> <tr> <td>PHSX 343<br>or PHSX 320</td> <td>Modern Physics<br>Classical Mechanics</td> <td>3</td> </tr> <tr> <td colspan="2">Physics electives (PHSX 261 or PHSX 262 or PHSX or ASTR courses 300 level or above)</td> <td>10</td> </tr> <tr> <td colspan="2">Total Credits</td> <td>28</td> </tr> </table>
+
+Students who complete PHSX 343 require 10 credits of physics elective. Students who complete PHSX 320 require 9 credits of physics elective. The physics electives can include no more than 1 credit of PHSX 494, 3 credits of PHSX 492, 3 credits of PHSX 490R, or 4 credits of the combination of PHSX 494, PHSX 492, and PHSX 490R. PHSX 401, PHSX 402, PHSX 403, and PHSX 405 can not be counted towards physics electives.

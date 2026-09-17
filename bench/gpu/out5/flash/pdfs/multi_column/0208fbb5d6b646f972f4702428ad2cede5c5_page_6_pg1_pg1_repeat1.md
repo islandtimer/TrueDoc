@@ -1,0 +1,17 @@
+Table 2. Main effects of wood residue rates and/or significant interactions between residue rates and N-fertilization/gypsum treatments on aboveground biomass of dominant plant growth forms, 1988-1990. ¹
+
+<table><tr><td rowspan="2">Growth Form</td><td rowspan="2">Year</td><td rowspan="2">Two-Way Interactions With Inorganic Amendments<sup>2</sup></td><td colspan="4">Wood Residue Rate (Mg/ha)</td></tr><tr><td>0</td><td>45</td><td>90</td><td>135</td></tr><tr><td colspan="6">Biomass (g/m<sup>2</sup>)</td></tr><tr><td>PERENNIAL GRASSES</td><td>1988</td><td>None</td><td>1 B</td><td>9 B</td><td>27 A</td><td>44 A</td></tr><tr><td rowspan="3"></td><td>1989</td><td>a) Gypsum-Amended</td><td>4 E</td><td>12 D</td><td>32 B</td><td>47 A</td></tr><tr><td></td><td>No Gypsum</td><td>1 E</td><td>1 E</td><td>12 D</td><td>26 C</td></tr><tr><td rowspan="2"></td><td>b) N-Fertilized<sup>3</sup></td><td>3 C</td><td>5 C</td><td>26 B</td><td>47 A</td></tr><tr><td>Non N-Fertilized</td><td>1 C</td><td>4 C</td><td>12 BC</td><td>19 B</td></tr><tr><td>1990</td><td>N-Fertilized<sup>3</sup></td><td>1 C</td><td>8 C</td><td>40 B</td><td>76 A</td></tr><tr><td></td><td>Non N-Fertilized</td><td>&lt;1 C</td><td>11 BC</td><td>27 BC</td><td>27 BC</td></tr><tr><td>ANNUAL FORBS</td><td>1988</td><td>None</td><td>7 A</td><td>6 A</td><td>5 A</td><td>2 B</td></tr><tr><td rowspan="2"></td><td>1989</td><td>N-Fertilized<sup>3</sup></td><td>18 B</td><td>12 C</td><td>8 CD</td><td>7 D</td></tr><tr><td>Non N-Fertilized</td><td>28 A</td><td>12 C</td><td>2 D</td><td>1 D</td></tr><tr><td>1990</td><td>None</td><td>59 A</td><td>15 B</td><td>8 BC</td><td>2 C</td></tr><tr><td>SHRUBS</td><td>1988</td><td>None</td><td>11 A</td><td>101 A</td><td>38 A</td><td>43 A</td></tr><tr><td rowspan="2"></td><td>1989</td><td>N-Fertilized<sup>3</sup></td><td>7 B</td><td>35 B</td><td>16 B</td><td>19 B</td></tr><tr><td>Non N-Fertilized</td><td>2 B</td><td>4 B</td><td>23 B</td><td>83 A</td></tr><tr><td>1990</td><td>None</td><td>13 A</td><td>43 A</td><td>35 A</td><td>54 A</td></tr></table>
+
+¹ Within growth forms, years and (if present) interactions, values followed by same letter are not significantly different at P ≤ 0.10.
+
+² Between wood residue rate and either or both N fertilization regime or gypsum regime; no significant three-way interactions among residue, fertilization and gypsum treatments occurred.
+
+³ Values are means among 3 rates of initial N fertilization applied in 1981.
+
+## Gypsum Amendment Effects
+
+Gypsum was surface-applied as an amendment treatment in April of 1987. Therefore, data collected in 1988, 1989, and 1990 reflect responses 1, 2, and 3 years after treatment application, respectively. Soils data of Meining (1991) demonstrated reductions in sodicity (exchangeable Na, ESP and SAR) and evidence of increased Na leaching in the upper 30 cm of gypsum-amended spoils during the 1988-1990 period.
+
+Aboveground biomass of seeded perennial
+
+grasses and non-seeded annual forbs responded positively to gypsum amendment within the first 14 months after application in 1988 (see Table 3), although gypsum responses were confounded somewhat by a two-way interaction with N-fertilization. More clearly positive effects of gypsum on herbaceous species productivity emerged in 1989 and 1990. This may have been due to the passage of additional time for fuller expression of gypsum's ameliorative effects on spoil sodicity. Gypsum has been noted to require more time for effectiveness than certain other inorganic amendments due to its relatively lower

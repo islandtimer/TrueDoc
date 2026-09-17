@@ -1,0 +1,5 @@
+<table> <tr> <td><i>accuracy</i></td> <td>95%</td> </tr> <tr> <td><i>sensitivity/recall</i></td> <td>93.75%</td> </tr> <tr> <td><i>specificity</i></td> <td>96.25%</td> </tr> <tr> <td><i>precision</i></td> <td>96.15%</td> </tr> <tr> <td>F₁</td> <td>0.9494</td> </tr> <tr> <td><i>MCC</i></td> <td>0.9003</td> </tr> </table>
+
+<table> <tr> <td><i>accuracy</i></td> <td>90.00%</td> </tr> <tr> <td><i>sensitivity/recall</i></td> <td>93.75%</td> </tr> <tr> <td><i>specificity</i></td> <td>86.25%</td> </tr> <tr> <td><i>precision</i></td> <td>87.21%</td> </tr> <tr> <td>F₁</td> <td>0.9036</td> </tr> <tr> <td><i>MCC</i></td> <td>0.8023</td> </tr> </table>
+
+<table> <tr> <td><i>accuracy</i></td> <td>91.88%</td> </tr> <tr> <td><i>sensitivity/recall</i></td> <td>87.50%</td> </tr> <tr> <td><i>specificity</i></td> <td>96.25%</td> </tr> <tr> <td><i>precision</i></td> <td>95.89%</td> </tr> <tr> <td>F₁</td> <td>0.9150</td> </tr> <tr> <td><i>MCC</i></td> <td>0.8407</td> </tr> </table>
