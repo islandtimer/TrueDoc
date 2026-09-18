@@ -565,6 +565,10 @@ belongs to the question of a second tier (D025).
 
 If Flash fails either - cannot read the picture regions, or shows noticeably more unsupported text - olmOCR 2 stays.
 
+_The second check passed the same day (`bench/probes/corroborate_readers.py`): on the 281 pages Flash is never
+backed less by the page's own words than olmOCR 2, and produces fewer words no other reader has, 1.5% against
+3.3%. The picture-text check is the one still owed._
+
 **What it sets in motion.** Nothing ships differently today, because no reader has shipped to anyone. To be built:
 a provider that speaks to a served Infinity-Parser2 model directly (its own prompt, its layout JSON turned into
 markdown; the authors' client is Apache-2.0), since today the readings are replayed from disk.

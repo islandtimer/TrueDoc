@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-18 (**Three decisions of yours, made this morning, settle what yesterday measured: Flash is
+_Last updated: 2026-09-18, 15:10 (**The quoted number is 86.6 (run 96), and the afternoon's work is committed; paused on your word with run 97 scoring itself.** Since this morning's decisions: Flash passed the invented-text check (never backed less by the page's own words than olmOCR 2 on any of 281 pages); the seven old-scan-maths checks our own handling lost were traced to a variable between dollars being escaped as money, fixed, measured on every category a model reads and carried into run 96 - 86.6 (CI 85.6-87.4), held-out 86.0, exactly +7 and nothing else moved; two more maths rules taken from what the leader's post-processing does (an aligned column of equations written one formula a row, a formula split at an operator joined) measured +9 on old-scan maths and were committed, the two rules that would put English words inside formulas declined, and run 97 carries them - `bench/out/launch/launch97_status.txt` says when it has scored; Pro alone over all 1,403 pages scores 87.1 on our scorer with its authors' post-processing and 86.1 raw, against our 86.6. `docs/PROGRESS_LOG.md` has each measurement. **Three decisions of yours, made this morning, settle what yesterday measured: Flash is
 the standard reader of scanned pages (D033), Pro is the deep reader behind it and a live service lets its user
 choose (D034), and the number we quote is run 95's 86.4 on open weights, held-out 86.0 (D035) - second on the
 leaderboard as read on 17 September, behind 87.6.** What follows is yesterday evening's account, which those
@@ -114,6 +114,8 @@ day and still holds, except that "third" now has a second place within reach.** 
 | Runs 81 to 91, 12 and 13 Sept (the licence swap finished, D024, the hosted deep reader) | in `docs/BENCHMARKS.md`; run 89 **84.1** on open weights, run 91 **85.4** with the hosted reader |
 | TrueDoc run 92 (today's code, olmOCR 2's saved readings - the first full run since 13 Sept), 17 Sept 18:18 | 84.2 (CI 83.4-85.2; held-out 81.5; against run 89 nothing moved but tables, 896 to 905: the week of rules from the owner's library cost the benchmark nothing) |
 | TrueDoc run 94 (the same code, Infinity-Parser2-Flash, 2.2B, as the only reader of those 281 pages), 17 Sept 20:59 | 85.6 (CI 84.8-86.5; held-out 84.8; level with Chandra OCR 2's 85.8 on a model a quarter of olmOCR 2's size) |
+| **TrueDoc run 96 (run 95's arrangement, a variable or an expression between dollars read as maths - the number we quote, D035), 18 Sept 14:49** | **86.6** (CI 85.6-87.4; held-out 86.0; old-scan maths +7 against run 95, nothing else moved) |
+| TrueDoc run 97 (run 96 plus an aligned column of equations written a row at a time and a formula split at an operator joined; +9 on old-scan maths over the model-read pages), launched 18 Sept 15:05 | scores itself; `bench/out/launch/launch97_status.txt` |
 | **TrueDoc run 95 (two tiers: Flash reads every scanned page, Pro the 102 the converter's own router flags), 17 Sept 20:59** | **86.4** (CI 85.4-87.3; **held-out 86.0, the best yet**; one check short of Pro reading all 281) |
 | **TrueDoc run 93 (the same code, Infinity-Parser2-Pro's readings on the 281 pages without a digital text layer; GPU session 5), 17 Sept 18:18** | **86.4** (CI 85.5-87.3; **held-out 84.8**; old scans 47.0 to 58.6, tiny text 88.7 to 92.5, tables 88.6 to 89.6; 91 checks net; not the default - the reader is the owner's decision) |
 
@@ -129,7 +131,7 @@ reading them (run 93); the hosted deep reader's 85.4 (run 91) is now below an op
 first place is 87.6, scored with post-processing a product cannot use; second is 85.8. On your insurance set,
 **229 of 229**; on your Key Facts Sheets, **99% and 100%**, where the leaderboard's top model, untuned, scores the
 same. The suite stands at 682. **18 September: you decided the reader (D033 to D035) - Flash as standard, Pro
-behind it, run 95's 86.4 the number we quote.**
+behind it - and the number we quote is that arrangement's: 86.6 at run 96, with the day's maths fix.**
 
 **15 September.** On the public exam TrueDoc scores **84.1 on open weights** (run 89) and **85.4 with the hosted deep
 reader** (run 91), against what was then a best published 83.1. **Corrected 17 September: that figure was stale. The best published is now 87.6 and TrueDoc is third, so M7 is not met** - see the leaderboard in `docs/BENCHMARKS.md`. On your insurance library it scores **229 of 229 checks**,
@@ -164,7 +166,9 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 - (Decided 18 Sept, D033: **Flash is the standard reader of scanned pages**, in place of olmOCR 2 - 85.6 against
   84.2 on the same code, a quarter of the size, the same licence. Subject to two checks, both mine to do: Flash
   asked our picture-text question, which needs a small rental of about 50 cents and your word to rent; and the
-  invented-text check run over its saved readings, which costs nothing. If it fails either, olmOCR 2 stays.)
+  invented-text check run over its saved readings, which costs nothing. **The second passed the same day**: on 281
+  pages Flash is never backed less by the page's own words than olmOCR 2, and produces fewer words no other reader
+  has (1.5% against 3.3%). The picture-text check is the one still owed; if it fails, olmOCR 2 stays.)
 - (Decided 18 Sept, D034: **two tiers are kept, Pro is the deep reader we quote, and a live service lets the user
   choose** - told what each deep reader costs, how long it takes and where the page goes. On the 102 hard pages
   Pro and Claude are level, 348 and 344 of 568 checks; they differ in cost, waiting and privacy. No 140 GB card is
@@ -175,7 +179,8 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 - (Decided 18 Sept, D035: **the number we quote is run 95's 86.4** (CI 85.4-87.3, held-out 86.0), open weights,
   with run 94's 85.6 for Flash alone and run 91's hosted 85.4 as history beside it. Second on the leaderboard as
   read on 17 September.)
-- **When you want it: about 50 cents of rental** on a 24 GB card, for D033's first check.
+- **When you want it: about 50 cents of rental** on a 24 GB card, for D033's picture-text check. The script also
+  measures how small a memory budget Flash will serve in, which answers the hardware question for users.
 - **Parked, on your word (17 Sept): timing Flash on a laptop.** What is kept of it is a line of guidance for users:
   Flash on small documents might be possible without a graphics card, and nothing larger is.
 - (Done 3 Sept, evening: you agreed the "inferred" marker proposal as written, one tag for every model source, and confirmed the GPU instance is stopped.)
@@ -189,6 +194,16 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 - (Done 7 Sept, evening, recorded as D020 on 8 Sept: partial pages stay closed and small task models stay out. Keeping the shaky reads of pages the OCR gate rejects was worth at most +1.4 against the model's +4.8 on the same pages, and the pages a reader would want are ones the model reads anyway; a formula-image reader and a second OCR engine have no territory left now that every page without a digital text layer goes to a model. One product question remains, in `docs/DECISIONS.md`: whether the free tier, which has no model, should emit a partial-page note instead of an empty file for the handful of pages our own OCR read confidently but the word-likeness gate rejected.)
 
 ## What is being worked on right now
+
+**18 September, 15:10 - paused on your word.** Run 97 is converting on its own and scores itself (about 75
+minutes; `bench/out/launch/launch97_status.txt`); when it is in, `docs/BENCHMARKS.md`'s table and this page want
+its row, and the quoted number moves if old-scan maths moves as the measurement says (+9). **Open, in the order I
+would take them:** the picture-text check (needs the small rental); the fifteen Key Facts Sheet cells where Pro and
+TrueDoc disagree, each to be read against its page image and the candidate rules measured; Pro's 100 random library
+pages and 25 insurance-set pages compared with ours the same way; the tables gap on digital pages (their model
+reads 164 digital table pages at 930 checks to our 913 - the one place Pro alone beats the whole converter); a
+provider that talks to a served Infinity-Parser2 model; and the downstream trial you want to discuss. The other
+agent's review in `docs/review/` is untouched.
 
 **17 September, evening: a rented GPU answered the morning's question, and the answers are on disk.** The leaderboard
 said the gap was on the pages a model reads, so two stronger open models read those pages - and Pro read the whole

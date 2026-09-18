@@ -100,6 +100,12 @@ worse for a reader and matches nothing but the reference's habit.
 Seven tests added, **suite 692**. Committed after run 96 was launched, so run 96 carries the first fix alone;
 these two go into run 97.
 
+**Run 96, scored 14:49: 86.6 (CI 85.6-87.4).** Against run 95, old-scan maths 381 to 388 - the seven, and nothing
+else moved in any category. Held-out 86.0 (unchanged; both algebra pages are tuned-on), tuned-on 84.5. Under D035
+this is the number we quote. Run 97, the tree at 9f9b77b with the two rules above, was launched at 15:05 and scores
+itself; the owner asked for a pause once run 96 and the re-measurement were in and the docs current, which is where
+this entry ends.
+
 ---
 
 ## 2026-09-17, afternoon and evening - GPU session 5: a stronger open reader, measured on our own pages
