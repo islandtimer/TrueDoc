@@ -1617,6 +1617,56 @@ def _label_carries_on(above: list[str], cells: list[str], filled: list[int]) -> 
     return len(filled) < sum(1 for c in above if c)
 
 
+_SAME_LEFT_EDGE = 1.5       # points: a wrapped line starts where the lines above it start
+_SAME_LEADING = 0.1         # and one leading below, to a tenth of it
+
+
+def _next_line_of_the_cell_above(row: _Row, prev_row: _Row, column: int,
+                                 columns: list[tuple[float, float]] | None, size: float) -> bool:
+    """Is this one-cell row the next line of the paragraph in the cell above it?
+
+    The merger folds a wrapped line on what it says - it starts in lower case, the cell above ends
+    on a connector or a comma - and the lines it cannot know were left as rows of their own:
+    `| | | 51-52 |` under "...if you rent out your home. PDS pg.", "'Portable Contents'." under
+    "...anywhere in the world under" (Key Facts Sheets read against their pages, 18 September 2026).
+    Where a line *stands* says what words cannot: the next line of a paragraph starts at the
+    paragraph's left edge, one leading below the line before.
+
+    Both halves are needed, and the second was nearly used alone. Measured first
+    (`bench/probes/orphan_row_census.py`): on the owner's Key Facts Sheets 40 label-less one-cell
+    rows sit exactly one leading below the cell above, and 37 of them are the band laid across the
+    table ("Cover for valuables, collections and items away...") - those tables have no padding
+    between rows, so pitch proves nothing by itself. A band is centred; a wrapped line is flush.
+    Flush *and* one leading below: exactly the three orphans on 380 sheet pages, none on the
+    insurance set, and on the benchmark's 1,122 digital pages 17, the last lines of references.
+
+    Only under a cell of two lines or more, which has a leading of its own to compare with. A line
+    under a one-line cell ("Accidental Damage." under "...can be purchased to cover") needs a
+    different test and is not decided here."""
+    if not columns:
+        return False
+    mine = [s for s in row.segments if s.text.strip()]
+    if len(mine) != 1:
+        return False
+    line = mine[0]
+    above = sorted((s for s in prev_row.segments if s.text.strip() and _column_of(s.bbox, columns) == column),
+                   key=lambda s: (s.bbox.y0, s.bbox.x0))
+    tops: list[float] = []
+    lefts: list[float] = []
+    for s in above:                                    # one top and one left edge to each printed line
+        if not tops or s.bbox.y0 - tops[-1] > 0.5 * size:
+            tops.append(s.bbox.y0)
+            lefts.append(s.bbox.x0)
+    if len(tops) < 2:
+        return False
+    steps = sorted(b - a for a, b in zip(tops, tops[1:]))
+    leading = steps[len(steps) // 2]
+    if leading <= 0:
+        return False
+    return (abs(line.bbox.x0 - lefts[-1]) <= _SAME_LEFT_EDGE
+            and abs((line.bbox.y0 - tops[-1]) - leading) <= _SAME_LEADING * leading)
+
+
 def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
                         columns: list[tuple[float, float]] | None = None,
                         joined: dict[str, tuple[str, str]] | None = None) -> tuple[list[list[str]], list[_Row]]:
@@ -1750,6 +1800,12 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
         )
         # The second line of a label that wrapped continues its row whatever the other columns say.
         if tight and not is_continuation and _label_carries_on(prev, cells, filled):
+            is_continuation = True
+        # The last line of a wrapped cell, by where it stands and not by what it says: words cannot
+        # tell "Accidental Damage." from a label, or "51-52" from a value (`_next_line_of_the_cell_above`).
+        if (not is_continuation and not cells[0] and len(filled) == 1 and prev[filled[0]]
+                and not _BULLET_START.match(cells[filled[0]]) and not _is_band(here, grid, rows, columns, bands, size)
+                and _next_line_of_the_cell_above(row, prev_row, filled[0], columns, size)):
             is_continuation = True
         if is_continuation:
             for i in filled:

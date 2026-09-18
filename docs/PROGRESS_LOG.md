@@ -4,6 +4,34 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 07:25-07:55 - The last line of a wrapped cell, part A: built and measured
+
+`tables/aligned._next_line_of_the_cell_above`, called by `_merge_wrapped_rows` for a row with no label and one
+filled cell that nothing else folded: it continues the cell above when it starts within 1.5 points of the left edge
+of that cell's last line and sits within a tenth of the cell's own leading below it. Only under a cell of two lines
+or more; never a band (`_is_band`), never a line opening with a tick or cross. The design and the census behind it
+are the entry below.
+
+**Measured.** Benchmark, code against code on all 87 pages that hold such a row (the before state from a worktree
+at 80d640d, each pool printing its `truedoc`; run 97's readings replayed): **no check moves in any section**, and
+three bodies change, each for the better - a contents list's wrapped titles become one line each ("End of an era
+for the Executive National / Security Programme"), "...the Canadian Premature Babies / Foundation." is one cell,
+and "+ aspirine, puis relais a 3 mois par / AVK" is one cell. That last was read against its page: AVK is the fifth
+line of Cas 1's treatment. (The row-spanning label "Cas 2 Homme" sits one line early on that table, before and
+after alike - an older fault of that table's, unchanged, noted.) Insurance set: no file differs, 229 of 229. Key
+Facts Sheets, all 190 fresh: **exactly two change** - ANZ's "'Portable Contents'." and the 2017 building sheet's
+"51-52" and "PDS pg.31." go back into their cells - no held-out sheet moves, grade unchanged (157 of 158; held out
+32 of 32, 375 of 375). Seven tests (`tests/test_table_last_line_of_a_cell.py`), two of them the census's warnings: a
+centred band one leading below stays a row, and a line under a one-line cell is not decided here. Suite 750.
+
+A check script of mine nearly misled me on the way: it flattened an HTML table's tags into spaces, so a row boundary
+read like a join and "Accidental Damage." looked folded when the function had said no. Read the raw lines.
+
+**Part B is next and not built:** "Accidental Damage." under a one-line cell. Its census is written
+(`bench/probes/orphan_row_fit_census.py`: would the first word have fitted on the line above?) and not yet run.
+
+---
+
 ## 2026-09-18 22:30 to 23:25, written up 19 September 07:25 - A cell's last line made a row of its own: sized, a rule designed, NOTHING BUILT YET
 
 Work in progress, recorded so it survives a break. The fault (four rows on three tuned-on Key Facts Sheets, two
