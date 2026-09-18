@@ -13,7 +13,7 @@ space and the word's width pass the column's right edge, which is where the wide
 column of the table ends. This census measures that slack for every such row, so the rule can be
 judged on its population before it is written.
 
-usage (repo root): orphan_row_fit_census.py <out.jsonl> kfs|insurance|bench [workers]
+usage (repo root): orphan_row_fit_census.py <out.jsonl> kfs|insurance|bench [workers [pages.txt]]
 """
 import concurrent.futures
 import json
@@ -45,6 +45,10 @@ def _install():
                     right[c] = max(right.get(c, 0.0), s.bbox.x1)
         steps = sorted(b.y0 - a.y0 for a, b in zip(rows, rows[1:]) if b.y0 - a.y0 > 0.5 * size)
         leading = steps[len(steps) // 4] if steps else None   # the lower quartile: lines inside cells, not rows apart
+        # the table's own wrap pitch: the step down to each line the merger FOLDED (a raw row that is no row of `out`)
+        kept = {round(r.y0, 1) for r in out_rows}          # a merged row keeps the top of its first line
+        folded = sorted(b.y0 - a.y0 for a, b in zip(rows, rows[1:]) if round(b.y0, 1) not in kept and b.y0 - a.y0 > 0.5 * size)
+        pitch = folded[len(folded) // 2] if folded else None
         for k in range(1, len(out)):
             cells = out[k]
             filled = [i for i, c in enumerate(cells) if c]
@@ -67,6 +71,12 @@ def _install():
                 "step": round((line.bbox.y0 - last.bbox.y0) / leading, 2) if leading else None,
                 "band": bool(aligned._is_band(k, out, out_rows, columns, aligned._band_segments(out_rows, size), size)),
                 "bullet": bool(aligned._BULLET_START.match(cells[i])),
+                # a line's step in its own type sizes, the words on the line above, and whether the line is a number
+                "dy": round((line.bbox.y0 - last.bbox.y0) / max(line.bbox.height, 1.0), 2), "size": round(size, 1),
+                "height": round(line.bbox.height, 1), "words_above": len(last.words),
+                "numeric": bool(aligned._NUMERIC.match(cells[i].strip())),
+                "pitch": round(pitch, 2) if pitch else None, "folded": len(folded),
+                "of_pitch": round((line.bbox.y0 - last.bbox.y0) / pitch, 3) if pitch else None,
             })
         return out, out_rows
 
@@ -89,6 +99,9 @@ if __name__ == "__main__":
     from orphan_row_census import jobs
     out, which = sys.argv[1], sys.argv[2]
     todo = list(jobs(which))
+    if len(sys.argv) > 4:                                  # only the pages listed in a file, one label a line
+        keep = {l.strip() for l in open(sys.argv[4], encoding="utf-8") if l.strip()}
+        todo = [j for j in todo if j[0] in keep]
     print(len(todo), "pages", flush=True)
     with open(out, "w", encoding="utf-8") as f, concurrent.futures.ProcessPoolExecutor(max_workers=int(sys.argv[3]) if len(sys.argv) > 3 else 6) as pool:
         for rows in pool.map(census, todo, chunksize=2):
@@ -104,7 +117,10 @@ if __name__ == "__main__":
     for title, group in (("WOULD NOT HAVE FITTED", wrap), ("would have fitted", fits)):
         print("  --", title)
         seen = set()
+        print("     (held-out sheets among them, counted and never listed: %d)" % sum(1 for r in group if r.get("held_out")))
         for r in sorted(group, key=lambda r: r["slack"]):
+            if r.get("held_out"):
+                continue
             key = (r["text"], r["above"])
             if key in seen:
                 continue

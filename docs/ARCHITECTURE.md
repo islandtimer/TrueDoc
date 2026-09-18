@@ -33,7 +33,11 @@ PDF page
   |                               row after it starts an entry of its own (counted as its lines when the table is judged)
   |                               - a line with no label, flush with the lines of the cell above and one leading
   |                                 below the last of them, is that cell's next line whatever it says
-  |                                 (_next_line_of_the_cell_above; a band is centred, and stays a row)
+  |                                 (_next_line_of_the_cell_above; a band is centred, and stays a row); under a
+  |                                 cell of ONE line the leading is the table's own wrap pitch, learnt on a first
+  |                                 reading (_merge_rows_once), and the line's first word must not have fitted
+  |                                 above. Either fold is recorded as the lines the page sets, so the judgement
+  |                                 "is this a table" never moves with it
   |                               - a heading line carried on under an empty cell joins the heading (_heading_wraps_on)
   v
   |  3. segment/blocks.py         lines -> paragraph blocks (gap, overlap, size, typeface rules)

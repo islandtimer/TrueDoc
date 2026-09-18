@@ -4,6 +4,76 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 07:57-09:55 - The last line of a wrapped cell, part B: a line under a cell of one line
+
+"Accidental Damage." under "...can be purchased to cover" (AAMI's contents sheet) is a cell's last line under a
+cell that has only one line, so part A's test - one of the cell's own leadings below - has nothing to compare with.
+
+**Sized first** (`bench/probes/orphan_row_fit_census.py`, all three populations: 380 sheet pages, the insurance
+set's 25, the benchmark's 1,122 digital pages). Rows with no label and one filled cell under a one-line cell: 9, 2
+and 121; flush with the line above, not a band, not opened by a tick: 3, 1 and 64. The typesetter's definition of a
+wrap - *the first word would not have fitted on the line above*: its end, a word space and the word pass the end of
+the column's widest line - separated what it was meant to: "Note: eligibility criteria may apply" under "...Go to
+page 42." fits with 23 points to spare (a break someone meant), and so do "Over 50 (37; 5.6%)", "Buttermilk
+(low-fat)", "Course Attributes:". It was **not enough by itself**, and the census said why: a column of values is
+as wide as its values, so none "fits" ("0.499" / "1.291", axis labels "10 -15" / "10 -20", "LE" / "RB"), and "Retire
+or resign with" under "Ysterplaat Museum" - the next entry of a magazine's contents list - misses fitting by a tenth
+of a point. What separates those is the step down: a wrapped line sits one pitch below, and the pitch is the table's
+own, shown by the lines its cells are already known to wrap on. Among the lines that would not have fitted, the
+wraps stand at 0.82 to 1.01 of that pitch and everything else at 1.17 or more. (In units of the line's own height the same rows ran from 0.75 to 1.5 for true
+wraps - useless; and AAMI's cell is set at 10 points in a table of 11.5, hand-squeezed, so the bound is one-sided.)
+
+**The rule** (`tables/aligned._next_line_of_the_cell_above`, its one-line branch): flush with the line above to 1.5
+points, no more than 1.1 of the table's wrap pitch below it, its first word would not have fitted, and not a number
+under a number. The merger reads a table twice when such a line is waiting: the first reading shows the pitch (the
+median step down to the lines it folded), the second asks the line (`_merge_wrapped_rows` -> `_merge_rows_once`). A
+table that wraps nowhere has shown no pitch and the line stays a row.
+
+**What the first measurement caught.** A/B over the 54 benchmark pages holding such a row: +1 check, and one page
+wrecked - a magazine's contents list ("SA Soldier") went from a table to loose numbers and loose titles. The folds
+were right ("Mandela / Commemoration / Medal Parade" is one entry, read against the page); what rejected the table
+was `_build_table`'s prose test, which counts the share of characters in cells of more than six words, and whole
+titles are long cells. The code already had the principle for this - a joined entry "is counted as the two lines the
+page sets: the join says what the table holds, not whether the text is a table" - and a fold by position now follows
+it: each is recorded in `joined` as its parts, a second fold adds a part, and a line folded later on what it says
+goes into the last part, which is exactly what the judge saw when the line stood as a row. By construction these
+folds can no longer change whether a table is a table. Part A had the same exposure and is covered by the same record.
+
+**Measured, final code against f7aeed7** (worktree, each pool printing its `truedoc`). Benchmark, the 87 pages
+either census found a candidate on: **tables 97 -> 98** (`c6673ff6..._pg3`: "...Prevention and Control of
+Non-communicable / Diseases (2011)" is one cell), every other section identical, six bodies change. Five read
+better, each checked on its page or plainly a wrap: the contents list (four titles whole: "Mandela Commemoration
+Medal Parade", "South Africa assists Mozambique Government during the floods", "National Civic Remembrance Sunday
+and Wreath-laying Ceremony", "A visit to Air Force Base Ysterplaat Museum"), two course lists ("Special Topics in
+Gender and Sexuality / Studies", "...Middle and High School Physical / Education"), the bicycle-report table
+("High visibility clothing (1994)", "Reflective clothing Lighting" - a two-line cell of Massachusetts' row), and the
+UN resolutions list. **One reads worse, and the fault is older than this rule:** a French case table
+(`multi_column/019a8841..._page_2`) whose heading cell "Presentation / Clinique" is now whole, which leaves
+`_header_row_count` with two heading rows where it had three - and the second is Cas 1's first line ("Sexe Cas 1
+Femme | Age 61 | ..."). It counted that body row as heading before as well (it ends a heading at the first cell of
+more than six words, and that cell is on the second, label-less line of Cas 1's entry); then it was a `<th>` row of
+its own, now it is folded into the labels. No check sees either. **Next item**, sized before it is built:
+`bench/probes/header_long_cell_census.py` (written, not run). Insurance set, code against code: **no file differs**,
+229 of 229. (The cached copy of one page differed - it predates "one picture, one figure"; old code and new write the
+same page. A cache is not a before state.) Key Facts Sheets, all 190 fresh: **two change**, the one tuned-on sheet
+the census named and one held out (counted, not named); grade unchanged, 157 of 158 and 32 of 32, 1,885 of 1,885 and
+375 of 375. Thirteen tests in `tests/test_table_last_line_of_a_cell.py` (the first part-B test fails at f7aeed7).
+Suite 756.
+
+Written while the pools ran, not yet run: `bench/probes/split_row_census.py`, for AAMI's row cut at its second
+answer (`| | No | scorching, melting, ... |` under "Yes | Fire - no cover ... from arcing,": the raw rows were read,
+and the table's next real row also starts one leading below, so position cannot decide it; the candidate is "a cell
+of a new row never opens in the middle of a sentence").
+
+Both census probes now count held-out sheets and never list them (the first run of the part-B census printed a
+held-out sheet's file name beside its numbers - no text, but a name is a listing; fixed the same hour).
+
+Also answered for the owner: would `pipeline_tag` / `library_name` on the card get TrueDoc listed? Read from the
+hub's API at 09:27: two of the 18 listed models carry neither, and `luganoquant/Inkling` carries both, has valid
+results, is three days old and is not listed. Not required and not sufficient; the table still shows 18 rows.
+
+---
+
 ## 2026-09-19, 07:25-07:55 - The last line of a wrapped cell, part A: built and measured
 
 `tables/aligned._next_line_of_the_cell_above`, called by `_merge_wrapped_rows` for a row with no label and one

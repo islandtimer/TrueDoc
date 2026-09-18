@@ -141,6 +141,7 @@ if __name__ == "__main__":
     seen = set()
     print("  -- flush left, one leading below (distinct texts):")
     for r in sorted(flush, key=lambda r: r["page"]):
+        if r.get("held_out"): continue               # counted above, never listed
         key = (r["text"], r["above_ends"])
         if key in seen: continue
         seen.add(key)
@@ -148,6 +149,7 @@ if __name__ == "__main__":
     seen = set()
     print("  -- one leading below but NOT flush left (distinct texts, first 12):")
     for r in sorted([r for r in near if r not in flush], key=lambda r: r["page"]):
+        if r.get("held_out"): continue
         key = r["text"]
         if key in seen: continue
         seen.add(key)
@@ -155,5 +157,5 @@ if __name__ == "__main__":
         print("     dx %5s ratio %.2f %-46s | %s" % (r["dx"], r["ratio"], r["page"][-46:], r["text"][:50]))
     single = [r for r in rows if r["lines_above"] < 2]
     print("  -- under a one-line cell (no leading of its own to compare): %d; flush left %d" % (len(single), sum(1 for r in single if r["dx"] is not None and abs(r["dx"]) <= 1.5)))
-    for r in single[:10]:
+    for r in [r for r in single if not r.get("held_out")][:10]:
         print("     dx %5s %-46s | ...%-28s | %s" % (r["dx"], r["page"][-46:], r["above_ends"][-28:], r["text"][:44]))

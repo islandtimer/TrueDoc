@@ -799,7 +799,7 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         grid_rows.append(cells)
 
     bands = _band_segments(cand.rows, size)
-    joined: dict[str, tuple[str, str]] = {}
+    joined: dict[str, tuple[str, ...]] = {}
     grid_rows, grid_geom = _merge_wrapped_rows(grid_rows, cand.rows, size, columns, joined)
     grid_rows, grid_geom = _fold_wrapped_heading(grid_rows, grid_geom)
     kept_columns = [c for c in range(n_cols) if any(row[c] for row in grid_rows)]
@@ -832,7 +832,9 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
     # entries took a conference flyer's accommodation list (0722235b) from 26 short cells of 29 to 22 of 27, under the
     # two-column bar, and the whole price list came out as run-on text.
     non_empty = [part for row in grid_rows for c in row if c for part in joined.get(c, (c,))]
-    folded_rows = sum(1 for row in grid_rows if row[0] in joined)
+    # (So is the last line of a cell folded in by where it stands, `_next_line_of_the_cell_above`: a row before
+    # the fold, in its own column.)
+    folded_rows = sum(len(joined[c]) - 1 for row in grid_rows for c in row if c in joined)
     if not non_empty:
         return None
     short = sum(1 for c in non_empty if len(c.split()) <= 4)
@@ -861,7 +863,7 @@ def _build_table(cand: _Candidate, size: float, strict: bool = True, trusted: bo
         # pieces of anything: they are why such a list has more columns than
         # segments, and they must not make it prose.
         dense_cols = sum(1 for c in range(n_cols)
-                         if sum(1 for row in grid_rows if row[c]) + (folded_rows if c == 0 else 0)
+                         if sum(1 for row in grid_rows if row[c]) + sum(len(joined[row[c]]) - 1 for row in grid_rows if row[c] in joined)
                          >= 0.5 * (len(grid_rows) + folded_rows))
         sliced = dense_cols > 1.5 * median_segments
         # Cells that carry a digit ("TP 120 µg l-1", a value with its unit) are not prose either,
@@ -1622,7 +1624,8 @@ _SAME_LEADING = 0.1         # and one leading below, to a tenth of it
 
 
 def _next_line_of_the_cell_above(row: _Row, prev_row: _Row, column: int,
-                                 columns: list[tuple[float, float]] | None, size: float) -> bool:
+                                 columns: list[tuple[float, float]] | None, size: float,
+                                 wrap_pitch: float | None = None, right_edge: float | None = None) -> bool:
     """Is this one-cell row the next line of the paragraph in the cell above it?
 
     The merger folds a wrapped line on what it says - it starts in lower case, the cell above ends
@@ -1640,9 +1643,18 @@ def _next_line_of_the_cell_above(row: _Row, prev_row: _Row, column: int,
     Flush *and* one leading below: exactly the three orphans on 380 sheet pages, none on the
     insurance set, and on the benchmark's 1,122 digital pages 17, the last lines of references.
 
-    Only under a cell of two lines or more, which has a leading of its own to compare with. A line
-    under a one-line cell ("Accidental Damage." under "...can be purchased to cover") needs a
-    different test and is not decided here."""
+    That is for a cell of two lines or more, which has a leading of its own to compare with. Under
+    a cell of ONE line ("Accidental Damage." under "...can be purchased to cover") the leading is the
+    table's - `wrap_pitch`, the step down to the lines this table's cells are already known to wrap
+    on - and because that is weaker evidence the typesetter's own definition of a wrap is asked as
+    well: the line's first word would not have fitted on the line above, whose end, a word space and
+    the word pass `right_edge`, where the column's widest line ends. Measured the same way
+    (`bench/probes/orphan_row_fit_census.py`): a line that fits above is a break someone meant
+    ("Note: eligibility criteria may apply" under "...Go to page 42.", "Over 50 (37; 5.6%)" under
+    "30-49 (156; 23.7%)"), an entry of a list stands more than a pitch below ("Retire or resign
+    with" under "Ysterplaat Museum", which misses fitting by a tenth of a point), and a number under
+    a number is a column of values, where every entry is as wide as its column and fitting says
+    nothing. A table that has wrapped nowhere has shown no pitch, and the line stays a row."""
     if not columns:
         return False
     mine = [s for s in row.segments if s.text.strip()]
@@ -1657,6 +1669,17 @@ def _next_line_of_the_cell_above(row: _Row, prev_row: _Row, column: int,
         if not tops or s.bbox.y0 - tops[-1] > 0.5 * size:
             tops.append(s.bbox.y0)
             lefts.append(s.bbox.x0)
+    if len(tops) == 1:
+        if not wrap_pitch or right_edge is None or not line.words:
+            return False
+        if _NUMERIC.match(line.text.strip()) and _NUMERIC.match(" ".join(s.text.strip() for s in above)):
+            return False
+        last = max(above, key=lambda s: s.bbox.x1)
+        gaps = sorted(b.bbox.x0 - a.bbox.x1 for a, b in zip(last.words, last.words[1:]) if b.bbox.x0 > a.bbox.x1)
+        space = gaps[len(gaps) // 2] if gaps else 0.25 * size
+        return (abs(line.bbox.x0 - lefts[0]) <= _SAME_LEFT_EDGE
+                and line.bbox.y0 - tops[0] <= (1 + _SAME_LEADING) * wrap_pitch
+                and last.bbox.x1 + space + line.words[0].bbox.width > right_edge)
     if len(tops) < 2:
         return False
     steps = sorted(b - a for a, b in zip(tops, tops[1:]))
@@ -1669,17 +1692,47 @@ def _next_line_of_the_cell_above(row: _Row, prev_row: _Row, column: int,
 
 def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
                         columns: list[tuple[float, float]] | None = None,
-                        joined: dict[str, tuple[str, str]] | None = None) -> tuple[list[list[str]], list[_Row]]:
+                        joined: dict[str, tuple[str, ...]] | None = None) -> tuple[list[list[str]], list[_Row]]:
     """Fold continuation lines of a wrapped cell into the row above.
 
     Returns the grid and the row geometry that goes with it (merged rows span
     the lines they were folded from). A wrapped entry joined to the line that
-    holds its values is recorded in `joined`, when given, as its two lines."""
+    holds its values is recorded in `joined`, when given, as its two lines.
+
+    Read twice when a line stands under a one-line cell with nothing said to fold it: the first
+    reading shows the pitch this table's cells wrap on, and the second asks that line whether it
+    stands a pitch below (`_next_line_of_the_cell_above`). Nothing else differs between the two."""
+    found: dict[str, tuple[str, ...]] = {}
+    out, out_rows, pitches, waiting = _merge_rows_once(grid, rows, size, columns, found, None)
+    if waiting and pitches:
+        found = {}
+        pitches.sort()
+        out, out_rows, _, _ = _merge_rows_once(grid, rows, size, columns, found, pitches[len(pitches) // 2])
+    if joined is not None:
+        joined.update(found)
+    return out, out_rows
+
+
+def _merge_rows_once(grid: list[list[str]], rows: list[_Row], size: float,
+                     columns: list[tuple[float, float]] | None, joined: dict[str, tuple[str, ...]],
+                     wrap_pitch: float | None) -> tuple[list[list[str]], list[_Row], list[float], bool]:
+    """One reading of `_merge_wrapped_rows`: the grid, its geometry, the step down to every line it
+    folded as a wrapped one, and whether a line under a one-line cell is waiting on that pitch."""
     if not grid:
-        return grid, list(rows)
+        return grid, list(rows), [], False
     grid = [list(cells) for cells in grid]
     rows = list(rows)
     bands = _band_segments(rows, size)
+    pitches: list[float] = []
+    waiting = False
+    stood: set[str] = set()                             # cells of `joined` recorded for a line folded by where it stands
+    right_edges: dict[int, float] = {}                  # where each column's widest line ends
+    if wrap_pitch and columns:
+        for r in rows:
+            for s in r.segments:
+                if s.text.strip():
+                    c = _column_of(s.bbox, columns)
+                    right_edges[c] = max(right_edges.get(c, s.bbox.x1), s.bbox.x1)
     out: list[list[str]] = [grid[0]]
     out_rows: list[_Row] = [rows[0]]
     took_statistics: set[int] = set()   # rows of `out` that have folded a statistics row in
@@ -1801,18 +1854,39 @@ def _merge_wrapped_rows(grid: list[list[str]], rows: list[_Row], size: float,
         # The second line of a label that wrapped continues its row whatever the other columns say.
         if tight and not is_continuation and _label_carries_on(prev, cells, filled):
             is_continuation = True
+        by_position = False
         # The last line of a wrapped cell, by where it stands and not by what it says: words cannot
         # tell "Accidental Damage." from a label, or "51-52" from a value (`_next_line_of_the_cell_above`).
         if (not is_continuation and not cells[0] and len(filled) == 1 and prev[filled[0]]
-                and not _BULLET_START.match(cells[filled[0]]) and not _is_band(here, grid, rows, columns, bands, size)
-                and _next_line_of_the_cell_above(row, prev_row, filled[0], columns, size)):
-            is_continuation = True
+                and not _BULLET_START.match(cells[filled[0]]) and not _is_band(here, grid, rows, columns, bands, size)):
+            if _next_line_of_the_cell_above(row, prev_row, filled[0], columns, size,
+                                            wrap_pitch, right_edges.get(filled[0])):
+                is_continuation = by_position = True
+            else:
+                waiting = True
         if is_continuation:
+            if row.y0 - rows[here - 1].y0 > 0.5 * size:
+                pitches.append(row.y0 - rows[here - 1].y0)
             for i in filled:
-                prev[i] = _join_lines(prev[i], cells[i])
+                whole = _join_lines(prev[i], cells[i])
+                # A line folded by where it stands is recorded as the parts the page sets, as a joined entry
+                # is: the fold says what the cell holds, not whether the text is a table, and `_build_table`
+                # must judge that exactly as it did when the line stood as a row - a line folded later on
+                # what it says went into that row, so it goes into the record's last part. (A magazine's
+                # contents list, its titles made whole, read as prose by the share of its characters in
+                # long cells, and came out as loose numbers and loose titles.)
+                if by_position:
+                    joined[whole] = (joined.pop(prev[i]) if prev[i] in stood else (prev[i],)) + (cells[i],)
+                elif prev[i] in stood:
+                    parts = joined.pop(prev[i])
+                    joined[whole] = parts[:-1] + (_join_lines(parts[-1], cells[i]),)
+                if by_position or prev[i] in stood:
+                    stood.discard(prev[i])
+                    stood.add(whole)
+                prev[i] = whole
             out_rows[into] = _Row(segments=prev_row.segments + row.segments,
                                   y0=prev_row.y0, y1=max(prev_row.y1, row.y1))
         else:
             out.append(cells)
             out_rows.append(row)
-    return out, out_rows
+    return out, out_rows, pitches, waiting
