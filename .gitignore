@@ -48,3 +48,7 @@ bench/gpu/bands/
 
 # The OmniDocBench evaluation toolkit (cloned, Apache-2.0, not our code)
 bench/omnidocbench/
+
+# Another agent's whole-project review (17-18 September 2026), kept local on the owner's word:
+# candid, useful, and not for the public repository.
+docs/review/

@@ -623,3 +623,38 @@ the routing, and what is done with a model's text.
 
 **Subject to D033's two checks.** If Flash fails either, the standard reader reverts to olmOCR 2 and the quoted
 arrangement has to be measured again with olmOCR 2 in front of Pro.
+
+## D036 - TrueDoc goes public: Apache-2.0, on GitHub and on the olmOCR-bench leaderboard in the strong form (2026-09-18, owner's decision)
+
+**The question.** The other agent's review (kept local in `docs/review/`) ends with "support stronger claims" as
+its last stage. The owner's point: being listed on the benchmark's own leaderboard is instant credibility. The
+mechanism was checked on 18 September against Hugging Face's own documentation: any model repository holding
+`.eval_results/olmocrbench.yaml` appears on the dataset's leaderboard automatically; entries are self-reported,
+there is no submission process, and a classical pipeline (kraken + PP-OCRv6, 36.8) is already listed, published
+by a third party with a results page as its source. Our copy of the dataset is revision `54a96a6f`, the one the
+entries cite.
+
+**The decisions, in the owner's words.**
+- "lets go with the strong form": the entry links to the full markdown output for all 1,403 pages plus the
+  scorer's log, so anyone can rescore it in minutes - not the log alone, which asks to be taken on trust.
+- "agree with Apache-2.0" for the code. Its cost, stated and accepted: anyone may host TrueDoc as a service; the
+  defensible position is the running service and the ongoing rules, not the code.
+- "keep the 4 insurer PDFs" in `samples/`.
+- "don't push the reviewer's folder - keep it local only": `docs/review/` is git-ignored.
+- One repository, one history: no duplicate "public copy". Local-only material is kept out by `.gitignore`, never
+  by a second repo. Pushed private first (which also closes the two-week-old "no backup" risk), public when the
+  README, LICENSE, NOTICE, secrets scan of the whole history and a clean-install test are done, in the same step as
+  the leaderboard entry; a tag per quoted run (`run-96`, ...) so the entry names the exact commit.
+- The owner does the two one-time logins himself (GitHub push credentials; `hf auth login` with a write token):
+  the tools then work from the agent's shell without the credential ever passing through it.
+
+**The entry itself** (to be written once run 97 has scored and D033's picture-text check is done): named so that
+nobody reads it as a model - "TrueDoc (native text + Infinity-Parser2 Flash/Pro)" - with notes that say exactly
+what ran: the PDF's own text for digital pages, Flash for pages without a text layer, Pro behind the router on the
+pages our own OCR cannot read, olmOCR 2 for picture regions, all eight sections, the official scorer, the
+interval, and that the readings are replayed from a recorded session. One dated claim, as the review's F05 asks:
+"would rank second by point estimate; live integration pending".
+
+**Before anything goes public, no decision needed:** LICENSE and a NOTICE for the Apache-2.0 olmOCR scorer code
+under `bench/olmocr_ref/`; the two unchecked weight licences of D007 resolved; a README a stranger can install
+from, tested in a fresh environment (the review's F06); the personal paths tidied out of the logs.

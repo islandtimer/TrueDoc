@@ -181,6 +181,17 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
   read on 17 September.)
 - **When you want it: about 50 cents of rental** on a 24 GB card, for D033's picture-text check. The script also
   measures how small a memory budget Flash will serve in, which answers the hardware question for users.
+- **Two one-time logins, yours to do (D036, 18 Sept):** a GitHub repository (private first) with push credentials
+  stored on this machine - install the `gh` tool and run `gh auth login`, or push once yourself; and a Hugging Face
+  account with a write token, then `hf auth login` in a terminal. After those, the push and the leaderboard entry
+  work from my shell without the credential ever passing through me. You agreed Apache-2.0, the four insurer PDFs
+  staying in `samples/`, the reviewer's folder staying local, and the strong-form entry (all 1,403 page outputs
+  plus the scorer's log as its source).
+- **A ruling still open: the order of the next work.** The other agent's review (`docs/review/rev-2/`, local)
+  puts a completion-and-issue status contract first (an empty output drops its warnings, an invalid page range
+  succeeds silently, a truncated model reply is accepted), then repairs to my two-reader comparison (it prints
+  held-out sheets' discrepancies), then reader adoption, then the two downstream tasks, then delivery. I
+  recommended accepting that order; you have not yet said.
 - **Parked, on your word (17 Sept): timing Flash on a laptop.** What is kept of it is a line of guidance for users:
   Flash on small documents might be possible without a graphics card, and nothing larger is.
 - (Done 3 Sept, evening: you agreed the "inferred" marker proposal as written, one tag for every model source, and confirmed the GPU instance is stopped.)
@@ -195,15 +206,20 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## What is being worked on right now
 
-**18 September, 15:10 - paused on your word.** Run 97 is converting on its own and scores itself (about 75
-minutes; `bench/out/launch/launch97_status.txt`); when it is in, `docs/BENCHMARKS.md`'s table and this page want
-its row, and the quoted number moves if old-scan maths moves as the measurement says (+9). **Open, in the order I
-would take them:** the picture-text check (needs the small rental); the fifteen Key Facts Sheet cells where Pro and
-TrueDoc disagree, each to be read against its page image and the candidate rules measured; Pro's 100 random library
-pages and 25 insurance-set pages compared with ours the same way; the tables gap on digital pages (their model
-reads 164 digital table pages at 930 checks to our 913 - the one place Pro alone beats the whole converter); a
-provider that talks to a served Infinity-Parser2 model; and the downstream trial you want to discuss. The other
-agent's review in `docs/review/` is untouched.
+**18 September, 16:30 - prepared for a compact.** Run 97 is converting on its own and scores itself (launched
+14:56; `bench/out/launch/launch97_status.txt`); when it is in, `docs/BENCHMARKS.md`'s table and this page want its
+row, and the quoted number moves if old-scan maths moves as the measurement says (+9, to about 86.8). **Open, in
+the order I would take them - the review's order, which I recommended and you have not yet ruled on:** (1) the
+status contract the review's F01 asks for, using its ten probes as acceptance cases, and the F10 repairs to
+`bench/tools/kfs_two_readers.py` (no held-out sheet in the detailed listing; marks compared, not stripped;
+critical words such as "not" flagged whatever the similarity; rows one reader misses counted); (2) publishing -
+LICENSE, NOTICE, D007's two weight licences, a stranger's README tested clean, a secrets scan of the history, the
+private push, then the leaderboard entry in the strong form once run 97 is in and the picture-text check is done
+(D036); (3) the picture-text check itself (the small rental); (4) the fifteen Key Facts Sheet cells, re-listed
+without held-out sheets, each read against its page image; (5) Pro's 100 random library pages and 25 insurance-set
+pages compared with ours; (6) the tables gap on digital pages (Pro alone 930 checks to our 913); (7) a provider for
+a served Infinity-Parser2 model; (8) the downstream trial you want to discuss. The reviewer's folder is now
+git-ignored on your word.
 
 **17 September, evening: a rented GPU answered the morning's question, and the answers are on disk.** The leaderboard
 said the gap was on the pages a model reads, so two stronger open models read those pages - and Pro read the whole

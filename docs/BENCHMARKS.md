@@ -2,7 +2,7 @@
 
 ## The yardstick
 
-**Primary: olmOCR-bench** (Allen Institute for AI; dataset `allenai/olmOCR-bench` on Hugging Face). 1,403 single-page PDFs, 7,010 unit tests. Each test asks a question a careful human reader could answer: is this sentence present? is this header/footer *absent*? does paragraph A come before paragraph B? is this table cell to the left of that one? is this formula there? A test is pass or fail. The score for a section is the pass rate; the overall score is the average of the eight sections. This is the closest public measure of "meaning accuracy" we have found, and it is the benchmark most of the tools on the owner's list report on.
+**Primary: olmOCR-bench** (Allen Institute for AI; dataset `allenai/olmOCR-bench` on Hugging Face). 1,403 single-page PDFs, 7,019 unit tests plus 1,394 automatic baseline checks (the dataset's README says 7,010; the files at revision `54a96a6f`, the one the leaderboard's entries cite and the one on this machine, hold 7,019 - corrected 18 September after the other agent's review noticed the mismatch). Each test asks a question a careful human reader could answer: is this sentence present? is this header/footer *absent*? does paragraph A come before paragraph B? is this table cell to the left of that one? is this formula there? A test is pass or fail. The score for a section is the pass rate; the overall score is the average of the eight sections. This is the closest public measure of "meaning accuracy" we have found, and it is the benchmark most of the tools on the owner's list report on.
 
 **Secondary: OmniDocBench v1.6** (OpenDataLab). 1,651 page images across nine document types. Scored by text edit distance, table similarity (TEDS), formula similarity (CDM) and reading-order edit distance; overall = mean of (100 minus text edit distance, table TEDS, formula CDM). It ships page *images* rather than PDFs, so it exercises the OCR path only. We report on it as a second opinion once the OCR path exists.
 
@@ -28,7 +28,7 @@ Source: the leaderboard on `huggingface.co/datasets/allenai/olmOCR-bench`, read 
 entries. Every number below was then confirmed a second way, against the `.eval_results/olmocrbench.yaml`
 file in the model's own repository, which is what the leaderboard reads; and each tool's eight section
 scores were averaged to check they give the overall it claims. TrueDoc is not on the leaderboard: our two
-numbers are our own runs of the official scorer over the same 1,403 pages and 7,010 checks.
+numbers are our own runs of the official scorer over the same 1,403 pages and the same 7,019 checks, at the same dataset revision.
 
 | # | Tool | Overall | What it is |
 |---|---|---|---|

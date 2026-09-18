@@ -100,6 +100,38 @@ worse for a reader and matches nothing but the reference's habit.
 Seven tests added, **suite 692**. Committed after run 96 was launched, so run 96 carries the first fix alone;
 these two go into run 97.
 
+**The other agent's review, read and discussed (15:20-16:00; `docs/review/`, local only).** Revision 2, baselined
+at this morning's decisions commit, recommends refining the current direction - no rewrite, no pause, no paid
+launch yet - and orders the work: a completion-and-issue status contract first (its F01: an empty output drops its
+warnings, an invalid page range succeeds silently, a truncated model reply is accepted), honest assurance wording
+(F02), repairs to my two-reader comparison tool (F10), then reader-adoption evidence, then both downstream tasks,
+then delivery. **F10 is right on every point and one matters most: `bench/tools/kfs_two_readers.py` prints its
+discrepancies from the held-out fifth too**, the leak the split exists to prevent, written by me on the 17th without
+noticing; its normaliser also erases a tick-versus-cross difference, its 0.98 cutoff misses a removed "not" in a
+long cell, and rows one reader misses drop out of the count. The fifteen cells and three answers reported on the
+17th are to be re-listed with held-out sheets excluded before any is read against its page. Other points taken:
+"a product cannot use that post-processing" was too broad (a product cannot choose it by benchmark folder; general
+source-preserving normalisation is fine, and the aligned split is exactly that); "level" from an overlapping
+interval is not an equivalence test; the 102 deep pages were counted from changed output, not call records; "both
+models fit on one card" is a claim about weights, not serving; the docs said 7,010 checks where the files hold 7,019
+(fixed). Where I pushed back: "use the upstream model for everything" is not level with the hybrid on the evidence
+(Pro alone 86.1 raw on our scorer against our 86.6; equal on the sheets' shape, behind on their wording); two
+findings predate the day (the seven-check loss is traced and fixed; the invented-text check passed); the JSON
+salvage is a bench tool, not the product, though the live provider must carry finish reasons. My recommendation to
+the owner: accept the direction and the order, with the review's R2-S1 (the status contract, its ten probes as
+acceptance cases) and the F10 repairs before the fifteen cells; the owner has not yet ruled on that order.
+
+**The leaderboard, and publishing (16:00-16:30; D036).** The owner: a listing on the benchmark's own leaderboard is
+instant credibility. Checked against Hugging Face's documentation, not memory: a model repository holding
+`.eval_results/olmocrbench.yaml` is aggregated onto the dataset's leaderboard automatically, entries are
+self-reported (no verification exists for this benchmark's own scorer), and a classical pipeline is already listed
+with a results page as its source, so a tool can be. Our dataset copy is revision `54a96a6f`, the one the entries
+cite. Decided: the strong form (all 1,403 page outputs plus the scorer's log as the source, so anyone can rescore
+in minutes), Apache-2.0 for the code, the four insurer PDFs stay, the reviewer's folder stays local
+(`.gitignore`), one repository pushed private first and public with the entry, a tag per quoted run. The owner
+does the two one-time logins; nothing goes public before LICENSE, NOTICE, the D007 weight licences, a
+stranger's README tested in a clean environment, and a secrets scan of the whole history.
+
 **Run 96, scored 14:49: 86.6 (CI 85.6-87.4).** Against run 95, old-scan maths 381 to 388 - the seven, and nothing
 else moved in any category. Held-out 86.0 (unchanged; both algebra pages are tuned-on), tuned-on 84.5. Under D035
 this is the number we quote. Run 97, the tree at 9f9b77b with the two rules above, was launched at 14:50 and scores
