@@ -82,6 +82,10 @@ for path in docs:
         manifest.append({"set": "library", "name": name, "pdf": path, "page": page})
         taken += 1
 
+# The manifest is committed with the readings, so it names each document relative to the library
+# (doc_library.absolute puts this machine's root back).
+for entry in manifest:
+    entry["pdf"] = kfs_grade.doc_library.relative(entry["pdf"])
 with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as f:
     json.dump(manifest, f, indent=1)
 for s in ("insurance", "kfs", "library"):

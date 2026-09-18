@@ -7,7 +7,7 @@ import json
 import os
 import sys
 
-REPO = r"C:\Users\griff\OneDrive\Documents\10 Have a crack\31b TrueDoc_Fable"
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO, "bench"))
 os.chdir(REPO)
 from holdout_score import is_held_out          # noqa: E402

@@ -1,0 +1,1014 @@
+[
+ {
+  "crop": "arxiv_math/2503.03879_pg4__r0.pdf",
+  "page": "arxiv_math/2503.03879_pg4",
+  "bbox": [
+   65.9,
+   72.1,
+   266.6,
+   210.3
+  ],
+  "area_share": 0.055
+ },
+ {
+  "crop": "arxiv_math/2503.03903_pg9__r0.pdf",
+  "page": "arxiv_math/2503.03903_pg9",
+  "bbox": [
+   238.0,
+   72.0,
+   374.0,
+   205.6
+  ],
+  "area_share": 0.037
+ },
+ {
+  "crop": "arxiv_math/2503.04056_pg25__r0.pdf",
+  "page": "arxiv_math/2503.04056_pg25",
+  "bbox": [
+   66.9,
+   106.8,
+   528.2,
+   427.1
+  ],
+  "area_share": 0.295
+ },
+ {
+  "crop": "arxiv_math/2503.04690_pg4__r0.pdf",
+  "page": "arxiv_math/2503.04690_pg4",
+  "bbox": [
+   72.0,
+   459.0,
+   540.0,
+   533.5
+  ],
+  "area_share": 0.072
+ },
+ {
+  "crop": "arxiv_math/2503.04932_pg20__r0.pdf",
+  "page": "arxiv_math/2503.04932_pg20",
+  "bbox": [
+   73.7,
+   73.0,
+   290.3,
+   235.5
+  ],
+  "area_share": 0.07
+ },
+ {
+  "crop": "arxiv_math/2503.04932_pg20__r1.pdf",
+  "page": "arxiv_math/2503.04932_pg20",
+  "bbox": [
+   305.0,
+   72.0,
+   521.6,
+   234.5
+  ],
+  "area_share": 0.07
+ },
+ {
+  "crop": "arxiv_math/2503.04932_pg20__r2.pdf",
+  "page": "arxiv_math/2503.04932_pg20",
+  "bbox": [
+   78.2,
+   293.3,
+   222.6,
+   401.6
+  ],
+  "area_share": 0.031
+ },
+ {
+  "crop": "arxiv_math/2503.04932_pg20__r3.pdf",
+  "page": "arxiv_math/2503.04932_pg20",
+  "bbox": [
+   225.4,
+   293.3,
+   369.8,
+   401.6
+  ],
+  "area_share": 0.031
+ },
+ {
+  "crop": "arxiv_math/2503.04932_pg20__r4.pdf",
+  "page": "arxiv_math/2503.04932_pg20",
+  "bbox": [
+   372.7,
+   293.3,
+   517.1,
+   401.6
+  ],
+  "area_share": 0.031
+ },
+ {
+  "crop": "arxiv_math/2503.05140_pg22__r0.pdf",
+  "page": "arxiv_math/2503.05140_pg22",
+  "bbox": [
+   139.7,
+   421.7,
+   449.3,
+   690.7
+  ],
+  "area_share": 0.172
+ },
+ {
+  "crop": "arxiv_math/2503.05506_pg11__r0.pdf",
+  "page": "arxiv_math/2503.05506_pg11",
+  "bbox": [
+   95.0,
+   84.8,
+   528.7,
+   351.3
+  ],
+  "area_share": 0.239
+ },
+ {
+  "crop": "arxiv_math/2503.05993_pg15__r0.pdf",
+  "page": "arxiv_math/2503.05993_pg15",
+  "bbox": [
+   56.7,
+   63.8,
+   555.3,
+   423.5
+  ],
+  "area_share": 0.37
+ },
+ {
+  "crop": "arxiv_math/2503.06549_pg8__r0.pdf",
+  "page": "arxiv_math/2503.06549_pg8",
+  "bbox": [
+   258.9,
+   182.9,
+   487.7,
+   253.7
+  ],
+  "area_share": 0.032
+ },
+ {
+  "crop": "arxiv_math/2503.06651_pg13__r0.pdf",
+  "page": "arxiv_math/2503.06651_pg13",
+  "bbox": [
+   74.7,
+   56.1,
+   537.3,
+   146.2
+  ],
+  "area_share": 0.086
+ },
+ {
+  "crop": "arxiv_math/2503.06651_pg13__r1.pdf",
+  "page": "arxiv_math/2503.06651_pg13",
+  "bbox": [
+   75.8,
+   188.0,
+   276.7,
+   286.7
+  ],
+  "area_share": 0.041
+ },
+ {
+  "crop": "arxiv_math/2503.06701_pg5__r0.pdf",
+  "page": "arxiv_math/2503.06701_pg5",
+  "bbox": [
+   324.5,
+   336.5,
+   550.5,
+   493.2
+  ],
+  "area_share": 0.073
+ },
+ {
+  "crop": "arxiv_math/2503.06904_pg10__r0.pdf",
+  "page": "arxiv_math/2503.06904_pg10",
+  "bbox": [
+   161.8,
+   71.9,
+   315.6,
+   239.0
+  ],
+  "area_share": 0.053
+ },
+ {
+  "crop": "arxiv_math/2503.07449_pg17__r0.pdf",
+  "page": "arxiv_math/2503.07449_pg17",
+  "bbox": [
+   179.5,
+   52.1,
+   306.5,
+   179.1
+  ],
+  "area_share": 0.033
+ },
+ {
+  "crop": "arxiv_math/2503.07449_pg17__r1.pdf",
+  "page": "arxiv_math/2503.07449_pg17",
+  "bbox": [
+   309.6,
+   52.1,
+   436.6,
+   179.1
+  ],
+  "area_share": 0.033
+ },
+ {
+  "crop": "arxiv_math/2503.07449_pg17__r2.pdf",
+  "page": "arxiv_math/2503.07449_pg17",
+  "bbox": [
+   206.4,
+   216.2,
+   409.7,
+   313.7
+  ],
+  "area_share": 0.041
+ },
+ {
+  "crop": "arxiv_math/2503.07449_pg17__r3.pdf",
+  "page": "arxiv_math/2503.07449_pg17",
+  "bbox": [
+   206.4,
+   314.7,
+   409.7,
+   412.1
+  ],
+  "area_share": 0.041
+ },
+ {
+  "crop": "arxiv_math/2503.07449_pg17__r4.pdf",
+  "page": "arxiv_math/2503.07449_pg17",
+  "bbox": [
+   206.4,
+   449.3,
+   409.7,
+   557.9
+  ],
+  "area_share": 0.046
+ },
+ {
+  "crop": "arxiv_math/2503.07488_pg6__r0.pdf",
+  "page": "arxiv_math/2503.07488_pg6",
+  "bbox": [
+   154.4,
+   96.4,
+   437.9,
+   257.4
+  ],
+  "area_share": 0.094
+ },
+ {
+  "crop": "arxiv_math/2503.07509_pg2__r0.pdf",
+  "page": "arxiv_math/2503.07509_pg2",
+  "bbox": [
+   49.1,
+   50.5,
+   562.9,
+   229.9
+  ],
+  "area_share": 0.19
+ },
+ {
+  "crop": "arxiv_math/2503.08059_pg6__r0.pdf",
+  "page": "arxiv_math/2503.08059_pg6",
+  "bbox": [
+   54.8,
+   54.0,
+   291.7,
+   192.5
+  ],
+  "area_share": 0.068
+ },
+ {
+  "crop": "arxiv_math/2503.08059_pg6__r1.pdf",
+  "page": "arxiv_math/2503.08059_pg6",
+  "bbox": [
+   321.6,
+   54.0,
+   553.4,
+   210.7
+  ],
+  "area_share": 0.075
+ },
+ {
+  "crop": "arxiv_math/2503.08206_pg4__r0.pdf",
+  "page": "arxiv_math/2503.08206_pg4",
+  "bbox": [
+   134.0,
+   348.0,
+   299.7,
+   451.6
+  ],
+  "area_share": 0.035
+ },
+ {
+  "crop": "arxiv_math/2503.08206_pg4__r1.pdf",
+  "page": "arxiv_math/2503.08206_pg4",
+  "bbox": [
+   303.3,
+   344.8,
+   478.0,
+   451.6
+  ],
+  "area_share": 0.038
+ },
+ {
+  "crop": "headers_footers/029b20b3eb58d1fbda4a16bfea632b29642998ae_page_6_processed__r0.pdf",
+  "page": "headers_footers/029b20b3eb58d1fbda4a16bfea632b29642998ae_page_6_processed",
+  "bbox": [
+   166.2,
+   153.6,
+   429.1,
+   643.1
+  ],
+  "area_share": 0.257
+ },
+ {
+  "crop": "long_tiny_text/20_pg18_pg1__r0.pdf",
+  "page": "long_tiny_text/20_pg18_pg1",
+  "bbox": [
+   209.1,
+   652.7,
+   426.7,
+   774.5
+  ],
+  "area_share": 0.052
+ },
+ {
+  "crop": "long_tiny_text/20_pg32_pg1__r0.pdf",
+  "page": "long_tiny_text/20_pg32_pg1",
+  "bbox": [
+   298.4,
+   62.0,
+   622.2,
+   404.3
+  ],
+  "area_share": 0.216
+ },
+ {
+  "crop": "long_tiny_text/20_pg32_pg1__r1.pdf",
+  "page": "long_tiny_text/20_pg32_pg1",
+  "bbox": [
+   89.9,
+   631.6,
+   290.2,
+   753.3
+  ],
+  "area_share": 0.048
+ },
+ {
+  "crop": "long_tiny_text/20_pg35_pg1__r0.pdf",
+  "page": "long_tiny_text/20_pg35_pg1",
+  "bbox": [
+   337.8,
+   413.1,
+   431.7,
+   525.3
+  ],
+  "area_share": 0.021
+ },
+ {
+  "crop": "long_tiny_text/20_pg35_pg1__r1.pdf",
+  "page": "long_tiny_text/20_pg35_pg1",
+  "bbox": [
+   133.7,
+   413.0,
+   227.5,
+   525.3
+  ],
+  "area_share": 0.021
+ },
+ {
+  "crop": "long_tiny_text/20_pg39_pg1__r0.pdf",
+  "page": "long_tiny_text/20_pg39_pg1",
+  "bbox": [
+   132.0,
+   159.2,
+   236.8,
+   269.4
+  ],
+  "area_share": 0.023
+ },
+ {
+  "crop": "long_tiny_text/20_pg40_pg1__r0.pdf",
+  "page": "long_tiny_text/20_pg40_pg1",
+  "bbox": [
+   298.1,
+   489.5,
+   603.4,
+   701.7
+  ],
+  "area_share": 0.126
+ },
+ {
+  "crop": "long_tiny_text/20_pg40_pg1__r1.pdf",
+  "page": "long_tiny_text/20_pg40_pg1",
+  "bbox": [
+   80.7,
+   616.3,
+   246.1,
+   747.1
+  ],
+  "area_share": 0.042
+ },
+ {
+  "crop": "long_tiny_text/20_pg46_pg1__r0.pdf",
+  "page": "long_tiny_text/20_pg46_pg1",
+  "bbox": [
+   203.4,
+   653.1,
+   389.2,
+   760.1
+  ],
+  "area_share": 0.039
+ },
+ {
+  "crop": "multi_column/00945e98ea0970dcffb8f548336df3a0137f_page_5_pg1__r0.pdf",
+  "page": "multi_column/00945e98ea0970dcffb8f548336df3a0137f_page_5_pg1",
+  "bbox": [
+   309.0,
+   429.7,
+   538.9,
+   574.6
+  ],
+  "area_share": 0.066
+ },
+ {
+  "crop": "multi_column/01ed6dcc6a3d0237daa88b293d0c0667df1a_page_66_pg1__r0.pdf",
+  "page": "multi_column/01ed6dcc6a3d0237daa88b293d0c0667df1a_page_66_pg1",
+  "bbox": [
+   358.8,
+   329.0,
+   539.5,
+   440.0
+  ],
+  "area_share": 0.041
+ },
+ {
+  "crop": "multi_column/01ed6dcc6a3d0237daa88b293d0c0667df1a_page_66_pg1__r1.pdf",
+  "page": "multi_column/01ed6dcc6a3d0237daa88b293d0c0667df1a_page_66_pg1",
+  "bbox": [
+   404.8,
+   522.2,
+   545.3,
+   631.7
+  ],
+  "area_share": 0.032
+ },
+ {
+  "crop": "multi_column/01ed6dcc6a3d0237daa88b293d0c0667df1a_page_66_pg1__r2.pdf",
+  "page": "multi_column/01ed6dcc6a3d0237daa88b293d0c0667df1a_page_66_pg1",
+  "bbox": [
+   86.9,
+   522.4,
+   226.9,
+   631.4
+  ],
+  "area_share": 0.032
+ },
+ {
+  "crop": "multi_column/027880a87e3c2ad4cf8c05f477597c0c6da7_page_6_pg1__r0.pdf",
+  "page": "multi_column/027880a87e3c2ad4cf8c05f477597c0c6da7_page_6_pg1",
+  "bbox": [
+   135.8,
+   70.6,
+   447.8,
+   506.6
+  ],
+  "area_share": 0.297
+ },
+ {
+  "crop": "multi_column/027880a87e3c2ad4cf8c05f477597c0c6da7_page_7_pg1__r0.pdf",
+  "page": "multi_column/027880a87e3c2ad4cf8c05f477597c0c6da7_page_7_pg1",
+  "bbox": [
+   325.0,
+   299.1,
+   517.0,
+   623.1
+  ],
+  "area_share": 0.136
+ },
+ {
+  "crop": "multi_column/0301cb032c92b9b49cbce64def4c292c277b_page_1_pg1__r0.pdf",
+  "page": "multi_column/0301cb032c92b9b49cbce64def4c292c277b_page_1_pg1",
+  "bbox": [
+   48.1,
+   38.0,
+   552.1,
+   102.6
+  ],
+  "area_share": 0.07
+ },
+ {
+  "crop": "multi_column/031262e6346a8b7db19239800839b132c1ce_page_13_pg1__r0.pdf",
+  "page": "multi_column/031262e6346a8b7db19239800839b132c1ce_page_13_pg1",
+  "bbox": [
+   402.1,
+   79.1,
+   539.5,
+   369.3
+  ],
+  "area_share": 0.08
+ },
+ {
+  "crop": "multi_column/031262e6346a8b7db19239800839b132c1ce_page_8_pg1__r0.pdf",
+  "page": "multi_column/031262e6346a8b7db19239800839b132c1ce_page_8_pg1",
+  "bbox": [
+   0.0,
+   0.0,
+   595.3,
+   113.4
+  ],
+  "area_share": 0.135
+ },
+ {
+  "crop": "multi_column/031262e6346a8b7db19239800839b132c1ce_page_8_pg1__r1.pdf",
+  "page": "multi_column/031262e6346a8b7db19239800839b132c1ce_page_8_pg1",
+  "bbox": [
+   204.1,
+   127.7,
+   398.8,
+   391.2
+  ],
+  "area_share": 0.102
+ },
+ {
+  "crop": "multi_column/031a888e402c82517f213222ae97147dd7dc_page_2_pg1__r0.pdf",
+  "page": "multi_column/031a888e402c82517f213222ae97147dd7dc_page_2_pg1",
+  "bbox": [
+   324.3,
+   75.1,
+   540.3,
+   236.6
+  ],
+  "area_share": 0.072
+ },
+ {
+  "crop": "multi_column/03b953c18a4f7d2bbe390940dec839395cdd_page_19_pg1__r0.pdf",
+  "page": "multi_column/03b953c18a4f7d2bbe390940dec839395cdd_page_19_pg1",
+  "bbox": [
+   42.4,
+   26.1,
+   565.4,
+   96.2
+  ],
+  "area_share": 0.076
+ },
+ {
+  "crop": "multi_column/055c2edec4677b71f7bb6a759ebacc701bb1_page_4_pg1__r0.pdf",
+  "page": "multi_column/055c2edec4677b71f7bb6a759ebacc701bb1_page_4_pg1",
+  "bbox": [
+   43.9,
+   44.4,
+   295.9,
+   270.2
+  ],
+  "area_share": 0.114
+ },
+ {
+  "crop": "multi_column/05aa71fa77e07bccb443ef4fd28dde3ecfd6_page_4_pg1__r0.pdf",
+  "page": "multi_column/05aa71fa77e07bccb443ef4fd28dde3ecfd6_page_4_pg1",
+  "bbox": [
+   75.7,
+   70.4,
+   507.7,
+   446.4
+  ],
+  "area_share": 0.355
+ },
+ {
+  "crop": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1__r0.pdf",
+  "page": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1",
+  "bbox": [
+   58.0,
+   78.7,
+   171.8,
+   168.1
+  ],
+  "area_share": 0.021
+ },
+ {
+  "crop": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1__r1.pdf",
+  "page": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1",
+  "bbox": [
+   174.0,
+   78.7,
+   287.9,
+   168.1
+  ],
+  "area_share": 0.021
+ },
+ {
+  "crop": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1__r2.pdf",
+  "page": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1",
+  "bbox": [
+   58.0,
+   169.1,
+   171.8,
+   283.0
+  ],
+  "area_share": 0.027
+ },
+ {
+  "crop": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1__r3.pdf",
+  "page": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1",
+  "bbox": [
+   174.0,
+   169.1,
+   287.9,
+   283.0
+  ],
+  "area_share": 0.027
+ },
+ {
+  "crop": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1__r4.pdf",
+  "page": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1",
+  "bbox": [
+   328.9,
+   78.7,
+   438.0,
+   187.4
+  ],
+  "area_share": 0.024
+ },
+ {
+  "crop": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1__r5.pdf",
+  "page": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1",
+  "bbox": [
+   440.2,
+   78.7,
+   549.2,
+   187.4
+  ],
+  "area_share": 0.024
+ },
+ {
+  "crop": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1__r6.pdf",
+  "page": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1",
+  "bbox": [
+   328.9,
+   188.4,
+   438.0,
+   297.1
+  ],
+  "area_share": 0.024
+ },
+ {
+  "crop": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1__r7.pdf",
+  "page": "multi_column/06032fa18b312e3f7186a1cbd6c11cc4b1a4_page_13_pg1",
+  "bbox": [
+   440.2,
+   188.4,
+   549.2,
+   297.1
+  ],
+  "area_share": 0.024
+ },
+ {
+  "crop": "multi_column/0621a0090414e4681e90a4e1ea543acca910_page_4_pg1__r0.pdf",
+  "page": "multi_column/0621a0090414e4681e90a4e1ea543acca910_page_4_pg1",
+  "bbox": [
+   170.4,
+   483.5,
+   427.3,
+   695.1
+  ],
+  "area_share": 0.108
+ },
+ {
+  "crop": "multi_column/075cc4e94eb8bdd518b96fc27aaef00a64c8_page_11_pg1__r0.pdf",
+  "page": "multi_column/075cc4e94eb8bdd518b96fc27aaef00a64c8_page_11_pg1",
+  "bbox": [
+   190.6,
+   570.4,
+   337.0,
+   680.4
+  ],
+  "area_share": 0.038
+ },
+ {
+  "crop": "multi_column/07619750fcfe3caff8ec82642ac2449b490a_page_1_pg1__r0.pdf",
+  "page": "multi_column/07619750fcfe3caff8ec82642ac2449b490a_page_1_pg1",
+  "bbox": [
+   303.7,
+   189.0,
+   567.9,
+   436.8
+  ],
+  "area_share": 0.131
+ },
+ {
+  "crop": "multi_column/081875a1035e34dee439b9a2a3a55e319405_page_16_pg1__r0.pdf",
+  "page": "multi_column/081875a1035e34dee439b9a2a3a55e319405_page_16_pg1",
+  "bbox": [
+   148.7,
+   102.5,
+   451.6,
+   380.8
+  ],
+  "area_share": 0.174
+ },
+ {
+  "crop": "multi_column/081875a1035e34dee439b9a2a3a55e319405_page_22_pg1__r0.pdf",
+  "page": "multi_column/081875a1035e34dee439b9a2a3a55e319405_page_22_pg1",
+  "bbox": [
+   201.9,
+   140.6,
+   396.7,
+   318.0
+  ],
+  "area_share": 0.071
+ },
+ {
+  "crop": "multi_column/081875a1035e34dee439b9a2a3a55e319405_page_4_pg1__r0.pdf",
+  "page": "multi_column/081875a1035e34dee439b9a2a3a55e319405_page_4_pg1",
+  "bbox": [
+   305.7,
+   529.6,
+   552.5,
+   715.9
+  ],
+  "area_share": 0.095
+ },
+ {
+  "crop": "multi_column/081875a1035e34dee439b9a2a3a55e319405_page_4_pg1__r1.pdf",
+  "page": "multi_column/081875a1035e34dee439b9a2a3a55e319405_page_4_pg1",
+  "bbox": [
+   48.3,
+   201.7,
+   295.6,
+   366.8
+  ],
+  "area_share": 0.084
+ },
+ {
+  "crop": "multi_column/0a7e813e2010ecd8239725c32c859fe00c92_page_2_pg1__r0.pdf",
+  "page": "multi_column/0a7e813e2010ecd8239725c32c859fe00c92_page_2_pg1",
+  "bbox": [
+   57.6,
+   59.9,
+   375.8,
+   258.7
+  ],
+  "area_share": 0.143
+ },
+ {
+  "crop": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_26_pg1__r0.pdf",
+  "page": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_26_pg1",
+  "bbox": [
+   220.7,
+   419.4,
+   595.3,
+   713.4
+  ],
+  "area_share": 0.227
+ },
+ {
+  "crop": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_26_pg1__r1.pdf",
+  "page": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_26_pg1",
+  "bbox": [
+   222.7,
+   191.0,
+   435.5,
+   430.8
+  ],
+  "area_share": 0.105
+ },
+ {
+  "crop": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_30_pg1__r0.pdf",
+  "page": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_30_pg1",
+  "bbox": [
+   221.4,
+   149.6,
+   556.8,
+   375.1
+  ],
+  "area_share": 0.156
+ },
+ {
+  "crop": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_30_pg1__r1.pdf",
+  "page": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_30_pg1",
+  "bbox": [
+   51.9,
+   319.4,
+   401.5,
+   578.1
+  ],
+  "area_share": 0.187
+ },
+ {
+  "crop": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_32_pg1__r0.pdf",
+  "page": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_32_pg1",
+  "bbox": [
+   254.0,
+   153.9,
+   563.4,
+   390.7
+  ],
+  "area_share": 0.151
+ },
+ {
+  "crop": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_32_pg1__r1.pdf",
+  "page": "multi_column/0b045ab838c05c4ff1ac844caf826f8f368d_page_32_pg1",
+  "bbox": [
+   0.0,
+   376.1,
+   397.1,
+   594.5
+  ],
+  "area_share": 0.179
+ },
+ {
+  "crop": "multi_column/0b128decb905a38700baf486672b8634c308_page_4_pg1__r0.pdf",
+  "page": "multi_column/0b128decb905a38700baf486672b8634c308_page_4_pg1",
+  "bbox": [
+   175.9,
+   535.0,
+   409.9,
+   689.0
+  ],
+  "area_share": 0.079
+ },
+ {
+  "crop": "tables/11d982c1d2faa79c3ea4c05c707b84a72b8e_pg3_pg1__r0.pdf",
+  "page": "tables/11d982c1d2faa79c3ea4c05c707b84a72b8e_pg3_pg1",
+  "bbox": [
+   56.4,
+   262.8,
+   280.1,
+   330.5
+  ],
+  "area_share": 0.03
+ },
+ {
+  "crop": "tables/11d982c1d2faa79c3ea4c05c707b84a72b8e_pg3_pg1__r1.pdf",
+  "page": "tables/11d982c1d2faa79c3ea4c05c707b84a72b8e_pg3_pg1",
+  "bbox": [
+   315.8,
+   100.3,
+   544.3,
+   210.7
+  ],
+  "area_share": 0.05
+ },
+ {
+  "crop": "tables/1801ca1db8bc496d17aeb2ea9e21c685443c_pg5_pg1__r0.pdf",
+  "page": "tables/1801ca1db8bc496d17aeb2ea9e21c685443c_pg5_pg1",
+  "bbox": [
+   305.9,
+   525.3,
+   546.0,
+   668.9
+  ],
+  "area_share": 0.074
+ },
+ {
+  "crop": "tables/3331dcc1ca4cf2f6841e60e838cb95a84528_pg2__r0.pdf",
+  "page": "tables/3331dcc1ca4cf2f6841e60e838cb95a84528_pg2",
+  "bbox": [
+   77.4,
+   173.5,
+   259.1,
+   282.0
+  ],
+  "area_share": 0.041
+ },
+ {
+  "crop": "tables/3a91fad8184c20e498f8b76585554783fa3b_pg2_pg1__r0.pdf",
+  "page": "tables/3a91fad8184c20e498f8b76585554783fa3b_pg2_pg1",
+  "bbox": [
+   46.0,
+   378.6,
+   270.3,
+   457.3
+  ],
+  "area_share": 0.035
+ },
+ {
+  "crop": "tables/3d780cdcc987c65fdc7e1628c6a32af33d5d_pg22_pg1__r0.pdf",
+  "page": "tables/3d780cdcc987c65fdc7e1628c6a32af33d5d_pg22_pg1",
+  "bbox": [
+   84.9,
+   96.2,
+   543.1,
+   682.8
+  ],
+  "area_share": 0.536
+ },
+ {
+  "crop": "tables/4c77cbf4de004721c9da33c7f3843716c9a6_pg4_pg1__r0.pdf",
+  "page": "tables/4c77cbf4de004721c9da33c7f3843716c9a6_pg4_pg1",
+  "bbox": [
+   69.9,
+   518.5,
+   526.1,
+   779.6
+  ],
+  "area_share": 0.238
+ },
+ {
+  "crop": "tables/4db371aebdbbfa28531a816f9bf26ed0a028_pg52_pg1__r0.pdf",
+  "page": "tables/4db371aebdbbfa28531a816f9bf26ed0a028_pg52_pg1",
+  "bbox": [
+   194.4,
+   113.4,
+   446.4,
+   732.1
+  ],
+  "area_share": 0.311
+ },
+ {
+  "crop": "tables/53d3f304da5d1943dd4f650937f7cdbfda90_pg3__r0.pdf",
+  "page": "tables/53d3f304da5d1943dd4f650937f7cdbfda90_pg3",
+  "bbox": [
+   81.3,
+   28.8,
+   267.5,
+   276.0
+  ],
+  "area_share": 0.095
+ },
+ {
+  "crop": "tables/587a1f5a89db9e04752baea0b4f94a364b7a_pg7_pg1__r0.pdf",
+  "page": "tables/587a1f5a89db9e04752baea0b4f94a364b7a_pg7_pg1",
+  "bbox": [
+   82.7,
+   110.8,
+   466.7,
+   185.3
+  ],
+  "area_share": 0.057
+ },
+ {
+  "crop": "tables/587a1f5a89db9e04752baea0b4f94a364b7a_pg7_pg1__r1.pdf",
+  "page": "tables/587a1f5a89db9e04752baea0b4f94a364b7a_pg7_pg1",
+  "bbox": [
+   142.4,
+   186.8,
+   406.9,
+   490.8
+  ],
+  "area_share": 0.16
+ },
+ {
+  "crop": "tables/8bf7270c7971c46736f4d95f7117dbd9dcff_pg10__r0.pdf",
+  "page": "tables/8bf7270c7971c46736f4d95f7117dbd9dcff_pg10",
+  "bbox": [
+   10.0,
+   8.5,
+   244.7,
+   55.0
+  ],
+  "area_share": 0.022
+ },
+ {
+  "crop": "tables/9a61fe7883401ae6a1e4fa506030c59e99ea_pg2__r0.pdf",
+  "page": "tables/9a61fe7883401ae6a1e4fa506030c59e99ea_pg2",
+  "bbox": [
+   43.3,
+   61.2,
+   403.7,
+   113.5
+  ],
+  "area_share": 0.067
+ },
+ {
+  "crop": "tables/9a61fe7883401ae6a1e4fa506030c59e99ea_pg2__r1.pdf",
+  "page": "tables/9a61fe7883401ae6a1e4fa506030c59e99ea_pg2",
+  "bbox": [
+   72.5,
+   96.1,
+   373.7,
+   387.0
+  ],
+  "area_share": 0.311
+ },
+ {
+  "crop": "tables/a534e72afcecc225a6b2896ddf7290003c9c_pg6__r0.pdf",
+  "page": "tables/a534e72afcecc225a6b2896ddf7290003c9c_pg6",
+  "bbox": [
+   164.1,
+   72.4,
+   432.7,
+   305.6
+  ],
+  "area_share": 0.125
+ },
+ {
+  "crop": "tables/a534e72afcecc225a6b2896ddf7290003c9c_pg6__r1.pdf",
+  "page": "tables/a534e72afcecc225a6b2896ddf7290003c9c_pg6",
+  "bbox": [
+   176.9,
+   365.8,
+   419.1,
+   509.8
+  ],
+  "area_share": 0.07
+ },
+ {
+  "crop": "tables/fa18a15c1dbbfcb71b1f1ea1b8f116e24b8a_pg2_pg1__r0.pdf",
+  "page": "tables/fa18a15c1dbbfcb71b1f1ea1b8f116e24b8a_pg2_pg1",
+  "bbox": [
+   350.2,
+   267.5,
+   546.8,
+   437.7
+  ],
+  "area_share": 0.054
+ }
+]

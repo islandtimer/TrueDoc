@@ -55,10 +55,12 @@ licence its installed metadata states:
 | `pyyaml`, `pydantic`, `lxml`, `rich`, `typer`, `rapidfuzz` | front matter, models, output, CLI | MIT and BSD-3-Clause |
 | `wordninja` | splits glued words in OCR layers | MIT by its repository; the installed metadata states none |
 
-**Not yet checked, and the owner's to settle before a product ships:** the licences of the two sets of
-model *weights* the pipeline downloads at run time - `ds4sd/docling-layout-heron` for layout and
-`SWHL/RapidOCR` for the English recogniser. Those are data, not packages, and their terms are not in any
-installed metadata.
+**The two sets of model *weights* the pipeline downloads at run time, checked 18 September 2026** (they are
+data, not packages, so their terms are not in any installed metadata): both repositories declare
+**Apache-2.0** in their model card and their `license:` tag, read through Hugging Face's API that day.
+`ds4sd/docling-layout-heron` (layout) now redirects to `docling-project/docling-layout-heron` - the code's
+name still resolves, and the licence is the same on the new address. `SWHL/RapidOCR` (the English
+recogniser) likewise. Both are named in the NOTICE file with the rest of what TrueDoc ships with.
 
 ## D011 - Text a reader cannot see stays out of the body, and is recorded in the front matter (2026-09-03, owner's decision)
 
@@ -658,3 +660,18 @@ interval, and that the readings are replayed from a recorded session. One dated 
 **Before anything goes public, no decision needed:** LICENSE and a NOTICE for the Apache-2.0 olmOCR scorer code
 under `bench/olmocr_ref/`; the two unchecked weight licences of D007 resolved; a README a stranger can install
 from, tested in a fresh environment (the review's F06); the personal paths tidied out of the logs.
+
+**Done 18 September, evening, before the private push:** a scan of every blob in the history (3,666, all
+patterns for API keys, tokens, private keys, secret assignments, emails, IP logins) found no credential - the one
+"secret" is `api_key="test-key"` in a test, and the email addresses are insurers' public contact lines on
+benchmark pages. Personal paths: 18 files named this machine's folders; the repository root is now derived from
+each script's own location and the owner's library from `bench/tools/doc_library.py` (`TRUEDOC_LIBRARY`, or the
+git-ignored `bench/library_path.txt`), and the 505 paths in `bench/gpu/out5/pro/own/manifest.json` are relative
+to the library. LICENSE is the Apache-2.0 text from apache.org (`pyproject.toml` said MIT; corrected). NOTICE
+names the olmOCR scorer copy, the committed readings and the dataset's ODC-BY terms, the four sample documents,
+and both weight repositories - each checked Apache-2.0 through Hugging Face's API that day. The three replay
+candidates run 97 used rebuild byte for byte from the committed readings (the crop manifest `olmocr2c` needs
+was git-ignored; it is now `bench/gpu/out3/crops_failing_manifest.json`), and the README says how. **Left
+open for the owner:** the author email on all 166 commits is the owner's personal address; GitHub's noreply
+address would need the history rewritten (every hash the docs cite would change) - the owner decides before
+the repository goes public, not before the private push.

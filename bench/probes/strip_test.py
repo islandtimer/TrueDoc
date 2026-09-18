@@ -11,7 +11,7 @@ import subprocess
 import sys
 import time
 
-REPO = r"C:\Users\griff\OneDrive\Documents\10 Have a crack\31b TrueDoc_Fable"
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, REPO)
 from truedoc.vision.witness import strip_running_heads  # noqa: E402
 

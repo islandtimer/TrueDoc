@@ -23,8 +23,9 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-LIB = "/".join(("C:", "Users", "griff", "OneDrive", "Documents", "10 Have a crack",
-                "25 InsurancePlatform", "uploads", "PDS Docs"))          # as in kfs_grade.py
+sys.path.insert(0, os.path.join(REPO, "bench", "tools"))
+import doc_library  # noqa: E402
+LIB = doc_library.root()                                                # as in kfs_grade.py
 with open(os.path.join(REPO, "truedoc", "data", "en_common_words.txt"), encoding="utf-8") as fh:
     VOCAB = {w.strip().lower() for w in fh if w.strip()}
 WORD = re.compile("[A-Za-z]+")

@@ -23,7 +23,9 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 BENCH = os.path.join(REPO, "bench", "data", "olmocr-bench", "bench_data", "pdfs")
 SUBSETS = ("tables", "multi_column", "long_tiny_text", "headers_footers", "arxiv_math", "old_scans", "old_scans_math")
 MANIFEST = os.path.join(REPO, "bench", "out", "insurance_set", "manifest.json")
-LIB = "C:/Users/griff/OneDrive/Documents/10 Have a crack/25 InsurancePlatform/uploads/PDS Docs"
+sys.path.insert(0, os.path.join(REPO, "bench", "tools"))
+import doc_library  # noqa: E402
+LIB = doc_library.root()
 TOUCH = 1.0        # pieces meet: the next starts no more than this after the last ends
 OVERLAP = 3.0      # ... or overlaps it by no more than this
 MIN_PIECE = 10.0   # a dash is not a piece of a rule

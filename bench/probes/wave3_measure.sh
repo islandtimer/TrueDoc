@@ -1,9 +1,9 @@
 #!/bin/bash
 # Score the two vision merges built from run 54's pages, then sort the blank pages. One heavy job at a time.
-cd "C:/Users/griff/OneDrive/Documents/10 Have a crack/31b TrueDoc_Fable" || exit 1
+cd "$(dirname "$0")/../.." || exit 1
 PY=.venv/Scripts/python
 ST=bench/out/launch/wave3_status.txt
-SP="C:/Users/griff/AppData/Local/Temp/claude/C--Users-griff-OneDrive-Documents-10-Have-a-crack-31b-TrueDoc-Fable/afd79960-ca6a-4011-a3e5-c446c17183dc/scratchpad"
+SP="${SCRATCH:?set SCRATCH to the folder holding partial_census.py (a session scratchpad, 6 September)}"
 for C in truedoc53_vlm truedoc53_vlmall; do
   D="bench/runs/${C}-$(date +%Y%m%d-%H%M%S)"; mkdir -p "$D"
   echo "$(date +%H:%M) scoring $C into $D" >> "$ST"

@@ -29,6 +29,10 @@ Thumbs.db
 # Secrets
 .env
 
+# Where this machine keeps the owner's document library (bench/tools/doc_library.py reads it;
+# TRUEDOC_LIBRARY in the environment does the same). The library itself is never in the repository.
+bench/library_path.txt
+
 # GPU step working files: inputs only. These are cut from the benchmark PDFs by
 # select_pages.py, select_regions.py and select_bands.py, so they cost nothing to remake.
 bench/gpu/pdfs/

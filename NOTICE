@@ -1,0 +1,33 @@
+TrueDoc
+Copyright 2026 islandtimer
+
+Licensed under the Apache License, Version 2.0 (the LICENSE file at the root of this repository).
+
+This repository also contains, or downloads at run time, work by others:
+
+bench/olmocr_ref/
+    The olmOCR-bench scorer (benchmark.py, tests.py, render.py) from the allenai/olmocr repository on
+    GitHub; Copyright the Allen Institute for Artificial Intelligence, Apache License 2.0
+    (bench/olmocr_ref/LICENSE). Every score in docs/BENCHMARKS.md is produced by running this copy of
+    benchmark.py over the dataset's own test files: bench/score_olmocr.py rewrites its three relative
+    imports to the installed `olmocr` package's modules (tests, report, utils; olmocr 0.4.27) and
+    changes nothing else, so the test rules are the package's and the driver is this file.
+
+bench/gpu/out*/
+    Saved page readings produced by open-weight vision models on pages of the olmOCR-bench dataset
+    (allenai/olmOCR-bench, ODC-BY) and, under out5/pro/own/, on pages of publicly available Australian
+    insurance documents. The models: allenai/olmOCR-2-7B-1025, infly/Infinity-Parser2-Flash and
+    infly/Infinity-Parser2-Pro, each Apache License 2.0. The readings are kept so that every benchmark
+    run since run 55 can be reproduced without a GPU.
+
+samples/
+    Four product disclosure statements published by their insurers, kept as test documents; the
+    insurers hold their copyright.
+
+Model weights fetched at run time, none stored here:
+    docling-project/docling-layout-heron (formerly ds4sd/docling-layout-heron), layout detection -
+    Apache License 2.0.
+    SWHL/RapidOCR, the English text recogniser used by rapidocr_onnxruntime - Apache License 2.0.
+
+Python dependencies are listed in pyproject.toml with their licences; docs/DECISIONS.md (D007) records
+the licence check of everything on the conversion path.

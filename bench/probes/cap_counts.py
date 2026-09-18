@@ -26,8 +26,9 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 BENCH = os.path.join(REPO, "bench", "data", "olmocr-bench", "bench_data", "pdfs")
 SUBSETS = ("tables", "multi_column", "long_tiny_text", "headers_footers", "arxiv_math", "old_scans", "old_scans_math")
 MANIFEST = os.path.join(REPO, "bench", "out", "insurance_set", "manifest.json")
-LIB = os.path.join("C:/", "Users", "griff", "OneDrive", "Documents", "10 Have a crack",
-                   "25 InsurancePlatform", "uploads", "PDS Docs")       # as in kfs_grade.py
+sys.path.insert(0, os.path.join(REPO, "bench", "tools"))
+import doc_library  # noqa: E402
+LIB = doc_library.root()                                                # as in kfs_grade.py
 ASSIGN = "                                    advance = ox2.value - x_off - origin[0]\n"
 COUNTED = "                                    CAP_LOG.append(i)\n" + ASSIGN
 

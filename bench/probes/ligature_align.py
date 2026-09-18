@@ -22,9 +22,10 @@ import pypdfium2.raw as raw
 from pypdf.generic import ByteStringObject, ContentStream, TextStringObject
 
 sys.stdout.reconfigure(encoding="utf-8")
-PDF = os.path.join("C:/", "Users", "griff", "OneDrive", "Documents", "10 Have a crack", "25 InsurancePlatform",
-                   "uploads", "PDS Docs", "RAA", "landlord-insurance",
-                   "raa-landlord-and-short-stay-insurance-pds-product-disclosure-statement-30-9-2021_0f6ceea4.pdf")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
+import doc_library  # noqa: E402
+PDF = doc_library.absolute("RAA/landlord-insurance/"
+                           "raa-landlord-and-short-stay-insurance-pds-product-disclosure-statement-30-9-2021_0f6ceea4.pdf")
 PAGE = 22
 LIGATURES = {"f_f": "ff", "ff": "ff", "f_i": "fi", "fi": "fi", "f_l": "fl", "fl": "fl",
              "f_f_i": "ffi", "ffi": "ffi", "f_f_l": "ffl", "ffl": "ffl"}

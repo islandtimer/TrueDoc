@@ -16,9 +16,10 @@ import sys
 import pypdf
 
 sys.stdout.reconfigure(encoding="utf-8")
-PDF = os.path.join("C:/", "Users", "griff", "OneDrive", "Documents", "10 Have a crack", "25 InsurancePlatform",
-                   "uploads", "PDS Docs", "RAA", "landlord-insurance",
-                   "raa-landlord-and-short-stay-insurance-pds-product-disclosure-statement-30-9-2021_0f6ceea4.pdf")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
+import doc_library  # noqa: E402
+PDF = doc_library.absolute("RAA/landlord-insurance/"
+                           "raa-landlord-and-short-stay-insurance-pds-product-disclosure-statement-30-9-2021_0f6ceea4.pdf")
 BFCHAR = re.compile("<([0-9A-Fa-f]+)>[ ]*<([0-9A-Fa-f]+)>")
 
 

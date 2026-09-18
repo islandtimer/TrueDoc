@@ -33,7 +33,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from truedoc import marks  # noqa: E402
 from truedoc.model import BBox  # noqa: E402
 
-LIB = r"C:\Users\griff\OneDrive\Documents\10 Have a crack\25 InsurancePlatform\uploads\PDS Docs"
+import doc_library  # noqa: E402
+
+LIB = doc_library.root()
 
 
 def _neighbours(page, box, long_side):

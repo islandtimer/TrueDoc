@@ -23,7 +23,9 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MANIFEST = os.path.join(REPO, "bench", "out", "insurance_set", "manifest.json")
-LIB = "C:/Users/griff/OneDrive/Documents/10 Have a crack/25 InsurancePlatform/uploads/PDS Docs"
+sys.path.insert(0, os.path.join(REPO, "bench", "tools"))
+import doc_library  # noqa: E402
+LIB = doc_library.root()
 READABLE = {"tick", "cross", "dot", "circle", "square", "box"}
 
 

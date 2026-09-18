@@ -17,8 +17,9 @@ import sys
 import pymupdf
 
 sys.stdout.reconfigure(encoding="utf-8")
-LIB = os.path.join("C:/", "Users", "griff", "OneDrive", "Documents", "10 Have a crack",
-                   "25 InsurancePlatform", "uploads", "PDS Docs")
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
+import doc_library  # noqa: E402
+LIB = doc_library.root()
 FRAGMENT = sys.argv[1] if len(sys.argv) > 1 else "landlord-building-KFSLLBLD"
 ANSWER = re.compile("^(Yes|No|Optional)$")
 

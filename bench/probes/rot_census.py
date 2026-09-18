@@ -16,7 +16,7 @@ import time
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 import pymupdf  # noqa: E402
 
-REPO = r"C:\Users\griff\OneDrive\Documents\10 Have a crack\31b TrueDoc_Fable"
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, REPO)
 from truedoc.ocr.rapid import ocr_page, _looks_like_text, _looks_like_language  # noqa: E402
 

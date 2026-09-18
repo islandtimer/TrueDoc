@@ -19,7 +19,10 @@ import sys
 
 import pypdfium2 as pdfium
 
-LIBRARY = r"C:/Users/griff/OneDrive/Documents/10 Have a crack/25 InsurancePlatform/uploads/PDS Docs"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import doc_library  # noqa: E402
+
+LIBRARY = doc_library.root()
 CONVERTED = os.path.join("bench", "out", "library")
 OUT = os.path.join("bench", "out", "insurance_set")
 HOW_MANY = int(sys.argv[1]) if len(sys.argv) > 1 else 25

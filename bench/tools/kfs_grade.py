@@ -41,8 +41,10 @@ import os
 import re
 import sys
 
-LIB = os.path.join("C:/", "Users", "griff", "OneDrive", "Documents", "10 Have a crack",
-                   "25 InsurancePlatform", "uploads", "PDS Docs")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import doc_library  # noqa: E402
+
+LIB = doc_library.root()
 OUT = os.path.join("bench", "out", "kfs")
 HOLDOUT_IN = 5          # one sheet in five is never reported with the tuned-on set
 
