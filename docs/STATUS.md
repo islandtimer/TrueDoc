@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-18, 15:10 (**The quoted number is 86.6 (run 96), and the afternoon's work is committed; paused on your word with run 97 scoring itself.** Since this morning's decisions: Flash passed the invented-text check (never backed less by the page's own words than olmOCR 2 on any of 281 pages); the seven old-scan-maths checks our own handling lost were traced to a variable between dollars being escaped as money, fixed, measured on every category a model reads and carried into run 96 - 86.6 (CI 85.6-87.4), held-out 86.0, exactly +7 and nothing else moved; two more maths rules taken from what the leader's post-processing does (an aligned column of equations written one formula a row, a formula split at an operator joined) measured +9 on old-scan maths and were committed, the two rules that would put English words inside formulas declined, and run 97 carries them - `bench/out/launch/launch97_status.txt` says when it has scored; Pro alone over all 1,403 pages scores 87.1 on our scorer with its authors' post-processing and 86.1 raw, against our 86.6. `docs/PROGRESS_LOG.md` has each measurement. **Three decisions of yours, made this morning, settle what yesterday measured: Flash is
+_Last updated: 2026-09-18, 16:40 (**The quoted number is 86.8 (run 97, scored 16:25), and everything is committed; paused on your word.** Since this morning's decisions: Flash passed the invented-text check (never backed less by the page's own words than olmOCR 2 on any of 281 pages); the seven old-scan-maths checks our own handling lost were traced to a variable between dollars being escaped as money, fixed, measured on every category a model reads and carried into run 96 - 86.6 (CI 85.6-87.4), exactly +7 and nothing else moved; two more maths rules taken from what the leader's post-processing does (an aligned column of equations written one formula a row, a formula split at an operator joined) measured +9 on old-scan maths, the two rules that would put English words inside formulas were declined, and run 97 carried them: **86.8 (CI 86.0-87.7), held-out 86.0, exactly +9 and nothing lost** - old-scan maths 83.2 to 86.7 in one afternoon, all of it on tuned-on pages (the held-out fifth has not moved since run 95). The leader's 87.6 now sits just inside the top of our interval and eight tenths above us on the number. Pro alone over all 1,403 pages scores 87.1 on our scorer with its authors' post-processing and 86.1 raw, against our 86.8. `docs/PROGRESS_LOG.md` has each measurement. **Three decisions of yours, made this morning, settle what yesterday measured: Flash is
 the standard reader of scanned pages (D033), Pro is the deep reader behind it and a live service lets its user
 choose (D034), and the number we quote is run 95's 86.4 on open weights, held-out 86.0 (D035) - second on the
 leaderboard as read on 17 September, behind 87.6.** What follows is yesterday evening's account, which those
@@ -114,8 +114,8 @@ day and still holds, except that "third" now has a second place within reach.** 
 | Runs 81 to 91, 12 and 13 Sept (the licence swap finished, D024, the hosted deep reader) | in `docs/BENCHMARKS.md`; run 89 **84.1** on open weights, run 91 **85.4** with the hosted reader |
 | TrueDoc run 92 (today's code, olmOCR 2's saved readings - the first full run since 13 Sept), 17 Sept 18:18 | 84.2 (CI 83.4-85.2; held-out 81.5; against run 89 nothing moved but tables, 896 to 905: the week of rules from the owner's library cost the benchmark nothing) |
 | TrueDoc run 94 (the same code, Infinity-Parser2-Flash, 2.2B, as the only reader of those 281 pages), 17 Sept 20:59 | 85.6 (CI 84.8-86.5; held-out 84.8; level with Chandra OCR 2's 85.8 on a model a quarter of olmOCR 2's size) |
-| **TrueDoc run 96 (run 95's arrangement, a variable or an expression between dollars read as maths - the number we quote, D035), 18 Sept 14:49** | **86.6** (CI 85.6-87.4; held-out 86.0; old-scan maths +7 against run 95, nothing else moved) |
-| TrueDoc run 97 (run 96 plus an aligned column of equations written a row at a time and a formula split at an operator joined; +9 on old-scan maths over the model-read pages), launched 18 Sept 14:50 | scores itself; `bench/out/launch/launch97_status.txt` |
+| **TrueDoc run 97 (run 96 plus an aligned column of equations written a row at a time and a formula split at an operator joined - the number we quote, D035), 18 Sept 16:25** | **86.8** (CI 86.0-87.7; held-out 86.0; old-scan maths +9 against run 96, nothing else moved, nothing lost; both pages tuned-on) |
+| TrueDoc run 96 (run 95's arrangement, a variable or an expression between dollars read as maths), 18 Sept 14:49 | 86.6 (CI 85.6-87.4; held-out 86.0; old-scan maths +7 against run 95, nothing else moved) |
 | **TrueDoc run 95 (two tiers: Flash reads every scanned page, Pro the 102 the converter's own router flags), 17 Sept 20:59** | **86.4** (CI 85.4-87.3; **held-out 86.0, the best yet**; one check short of Pro reading all 281) |
 | **TrueDoc run 93 (the same code, Infinity-Parser2-Pro's readings on the 281 pages without a digital text layer; GPU session 5), 17 Sept 18:18** | **86.4** (CI 85.5-87.3; **held-out 84.8**; old scans 47.0 to 58.6, tiny text 88.7 to 92.5, tables 88.6 to 89.6; 91 checks net; not the default - the reader is the owner's decision) |
 
@@ -131,7 +131,8 @@ reading them (run 93); the hosted deep reader's 85.4 (run 91) is now below an op
 first place is 87.6, scored with post-processing a product cannot use; second is 85.8. On your insurance set,
 **229 of 229**; on your Key Facts Sheets, **99% and 100%**, where the leaderboard's top model, untuned, scores the
 same. The suite stands at 682. **18 September: you decided the reader (D033 to D035) - Flash as standard, Pro
-behind it - and the number we quote is that arrangement's: 86.6 at run 96, with the day's maths fix.**
+behind it - and the number we quote is that arrangement's: 86.8 at run 97, with the day's three maths rules.
+The leader's 87.6 now sits just inside the top of that run's interval; on the number it is eight tenths ahead.**
 
 **15 September.** On the public exam TrueDoc scores **84.1 on open weights** (run 89) and **85.4 with the hosted deep
 reader** (run 91), against what was then a best published 83.1. **Corrected 17 September: that figure was stale. The best published is now 87.6 and TrueDoc is third, so M7 is not met** - see the leaderboard in `docs/BENCHMARKS.md`. On your insurance library it scores **229 of 229 checks**,
@@ -206,15 +207,16 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## What is being worked on right now
 
-**18 September, 16:30 - prepared for a compact.** Run 97 is converting on its own and scores itself (launched
-14:56; `bench/out/launch/launch97_status.txt`); when it is in, `docs/BENCHMARKS.md`'s table and this page want its
-row, and the quoted number moves if old-scan maths moves as the measurement says (+9, to about 86.8). **Open, in
+**18 September, 16:40 - run 97 is in, and the pause holds.** Run 97 scored at 16:25: **86.8 (CI 86.0-87.7)**, old-scan
+maths 388 to 397, exactly the +9 the code-against-code measure promised, nothing else moved, nothing lost; held-out
+86.0, unchanged, because both pages it moved are tuned-on. The quoted number is now this run's (D035: the chosen
+arrangement on the current code) and every page that carries it says so. **Open, in
 the order I would take them - the review's order, which I recommended and you have not yet ruled on:** (1) the
 status contract the review's F01 asks for, using its ten probes as acceptance cases, and the F10 repairs to
 `bench/tools/kfs_two_readers.py` (no held-out sheet in the detailed listing; marks compared, not stripped;
 critical words such as "not" flagged whatever the similarity; rows one reader misses counted); (2) publishing -
 LICENSE, NOTICE, D007's two weight licences, a stranger's README tested clean, a secrets scan of the history, the
-private push, then the leaderboard entry in the strong form once run 97 is in and the picture-text check is done
+private push, then the leaderboard entry in the strong form, from run 97's pages, once the picture-text check is done
 (D036); (3) the picture-text check itself (the small rental); (4) the fifteen Key Facts Sheet cells, re-listed
 without held-out sheets, each read against its page image; (5) Pro's 100 random library pages and 25 insurance-set
 pages compared with ours; (6) the tables gap on digital pages (Pro alone 930 checks to our 913); (7) a provider for

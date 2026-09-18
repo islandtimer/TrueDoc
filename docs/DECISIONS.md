@@ -644,11 +644,11 @@ entries cite.
 - One repository, one history: no duplicate "public copy". Local-only material is kept out by `.gitignore`, never
   by a second repo. Pushed private first (which also closes the two-week-old "no backup" risk), public when the
   README, LICENSE, NOTICE, secrets scan of the whole history and a clean-install test are done, in the same step as
-  the leaderboard entry; a tag per quoted run (`run-96`, ...) so the entry names the exact commit.
+  the leaderboard entry; a tag per quoted run (`run-97`, ...) so the entry names the exact commit.
 - The owner does the two one-time logins himself (GitHub push credentials; `hf auth login` with a write token):
   the tools then work from the agent's shell without the credential ever passing through it.
 
-**The entry itself** (to be written once run 97 has scored and D033's picture-text check is done): named so that
+**The entry itself** (from run 97's pages, 86.8, once D033's picture-text check is done): named so that
 nobody reads it as a model - "TrueDoc (native text + Infinity-Parser2 Flash/Pro)" - with notes that say exactly
 what ran: the PDF's own text for digital pages, Flash for pages without a text layer, Pro behind the router on the
 pages our own OCR cannot read, olmOCR 2 for picture regions, all eight sections, the official scorer, the

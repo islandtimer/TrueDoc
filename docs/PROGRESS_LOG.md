@@ -134,9 +134,21 @@ stranger's README tested in a clean environment, and a secrets scan of the whole
 
 **Run 96, scored 14:49: 86.6 (CI 85.6-87.4).** Against run 95, old-scan maths 381 to 388 - the seven, and nothing
 else moved in any category. Held-out 86.0 (unchanged; both algebra pages are tuned-on), tuned-on 84.5. Under D035
-this is the number we quote. Run 97, the tree at 9f9b77b with the two rules above, was launched at 14:50 and scores
-itself; the owner asked for a pause once run 96 and the re-measurement were in and the docs current, which is where
-this entry ends.
+this was the number we quote for an hour and a half. Run 97, the tree at 9f9b77b with the two rules above, was
+validated at 14:50 and launched at 14:56; the owner asked for a pause once run 96 and the re-measurement were in
+and the docs current.
+
+**Run 97, scored 16:25: 86.8 (CI 86.0-87.7) - the number we quote.** Against run 96, old-scan maths 388 to 397:
+**nine won, none lost**, exactly the code-against-code measure over the model-read pages - eight checks on `3_pg39`,
+the aligned column, and one on `4_pg48`, the seam join - and every other category identical to the check
+(`bench/tools/run_summary.py` over the two run folders). Held-out 86.0 (1,096 of 1,255, unchanged: both pages are
+tuned-on), tuned-on 84.8 (4,993 of 5,764). The afternoon's three maths rules together took old-scan maths from 83.2
+at run 95 to 86.7, every check of it on tuned-on pages - which is the honest reading: the rules were built from
+what the leader's post-processing does to pages I could see, and the held-out fifth has not moved since run 95.
+The leader's 87.6 now sits just inside the top of run 97's interval, by the same reading that called Chandra's 85.8
+level with run 91; on the number it is eight tenths ahead, so M7 stays not met. The runs table, the leaderboard
+table and its section-score table in `docs/BENCHMARKS.md` (which now carries run 97's and run 94's section rows),
+`docs/STATUS.md` and the memory brief say 86.8; nothing else moved. The pause holds here.
 
 ---
 
