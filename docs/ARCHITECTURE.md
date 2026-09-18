@@ -10,6 +10,10 @@ PDF page
   |                               - a character whose code cannot mean what it draws is read by its drawing: a
   |                                 private-use one, and a Latin letter in a dingbat font (Wingdings' "n" is a square)
   |                               - a mark alone on a line, drawn or named by the text layer, joins the words beside it
+  |                               - hidden text (D011): a character is covered when a later opaque fill covers its
+  |                                 *ink*, not its taller font box; the render may overturn that only on the evidence
+  |                                 of characters no visible character is printed over; paint order is matched by
+  |                                 position and character, so an earlier wording under a row's shading stays out
   |     ocr/rapid.py              (only if the page has no usable text) RapidOCR -> same evidence shapes; a page read sideways is turned and read again
   v
   |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;

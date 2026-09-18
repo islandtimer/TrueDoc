@@ -4,6 +4,63 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-18, late night (21:35-22:24) - Hidden words in the body: an earlier wording under a row's shading, with the present sentence printed over it (D011)
+
+**What the comparison found, read against the page:** "entered" at the end of a GIO cell and "item." inside an
+Apia one are not on the page. Each is in the PDF, painted first; then the table row's opaque shading over it; then
+the visible sentence at the same spot. D011 exists to keep such text out of the body, and its check had judged
+one of them `covered` and then let it through. Three separate faults, stacked:
+
+1. **The cover test measured the font box.** A fill had to cover 0.9 of a character's box; a band the height of
+   the line covers every stroke and 0.87 of the box, which holds the line's leading too. A character is now covered
+   when a later opaque fill covers 0.9 of its *ink* (`_ink_box`: from 0.22 em under the baseline to 0.75 over it,
+   inside its own box), or of its box as before.
+2. **The render check took another text's ink for this one's.** `_Visibility.verify` renders a covered run's box
+   and overturns the verdict if the patch shows contrast - but the patch showed the sentence printed over it. The
+   render is now asked only about the characters no visible character is printed over (`_clear_stretches`: other
+   visible ink over a tenth of a character's ink counts), a stretch at a time, over the ink region brought in a
+   point and to whole points; where there are none it cannot testify and the paint order stands. A run with nothing
+   over it is one stretch, as before.
+3. **Characters were matched to their paint order by position alone.** A hidden full stop and the "t" of the
+   visible "Earthquake" share an origin to half a point; the later overwrote the earlier in `_span_at`, so "item"
+   was hidden and "." stayed ("damage that . occurs"). Matched now by position *and* character, in the order the
+   page gives them (`_span_queue`), in both readers.
+
+**Sized before it was written** (`bench/probes/covered_overprint_census.py`, text layer only): runs un-hidden by the
+render while overprinted - Key Facts Sheets 5 of 86 un-hidden runs, with a clean gap (81 at no overprint at all);
+the benchmark's 1,122 digital pages 7, all one handbook. A share-of-overlap threshold would have been a tuned
+number there (the handbook's runs sit at 0.48 to 0.63), which is why the rule is about what the render can
+testify to and not a share. Runs whose ink a later fill covers though not their box: 6 on the sheets, every one
+an overprinted remnant; 1 on the benchmark, visible, and left visible by the render.
+
+**Two traps on the way, each now a test.** The render saw the *band's edge* round a font box standing proud of it
+and called it ink (so the ink region is what is rendered); and a patch ending at 202.03 points took in the pixel
+row the band's foot runs through (so the patch is brought to whole points). `tests/test_hidden_text_overprint.py`
+builds the three cases from raw PDF operators and reads each with both libraries: 8 tests.
+
+**Measured.** A screen of the text layer of every page of all three populations, both code states (1,808 pages, six
+minutes a state, the before state from a worktree, each run printing its `truedoc`): **22 pages change - 9
+benchmark, 13 Key Facts Sheets, 0 of the insurance set - and every change is text newly hidden; nothing newly
+visible.** Each newly hidden run on a page I may open was then looked at on the page, its box outlined: a magazine
+foot reading "86 ... MAY 2012" over a hidden "94" and "JANUARY 2012"; page tabs "40", "41" over "26", "27"; a
+handbook's footer "thermofisher.com/probes" over a hidden "www.invitrogen.com/probes" and its title with a
+trademark sign over the old one with a registered sign; "Policy Name" over "s at:"; a stray glyph on blank paper,
+twice. One looked wrong and was not: on Budget Direct's sheet the box of a hidden "STE" sits over the body line
+under the big blue "STEP" - the PDF holds *two*, the visible heading and a second "STE" from an earlier layout
+under the body's fill, which had been coming out as a phantom top-level heading, `# STE`, on six sheets.
+Converted in full: the 9 benchmark pages, no check moves and one body changes (a stray "Ó" out of a garbled
+cell - the rest was running heads and feet, dropped anyway); the 190 sheets, exactly the 13 predicted change, each
+by the loss of a word the page does not print (and the Budget and ING sheets' heading levels settle up one with
+the phantom gone), grade unchanged (157 of 158; held out 32 of 32, 375 of 375). The two-readers comparison goes
+from 15 tuned-on differences to 12; a held-out total falls by one, seen as a number only. Suite 743.
+
+**What this was worth knowing.** The benchmark would never have shown it: nothing moved there. It was found by
+putting a second reader beside ours on the owner's documents and reading the differences against the page - two
+of the six causes turned out to be this one fault, and the census found four more sheets and a benchmark
+document with it that no difference had pointed at.
+
+---
+
 ## 2026-09-18, night (21:20-21:33) - The Key Facts Sheet differences, each read against its page: six defects of ours, one of the model's
 
 The repaired two-readers tool listed 23 differences on the tuned-on sheets. Each was read against the page image

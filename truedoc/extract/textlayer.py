@@ -8,6 +8,7 @@ assessment of how trustworthy the text layer is.
 from __future__ import annotations
 
 import dataclasses
+import math
 import os
 import unicodedata
 
@@ -232,6 +233,17 @@ def _words_interleave(a: list[Word], b: list[Word]) -> bool:
     return True
 
 
+def _ink_box(ch: Char) -> BBox:
+    """Where a character's ink can be: inside its box, from a fifth of an em under the baseline to
+    three quarters of an em over it. A font's box is taller than anything printed in it - it holds
+    the line's leading too - so a band of shading as tall as the line covers every stroke of a
+    character while covering 87% of its box (a GIO Key Facts Sheet, 18 September 2026)."""
+    top, bottom = max(ch.bbox.y0, ch.origin_y - 0.75 * ch.size), min(ch.bbox.y1, ch.origin_y + 0.22 * ch.size)
+    if ch.size < 1.0 or bottom - top < 1.0:
+        return ch.bbox
+    return BBox(ch.bbox.x0, top, ch.bbox.x1, bottom)
+
+
 class _Visibility:
     """Decides, per character, whether a reader can see it (decision D011).
 
@@ -246,9 +258,16 @@ class _Visibility:
                  raw: dict | None = None, objects: list | None = None) -> None:
         self.width, self.height = width, height
         self._span_at: dict[tuple[int, int], dict] = {}
+        # The same, by position *and* character, in the order the page gives them. Position alone
+        # is not enough where two texts are printed at one spot: an earlier wording's full stop
+        # and a letter of the sentence set over it share an origin to half a point, the later
+        # overwrote the earlier, and the hidden full stop was judged by the visible letter's
+        # paint order (an Apia Key Facts Sheet, 18 September 2026: "item" went and "." stayed).
+        self._span_queue: dict[tuple[int, int, str], list[dict]] = {}
         self.cover: list[tuple[int, BBox, str, tuple | None]] = []
         self.under: list[tuple[int, BBox]] = []  # anything painted (fills of any shape, images): the background is unknown there
         self.hidden: list[tuple[int, Char, str]] = []
+        self.seen: list[Char] = []      # every character judged on paint and colour: `verify` asks which of them are printed over another
         self.total_chars = 0
         self.distrusted = False
         # The page-quality check's measure (`_assess_quality`): the characters the page draws and
@@ -298,6 +317,7 @@ class _Visibility:
                             self.drawn_invisible += int(drawn_invisibly)
                         x, y = _point(c.get("origin", (0, 0)), M)
                         self._span_at[(round(x * 2), round(y * 2))] = info
+                        self._span_queue.setdefault((round(x * 2), round(y * 2), c.get("c", "")), []).append(info)
         image_area = 0.0
         for o in objects:
             if o.kind in ("image", "shading"):
@@ -331,6 +351,8 @@ class _Visibility:
                 for c in span.get("chars", []):
                     x, y = _point(c[2], M)
                     self._span_at[(round(x * 2), round(y * 2))] = info
+                    glyph = chr(c[0]) if isinstance(c[0], int) and 0 < c[0] < 0x110000 else str(c[0])
+                    self._span_queue.setdefault((round(x * 2), round(y * 2), glyph), []).append(info)
         except Exception:
             pass
         image_area = 0.0
@@ -376,14 +398,27 @@ class _Visibility:
         cx, cy = ch.bbox.cx, ch.bbox.cy
         if cx < -1.0 or cy < -1.0 or cx > self.width + 1.0 or cy > self.height + 1.0:
             return "off-page"  # beyond the visible page box (print-shop stamps, crop-mark text)
-        info = self._span_at.get((round(origin[0] * 2), round(origin[1] * 2)))
+        key = (round(origin[0] * 2), round(origin[1] * 2))
+        queue = self._span_queue.get(key + (ch.text,))
+        if queue:
+            # The page's characters are judged in the order they were recorded, so where the same
+            # character stands twice at one spot each takes its own record in turn.
+            info = queue.pop(0) if len(queue) > 1 else queue[0]
+        else:
+            info = self._span_at.get(key)
         if info is not None and not self.ocr_layer and (info["type"] == 3 or info["opacity"] == 0.0):
             return "invisible"
         seq = info["seqno"] if info is not None else -1
         box = ch.bbox
+        ink = _ink_box(ch)
+        self.seen.append(ch)
         background: tuple | None = (1.0, 1.0, 1.0)
         background_seq = -1
         for s, rect, kind, colour in self.cover:
+            # Painted over later, and over the character's ink: that is what hides it. Its box
+            # is taller than its ink, so a fill the height of the line would never count.
+            if seq >= 0 and s > seq and ink.overlap_fraction(rect) >= 0.9:
+                return "covered"
             if box.overlap_fraction(rect) < 0.9:
                 continue
             if seq >= 0 and s > seq:
@@ -421,17 +456,32 @@ class _Visibility:
         black text as white; a figure whose paint order says it lies over the
         text). Rendering the run's box is the ground truth: hidden text is a
         uniform patch, visible text shows contrast.
+
+        But only the run's *own* ink is evidence. Where other, visible text is printed over the
+        same spot - an earlier wording left under a row's shading with the present sentence set
+        on top of it; a footer printed twice - the patch shows contrast that is not this run's,
+        and a correct verdict was being overturned by it ("entered", "item.", "s at:" in the
+        bodies of Key Facts Sheets; found 18 September 2026 by comparing our reading with a
+        model's). So the render is asked about the characters that no visible character is
+        printed over, a stretch at a time, and where there are none it cannot testify and the
+        paint order stands.
         """
         render_failed = False
+        visible = [c for c in self.seen if not c.hidden]
         for run in self._runs():
             if run["reason"] not in ("covered", "same-colour"):
                 continue
-            uniform = _renders_uniform(pdf_page, run["bbox"], M)
-            if uniform is None:
-                render_failed = True
-            elif not uniform:
-                for ch in run["_chars"]:
-                    ch.hidden = ""
+            stretches = _clear_stretches(run["_chars"], visible)
+            if not stretches:
+                continue
+            for box in stretches:
+                uniform = _renders_uniform(pdf_page, box, M)
+                if uniform is None:
+                    render_failed = True
+                elif not uniform:
+                    for ch in run["_chars"]:
+                        ch.hidden = ""
+                    break
         # Without a render to check against, a page cannot be believed to be
         # almost entirely invisible: keep the text rather than trust the colours.
         # (With a render, a genuinely invisible duplicate text layer stays hidden.)
@@ -449,6 +499,45 @@ class _Visibility:
             entry.pop("_x1", None)
             entry.pop("_chars", None)
         return out
+
+
+_PRINTED_OVER = 0.1     # other visible ink over a tenth of a character's ink: more than a neighbour's kerning, so an overprint
+
+
+def _clear_stretches(chars: list[Char], visible: list[Char]) -> list[BBox]:
+    """The run's characters that no visible character is printed over, as the boxes of each
+    unbroken stretch of them; a run with nothing printed over it is one stretch. The boxes are of
+    the characters' ink, which is what was judged covered: a font box stands proud of a band of
+    shading the height of its line, and the render would see the band's edge and call it ink."""
+    chars = [c for c in chars if not c.text.isspace()]
+    if not chars:
+        return []
+    own = {id(c) for c in chars}
+    box = BBox.union_all(c.bbox for c in chars)
+    near = [_ink_box(o) for o in visible
+            if id(o) not in own and o.bbox.x1 > box.x0 and o.bbox.x0 < box.x1 and o.bbox.y1 > box.y0 and o.bbox.y0 < box.y1]
+    stretches: list[BBox] = []
+    current: list[BBox] = []
+    for c in chars:
+        ink = _ink_box(c)
+        over = sum((ink.intersection(o).area if ink.intersection(o) is not None else 0.0) for o in near) if near else 0.0
+        if ink.area > 0 and over / ink.area >= _PRINTED_OVER:
+            if current:
+                stretches.append(BBox.union_all(current))
+                current = []
+        else:
+            current.append(ink)
+    if current:
+        stretches.append(BBox.union_all(current))
+    # The patch is drawn at a pixel a point, and an edge that falls inside a pixel takes in what
+    # lies beyond it - the white page below a band whose foot is the ink's foot. So the patch is
+    # brought a point in from top and bottom and then to whole points: the letters' bodies stay in
+    # view, the band's edge stays out, and `_renders_uniform`'s own half point lands on a pixel.
+    out: list[BBox] = []
+    for b in stretches:
+        y0, y1 = math.ceil(b.y0 + 1.0), math.floor(b.y1 - 1.0)
+        out.append(BBox(b.x0, float(y0), b.x1, float(y1)) if y1 - y0 >= 2 else b)
+    return out
 
 
 def _renders_uniform(pdf_page: "pymupdf.Page", box: BBox, M=None) -> bool | None:
