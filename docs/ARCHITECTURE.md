@@ -121,6 +121,11 @@ PDF page
   |                               hands the same to a caller who asked for no front matter. A page selection the
   |                               document cannot meet is an error (`PageSelectionError`), not a state; a model's
   |                               reply cut off at its length limit is kept and its page named `reply-cut-off`
+  |                               - a transcription cannot hold more print than its region (`vision/capacity.py`):
+  |                               a page's or a picture's reading that claims more characters than fit at four-point
+  |                               type - a loop, a table invented at length - is set aside and named
+  |                               `reading-implausible`. Measured before it was written: real transcriptions reach
+  |                               0.32 of a picture's capacity and 0.66 of a page's; the two that prompted it, 2.2
   v
 OKF markdown
 ```

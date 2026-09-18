@@ -26,6 +26,7 @@ from truedoc.tables.cells import clean_cell_text, runs_across_columns
 from truedoc.tables.fill_grid import redraw_tables
 from truedoc.tables.list_columns import rebuild_side_by_side_lists
 from truedoc.tables.ruled import find_ruled_tables
+from truedoc.vision import capacity
 
 
 class PageSelectionError(ValueError):
@@ -1211,6 +1212,14 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
             text = reader.read_page(path, page.number)
         if not text:
             continue
+        if capacity.holds_more_than_fits(text, page.width, page.height):
+            # More print than the page could hold in the smallest legible type: a loop, or an invention
+            # at length. Not a reading of this page, whatever it says; the page keeps its own reading.
+            load = capacity.load(text, page.width, page.height)
+            page.meta["vision_implausible"] = {"model": reader.name, "load": round(load, 2)}
+            doc.add_issue("reading-implausible", f"page {page.number}: the model's reading holds {load:.1f} times the print "
+                          f"a page this size can hold, and was set aside", "degraded", [page.number])
+            continue
         if getattr(reader, "last_cut_off", False):
             # The reply stopped at the token limit, not at the page's end. What came back is kept -
             # most of a page is worth more than none of it - and the page is named as incomplete.
@@ -1277,7 +1286,7 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
         inferred.append({"page": page.number, "kind": "page", "model": reader.name})
     if opts.vision_regions:
         _read_regions_with_model(doc, path, provider, inferred)
-        _report_cut_off_regions(doc)
+        _report_region_issues(doc)
 
 
 _PARTIAL_MIN_OWN_WORDS = 100    # the page's own reading must be substantial before it can outweigh the model's
@@ -1336,18 +1345,28 @@ def _read_region(provider, path: str, page: Page, box: BBox, kind: str):
         answer = provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), kind, turn=turn)
     else:
         answer = provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), kind)
+    if answer and kind == "picture-text" and capacity.holds_more_than_fits(answer, box.width, box.height):
+        # A transcription holding more print than the picture could: set aside, and said (`capacity`).
+        # An icon's meaning and a figure's description are words *about* a region, and are not judged so.
+        page.meta.setdefault("regions_implausible", []).append(round(capacity.load(answer, box.width, box.height), 2))
+        return None
     if answer and getattr(provider, "last_cut_off", False):
-        # Reported with the page's other issues once its regions are all read (`_report_cut_off_regions`).
+        # Reported with the page's other issues once its regions are all read (`_report_region_issues`).
         page.meta.setdefault("regions_cut_off", []).append(kind)
     return answer
 
 
-def _report_cut_off_regions(doc: Document) -> None:
+def _report_region_issues(doc: Document) -> None:
     for page in doc.pages:
         kinds = page.meta.get("regions_cut_off")
         if kinds:
             doc.add_issue("reply-cut-off", f"page {page.number}: the model's reply about {len(kinds)} region(s) "
                           f"({', '.join(sorted(set(kinds)))}) was cut off at its length limit", "incomplete", [page.number])
+        loads = page.meta.get("regions_implausible")
+        if loads:
+            doc.add_issue("reading-implausible", f"page {page.number}: the model's transcription of {len(loads)} picture(s) held "
+                          f"up to {max(loads):.1f} times the print a picture that size can hold, and was set aside",
+                          "degraded", [page.number])
 
 
 def _read_regions_with_model(doc: Document, path: str, provider, inferred: list[dict]) -> None:

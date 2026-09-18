@@ -739,7 +739,7 @@ converter without its layout model and exited 0. The warnings existed; nothing a
 | `completion` | means | today's issues of that severity |
 |---|---|---|
 | `complete` | everything asked for ran and every page was read | (notes only: `pages-turned`, `hidden-text`, `low-support`, `witness-failed`) |
-| `degraded` | every page has content, but a stage that was asked for did not run, or a lesser reader stood in | `stage-unavailable` (layout model, vision stage, deep reader), `reader-fallback` (the deep reader returned nothing; a model's partial reading set aside for the page's own text) |
+| `degraded` | every page has content, but a stage that was asked for did not run, or a lesser reader stood in | `stage-unavailable` (layout model, vision stage, deep reader), `reader-fallback` (the deep reader returned nothing; a model's partial reading set aside for the page's own text), `reading-implausible` (added the same evening: a transcription holding more print than its page or picture could, set aside - `truedoc/vision/capacity.py`) |
 | `incomplete` | content is known to be missing | `unreadable-pages`, `reply-cut-off` |
 
 An issue is `code` (stable, for software), `severity`, `pages`, `message` (the sentence `warnings` has always

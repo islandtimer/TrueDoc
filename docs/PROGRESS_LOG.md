@@ -4,7 +4,43 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
-## 2026-09-18, late evening (20:25-21:10) - One picture is one figure: a picture the layout model also saw was written twice
+## 2026-09-18, night (21:06-21:19) - A transcription cannot hold more print than its region
+
+The second thing the crops taught (D033's check, this evening): Flash turned a scatter plot into an 1,800-row
+table of numbers and a graph figure into one line 4,095 times. Nothing in the *words* marks either as wrong, and a
+picture has no text layer to check them against. What marks them is the region.
+
+**Measured before it was written** (`bench/probes/region_capacity.py`, and the three readers' 843 whole-page
+readings). My first idea - a region H points tall holds at most H/4 lines - is the wrong measure: three honest
+readings exceed it (1.51, 1.29, 1.14), because olmOCR 2 writes an HTML table one cell a line, so lines measure
+the reader's formatting and not the picture. Characters against area is the right one: print under about four
+points cannot be read, so a region holds at most its area over the area of a four-point character (W x H / 8).
+Of 164 recorded readings of picture regions the largest real transcription uses 0.32 of that, the median 0.02,
+and the two runaways 2.25 and 2.21. Of 843 whole-page readings the densest - tiny-print book scans on page boxes
+of 300 x 200 points, all three readers agreeing - uses 0.66, and none exceeds 1. The bound is 1.0, the definition
+itself, with a margin of one and a half over the densest real page seen and a factor of seven between the
+runaways and the largest real picture reading.
+
+**The rule** (`truedoc/vision/capacity.py`; wired in `pipeline.py` where a transcription arrives): a whole-page
+reading, or a picture's transcription, that claims more characters than its region can hold is set aside and named
+`reading-implausible` (degraded; the page keeps its own reading, the picture stays a figure). An icon's meaning
+and a figure's description are words *about* a region and are not judged so - a sentence about a twelve-point
+icon is longer than anything that fits in it.
+
+**Measured, code against code** (the worktree at d5ba8bd, the 60 crop pages, each pool printing its `truedoc`):
+with Flash's crop readings **two pages change and only two**, 4,123 lines to 23 and 1,987 to 140, and no check
+moves in any section (the benchmark never saw the invented text; a reader would have). With olmOCR 2's readings -
+run 97's arrangement - 0 of 60 pages differ from the pool made after the figure fix: the rule fires nowhere. The
+scatter-plot page now reports itself `degraded`, one figure line, no invented number. Ten tests
+(`tests/test_vision_capacity.py`), three of them through the pipeline. Suite 735.
+
+**What it does not do.** It bounds length, not truth: an invented table that fits its picture passes. It would not
+have caught Flash dropping a column of the vehicle list. It makes Flash safer as a crop reader, and D033's split
+stands on the evidence it was made on: olmOCR 2 keeps the crops.
+
+---
+
+## 2026-09-18, late evening (20:25-21:06) - One picture is one figure: a picture the layout model also saw was written twice
 
 **How it was found.** Reading the crops for D033, a caption of olmOCR 2's stood twice on three run 97 pages. The
 cause was not in the vision stage. Every picture is proposed twice: the layout model's figure region

@@ -31,7 +31,7 @@ OKF allows any extra keys, so everything specific to TrueDoc sits under one key,
 | `turned_pages` | pages that lay on their side (a landscape scan of a portrait page, a table printed sideways) and were turned upright before reading: `page` and `turn` in degrees clockwise; omitted when there are none |
 | `hidden_text` | text a reader cannot see, kept out of the body (page, reason, text); omitted when there is none |
 | `warnings` | human-readable notes about anything uncertain |
-| `issues` | the same notes for software, one entry each: `code` (stable: `unreadable-pages`, `reply-cut-off`, `stage-unavailable`, `reader-fallback`, `hidden-text`, `pages-turned`, `low-support`, `witness-failed`, or `warning` for a sentence nobody classified), `severity` (`note` / `degraded` / `incomplete`), `pages`, `message`; omitted when there are none |
+| `issues` | the same notes for software, one entry each: `code` (stable: `unreadable-pages`, `reply-cut-off`, `stage-unavailable`, `reader-fallback`, `reading-implausible`, `hidden-text`, `pages-turned`, `low-support`, `witness-failed`, or `warning` for a sentence nobody classified), `severity` (`note` / `degraded` / `incomplete`), `pages`, `message`; omitted when there are none |
 
 ## File shape
 
