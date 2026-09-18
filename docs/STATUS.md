@@ -207,7 +207,17 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## What is being worked on right now
 
-**18 September, 16:40 - run 97 is in, and the pause holds.** Run 97 scored at 16:25: **86.8 (CI 86.0-87.7)**, old-scan
+**18 September, 17:20 - the repository is on GitHub, private: `github.com/islandtimer/TrueDoc`, master at
+157a60e, tag `run-97` on 9f9b77b.** The two-week "no backup" risk is closed. Before the push: a scan of every blob
+in the history (no credential anywhere), eighteen files' personal paths replaced (`bench/tools/doc_library.py`
+finds your library through `TRUEDOC_LIBRARY` or the git-ignored `bench/library_path.txt`; the 505 manifest paths
+are relative), LICENSE (Apache-2.0) and NOTICE written, D007's two weight licences checked (both Apache-2.0),
+the README given the results, a reproduction section (the three replay candidates rebuild byte for byte from the
+committed readings) and a licence section. The clean-environment install test was running at the time of
+writing; its result goes in the log. **Still to do before the repository goes public:** your decision on the
+author email (your personal address is on all 166 commits; GitHub's noreply address would mean rewriting the
+history and every hash the docs cite), and the leaderboard entry itself, which waits on the picture-text check.
+Run 97 scored at 16:25: **86.8 (CI 86.0-87.7)**, old-scan
 maths 388 to 397, exactly the +9 the code-against-code measure promised, nothing else moved, nothing lost; held-out
 86.0, unchanged, because both pages it moved are tuned-on. The quoted number is now this run's (D035: the chosen
 arrangement on the current code) and every page that carries it says so. **Open, in
@@ -215,9 +225,8 @@ the order I would take them - the review's order, which I recommended and you ha
 status contract the review's F01 asks for, using its ten probes as acceptance cases, and the F10 repairs to
 `bench/tools/kfs_two_readers.py` (no held-out sheet in the detailed listing; marks compared, not stripped;
 critical words such as "not" flagged whatever the similarity; rows one reader misses counted); (2) publishing -
-LICENSE, NOTICE, D007's two weight licences, a stranger's README tested clean, a secrets scan of the history, the
-private push, then the leaderboard entry in the strong form, from run 97's pages, once the picture-text check is done
-(D036); (3) the picture-text check itself (the small rental); (4) the fifteen Key Facts Sheet cells, re-listed
+the leaderboard entry in the strong form, from run 97's pages, once the picture-text check is done (D036), then
+the repository public; (3) the picture-text check itself (the small rental); (4) the fifteen Key Facts Sheet cells, re-listed
 without held-out sheets, each read against its page image; (5) Pro's 100 random library pages and 25 insurance-set
 pages compared with ours; (6) the tables gap on digital pages (Pro alone 930 checks to our 913); (7) a provider for
 a served Infinity-Parser2 model; (8) the downstream trial you want to discuss. The reviewer's folder is now

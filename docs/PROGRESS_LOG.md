@@ -150,6 +150,32 @@ level with run 91; on the number it is eight tenths ahead, so M7 stays not met. 
 table and its section-score table in `docs/BENCHMARKS.md` (which now carries run 97's and run 94's section rows),
 `docs/STATUS.md` and the memory brief say 86.8; nothing else moved. The pause holds here.
 
+**17:00-17:20 - the repository goes to GitHub, private (D036).** The owner did both logins (`gh` as
+`islandtimer`, `hf` as `awmg`) and named the repository TrueDoc. Before the push: a scan of all 3,666 blobs in
+the history for API keys, tokens, private keys, secret assignments, emails and IP logins (43 seconds; a
+scratchpad script) - no credential anywhere; the only "secret" is `api_key="test-key"` in a test, the emails
+are insurers' contact lines on benchmark pages plus `x@y.com`, and the rental host was never committed. Personal
+paths: 18 files named this machine's folders (five with the repository root as a literal, eight with the library,
+three one-document probes, a shell script's scratchpad, and 505 entries in `out5/pro/own/manifest.json`); the
+root is now derived from each script's location, the library comes from `bench/tools/doc_library.py`
+(`TRUEDOC_LIBRARY`, or the git-ignored `bench/library_path.txt`; a stranger gets a plain message), and the
+manifest's paths are relative to the library (`build_own_sets.py` writes them so). `kfs_grade` still finds its
+190 sheets. LICENSE is the Apache-2.0 text from apache.org, checked by hash; `pyproject.toml` said MIT and was
+wrong. NOTICE names the olmOCR scorer copy and how `score_olmocr.py` runs it (the vendored `benchmark.py` with
+its three relative imports pointed at olmocr 0.4.27's modules - I first wrote that the package's own scorer
+runs, read the wrapper, and corrected it), the committed readings and the dataset's ODC-BY terms, the samples,
+and both weight repositories, each checked Apache-2.0 through the Hub's API (heron now lives at
+`docling-project/docling-layout-heron`; the old name redirects). The README: a results table, a quick start
+that matches `pyproject.toml` (the extra `pip install transformers rapidocr-onnxruntime` line was stale), a
+reproduction section, and a licence section. The reproduction section was tested before it was written: the
+three replay candidates run 97 used (`inf2flash_raw`, `inf2pro_raw`, `olmocr2c`) rebuild byte for byte from
+the committed readings with `place_bakeoff.py` and `merge.py place` - except that `olmocr2c`'s crop manifest
+was git-ignored, so it is now committed as `bench/gpu/out3/crops_failing_manifest.json`. Suite 692. Commit
+157a60e; `gh repo create TrueDoc --private --source=. --push` took under a minute; tag `run-97` on 9f9b77b,
+pushed; the API confirms private, default branch master, licence detected Apache-2.0, no `docs/review/`. A
+fresh-venv install test (`pip install -e ".[bench,dev]"`, three sample pages, the suite) was still running at
+17:20 - result below when it lands.
+
 ---
 
 ## 2026-09-17, afternoon and evening - GPU session 5: a stronger open reader, measured on our own pages
