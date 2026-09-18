@@ -4,6 +4,65 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-18 22:30 to 23:25, written up 19 September 07:25 - A cell's last line made a row of its own: sized, a rule designed, NOTHING BUILT YET
+
+Work in progress, recorded so it survives a break. The fault (four rows on three tuned-on Key Facts Sheets, two
+more on held-out ones): `| | | 51-52 |`, `| | | PDS pg.31. |`, "'Portable Contents'.", "Accidental Damage." - the
+last wrapped line of a third-column cell standing as a row.
+
+**Why they stand.** `tables/aligned._merge_wrapped_rows` - the one merger every table builder goes through
+(aligned tables and `layout-table`s alike) - folds a line into the row above on what it *says*: it starts in lower
+case, or the cell above ends on a connector or a comma; a numeric line is refused outright. "Accidental Damage."
+under "...can be purchased to cover" fails every such test, and words cannot settle it: "Accidental Damage" is as
+good a label as a continuation. The page can.
+
+**First idea, killed by its census** (`bench/probes/orphan_row_census.py`, which hooks the merger and records every
+row left standing with no label and one filled cell): "a wrapped line sits one leading under the line above; a new
+row starts after the row's padding". On the sheets, of 110 such rows under a cell of two lines or more, **40 sit
+exactly one leading below - and 37 of them are the legitimate band** "Cover for valuables, collections and items
+away...". These tables have no padding between rows. AAMI's table says the same from the other side: lines inside
+a cell step 11.5 points, and the real next row, "Flood", starts 11.5 below the last line of "Fire and Explosion".
+Pitch alone would have folded thirty-odd bands into the cells above them.
+
+**What does separate them: the rest of what "the next line of the same paragraph" means - it starts at the left
+edge of the lines above.** A band is centred (30 to 112 points off that edge). Rows one leading below *and* flush
+left within 1.5 points, under a cell of two lines or more:
+
+| population | one leading below | and flush left | what those are |
+|---|---|---|---|
+| Key Facts Sheets, 380 pages | 40 | **3** | exactly the three orphans with a multi-line cell above |
+| insurance set, 25 pages | 0 | 0 | - |
+| benchmark, 1,122 digital pages | 18 | **17** | last lines of references and wrapped entries: "...Nelson and / Winter, 1982).", "...Executive National / Security Programme", "...Glob Health / Action. 2013;6:22450.", "...vol. 302, Art. no. / 117584, 2024." |
+
+**The fourth orphan is the hard one.** "Accidental Damage." sits under a *one-line* cell, which has no leading of its
+own. That group is where the danger is: sheets 9 rows (3 flush left - the orphan, counted twice, and one held out),
+insurance 2 flush left that MUST stay rows ("Note: eligibility criteria may apply" under "...Go to page 42."; a
+cross and "Pontoons" under "...Replacement of water"), benchmark 166 (88 flush left, among them stacks of numbers,
+"-0.05" over "-0.06", which are rows). Flush-left is not enough there.
+
+**The design, to be built and measured next:**
+- *Part A - the cell above has two lines or more:* a row with no label and one filled cell continues that cell when
+  it starts within 1.5 points of the left edge of the cell's last line and sits within a tenth of the cell's own
+  leading below it; never a band (`_is_band`), never a line opening with a tick or cross (`_BULLET_START`). Numeric
+  lines allowed ("51-52" is one).
+- *Part B - the cell above has one line:* the typesetter's own definition of a wrap - **the first word of the line
+  would not have fitted on the line above** (the line above's right edge, a space, and the word's width pass the
+  column's right edge, taken from the widest line in that column). "-0.06" fits after "-0.05", so a stack of
+  numbers stays rows; "Go to page 42." is short, so the note under it stays a row. Its population has NOT been
+  sized yet - size it before building it, and build A first.
+- *How to measure:* the rule can only touch tables that hold such a row, and the census lists them: 87 benchmark
+  pages, 83 sheet pages, 4 insurance pages. Convert those both ways (the before state from a worktree), re-grade
+  all 190 sheets fresh, re-score the insurance set, read every changed page against its image.
+
+**The AAMI row cut in two ("Yes" / "No" in the answer cell) is a different rule** and pitch cannot decide it, for
+the reason above. Its row is `| | No | scorching, melting, or cigarette burns unless... |`: no label, and one cell
+that plainly carries a sentence on (lower case, the cell above ends on a comma). The merger wants *every* filled
+cell to read as a continuation, and "No" under "Yes" does not. Candidate: with no label, one cell carrying a
+sentence on is enough, and the other cells are second lines too - to be sized on every table page, since a looser
+version of this merger once cost 48 benchmark checks (the comment at `aligned.py:1719`).
+
+---
+
 ## 2026-09-18, late night (21:35-22:24) - Hidden words in the body: an earlier wording under a row's shading, with the present sentence printed over it (D011)
 
 **What the comparison found, read against the page:** "entered" at the end of a GIO cell and "item." inside an
