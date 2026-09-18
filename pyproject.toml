@@ -27,6 +27,7 @@ dependencies = [
   "rich>=13",
   "typer>=0.12",
   "torch>=2",                   # BSD-3 and others: runs the layout model
+  "torchvision>=0.15",          # BSD-3: the layout model's image processor imports it (found missing by a clean install, 18 Sept)
   "transformers>=5",            # Apache-2.0: the layout model, ds4sd/docling-layout-heron (tested with 5.16)
   "huggingface_hub>=0.23",      # Apache-2.0: fetches the layout and OCR models on first use
   "rapidocr_onnxruntime>=1.2",  # Apache-2.0: OCR for pages without a text layer

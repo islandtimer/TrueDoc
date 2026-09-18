@@ -174,7 +174,19 @@ was git-ignored, so it is now committed as `bench/gpu/out3/crops_failing_manifes
 157a60e; `gh repo create TrueDoc --private --source=. --push` took under a minute; tag `run-97` on 9f9b77b,
 pushed; the API confirms private, default branch master, licence detected Apache-2.0, no `docs/review/`. A
 fresh-venv install test (`pip install -e ".[bench,dev]"`, three sample pages, the suite) was still running at
-17:20 - result below when it lands.
+17:20.
+
+**17:20 - the clean install found the one thing a stranger would have hit.** Ten minutes to install (torch is
+most of it), and the suite passed, 692 - but the conversion printed "AutoImageProcessor requires the Torchvision
+library" and wrote its three pages *without the layout model*, saying so in the front matter exactly as b7f53c4
+requires ("the layout model was asked for and could not run, so 3 page(s) were read without it"). `torchvision`
+was in our venv (0.28.0, installed by hand at some point) and not in `pyproject.toml`. Added (`torchvision>=0.15`),
+reinstalled in the same fresh venv, converted again: no warning, and the output is byte-identical to the
+project venv's for the same three pages, timestamps aside - on torch 2.14, transformers 5.17 and torchvision
+0.29, all newer than the project venv's 2.13 / 5.16.1 / 0.28, so the pins hold forward. The review's F06 (a README a stranger
+can install from, tested in a fresh environment) is met. Note for the other agent's F01 (the status contract):
+this run is the case its probes describe - a stage silently degraded to the reader of the markdown, loud only
+in the front matter and on stderr; the exit code was 0.
 
 ---
 
