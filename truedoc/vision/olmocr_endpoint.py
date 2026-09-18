@@ -100,6 +100,8 @@ class OlmocrEndpoint:
         self.timeout = timeout
         self.longest_dim = longest_dim
         self.name = model or "olmocr"
+        # Whether the last read_page / read_region reply stopped at the token limit (D037).
+        self.last_cut_off = False
 
     def _query(self, image_b64: str, prompt: str | None = None, max_tokens: int = _MAX_TOKENS) -> dict:
         return {
@@ -127,12 +129,17 @@ class OlmocrEndpoint:
             log.warning("vision: endpoint %s failed for %s: %s", self.url, what, exc)
             return None
         try:
-            return payload["choices"][0]["message"]["content"] or ""
-        except (KeyError, IndexError, TypeError):
+            choice = payload["choices"][0]
+            if choice.get("finish_reason") == "length":
+                log.warning("vision: the reply from %s for %s was cut off at %s tokens", self.url, what, max_tokens)
+                self.last_cut_off = True
+            return choice["message"]["content"] or ""
+        except (KeyError, IndexError, TypeError, AttributeError):
             log.warning("vision: unexpected answer shape from %s", self.url)
             return None
 
     def read_page(self, pdf_path: str, page_number: int) -> str | None:
+        self.last_cut_off = False
         try:
             image_b64 = render_page_png_base64(pdf_path, page_number, self.longest_dim)
         except Exception as exc:
@@ -149,6 +156,8 @@ class OlmocrEndpoint:
     def read_region(self, pdf_path: str, page_number: int, bbox: tuple[float, float, float, float], kind: str, turn: int = 0) -> str | None:
         """An icon's meaning or a figure's description (D015 items 1 and 4)."""
         from truedoc.vision.regions import MAX_TOKENS, clean_answer, region_prompt, render_region_png_base64
+
+        self.last_cut_off = False
 
         try:
             image_b64 = render_region_png_base64(pdf_path, page_number, bbox, kind, turn=turn)

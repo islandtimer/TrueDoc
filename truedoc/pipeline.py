@@ -15,7 +15,7 @@ from truedoc.extract import render as page_render
 from truedoc.extract.handle import open_pdf
 from truedoc.extract.textlayer import extract_page
 from truedoc.layout.fuse import _repeated_beside, apply_layout
-from truedoc.model import BBox, Block, BlockKind, Document, Page
+from truedoc.model import BBox, Block, BlockKind, Document, Issue, Page
 from truedoc.render.okf import RenderOptions, render_document
 from truedoc.segment.blocks import build_blocks
 from truedoc.segment.order import assign_reading_order
@@ -26,6 +26,40 @@ from truedoc.tables.cells import clean_cell_text, runs_across_columns
 from truedoc.tables.fill_grid import redraw_tables
 from truedoc.tables.list_columns import rebuild_side_by_side_lists
 from truedoc.tables.ruled import find_ruled_tables
+
+
+class PageSelectionError(ValueError):
+    """The pages asked for cannot be converted: none were named, or the document has no such page."""
+
+
+@dataclass
+class ConvertResult:
+    """A conversion and how it ended (D037): the markdown, `complete` / `degraded` / `incomplete`
+    (`truedoc.model.SEVERITIES`), and every issue with its code and pages. The same status is in the
+    front matter when there is one; this is for a caller who asked for none, or wants no YAML parser."""
+    markdown: str
+    completion: str
+    issues: list[Issue]
+    pages: list[int]
+    sha256: str
+
+    def as_dict(self) -> dict:
+        return {"completion": self.completion, "pages": list(self.pages), "sha256": self.sha256,
+                "issues": [i.as_dict() for i in self.issues]}
+
+
+def page_count(path: str) -> int:
+    pdf = open_pdf(path)
+    try:
+        return len(pdf)
+    finally:
+        pdf.close()
+
+
+def first_pages(path: str, n: int) -> list[int]:
+    """The first `n` pages, or as many as the document has: for a caller that wants "the opening
+    pages" of many documents and would otherwise name a page a short one does not have."""
+    return list(range(1, min(n, page_count(path)) + 1))
 
 
 @dataclass
@@ -82,10 +116,19 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
         md = pdf.metadata or {}
         if md.get("title"):
             doc.metadata["title"] = md["title"].strip()
-        page_numbers = opts.pages or list(range(1, len(pdf) + 1))
+        # A selection that names no page, or a page the document does not have, is a request that
+        # cannot be met, and says so (D037). It used to be met with something else: `[]` converted
+        # every page, and a page past the end converted none and returned an empty file.
+        if opts.pages is None:
+            page_numbers = list(range(1, len(pdf) + 1))
+        else:
+            page_numbers = list(opts.pages)
+            if not page_numbers:
+                raise PageSelectionError("the page selection names no page")
+            outside = sorted({n for n in page_numbers if n < 1 or n > len(pdf)})
+            if outside:
+                raise PageSelectionError(f"page(s) {outside} are not in this document, which has {len(pdf)} page(s)")
         for n in page_numbers:
-            if n < 1 or n > len(pdf):
-                continue
             pdf_page = pdf[n - 1]
             page = process_page(pdf_page, n, opts)
             doc.pages.append(page)
@@ -102,7 +145,8 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
     turned = [{"page": p.number, "turn": p.meta["turned"]} for p in doc.pages if p.meta.get("turned")]
     if turned:
         doc.metadata["turned_pages"] = turned
-        doc.warnings.append(f"pages turned upright before reading: {[t['page'] for t in turned]}")
+        doc.add_issue("pages-turned", f"pages turned upright before reading: {[t['page'] for t in turned]}",
+                      "note", [t["page"] for t in turned])
     regions = [dict(page=p.number, **r) for p in doc.pages for r in (p.meta.get("ocr_regions") or [])]
     if regions:
         doc.metadata["ocr_regions"] = regions[:200]
@@ -120,14 +164,14 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
         doc.metadata["marks_not_placed"] = marks[:200]
     unreadable = [p.number for p in doc.pages if not p.quality.usable and p.quality.kind != "ocr-truedoc"]
     if unreadable:
-        doc.warnings.append(f"pages without readable text: {unreadable}")
+        doc.add_issue("unreadable-pages", f"pages without readable text: {unreadable}", "incomplete", unreadable)
     # A stage that was asked for and could not run is said out loud, so no one reads this conversion as the
     # converter's own answer (see `_detect_layout`).
     without = [p.number for p in doc.pages if p.meta.get("layout_unavailable")]
     if without:
         why = next(p.meta["layout_unavailable"] for p in doc.pages if p.meta.get("layout_unavailable"))
-        doc.warnings.append(f"the layout model was asked for and could not run, so {len(without)} "
-                            f"page(s) were read without it: {why}")
+        doc.add_issue("stage-unavailable", f"the layout model was asked for and could not run, so {len(without)} "
+                      f"page(s) were read without it: {why}", "degraded", without)
     # Text a reader cannot see is kept out of the body and recorded here (D011).
     hidden: list[dict] = []
     for p in doc.pages:
@@ -139,7 +183,8 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
                 hidden.append({"page": p.number, "reason": h["reason"], "text": text[:500]})
     if hidden:
         doc.metadata["hidden_text"] = hidden
-        doc.warnings.append(f"hidden text removed from the body on pages: {sorted({h['page'] for h in hidden})}")
+        doc.add_issue("hidden-text", f"hidden text removed from the body on pages: {sorted({h['page'] for h in hidden})}",
+                      "note", {h["page"] for h in hidden})
     doc.metadata["confidence"] = _estimate_confidence(doc)
     return doc
 
@@ -1118,7 +1163,7 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
     try:
         provider = make_provider(opts.vision_endpoint, opts.vision_model)
     except Exception as exc:
-        doc.warnings.append(f"vision stage unavailable: {exc}")
+        doc.add_issue("stage-unavailable", f"vision stage unavailable: {exc}", "degraded")
         return
     deep = None
     if opts.vision_deep:
@@ -1126,7 +1171,7 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
             deep = make_provider(opts.vision_deep, opts.vision_deep_model or "olmocr")
         except Exception as exc:
             # The ordinary reader still works; say so and carry on rather than losing the page.
-            doc.warnings.append(f"the deep reader is unavailable, the ordinary one is reading every page: {exc}")
+            doc.add_issue("stage-unavailable", f"the deep reader is unavailable, the ordinary one is reading every page: {exc}", "degraded")
     inferred: list[dict] = doc.metadata.setdefault("inferred", [])
     pages_with_model: list[int] = doc.metadata.setdefault("pages_with_model", [])
     from truedoc.vision.mathdelims import normalise_math_delimiters
@@ -1145,18 +1190,26 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
         text = reader.read_page(path, page.number)
         if not text and reader is deep:
             # The expensive reader had its turn and came back empty; the ordinary one still tries.
-            doc.warnings.append(f"page {page.number}: the deep reader returned nothing; the ordinary reader read it")
+            doc.add_issue("reader-fallback", f"page {page.number}: the deep reader returned nothing; the ordinary reader read it",
+                          "degraded", [page.number])
             reader, why = provider, ""
             text = reader.read_page(path, page.number)
         if not text:
             continue
+        if getattr(reader, "last_cut_off", False):
+            # The reply stopped at the token limit, not at the page's end. What came back is kept -
+            # most of a page is worth more than none of it - and the page is named as incomplete.
+            page.meta["vision_cut_off"] = reader.name
+            doc.add_issue("reply-cut-off", f"page {page.number}: the model's reply was cut off at its length limit, so the "
+                          f"end of the page may be missing", "incomplete", [page.number])
         if why:
             page.meta["deep_read"] = {"model": reader.name, "because": why}
         if _model_reading_is_partial(page, text):
             # The model returned far less text than the page demonstrably holds (a table it gave
             # up on, a dense page cut short): the page's own reading stays, and the file says so.
             page.meta["vision_partial"] = {"model_words": _word_count(text), "own_words": _own_words(page)}
-            doc.warnings.append(f"page {page.number}: the model's reading was partial ({_word_count(text)} words against {_own_words(page)} in the page's own text); the page's own text kept")
+            doc.add_issue("reader-fallback", f"page {page.number}: the model's reading was partial ({_word_count(text)} words against {_own_words(page)} in the page's own text); the page's own text kept",
+                          "degraded", [page.number])
             continue
         witness = page.lines or page.meta.get("witness_lines") or []
         top, bottom = strip_lines(witness, page.height)
@@ -1174,7 +1227,7 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
                 finally:
                     pdf.close()
             except Exception as exc:  # the witness is optional: never fail a conversion for it
-                doc.warnings.append(f"strip witness failed on page {page.number}: {exc}")
+                doc.add_issue("witness-failed", f"strip witness failed on page {page.number}: {exc}", "note", [page.number])
         text, dropped = strip_running_heads(text, top, bottom)
         if dropped:
             page.meta["vision_dropped"] = dropped
@@ -1199,8 +1252,7 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
         page.meta["corroboration"] = verdict
         corroboration.append(dict(verdict, page=page.number))
         if verdict["state"] == "low support":
-            doc.warnings.append(
-                f"page {page.number}: {verdict['reason']}")
+            doc.add_issue("low-support", f"page {page.number}: {verdict['reason']}", "note", [page.number])
         page.meta["vision_replaced"] = page.quality.kind
         page.blocks = [Block(kind=BlockKind.TEXT, bbox=BBox(0.0, 0.0, page.width, page.height), text_override=text, provenance=f"vision:{reader.name}")]
         page.blocks[0].order = 0
@@ -1210,6 +1262,7 @@ def _read_unreadable_pages_with_model(doc: Document, path: str, opts: ConvertOpt
         inferred.append({"page": page.number, "kind": "page", "model": reader.name})
     if opts.vision_regions:
         _read_regions_with_model(doc, path, provider, inferred)
+        _report_cut_off_regions(doc)
 
 
 _PARTIAL_MIN_OWN_WORDS = 100    # the page's own reading must be substantial before it can outweigh the model's
@@ -1265,8 +1318,21 @@ def _read_region(provider, path: str, page: Page, box: BBox, kind: str):
     providers that predate the parameter are still called the old way."""
     turn = page.meta.get("turned", 0)
     if turn:
-        return provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), kind, turn=turn)
-    return provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), kind)
+        answer = provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), kind, turn=turn)
+    else:
+        answer = provider.read_region(path, page.number, (box.x0, box.y0, box.x1, box.y1), kind)
+    if answer and getattr(provider, "last_cut_off", False):
+        # Reported with the page's other issues once its regions are all read (`_report_cut_off_regions`).
+        page.meta.setdefault("regions_cut_off", []).append(kind)
+    return answer
+
+
+def _report_cut_off_regions(doc: Document) -> None:
+    for page in doc.pages:
+        kinds = page.meta.get("regions_cut_off")
+        if kinds:
+            doc.add_issue("reply-cut-off", f"page {page.number}: the model's reply about {len(kinds)} region(s) "
+                          f"({', '.join(sorted(set(kinds)))}) was cut off at its length limit", "incomplete", [page.number])
 
 
 def _read_regions_with_model(doc: Document, path: str, provider, inferred: list[dict]) -> None:
@@ -1627,7 +1693,14 @@ def _estimate_confidence(doc: Document) -> float:
 
 
 def convert(path: str, opts: ConvertOptions | None = None) -> str:
+    return convert_with_status(path, opts).markdown
+
+
+def convert_with_status(path: str, opts: ConvertOptions | None = None) -> ConvertResult:
+    """The markdown, and how the conversion ended, whatever the markdown looks like: an empty
+    body and a body without front matter carry no status of their own (D037)."""
     opts = opts or ConvertOptions()
     doc = load_document(path, opts)
     ropts = RenderOptions(frontmatter=opts.frontmatter, page_markers=opts.page_markers)
-    return render_document(doc, ropts)
+    return ConvertResult(markdown=render_document(doc, ropts), completion=doc.completion, issues=doc.all_issues(),
+                         pages=[p.number for p in doc.pages], sha256=doc.sha256)

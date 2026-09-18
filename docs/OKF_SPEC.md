@@ -24,12 +24,14 @@ OKF allows any extra keys, so everything specific to TrueDoc sits under one key,
 | --- | --- |
 | `version` | the TrueDoc version that wrote the file |
 | `sha256`, `pages` | checksum of the PDF bytes and the number of pages converted |
+| `completion` | how the conversion ended (D037): `complete` - everything asked for ran and every page was read; `degraded` - every page has content, but a stage that was asked for did not run or a lesser reader stood in; `incomplete` - content is known to be missing (a page nothing could read, a model's reply cut off at its length limit). The worst issue decides |
 | `confidence` | 0..1, TrueDoc's own estimate of meaning fidelity |
 | `language` | best-effort, when known |
 | `pages_with_ocr` | page numbers whose text came from image OCR (no usable text layer) |
 | `turned_pages` | pages that lay on their side (a landscape scan of a portrait page, a table printed sideways) and were turned upright before reading: `page` and `turn` in degrees clockwise; omitted when there are none |
 | `hidden_text` | text a reader cannot see, kept out of the body (page, reason, text); omitted when there is none |
 | `warnings` | human-readable notes about anything uncertain |
+| `issues` | the same notes for software, one entry each: `code` (stable: `unreadable-pages`, `reply-cut-off`, `stage-unavailable`, `reader-fallback`, `hidden-text`, `pages-turned`, `low-support`, `witness-failed`, or `warning` for a sentence nobody classified), `severity` (`note` / `degraded` / `incomplete`), `pages`, `message`; omitted when there are none |
 
 ## File shape
 
@@ -51,6 +53,7 @@ truedoc:
   version: 0.0.1
   sha256: <hash of the PDF bytes>
   pages: 12
+  completion: complete            # or degraded / incomplete, with the reasons under `issues`
   confidence: 0.94
   pages_with_ocr: []
   hidden_text:                          # only when there is some
@@ -105,7 +108,7 @@ Resolved (owner, 3 September, evening): one tag, `[^inferred]`, for every model 
 
 ## Reading the file back
 
-Any YAML parser reads the front matter; any markdown renderer shows the body. To find what TrueDoc was unsure about, look at `truedoc.warnings`, `truedoc.pages_with_ocr`, `truedoc.ocr_regions` (pictures on digital pages read with OCR, with `--ocr-pictures`) and `truedoc.hidden_text`. To mark a file as reviewed, change `status` to `stable` and add:
+Any YAML parser reads the front matter; any markdown renderer shows the body. To know whether the conversion can be relied on as a whole, read `truedoc.completion` first, and `truedoc.issues` for the pages and reasons; a document nothing could be read from still has a front matter block, with an empty body under it. A caller that asks for no front matter gets the same from `truedoc.pipeline.convert_with_status` or the command line's `--status <file>`, and `--strict` turns anything short of `complete` into exit code 3. To find what TrueDoc was unsure about, look at `truedoc.warnings`, `truedoc.pages_with_ocr`, `truedoc.ocr_regions` (pictures on digital pages read with OCR, with `--ocr-pictures`) and `truedoc.hidden_text`. To mark a file as reviewed, change `status` to `stable` and add:
 
 ```
 verified:

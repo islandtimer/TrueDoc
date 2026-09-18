@@ -15,7 +15,7 @@ import sys
 sys.path.insert(0, os.path.join("bench", "tools"))
 from kfs_grade import cache_path, grade, held_out, sheets  # noqa: E402
 import truedoc.tables.aligned as aligned  # noqa: E402
-from truedoc.pipeline import ConvertOptions, convert  # noqa: E402
+from truedoc.pipeline import ConvertOptions, convert, first_pages  # noqa: E402
 
 CUTS = {
     "no white space": ("_band_segments", "        if apart and any(", "        if False and any("),
@@ -46,7 +46,7 @@ def main() -> None:
         cells = []
         for which in ("as it stands", "no white space", "no crossing"):
             use(which)
-            g = grade(convert(path, ConvertOptions(frontmatter=False, pages=[1, 2])))
+            g = grade(convert(path, ConvertOptions(frontmatter=False, pages=first_pages(path, 2))))
             cells.append(f"{which}: swallowed {str(bool(g.get('band_swallowed'))):5s} answers {g.get('answers_attached', 0):2d}")
         use("as it stands")
         print(f"{name[:44]:44s} " + "  |  ".join(cells), flush=True)

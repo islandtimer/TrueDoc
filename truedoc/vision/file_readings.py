@@ -15,6 +15,9 @@ import os
 import re
 
 _YAML_BLOCK = re.compile(r"\A---\s*\n.*?\n---\s*\n", re.S)
+# A saved reading says in its YAML block when the model's reply was cut off as it was recorded
+# (or was salvaged from a cut-off reply), and the replay reports it as a live provider would (D037).
+_CUT_OFF = re.compile(r"^cut_off:\s*true\s*$", re.M | re.I)
 
 
 class FileReadings:
@@ -25,6 +28,7 @@ class FileReadings:
     def __init__(self, folder: str, model: str = "olmocr") -> None:
         self.folder = folder
         self.name = model
+        self.last_cut_off = False
         self._index: dict[str, str] = {}
         self._regions: dict[str, list[tuple[tuple[float, float, float, float], str]]] = {}
         folders = [f.strip() for f in folder.split("+") if f.strip()]
@@ -51,17 +55,23 @@ class FileReadings:
                 return self._index[name]
         return None
 
+    def _body(self, text: str) -> str | None:
+        block = _YAML_BLOCK.match(text)
+        if block and _CUT_OFF.search(block.group(0)):
+            self.last_cut_off = True
+        return _YAML_BLOCK.sub("", text, count=1).strip() or None
+
     def read_page(self, pdf_path: str, page_number: int) -> str | None:
+        self.last_cut_off = False
         stem = os.path.splitext(os.path.basename(pdf_path))[0]
         path = self._find(stem, page_number)
         if path is None:
             return None
         with open(path, encoding="utf-8") as fh:
-            text = fh.read()
-        text = _YAML_BLOCK.sub("", text, count=1).strip()
-        return text or None
+            return self._body(fh.read())
 
     def read_region(self, pdf_path: str, page_number: int, bbox, kind: str, turn: int = 0) -> str | None:
+        self.last_cut_off = False
         if kind != "picture-text":
             return None
         stem = os.path.splitext(os.path.basename(pdf_path))[0]
@@ -76,8 +86,7 @@ class FileReadings:
         if path is None:
             return None
         with open(path, encoding="utf-8") as fh:
-            text = _YAML_BLOCK.sub("", fh.read(), count=1).strip()
-        return text or None
+            return self._body(fh.read())
 
 
 def _iou(a, b) -> float:

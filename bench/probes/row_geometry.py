@@ -12,7 +12,7 @@ import sys
 
 sys.path.insert(0, os.path.join("bench", "tools"))
 from kfs_grade import cache_path, held_out, sheets  # noqa: E402
-from truedoc.pipeline import ConvertOptions, load_document  # noqa: E402
+from truedoc.pipeline import ConvertOptions, first_pages, load_document  # noqa: E402
 
 
 def text_of(line) -> str:
@@ -28,7 +28,7 @@ def main() -> None:
         print(f"{name}: held out, not looked at")
         return
     print(f"===== {name}")
-    doc = load_document(path, ConvertOptions(frontmatter=False, pages=[1, 2]))
+    doc = load_document(path, ConvertOptions(frontmatter=False, pages=first_pages(path, 2)))
     for page in doc.pages:
         for anchor in [l for l in page.lines if any(label in text_of(l) for label in labels)]:
             y0, y1 = anchor.bbox.y0 - 2.0, anchor.bbox.y1 + 2.0

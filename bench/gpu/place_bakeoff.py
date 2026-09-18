@@ -43,22 +43,32 @@ _FURNITURE = ("figure", "header", "footer")
 _TEXT_FIELD = re.compile(r'"category":\s*"([^"]*)",\s*"text":\s*"((?:[^"\\]|\\.)*)"')
 
 
+_LAYOUT_JSON = re.compile(r'\A\[\s*\{\s*"')     # however the model spaced it: `[{"`, or `[` and a new line
+CUT_OFF_BLOCK = "---\ncut_off: true\n---\n"     # what `truedoc.vision.file_readings` looks for (D037)
+
+
 def layout_text(markdown, counts, candidate):
     """The authors' client hands back the model's layout JSON untouched when it cannot make
     markdown of it: a picture with nothing to read (one "figure" item, no text), a page of
     running heads alone, or a reading cut off before its closing bracket. Those are not the
     page's words. Keep the text of every item that is not a figure or a running head, which is
-    what their own conversion keeps; from a cut-off reading, keep what can still be parsed."""
+    what their own conversion keeps; from a cut-off reading, keep what can still be parsed -
+    and say so in the file, page by page: a cover statement whose exception was cut off reads
+    as a complete sentence, so a count at the end of this script is not where that belongs.
+
+    Returns the text and whether the reading was cut off."""
     text = markdown.strip()
-    if not text.startswith("[{"):
-        return markdown
+    if not _LAYOUT_JSON.match(text):
+        return markdown, False
     try:
         items = [(it.get("category", ""), it.get("text") or "") for it in json.loads(text)]
         counts[(candidate, "(layout JSON)", "fixed")] += 1
+        cut_off = False
     except ValueError:
         items = [(c, json.loads('"%s"' % t)) for c, t in _TEXT_FIELD.findall(text)]
         counts[(candidate, "(layout JSON, cut off)", "fixed")] += 1
-    return "\n\n".join(t for c, t in items if c not in _FURNITURE and t.strip())
+        cut_off = True
+    return "\n\n".join(t for c, t in items if c not in _FURNITURE and t.strip()), cut_off
 
 
 def infinity(folder, name, counts):
@@ -69,7 +79,8 @@ def infinity(folder, name, counts):
         rec = json.loads(line)
         pdf = rec["pdf"].replace("\\", "/")
         category, stem = pdf.split("/")[-2], os.path.splitext(os.path.basename(pdf))[0]
-        write(name + "_raw", category, stem, layout_text(rec.get("markdown") or "", counts, name + "_raw"), counts)
+        text, cut_off = layout_text(rec.get("markdown") or "", counts, name + "_raw")
+        write(name + "_raw", category, stem, (CUT_OFF_BLOCK if cut_off and text.strip() else "") + text, counts)
     for path in glob.glob(os.path.join(folder, "*", "*_pg1_repeat1.md")):
         category = os.path.basename(os.path.dirname(path))
         stem = os.path.basename(path)[: -len("_pg1_repeat1.md")]

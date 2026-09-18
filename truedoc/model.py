@@ -367,6 +367,29 @@ class Page:
         return sorted(self.blocks, key=lambda b: b.order)
 
 
+# How a conversion ended, worst first (D037). A caller decides what to do with each; the
+# converter's part is to say which it is, in a form software can read, whether or not the
+# markdown has a front matter block and whether or not its body is empty.
+#   incomplete  content is known to be missing: a page nothing could read, a model's reply
+#               cut off at its token limit
+#   degraded    every page has content, but a stage that was asked for did not run, or a
+#               lesser reader stood in for the one that was meant to read
+#   note        something was done that a reader should know, and nothing is missing
+SEVERITIES = ("note", "degraded", "incomplete")
+_COMPLETION = {"note": "complete", "degraded": "degraded", "incomplete": "incomplete"}
+
+
+@dataclass
+class Issue:
+    code: str                                   # stable, for software: "unreadable-pages", "reply-cut-off", ...
+    message: str                                # the sentence a person reads; what `warnings` has always held
+    severity: str = "note"                      # one of SEVERITIES
+    pages: list[int] = field(default_factory=list)
+
+    def as_dict(self) -> dict[str, Any]:
+        return {"code": self.code, "severity": self.severity, "pages": list(self.pages), "message": self.message}
+
+
 @dataclass
 class Document:
     path: str
@@ -374,3 +397,25 @@ class Document:
     metadata: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     sha256: str = ""
+    issues: list[Issue] = field(default_factory=list)
+
+    def add_issue(self, code: str, message: str, severity: str = "note", pages: Iterable[int] = ()) -> Issue:
+        """Record what happened once, for both readers: the sentence goes to `warnings` (the
+        front matter has carried those since run 8) and the typed issue to `issues`."""
+        if severity not in SEVERITIES:
+            raise ValueError(f"unknown severity {severity!r}")
+        issue = Issue(code=code, message=message, severity=severity, pages=sorted(set(pages)))
+        self.issues.append(issue)
+        self.warnings.append(message)
+        return issue
+
+    def all_issues(self) -> list[Issue]:
+        """Every issue, including a warning some caller appended as a bare string: a sentence
+        nobody classified is still reported, as a note."""
+        typed = {i.message for i in self.issues}
+        return list(self.issues) + [Issue(code="warning", message=w) for w in self.warnings if w not in typed]
+
+    @property
+    def completion(self) -> str:
+        worst = max((SEVERITIES.index(i.severity) for i in self.all_issues()), default=0)
+        return _COMPLETION[SEVERITIES[worst]]

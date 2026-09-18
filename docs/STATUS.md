@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-18, 19:35 (**TrueDoc is public: the code at `github.com/islandtimer/TrueDoc` (Apache-2.0) and the olmOCR-bench entry at `huggingface.co/awmg/TrueDoc`, 86.8 with all 1,403 outputs and the scorer's log. The leaderboard table had not picked the row up ten minutes after the upload, and a two-day-old repository of someone else's with valid results is not on its board either - so look again over the next days before changing anything.** Before that, D033 closed: Flash fails the picture-text check, olmOCR 2 keeps the crops, the quoted 86.8 stands; the repository is on GitHub, private. Earlier in the day:** Since this morning's decisions: Flash passed the invented-text check (never backed less by the page's own words than olmOCR 2 on any of 281 pages); the seven old-scan-maths checks our own handling lost were traced to a variable between dollars being escaped as money, fixed, measured on every category a model reads and carried into run 96 - 86.6 (CI 85.6-87.4), exactly +7 and nothing else moved; two more maths rules taken from what the leader's post-processing does (an aligned column of equations written one formula a row, a formula split at an operator joined) measured +9 on old-scan maths, the two rules that would put English words inside formulas were declined, and run 97 carried them: **86.8 (CI 86.0-87.7), held-out 86.0, exactly +9 and nothing lost** - old-scan maths 83.2 to 86.7 in one afternoon, all of it on tuned-on pages (the held-out fifth has not moved since run 95). The leader's 87.6 now sits just inside the top of our interval and eight tenths above us on the number. Pro alone over all 1,403 pages scores 87.1 on our scorer with its authors' post-processing and 86.1 raw, against our 86.8. `docs/PROGRESS_LOG.md` has each measurement. **Three decisions of yours, made this morning, settle what yesterday measured: Flash is
+_Last updated: 2026-09-18, 20:25 (**The review's first two items are done: a conversion now says how it ended - complete, degraded or incomplete - in a form software can read, and my Key Facts Sheets comparison no longer lists held-out sheets or hides a dropped "not". One decision is yours: whether `--strict` should be the default.** Before that: **TrueDoc is public: the code at `github.com/islandtimer/TrueDoc` (Apache-2.0) and the olmOCR-bench entry at `huggingface.co/awmg/TrueDoc`, 86.8 with all 1,403 outputs and the scorer's log. The leaderboard table had not picked the row up ten minutes after the upload, and a two-day-old repository of someone else's with valid results is not on its board either - so look again over the next days before changing anything.** Before that, D033 closed: Flash fails the picture-text check, olmOCR 2 keeps the crops, the quoted 86.8 stands; the repository is on GitHub, private. Earlier in the day:** Since this morning's decisions: Flash passed the invented-text check (never backed less by the page's own words than olmOCR 2 on any of 281 pages); the seven old-scan-maths checks our own handling lost were traced to a variable between dollars being escaped as money, fixed, measured on every category a model reads and carried into run 96 - 86.6 (CI 85.6-87.4), exactly +7 and nothing else moved; two more maths rules taken from what the leader's post-processing does (an aligned column of equations written one formula a row, a formula split at an operator joined) measured +9 on old-scan maths, the two rules that would put English words inside formulas were declined, and run 97 carried them: **86.8 (CI 86.0-87.7), held-out 86.0, exactly +9 and nothing lost** - old-scan maths 83.2 to 86.7 in one afternoon, all of it on tuned-on pages (the held-out fifth has not moved since run 95). The leader's 87.6 now sits just inside the top of our interval and eight tenths above us on the number. Pro alone over all 1,403 pages scores 87.1 on our scorer with its authors' post-processing and 86.1 raw, against our 86.8. `docs/PROGRESS_LOG.md` has each measurement. **Three decisions of yours, made this morning, settle what yesterday measured: Flash is
 the standard reader of scanned pages (D033), Pro is the deep reader behind it and a live service lets its user
 choose (D034), and the number we quote is run 95's 86.4 on open weights, held-out 86.0 (D035) - second on the
 leaderboard as read on 17 September, behind 87.6.** What follows is yesterday evening's account, which those
@@ -209,6 +209,22 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## What is being worked on right now
 
+**18 September, 20:25 - the review's F01 and F10 are done (D037).** Until today a conversion that had gone wrong
+could look like one that had gone right: a document nothing could read came out as an empty file with its
+warnings gone; `--pages 2-1` quietly converted every page; a model's answer cut off in mid-sentence was taken as
+finished. Now every conversion says how it ended - **complete**, **degraded** (a stage that was asked for did not
+run, or a lesser reader stood in) or **incomplete** (content is known to be missing) - in the front matter, on
+the command line, and to a program that asks; a request that cannot be met is refused. It found something at
+once: one page of run 97 (`long_tiny_text/17_pg17`) was read from a reply that had been cut off, and now says so;
+its text is unchanged. My comparison of TrueDoc and the model on your Key Facts Sheets is repaired too: held-out
+sheets are counted and never named, a tick against a cross is a difference, a dropped "not" or a changed amount
+is flagged however alike the sentences are, and rows only one reader found are listed - twelve of them on the
+tuned-on sheets, which the old version could not see. Nothing your documents produce moved: 190 of 190 sheets
+byte-identical, insurance 229 of 229 with no file changed, suite 722. **Yours to decide:** by default the command
+line writes the file, lists what went wrong and exits normally, and `--strict` makes anything short of complete
+an error - should strict be the default? **Next: the two small items from the crops, then the 23 differences on
+the tuned-on sheets, each read against its page image.**
+
 **18 September, 19:20 - published, on your word.** The GitHub repository is public and the leaderboard entry is up
 at `huggingface.co/awmg/TrueDoc` (the hub puts an account name before every repository, and the `truedoc` name
 belongs to someone else): the card, a results page saying exactly what read which pages, the entry file with all
@@ -245,13 +261,13 @@ maths 388 to 397, exactly the +9 the code-against-code measure promised, nothing
 arrangement on the current code) and every page that carries it says so. **Open, in
 the order you set on 18 September (the picture-text check first - done - then the entry, then the review's items):**
 (1) DONE 19:20 - the leaderboard entry in the strong form and the repository public (D036); check the
-leaderboard's table for the row; (2) the
-status contract the review's F01 asks for, using its ten probes as acceptance cases, and the F10 repairs to
-`bench/tools/kfs_two_readers.py` (no held-out sheet in the detailed listing; marks compared, not stripped;
-critical words such as "not" flagged whatever the similarity; rows one reader misses counted); (3) two small
+leaderboard's table for the row; (2) DONE 20:25 - the
+status contract the review's F01 asks for, its ten probes now tests, and the F10 repairs to
+`bench/tools/kfs_two_readers.py` (D037); (3) two small
 product items from the crops: a geometric cap on a region's transcription (a region cannot hold more lines than its
-height allows) and the caption written twice on three run 97 pages; (4) the fifteen Key Facts Sheet cells, re-listed
-without held-out sheets, each read against its page image; (5) Pro's 100 random library pages and 25 insurance-set
+height allows) and the caption written twice on three run 97 pages; (4) the Key Facts Sheet differences, re-listed
+by the repaired tool without held-out sheets - 23 on 15 tuned-on sheets, 12 of them rows only one reader found
+(`bench/out/kfs/two_readers_differences.json`, each with an empty verdict) - each read against its page image; (5) Pro's 100 random library pages and 25 insurance-set
 pages compared with ours; (6) the tables gap on digital pages (Pro alone 930 checks to our 913); (7) a provider for
 a served Infinity-Parser2 model; (8) the downstream trial you want to discuss. The reviewer's folder is now
 git-ignored on your word.

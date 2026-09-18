@@ -114,6 +114,13 @@ PDF page
   |                               - a stage asked for that could not run is named under `truedoc.warnings`
   |                               ("the layout model was asked for and could not run..."), so no one reads a
   |                               conversion made without it as the converter's own answer
+  |                               - how the conversion ended travels apart from the body (D037): every warning is
+  |                               also a typed issue (`Document.add_issue`: code, severity, pages), the worst of
+  |                               them decides `truedoc.completion` (complete / degraded / incomplete), the front
+  |                               matter is written even over an empty body, and `pipeline.convert_with_status`
+  |                               hands the same to a caller who asked for no front matter. A page selection the
+  |                               document cannot meet is an error (`PageSelectionError`), not a state; a model's
+  |                               reply cut off at its length limit is kept and its page named `reply-cut-off`
   v
 OKF markdown
 ```

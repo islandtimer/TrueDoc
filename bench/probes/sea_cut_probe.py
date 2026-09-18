@@ -13,7 +13,7 @@ import sys
 
 sys.path.insert(0, os.path.join("bench", "tools"))
 from kfs_grade import cache_path, held_out, sheets  # noqa: E402
-from truedoc.pipeline import ConvertOptions, load_document  # noqa: E402
+from truedoc.pipeline import ConvertOptions, first_pages, load_document  # noqa: E402
 from truedoc.tables import aligned  # noqa: E402
 
 ORIGINAL = aligned._refine_segments
@@ -61,7 +61,7 @@ def main() -> None:
         print(f"{name}: held out, not looked at")
         return
     print(f"===== {name}", flush=True)
-    load_document(path, ConvertOptions(frontmatter=False, pages=[1, 2]))
+    load_document(path, ConvertOptions(frontmatter=False, pages=first_pages(path, 2)))
 
 
 if __name__ == "__main__":

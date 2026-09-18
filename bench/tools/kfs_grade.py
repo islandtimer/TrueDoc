@@ -44,8 +44,16 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import doc_library  # noqa: E402
 
-LIB = doc_library.root()
 OUT = os.path.join("bench", "out", "kfs")
+
+
+def __getattr__(name):
+    # `kfs_grade.LIB` is looked up when it is asked for, so the grader itself - `grade`, `blocks`,
+    # the prescribed events - can be imported on a machine that does not hold the library.
+    if name == "LIB":
+        return doc_library.root()
+    raise AttributeError(name)
+
 HOLDOUT_IN = 5          # one sheet in five is never reported with the tuned-on set
 
 ROW = re.compile(r"^\|.*\|\s*$")
@@ -65,7 +73,7 @@ EVENTS = ("fire and explosion", "flood", "storm", "earthquake", "lightning", "th
 def sheets() -> list[tuple[str, str]]:
     """(insurer, path) for every Key Facts Sheet in the library, insurer by insurer."""
     found = []
-    for path in sorted(glob.glob(os.path.join(LIB, "*", "*", "*.pdf"))):
+    for path in sorted(glob.glob(os.path.join(doc_library.root(), "*", "*", "*.pdf"))):
         base = os.path.basename(path).lower()
         if "kfs" not in base and "key-fact" not in base and "key_fact" not in base:
             continue
@@ -83,7 +91,10 @@ def held_out(path: str) -> bool:
 
 
 def cache_path(path: str) -> str:
-    stem = hashlib.sha1(path.encode("utf-8")).hexdigest()[:12]
+    # Keyed on the sheet's place in the library, not on how this machine spells the way there: the
+    # key used to be the whole path as typed, so a change of spelling (18 September, when the
+    # library's root moved into `doc_library`) orphaned every cached conversion without a word.
+    stem = hashlib.sha1(doc_library.relative(path).encode("utf-8")).hexdigest()[:12]
     return os.path.join(OUT, os.path.splitext(os.path.basename(path))[0][:60] + "_" + stem + ".md")
 
 
@@ -93,9 +104,9 @@ def convert_one(job: tuple) -> tuple:
     target = cache_path(path)
     if not fresh and os.path.exists(target) and os.path.getsize(target) > 0:
         return path, open(target, encoding="utf-8").read(), "cached"
-    from truedoc.pipeline import ConvertOptions, convert
+    from truedoc.pipeline import ConvertOptions, convert, first_pages
     try:
-        md = convert(path, ConvertOptions(frontmatter=False, pages=[1, 2]))
+        md = convert(path, ConvertOptions(frontmatter=False, pages=first_pages(path, 2)))
     except Exception as exc:
         return path, "", "FAILED: " + repr(exc)[:90]
     os.makedirs(OUT, exist_ok=True)

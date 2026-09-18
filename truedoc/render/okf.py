@@ -414,10 +414,12 @@ def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
     # it when they search or quote, and the meaning is the same.
     body = body.replace("…", "...")
     body = _join_dangling_formulas(body)
-    # A page with nothing readable yields an empty file, not a lone newline:
-    # fuzzy matchers treat a one-character document as matching anything.
+    # A page with nothing readable yields an empty body, not a lone newline: fuzzy matchers
+    # treat a one-character document as matching anything. With a front matter block asked for,
+    # the block is still written - it is where the file says that nothing could be read, and an
+    # empty file says nothing at all (D037; without one, `convert_with_status` carries it).
     if not body:
-        return ""
+        return render_frontmatter(doc, body) + "\n" if opts.frontmatter else ""
     if opts.frontmatter:
         return render_frontmatter(doc, body) + "\n\n" + body + "\n"
     return body + "\n"
@@ -484,9 +486,10 @@ def render_frontmatter(doc: Document, body: str = "") -> str:
     OKF requires `type`; recommends `title`, `description`, `resource`, `tags`;
     records production under `generated` and provenance under `sources`; a
     conversion nobody has reviewed is `status: draft`. TrueDoc's own details
-    (checksum, page count, confidence, OCR pages, hidden text, imprint,
-    the marks nothing took, warnings) live under the `truedoc` key, which
-    the format allows as an extension.
+    (checksum, page count, how the conversion ended, confidence, OCR pages,
+    hidden text, imprint, the marks nothing took, warnings and the same as
+    typed issues) live under the `truedoc` key, which the format allows as
+    an extension.
     """
     now = _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0).isoformat()
     resource = doc.metadata.get("resource") or doc.metadata.get("file_name", "")
@@ -497,6 +500,7 @@ def render_frontmatter(doc: Document, body: str = "") -> str:
         "version": __version__,
         "sha256": doc.sha256,
         "pages": len(doc.pages),
+        "completion": doc.completion,
         "confidence": doc.metadata.get("confidence", None),
         "language": doc.metadata.get("language") or None,
         "pages_with_ocr": doc.metadata.get("pages_with_ocr", []),
@@ -509,6 +513,7 @@ def render_frontmatter(doc: Document, body: str = "") -> str:
         "imprint": doc.metadata.get("imprint") or None,
         "marks_not_placed": doc.metadata.get("marks_not_placed") or None,
         "warnings": list(doc.warnings),
+        "issues": [i.as_dict() for i in doc.all_issues()] or None,
     }
     fm = {
         "type": doc.metadata.get("type") or "Document",

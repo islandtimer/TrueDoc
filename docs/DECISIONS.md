@@ -723,3 +723,50 @@ was git-ignored; it is now `bench/gpu/out3/crops_failing_manifest.json`), and th
 open for the owner:** the author email on all 166 commits is the owner's personal address; GitHub's noreply
 address would need the history rewritten (every hash the docs cite would change) - the owner decides before
 the repository goes public, not before the private push.
+
+## D037 - How a conversion ended is carried apart from the markdown (2026-09-18; the default exit policy is the owner's to confirm)
+
+**The question.** The other agent's review (kept local; its F01) showed by synthetic probes that incomplete work
+could look successful: a document nothing could read rendered as an empty string, front matter and warnings gone
+with the body; `--pages 2-1` parsed to no pages and converted every page; `--pages 99` of a two-page file wrote
+nothing and exited 0; a model's reply cut off at its token limit was accepted as a finished reading; and my own
+placer of recorded readings salvaged a cut-off reply to its last complete item - a cover statement without its
+exception - and recorded that in a count printed at the end of a script. The same day a clean install ran the
+converter without its layout model and exited 0. The warnings existed; nothing a program could act on did.
+
+**The decision.** Three states, the worst issue deciding, and every issue typed:
+
+| `completion` | means | today's issues of that severity |
+|---|---|---|
+| `complete` | everything asked for ran and every page was read | (notes only: `pages-turned`, `hidden-text`, `low-support`, `witness-failed`) |
+| `degraded` | every page has content, but a stage that was asked for did not run, or a lesser reader stood in | `stage-unavailable` (layout model, vision stage, deep reader), `reader-fallback` (the deep reader returned nothing; a model's partial reading set aside for the page's own text) |
+| `incomplete` | content is known to be missing | `unreadable-pages`, `reply-cut-off` |
+
+An issue is `code` (stable, for software), `severity`, `pages`, `message` (the sentence `warnings` has always
+held; `Document.add_issue` writes both, and a bare sentence some caller appends is still reported, as a note).
+The status travels three ways because a body cannot carry it: the front matter (`truedoc.completion`,
+`truedoc.issues` - and the block is now written even when the body is empty, which is when it matters most);
+`convert_with_status()` for a caller who asked for no front matter; and the command line's stderr summary and
+`--status <file>`. A request that cannot be met is not a state but an error: a page selection that names no page,
+runs backwards, or names a page the document does not have raises `PageSelectionError`, exit code 2. A cut-off
+reply is detected where it happens (`stop_reason: max_tokens`, `finish_reason: length`, or `cut_off: true` in a
+saved reading's YAML block, which `place_bakeoff.py` now writes page by page) and the text is **kept**: most of a
+page is worth more than none of it, and the page is named.
+
+**Not decided here, and the owner's:** what a caller should do with a conversion that is not complete. The
+review is explicit that a warning is not a hard block. Built so either answer is one line: by default the
+command line writes the file, lists the issues on stderr and exits 0; `--strict` exits 3. Whether strict should be
+the default - the converter exists for meaning accuracy, and a silent exit 0 on a missing layout model is how two
+of my own measurements went wrong - is a question of who the first users are and how they call it.
+
+**What it does not do.** It reports failures the converter can know about deterministically. It does not detect a
+reading that is complete and wrong (the review's F02, P03: a negation removed and an amount multiplied by ten
+still "corroborates" at 93% word overlap); `confidence` and `corroboration` keep their names and their limits,
+and relabelling them honestly is separate work.
+
+**Measured.** 30 new tests, the review's ten probes among them (`tests/test_status_contract.py`,
+`tests/test_kfs_two_readers.py`); suite 722. No body can change except the empty-document case with front matter
+on: the benchmark converts with front matter off, and the two pages of run 97's arrangement whose recorded
+readings were cut off convert to bodies byte-identical to run 97's - one of them, `long_tiny_text/17_pg17`
+(Flash), is now reported `incomplete`, which it always was. The Key Facts Sheets were re-converted fresh and
+compared with the day before's conversions; the result is in the progress log.

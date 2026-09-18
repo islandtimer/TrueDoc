@@ -105,6 +105,9 @@ class AnthropicVision:
         self.api_url = api_url
         self.timeout = timeout
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
+        # Whether any reply in the last read_page / read_region stopped at the token limit and not at
+        # the end of what the model had to say (D037): the pipeline reads this and names the page.
+        self.last_cut_off = False
         if not self.api_key:
             raise RuntimeError("ANTHROPIC_API_KEY is not set; the frontier-model vision stage needs it in the environment")
 
@@ -140,14 +143,18 @@ class AnthropicVision:
             log.warning("vision: the Anthropic API call failed: %s", exc)
             return None
         try:
+            if payload.get("stop_reason") == "max_tokens":
+                log.warning("vision: the reply from %s was cut off at %s tokens", self.model, max_tokens)
+                self.last_cut_off = True
             return "".join(part.get("text", "") for part in payload["content"] if part.get("type") == "text")
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, AttributeError):
             log.warning("vision: unexpected answer shape from the Anthropic API")
             return None
 
     def read_page(self, pdf_path: str, page_number: int) -> str | None:
         from truedoc.vision.olmocr_endpoint import parse_response, render_page_png_base64
 
+        self.last_cut_off = False       # any reply of this read, a band's included, may set it
         if self.bands > 1:
             banded = self._read_in_bands(pdf_path, page_number)
             if banded:
@@ -204,6 +211,7 @@ class AnthropicVision:
         return welded if welded.strip() else None
 
     def read_region(self, pdf_path: str, page_number: int, bbox: tuple[float, float, float, float], kind: str, turn: int = 0) -> str | None:
+        self.last_cut_off = False
         try:
             image_b64 = render_region_png_base64(pdf_path, page_number, bbox, kind, turn=turn)
         except Exception as exc:

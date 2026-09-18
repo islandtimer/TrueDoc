@@ -11,7 +11,7 @@ import sys
 
 sys.path.insert(0, os.path.join("bench", "tools"))
 from kfs_grade import cache_path, grade, held_out, sheets  # noqa: E402
-from truedoc.pipeline import ConvertOptions, convert  # noqa: E402
+from truedoc.pipeline import ConvertOptions, convert, first_pages  # noqa: E402
 
 
 def whole(g: dict) -> bool:
@@ -31,7 +31,7 @@ def main() -> None:
             if held_out(path):
                 print(f"{name[:48]:48s} held out - not looked at")
                 continue
-            now = grade(convert(path, ConvertOptions(frontmatter=False, pages=[1, 2])))
+            now = grade(convert(path, ConvertOptions(frontmatter=False, pages=first_pages(path, 2))))
             before = grade(io.open(os.path.join(baseline, name), encoding="utf-8").read())
             print(f"{name[:48]:48s} answers {before.get('answers_attached', 0):2d} -> {now.get('answers_attached', 0):2d}"
                   f"   rows {before.get('events_in_rows', 0):2d} -> {now.get('events_in_rows', 0):2d} of {now.get('events', 0)}"

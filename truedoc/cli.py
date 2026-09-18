@@ -27,32 +27,65 @@ def convert(
     vision_deep: Optional[str] = typer.Option(None, "--vision-deep", help="A second, more expensive reader (e.g. 'anthropic') used only for pages the first one cannot manage: no text layer, and our own OCR of them finds nothing word-like"),
     vision_model: str = typer.Option("olmocr", "--vision-model", help="Model name the vision endpoint expects"),
     vision_pages_only: bool = typer.Option(False, "--vision-pages-only", help="With the vision stage on, read only unreadable pages; do not ask about icons and figures"),
+    strict: bool = typer.Option(False, "--strict", help="Exit with code 3 when the conversion is not complete (a page nothing could read, a stage that could not run, a model reply cut off). The file is still written"),
+    status: Optional[Path] = typer.Option(None, "--status", help="Write how the conversion ended to this file as JSON: completion, pages, and every issue with its code"),
 ):
-    from truedoc.pipeline import ConvertOptions, convert as _convert
+    """Convert a PDF. Exit codes: 0 converted (any issues are listed on stderr and in the front matter);
+    2 the request cannot be met (a page selection the document does not have); 3 with --strict, converted
+    but not complete."""
+    import json
 
-    page_list = _parse_pages(pages) if pages else None
+    from truedoc.pipeline import ConvertOptions, PageSelectionError, convert_with_status
+
+    try:
+        page_list = _parse_pages(pages) if pages is not None else None
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="--pages")
     opts = ConvertOptions(frontmatter=frontmatter, page_markers=page_markers, pages=page_list, layout=layout, math=math, ocr=ocr, ocr_pictures=ocr_pictures,
                           doc_type=doc_type, vision_endpoint=vision_endpoint, vision_model=vision_model, vision_regions=not vision_pages_only, vision_deep=vision_deep)
-    text = _convert(str(pdf), opts)
+    try:
+        result = convert_with_status(str(pdf), opts)
+    except PageSelectionError as exc:
+        typer.echo(f"truedoc: {exc}", err=True)
+        raise typer.Exit(code=2)
     if out is None:
-        sys.stdout.write(text)
+        sys.stdout.write(result.markdown)
     else:
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(text, encoding="utf-8")
+        out.write_text(result.markdown, encoding="utf-8")
         typer.echo(f"wrote {out}")
+    if status is not None:
+        status.parent.mkdir(parents=True, exist_ok=True)
+        status.write_text(json.dumps(result.as_dict(), indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    # How it ended goes to stderr whatever was asked for: a body written to stdout, or one with no
+    # front matter, or an empty one, carries no status of its own (D037).
+    if result.issues:
+        typer.echo(f"truedoc: {result.completion} - {len(result.issues)} issue(s)", err=True)
+        for issue in result.issues:
+            typer.echo(f"  [{issue.severity}] {issue.code}: {issue.message}", err=True)
+    if strict and result.completion != "complete":
+        raise typer.Exit(code=3)
 
 
 def _parse_pages(spec: str) -> list[int]:
+    """'1,3-5' as page numbers, in the order given. Anything that is not a page number or a range
+    running forwards is refused: '2-1' used to mean no pages, which the pipeline took for all of them."""
     pages: list[int] = []
     for part in spec.split(","):
         part = part.strip()
         if not part:
             continue
-        if "-" in part:
-            a, b = part.split("-", 1)
-            pages.extend(range(int(a), int(b) + 1))
-        else:
-            pages.append(int(part))
+        ends = part.split("-")
+        if len(ends) > 2 or not all(e.strip().isdigit() for e in ends):
+            raise ValueError(f"'{part}' is not a page number or a range like 3-5")
+        first, last = int(ends[0]), int(ends[-1])
+        if first < 1:
+            raise ValueError(f"'{part}': pages are numbered from 1")
+        if last < first:
+            raise ValueError(f"'{part}' runs backwards; write {last}-{first}")
+        pages.extend(range(first, last + 1))
+    if not pages:
+        raise ValueError("no page was named")
     return pages
 
 

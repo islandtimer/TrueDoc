@@ -4,6 +4,70 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-18, evening (19:40-20:25) - How a conversion ended, carried apart from the markdown (D037); the two-readers tool repaired. The review's F01 and F10
+
+The owner's order after the entry was published: the other agent's review items next. Its ten synthetic
+probes were taken as acceptance cases, and all ten are now tests.
+
+**F01, the status contract (D037).** `truedoc/model.py` gains `Issue` (code, message, severity, pages),
+`Document.add_issue` (writes the typed issue and the sentence `warnings` has always held),
+`Document.all_issues` (a bare sentence some caller appends is still reported, as a note) and
+`Document.completion`: `complete` / `degraded` / `incomplete`, the worst issue deciding. The pipeline's ten
+warning sites became typed issues: `unreadable-pages` and `reply-cut-off` are incomplete; `stage-unavailable`
+(layout model, vision stage, deep reader) and `reader-fallback` are degraded; `pages-turned`, `hidden-text`,
+`low-support`, `witness-failed` are notes. The probes, one by one: **P01** an unreadable document rendered as an
+empty string with front matter on - the block is now written over the empty body, and `convert_with_status()`
+returns the same status to a caller who asked for no front matter (the body stays empty: D008 stands). **P04** a
+reply with `stop_reason: max_tokens` was accepted as finished - both live providers and the replay provider now
+set `last_cut_off`, the pipeline keeps the text and names the page (whole pages and picture regions). **P05**
+`--pages 2-1` parsed to `[]`, which `opts.pages or all` took for every page, and `--pages 99` of a two-page file
+converted nothing and exited 0 - the parser refuses what is not a forward range of page numbers and the pipeline
+raises `PageSelectionError` for an empty selection or a page the document lacks; exit code 2. **P2-01, P2-02** (my
+own `bench/gpu/place_bakeoff.py`): a reading salvaged from a cut-off layout reply now opens with a YAML block
+`cut_off: true`, which `FileReadings` reports as a live provider would, and layout JSON is recognised however
+the model spaced it. The command line lists issues on stderr, writes `--status <file>` as JSON, and `--strict`
+exits 3 when the result is short of complete. **Left to the owner:** whether strict should be the default.
+
+**It found something at once.** Re-placing the recorded readings marked two as salvaged from cut-off replies:
+Flash's `long_tiny_text/17_pg17` and Pro's `long_tiny_text/13_pg475`. Converted in run 97's arrangement, the
+first is now reported `incomplete` with a body byte-identical to run 97's (it always was incomplete; nothing
+said so), and the second is `complete`, rightly: the router does not send that page to Pro.
+
+**A caller of my own that the stricter pipeline would have broken:** six tools ask for pages 1 and 2 of every
+Key Facts Sheet, and a one-page sheet has no page 2. `pipeline.first_pages(path, n)` gives the opening pages a
+document has; the six use it.
+
+**F10, `bench/tools/kfs_two_readers.py`.** Held-out sheets are counted and never listed (verified: 32 held-out
+sheets, none named in the output or the JSON). A leading tick or cross is compared as a mark, not stripped
+(P2-03). Negations, limiting words and every figure are compared as a bag of their own whatever the similarity
+(P2-04: a dropped "not" in a long condition is 0.998 alike and was invisible at the 0.98 cutoff). Rows only one
+reader found are counted and listed, and a label that opens more than one row is reported (P2-05). Each listed
+difference carries an empty `verdict` (truedoc / model / both / source ambiguous) and its sheet's place in the
+library - the first run showed one RACQ file listed twice because it is kept under two product lines. The
+comparison is a pure function (`compare`), so the probes are tests. **First run on the real sheets, tuned-on
+158:** 1,883 rows found by both, **12 found by one reader only** (the old tool could not see these), 2 answers
+differ, 0 marks, 4 cells differ in critical words, 5 in wording; 23 differences on 15 sheets, 13 distinct
+files. Held out, totals only: 3, 1, 0, 2, 7. Not yet read against the page images - that is the next list
+item, and the 17 September claim that "every difference read so far was TrueDoc's" predates these repairs
+and covered sheets that should not have been listed.
+
+**A side effect of this afternoon's path clean-up, caught here:** the Key Facts Sheets cache was keyed on the
+whole path as typed, so moving the library's root into `doc_library` changed every key and would have orphaned
+all 190 cached conversions without a word. The key is now the library-relative path. `kfs_grade.LIB` is looked
+up when asked for, so the grader imports on a machine without the library (the new tests need that).
+
+**Measured.** 30 new tests (21 in `tests/test_status_contract.py`, 9 in `tests/test_kfs_two_readers.py`);
+suite 722. All 190 Key Facts Sheets re-converted fresh: **190 of 190 byte-identical** to the day before's cached
+conversions, grade unchanged (tuned on 157 of 158 headers whole, 1,885 of 1,885; held out 32 of 32, 375 of 375).
+The insurance set reconverted: **0 of 25 files differ, 229 of 229**. The benchmark converts with front matter
+off and its bodies cannot move; the two cut-off pages' bodies were checked against run 97's directly.
+
+**Three times in an hour I patched code through a heredoc and a `"\n"` in the replacement text became a real line
+break** (a regex the first time, which failed safe; then `okf.py` and `cli.py`, which did not compile). The
+memory note that already warned of this now says what to check before every such patch.
+
+---
+
 ## 2026-09-18 - The owner decides the reader: Flash, Pro behind it, and run 95's 86.4 is the number
 
 Three decisions, put to the owner one at a time in plain terms and recorded as D033, D034 and D035.

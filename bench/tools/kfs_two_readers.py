@@ -8,18 +8,34 @@ Two questions, and the second is the one that finds defects:
 
   shape   `kfs_grade.grade` on the model's two pages, exactly as it grades TrueDoc's: header whole,
           events in rows, answers attached. Same grader, same pages, same held-out fifth.
-  words   for every prescribed event both readers found, is the Yes / No / Optional the same, and is
-          the third column the same words? TrueDoc's words are the PDF's own text; the model's come
-          from looking at the page. Where they differ one of them is wrong, and a shape grader that
-          passes both cannot say which - so the differences are listed for reading against the page.
+  words   for every prescribed event, did both readers find a row for it; is the Yes / No / Optional
+          the same; is the mark in front of it the same; do the third columns say the same thing?
+          TrueDoc's words are the PDF's own text; the model's come from looking at the page. Where
+          they differ one of them is wrong - or the page is ambiguous - and a shape grader that passes
+          both cannot say which, so the differences are listed for reading against the page.
 
-The differences are evidence to read, not a score: on 17 September every one of the fifteen that was
-read against TrueDoc's own markdown was TrueDoc's (a wrapped cell line opening with a capital made a
-row of its own; a stray word from a neighbouring cell).
+**What this is and is not.** It is a way to find cells worth reading against the page image. It is
+not a measure of meaning: two readers can agree and both be wrong, and a difference says nothing
+about which reader erred until someone has looked at the page. Every listed difference carries an
+empty `verdict` for that reading (`truedoc` / `model` / `both` / `source ambiguous`).
+
+**The held-out fifth stays held out.** A fifth of the sheets (`kfs_grade.held_out`) is never tuned
+on, and a tool that prints which cell of which held-out sheet is wrong tunes on it all the same. So
+held-out sheets are counted and never listed: their differences appear as totals, by kind, and
+nowhere by name. The first version of this tool (17 September) listed every sheet; the review of
+18 September caught it (its F10), before any held-out cell had been read.
+
+**Repaired with it (the same review's probes):** a leading tick or cross was stripped before the
+comparison, so "covered" and "not covered" by mark compared equal; only third columns under 0.98
+alike were listed, and a dropped "not" in a long condition is 0.998 alike; a row one reader missed
+fell out of the count altogether. Marks are now compared as marks, negations, amounts and limiting
+words are compared as a bag of their own whatever the ratio, and rows only one reader found are
+counted and listed.
 
 usage (repo root, the project's venv):
-    kfs_two_readers.py                      grade, compare, list the differences
+    kfs_two_readers.py                      grade, compare, list the tuned-on differences
     kfs_two_readers.py <readings folder>    another model's readings in the same form
+    kfs_two_readers.py --json <file>        also write the tuned-on differences for adjudication
 """
 import collections
 import difflib
@@ -35,7 +51,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "gpu"))
 import kfs_grade  # noqa: E402
 from place_bakeoff import layout_text  # noqa: E402
 
-FOLDER = sys.argv[1] if len(sys.argv) > 1 else os.path.join("bench", "gpu", "out5", "pro", "own")
+ALIKE = 0.98                       # a third column less alike than this is listed as a wording difference
+TICKS, CROSSES = "✓✔☑", "✗✘☒✕✖"
+# Words that turn a sentence round or bound it, and every figure: a difference in these is a
+# difference in meaning however alike the sentences are otherwise.
+CRITICAL = re.compile(
+    r"\b(?:not|no|never|none|nor|neither|without|unless|except|excepting|excluded|excludes|excluding|exclusion|"
+    r"only|other than|up to|at least|at most|more than|less than|under|over|maximum|minimum|limit|limited)\b"
+    r"|n't\b|[$£€]\s?\d[\d,]*(?:\.\d+)?|\b\d[\d,]*(?:\.\d+)?\s?%|\b\d[\d,]*(?:\.\d+)?\b", re.I)
 
 
 def read(path):
@@ -43,40 +66,71 @@ def read(path):
         return f.read()
 
 
-def load():
-    """sheet pdf -> {page: the model's reading}, from the manifest and the readings beside it."""
-    manifest = json.loads(read(os.path.join(FOLDER, "manifest.json")))
-    readings, counts = {}, collections.Counter()
-    for line in read(os.path.join(FOLDER, "inference.jsonl")).splitlines():
+def load(folder):
+    """sheet pdf -> {page: the model's reading}, and how many readings were salvaged from a reply
+    that was cut off (`place_bakeoff.layout_text`)."""
+    manifest = json.loads(read(os.path.join(folder, "manifest.json")))
+    readings, counts, cut_off = {}, collections.Counter(), set()
+    for line in read(os.path.join(folder, "inference.jsonl")).splitlines():
         if line.strip():
             rec = json.loads(line)
             name = os.path.splitext(os.path.basename(rec["pdf"].replace("\\", "/")))[0]
-            readings[name] = layout_text(rec.get("markdown") or "", counts, "model")
+            readings[name], was_cut = layout_text(rec.get("markdown") or "", counts, "model")
+            if was_cut:
+                cut_off.add(name)
     sheets = collections.OrderedDict()
     for m in manifest:
         if m["set"] == "kfs":
             sheets.setdefault(m["pdf"], {})[m["page"]] = readings.get(m["name"], "")
-    return sheets
+    return sheets, cut_off
 
 
-def norm(s):
+def plain(s):
+    """A cell as words: markup, escapes and typographic variants out, case folded. The mark in
+    front of it is kept - `mark_of` reads it - and only list furniture is dropped."""
     s = re.sub(r"<br\s*/?>", " ", s)
     s = html.unescape(re.sub(r"<[^>]+>", " ", s))
     s = s.replace("\\$", "$").replace("\\|", "|").replace("**", "").replace("*", "")
     for a, b in (("’", "'"), ("‘", "'"), ("“", '"'), ("”", '"'), ("–", "-"), ("—", "-")):
         s = s.replace(a, b)
-    s = re.sub(r"^[\s•✓✗✔✘-]+", "", s)
+    s = re.sub(r"^[\s•·-]+", "", s)
     return re.sub(r"\s+", " ", s).strip().lower()
 
 
+def mark_of(s):
+    """'tick', 'cross' or '' for the mark a cell opens with: a tick and a cross are an answer."""
+    lead = plain(s)[:1]
+    return "tick" if lead and lead in TICKS else "cross" if lead and lead in CROSSES else ""
+
+
+def norm(s):
+    """The words alone, the opening mark aside (it is compared by `mark_of`, not thrown away)."""
+    return re.sub(r"^[\s%s%s]+" % (TICKS, CROSSES), "", plain(s)).strip()
+
+
+def critical(s):
+    """The negations, limiting words and figures of a cell, as a bag."""
+    return collections.Counter(re.sub(r"[\s,]", "", m.group(0).lower()) for m in CRITICAL.finditer(norm(s)))
+
+
 def rows_of(md):
-    """event -> (answer, third column), from the table holding the most prescribed events."""
+    """event -> (answer cell, third column) as written, from the table holding the most prescribed
+    events; and the events whose label opens more than one row anywhere in the markdown, which
+    this picks the first of and a reader of the differences should know about."""
     best, hits = None, 0
+    seen = collections.Counter()
     for block in kfs_grade.blocks(md):
         text = " ".join(block).lower()
         h = sum(1 for e in kfs_grade.EVENTS if e in text)
         if h > hits:
             best, hits = block, h
+        for line in block[1:]:
+            cs = kfs_grade.cells_of(line)
+            label = kfs_grade._LEAD.sub("", cs[0]).lower() if cs else ""
+            for e in kfs_grade.EVENTS:
+                if label.startswith(e):
+                    seen[e] += 1
+                    break
     out = {}
     for line in (best or [])[1:]:
         cs = kfs_grade.cells_of(line)
@@ -85,9 +139,47 @@ def rows_of(md):
         label = kfs_grade._LEAD.sub("", cs[0]).lower()
         for e in kfs_grade.EVENTS:
             if label.startswith(e) and e not in out:
-                out[e] = (norm(cs[1]), norm(" ".join(cs[2:])))
+                out[e] = (cs[1], " ".join(cs[2:]))
                 break
-    return out
+    return out, sorted(e for e, n in seen.items() if n > 1)
+
+
+def compare(td_md, mo_md):
+    """Every difference between two readings of one sheet, as dicts of `kind` and what each reader
+    wrote; and the counts the totals are made of. Pure: nothing is printed, nothing is read."""
+    (td, td_dup), (mo, mo_dup) = rows_of(td_md), rows_of(mo_md)
+    found = []
+    counts = collections.Counter(rows_truedoc=len(td), rows_model=len(mo))
+    for e in sorted(set(td) | set(mo)):
+        if e not in td or e not in mo:
+            counts["row_one_reader_only"] += 1
+            found.append({"kind": "row only one reader found", "event": e,
+                          "truedoc": " | ".join(td[e]) if e in td else None, "model": " | ".join(mo[e]) if e in mo else None})
+            continue
+        counts["rows_both"] += 1
+        (ta, tt), (ma, mt) = td[e], mo[e]
+        if norm(ta) != norm(ma):
+            counts["answer"] += 1
+            found.append({"kind": "answer", "event": e, "truedoc": ta, "model": ma})
+        if (mark_of(ta), mark_of(tt)) != (mark_of(ma), mark_of(mt)):
+            counts["mark"] += 1
+            found.append({"kind": "mark", "event": e, "truedoc": (ta + " | " + tt)[:120], "model": (ma + " | " + mt)[:120]})
+        a, b = norm(tt), norm(mt)
+        ratio = difflib.SequenceMatcher(None, a, b).ratio() if (a or b) else 1.0
+        counts["third_identical"] += ratio == 1.0
+        if critical(tt) != critical(mt):
+            counts["critical"] += 1
+            diff = (critical(tt) - critical(mt)) + (critical(mt) - critical(tt))
+            found.append({"kind": "critical words", "event": e, "alike": round(ratio, 4), "differ": sorted(diff),
+                          "truedoc": a, "model": b})
+        elif ratio < ALIKE:
+            counts["wording"] += 1
+            found.append({"kind": "wording", "event": e, "alike": round(ratio, 4), "truedoc": a, "model": b})
+    for e in sorted(set(td_dup) | set(mo_dup)):
+        counts["label_repeated"] += 1
+        found.append({"kind": "label opens more than one row", "event": e,
+                      "truedoc": e in td_dup, "model": e in mo_dup})
+    return found, counts
 
 
 def summarise(rows, title):
@@ -99,47 +191,74 @@ def summarise(rows, title):
         sum(g["events_in_rows"] for g in found), events, sum(g["answers_attached"] for g in found), events))
 
 
-def main():
-    sheets = load()
+KINDS = ("row_one_reader_only", "answer", "mark", "critical", "wording", "label_repeated")
+
+
+def totals_line(c):
+    return ("rows found by both %d (TrueDoc %d, model %d) | only one reader %d | answer differs %d | mark differs %d | "
+            "critical words differ %d | wording under %.2f alike %d | third column identical %d | repeated labels %d" % (
+                c["rows_both"], c["rows_truedoc"], c["rows_model"], c["row_one_reader_only"], c["answer"], c["mark"],
+                c["critical"], ALIKE, c["wording"], c["third_identical"], c["label_repeated"]))
+
+
+def _window(a, b):
+    ops = [o for o in difflib.SequenceMatcher(None, a, b).get_opcodes() if o[0] != "equal"][:1]
+    for _tag, i1, i2, j1, j2 in ops:
+        return a[max(0, i1 - 25):i2 + 25][:80], b[max(0, j1 - 25):j2 + 25][:80]
+    return a[:80], b[:80]
+
+
+def main(argv):
+    args = [a for a in argv if not a.startswith("--")]
+    json_out = argv[argv.index("--json") + 1] if "--json" in argv else None
+    if json_out in args:
+        args.remove(json_out)
+    folder = args[0] if args else os.path.join("bench", "gpu", "out5", "pro", "own")
+
+    import doc_library
+    sheets, cut_off = load(folder)
     pairs = []
-    for pdf, pages in sheets.items():
+    for rel, pages in sheets.items():
+        pdf = doc_library.absolute(rel)
         cache = kfs_grade.cache_path(pdf)
         if os.path.exists(cache):
             pairs.append((pdf, read(cache), "\n\n".join(pages[p] for p in sorted(pages))))
-    print("%d sheets read by both (of %d the model read)\n\nSHAPE" % (len(pairs), len(sheets)))
+    print("%d sheets read by both (of %d the model read; %d of the model's pages were salvaged from a cut-off reply)\n\nSHAPE" % (
+        len(pairs), len(sheets), len(cut_off)))
     for label, want in (("tuned on", False), ("held out, never tuned on", True)):
         print(" " + label)
         summarise([kfs_grade.grade(td) for pdf, td, _ in pairs if kfs_grade.held_out(pdf) == want], "TrueDoc")
         summarise([kfs_grade.grade(mo) for pdf, _, mo in pairs if kfs_grade.held_out(pdf) == want], "the model")
 
-    both = same = 0
-    ratios, answers, texts = [], [], []
+    listed, held = [], collections.Counter()
+    tuned = collections.Counter()
     for pdf, td_md, mo_md in pairs:
-        td, mo = rows_of(td_md), rows_of(mo_md)
-        for e in td:
-            if e not in mo:
-                continue
-            both += 1
-            if td[e][0] == mo[e][0]:
-                same += 1
+        found, counts = compare(td_md, mo_md)
+        if kfs_grade.held_out(pdf):
+            held.update(counts)                             # totals only: no sheet, no event, no words
+        else:
+            tuned.update(counts)
+            # the sheet's place in the library, not its bare name: one file kept under two product
+            # lines is two sheets here, and should look like two and not like one counted twice
+            listed.extend(dict(d, sheet=doc_library.relative(pdf), verdict=None) for d in found)
+    print("\nWORDS\n tuned on\n  " + totals_line(tuned))
+    print(" held out, never tuned on (totals only - these sheets are never listed)\n  " + totals_line(held))
+    print("\nDIFFERENCES ON TUNED-ON SHEETS, to be read against the page image (neither reader is the answer)")
+    for kind in ("row only one reader found", "answer", "mark", "critical words", "wording", "label opens more than one row"):
+        for d in [d for d in listed if d["kind"] == kind]:
+            if kind in ("critical words", "wording"):
+                a, b = _window(d["truedoc"], d["model"])
+                extra = " differ %s" % d["differ"] if kind == "critical words" else ""
+                print("  %-14s %.4f %-44s %-20s%s\n      TrueDoc [%s]\n      model   [%s]" % (
+                    kind, d["alike"], d["sheet"][-60:], d["event"], extra, a, b))
             else:
-                answers.append((os.path.basename(pdf), e, td[e][0], mo[e][0]))
-            r = difflib.SequenceMatcher(None, td[e][1], mo[e][1]).ratio() if (td[e][1] or mo[e][1]) else 1.0
-            ratios.append(r)
-            if r < 0.98:
-                texts.append((r, os.path.basename(pdf), e, td[e][1], mo[e][1]))
-    print("\nWORDS\n  event rows found by both: %d" % both)
-    print("  answer identical: %d (%.2f%%), different: %d" % (same, 100.0 * same / max(both, 1), both - same))
-    print("  third column identical: %d | at least 0.98 alike: %d | under 0.98: %d" % (
-        sum(1 for r in ratios if r == 1.0), sum(1 for r in ratios if r >= 0.98), len(texts)))
-    for sheet, e, a, b in answers:
-        print("  answer   %-46s %-22s TrueDoc %r | model %r" % (sheet[:46], e, a[:30], b[:30]))
-    for r, sheet, e, a, b in sorted(texts):
-        ops = [o for o in difflib.SequenceMatcher(None, a, b).get_opcodes() if o[0] != "equal"][:1]
-        for tag, i1, i2, j1, j2 in ops:
-            print("  %.2f     %-46s %-22s TrueDoc [%s] | model [%s]" % (
-                r, sheet[:46], e, a[max(0, i1 - 20):i2 + 20][:70], b[max(0, j1 - 20):j2 + 20][:70]))
+                print("  %-30s %-44s %-20s TrueDoc %r | model %r" % (
+                    kind, d["sheet"][-60:], d["event"], str(d["truedoc"])[:40], str(d["model"])[:40]))
+    if json_out:
+        with open(json_out, "w", encoding="utf-8") as f:
+            json.dump(listed, f, indent=1, ensure_ascii=False)
+        print("\n%d differences written to %s, each with an empty verdict" % (len(listed), json_out))
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
