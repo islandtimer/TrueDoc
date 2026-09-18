@@ -188,6 +188,49 @@ can install from, tested in a fresh environment) is met. Note for the other agen
 this run is the case its probes describe - a stage silently degraded to the reader of the markdown, loud only
 in the front matter and on stderr; the exit code was 0.
 
+**17:30-18:50 - GPU session 6: the picture-text check. Flash fails it; olmOCR 2 keeps the crops; the number
+stands.** The owner's order for what remained: this check first, then the leaderboard entry, then the review's
+F01/F10 - a correction to my earlier recommendation, which had taken the review's order wholesale though the
+entry depends on neither. He rented one RTX 4090 (24 GB, vast.ai, US, $0.386/h, Max CUDA 13.0, 70 GB disk; the
+first address he sent refused connections and a second one worked). Only `crops_failing` went up - 42 MB as one
+tarball, 32 minutes at 20-25 KB/s, slower than the 50 KB/s of past sessions; a parallel-stream test was
+inconclusive and re-cutting the crops on the instance from the benchmark's own pages was possible (`select_regions.py`
+is a clip on the page) and declined by the owner, rightly: the check must use the same 92 crops olmOCR 2 and Pro
+read. The installs ran during the upload (`run_bakeoff.sh ... prep`, an unknown stage name, does the venv and the
+pins and nothing else - torch 2.10.0+cu128, vLLM 0.17.1, INF-MLLM at 5089819 again) and Flash's weights were
+fetched behind them (snapshot cfddc410, into the image's `/workspace/.hf_home`). Then `SETS=none CUSTOM_PROMPT=...
+FIT_GB="6 8 12 16" ... flash`: server up in five minutes, 92 crops read under our prompt, none failed, in ten.
+
+The readings placed as `inf2flash_custom_raw` with the crop manifest (`place_bakeoff.py infinity` reads the custom
+`inference.jsonl` as it reads the authors'). Counted by the pipeline's own rule for an answer (not `none`, three
+words or more): olmOCR 2 transcribes 52 of 92, Pro under our prompt 47 (the log's 53 was a looser count; Pro's
+custom readings had never been placed - now `inf2pro_custom_raw`), Flash 44 - **with 12,682 words to olmOCR 2's
+3,337**. Two crops hold 11,060 of them: `multi_column/027880a8..._page_7__r0`, a two-panel scatter plot, for which
+Flash invented an 1,800-row markdown table of numbers from 0.00 to 45.20 (olmOCR 2: a 46-word description); and
+`arxiv_math/2503.05506_pg11__r0`, a graph figure with vertex labels, where Flash wrote two labels and then
+`- V_i^50s` 4,095 times to the token limit (olmOCR 2: nothing). Both read against their crops. The rest of the gap
+was HTML: olmOCR 2 writes tables as `<table>` markup and my word count took the tags as words; the geology table
+(`tables/3d780c..._pg22`) is right cell for cell in Flash's markdown. Coverage cross-tab: both read 42, Flash only
+2, olmOCR 2 only 10, neither 38; of olmOCR 2's ten, two are figures it *described* (a diagram, a scatter plot)
+where Flash rightly answered `A B` and `None` - and on 15 crops olmOCR 2's whole answer is a description, which
+the pipeline writes into the page as `![...](figure)[^inferred]`, twice on three run 97 pages (a duplication to
+trace).
+
+**Through the converter, the 60 pages three ways on the same code** (`ab_pool.py --pages crop_pages --vision
+file:inf2flash_raw+<crops>`; the olmOCR 2 side's 60 page bodies are byte-identical to run 97's): olmOCR 2 230 of
+306; Flash 228 (tables +1 on the geology table, -1 on a people list both mostly fail, **-2 on the sideways
+vehicle-list scan, where Flash dropped the chassis-number column - seven columns of eight - and read NUMERO as
+HUMERO**; the two runaways moved no check, as the benchmark's design predicts); Pro 230 (+1, -1, the vehicle list
+intact, no runaways). **Verdict under D033's own words:** Flash cannot be the crop reader - "noticeably more
+unsupported text" - so olmOCR 2 stays on the crops, Flash stays on whole pages, and since run 97 was made exactly
+that way the quoted 86.8 is unchanged. Recorded in D033. Fit stage: 6 GB does not serve Flash, 8 GB does (8.6 GB
+in use; weights 4.25 GiB, KV cache 1.84 GiB at 32k context), 12 and 16 GB likewise; the stage's twelve-crop reads
+all failed with "requested 32768 output tokens" against the 32k context - the authors' client's default output
+length against my shorter `--max-model-len`, so "serves in 8 GB" is shown and "reads in 8 GB" is not; a flaw in
+the fit stage, to fix before it is used again. Instance destroyed by the owner at 18:50; about 55 minutes of
+instance time, all-in cost to come from the account. Everything is in `bench/gpu/out6/` (logs, fit results,
+environment) and `bench/gpu/out5/flash_custom/` (the readings).
+
 ---
 
 ## 2026-09-17, afternoon and evening - GPU session 5: a stronger open reader, measured on our own pages

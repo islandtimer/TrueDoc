@@ -569,7 +569,39 @@ If Flash fails either - cannot read the picture regions, or shows noticeably mor
 
 _The second check passed the same day (`bench/probes/corroborate_readers.py`): on the 281 pages Flash is never
 backed less by the page's own words than olmOCR 2, and produces fewer words no other reader has, 1.5% against
-3.3%. The picture-text check is the one still owed._
+3.3%._
+
+**The picture-text check, run the same evening (GPU session 6, one RTX 4090, about 55 minutes): Flash fails it,
+and the decision splits by region.** Flash read the 92 picture crops from the 60 digital pages under TrueDoc's own
+question (`bench/gpu/picture_text_prompt.txt`; readings `bench/gpu/out5/flash_custom/`, logs `bench/gpu/out6/`),
+and the 60 pages were converted three ways on the same code, the only difference the crop reader
+(`bench/tools/ab_pool.py --pages --vision`; the olmOCR 2 side is body-identical to run 97's pages):
+
+| crop reader | checks of 306 | crops transcribed of 92 | unsupported text |
+|---|---|---|---|
+| olmOCR 2 (run 97's arrangement) | 230 | 52 | 15 figure *descriptions* of about 40 words, written as figure captions with `[^inferred]` |
+| Flash, our prompt | 228 | 44 | **two runaways: an invented 1,800-row table of numbers on a scatter plot (6,964 words) and one line repeated 4,095 times on a graph figure**; a dense table scan read with a whole column dropped (the -2) |
+| Pro, our prompt | 230 | 47 | one invented image address |
+
+Level on the score: the benchmark asks whether text is present, never whether text was made up. On the check's
+own words - "noticeably more unsupported text" - Flash fails: 11,000 invented words on 2 of 92 crops, against
+descriptions a reader can see are descriptions. Its good readings are good (a geology table right cell for cell;
+`none` on figures where olmOCR 2 describes), which is why the split is by region and not a reversal:
+
+- **Whole pages without a text layer: Flash stands** (both checks: the invented-text check passed on all 281
+  pages, and the picture crops are a different question).
+- **Picture crops on digital pages: olmOCR 2 stays**, as this decision said it would. Run 97 was made exactly that
+  way, so the quoted 86.8 is unchanged and the leaderboard entry describes it as it is. Pro reads the crops as well
+  as olmOCR 2 and without the descriptions; whether the deep tier takes the crops in a live service is a design
+  question for D034's build, not a change to the number.
+
+Two things learned for the product, not built: a region's transcription cannot hold more lines than its height
+allows (1,844 lines in 328 points), a geometric cap that would have stopped both runaways from any reader; and the
+same olmOCR 2 caption appears twice on a run 97 page (`tables/11d982c1..._pg3`, and again on
+`tables/1801ca1d..._pg5` and `multi_column/027880a8..._page_7`), a duplication seen and not yet traced. The fit stage of the same session: Flash serves in
+8 GB of card memory (4.25 GiB of weights, 1.84 GiB of cache at a 32k context), not in 6; reading inside that
+budget was not demonstrated, because the stage's client asked for more output tokens than the shorter context
+holds - a flaw in `run_bakeoff.sh`'s fit stage, noted in `bench/gpu/README.md`.
 
 **What it sets in motion.** Nothing ships differently today, because no reader has shipped to anyone. To be built:
 a provider that speaks to a served Infinity-Parser2 model directly (its own prompt, its layout JSON turned into

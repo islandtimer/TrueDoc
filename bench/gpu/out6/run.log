@@ -1,0 +1,71 @@
+== system
+name, memory.total [MiB], driver_version
+NVIDIA GeForce RTX 4090, 24564 MiB, 580.159.03
+overlay          70G   17G   54G  24% /
+shm              15G     0   15G   0% /dev/shm
+== link speed, because a slow host wastes more than it costs (lesson of 8 September)
+pypi: 200 803300 B/s
+huggingface: 200 1725 B/s
+== dependencies
+Python 3.12.3
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+infinity-parser2 0.4.0 requires openai>=2.25.0, but you have openai 2.24.0 which is incompatible.
+infinity-parser2 0.4.0 requires transformers>=5.3.0, but you have transformers 4.57.6 which is incompatible.
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+vllm 0.17.1 requires openai<2.25.0,>=1.99.1, but you have openai 3.15.0 which is incompatible.
+vllm 0.17.1 requires transformers<5,>=4.56.0, but you have transformers 5.17.0 which is incompatible.
+torch 2.10.0+cu128 cuda True vllm 0.17.1 transformers 5.17.0
+INF-MLLM at 5089819
+== pages
+== flash: serving infly/Infinity-Parser2-Flash
+== flash: server up 08:27:02
+-- flash crops_failing, custom prompt
+[custom] done. parsed=92 failed=0 total=92
+find: ‘/root/gpu/out/markdown/flash’: No such file or directory
+== flash: done 08:36:49, 0 markdown files
+== fit: infly/Infinity-Parser2-Flash in 6 GB of a 24564 MiB card (share 0.25)
+server died:
+(APIServer pid=5056)     return cls(
+(APIServer pid=5056)            ^^^^
+(APIServer pid=5056)   File "/root/venv-inf/lib/python3.12/site-packages/vllm/v1/engine/async_llm.py", line 154, in __init__
+(APIServer pid=5056)     self.engine_core = EngineCoreClient.make_async_mp_client(
+(APIServer pid=5056)                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=5056)   File "/root/venv-inf/lib/python3.12/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=5056)     return func(*args, **kwargs)
+(APIServer pid=5056)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=5056)   File "/root/venv-inf/lib/python3.12/site-packages/vllm/v1/engine/core_client.py", line 127, in make_async_mp_client
+(APIServer pid=5056)     return AsyncMPClient(*client_args)
+(APIServer pid=5056)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=5056)   File "/root/venv-inf/lib/python3.12/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=5056)     return func(*args, **kwargs)
+(APIServer pid=5056)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=5056)   File "/root/venv-inf/lib/python3.12/site-packages/vllm/v1/engine/core_client.py", line 911, in __init__
+(APIServer pid=5056)     super().__init__(
+(APIServer pid=5056)   File "/root/venv-inf/lib/python3.12/site-packages/vllm/v1/engine/core_client.py", line 569, in __init__
+(APIServer pid=5056)     with launch_core_engines(
+(APIServer pid=5056)   File "/usr/lib/python3.12/contextlib.py", line 144, in __exit__
+(APIServer pid=5056)     next(self.gen)
+(APIServer pid=5056)   File "/root/venv-inf/lib/python3.12/site-packages/vllm/v1/engine/utils.py", line 951, in launch_core_engines
+(APIServer pid=5056)     wait_for_engine_startup(
+(APIServer pid=5056)   File "/root/venv-inf/lib/python3.12/site-packages/vllm/v1/engine/utils.py", line 1010, in wait_for_engine_startup
+(APIServer pid=5056)     raise RuntimeError(
+(APIServer pid=5056) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+== fit: 6 GB DOES NOT SERVE: (APIServer pid=5056)     raise RuntimeError(
+(APIServer pid=5056) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+== fit: infly/Infinity-Parser2-Flash in 8 GB of a 24564 MiB card (share 0.333)
+FAILED /root/gpu/pdfs/fit_sample/tables/2503.05506_pg11__r0.pdf RuntimeError('Failed to parse input at index 0: Error code: 400 - {\'error\': {\'message\': "You passed 590 input characters and requested 32768 output tokens. However, the model\'s context length is 
+FAILED /root/gpu/pdfs/fit_sample/tables/2503.05993_pg15__r0.pdf RuntimeError('Failed to parse input at index 0: Error code: 400 - {\'error\': {\'message\': "You passed 590 input characters and requested 32768 output tokens. However, the model\'s context length is 
+[custom] done. parsed=12 failed=12 total=12
+== fit: 8 GB SERVES; 12 crops in 11 s; card memory in use 8632 MiB
+== fit: infly/Infinity-Parser2-Flash in 12 GB of a 24564 MiB card (share 0.5)
+FAILED /root/gpu/pdfs/fit_sample/tables/2503.05506_pg11__r0.pdf RuntimeError('Failed to parse input at index 0: Error code: 400 - {\'error\': {\'message\': "You passed 590 input characters and requested 32768 output tokens. However, the model\'s context length is 
+FAILED /root/gpu/pdfs/fit_sample/tables/2503.05993_pg15__r0.pdf RuntimeError('Failed to parse input at index 0: Error code: 400 - {\'error\': {\'message\': "You passed 590 input characters and requested 32768 output tokens. However, the model\'s context length is 
+[custom] done. parsed=12 failed=12 total=12
+== fit: 12 GB SERVES; 12 crops in 11 s; card memory in use 12640 MiB
+== fit: infly/Infinity-Parser2-Flash in 16 GB of a 24564 MiB card (share 0.667)
+FAILED /root/gpu/pdfs/fit_sample/tables/2503.05506_pg11__r0.pdf RuntimeError('Failed to parse input at index 0: Error code: 400 - {\'error\': {\'message\': "You passed 590 input characters and requested 32768 output tokens. However, the model\'s context length is 
+FAILED /root/gpu/pdfs/fit_sample/tables/2503.05993_pg15__r0.pdf RuntimeError('Failed to parse input at index 0: Error code: 400 - {\'error\': {\'message\': "You passed 590 input characters and requested 32768 output tokens. However, the model\'s context length is 
+[custom] done. parsed=12 failed=12 total=12
+== fit: 16 GB SERVES; 12 crops in 12 s; card memory in use 16672 MiB
+== done: 0 markdown files
+== exit 0 08:48:51

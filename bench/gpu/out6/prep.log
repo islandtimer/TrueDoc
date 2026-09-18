@@ -1,0 +1,24 @@
+== system
+name, memory.total [MiB], driver_version
+NVIDIA GeForce RTX 4090, 24564 MiB, 580.159.03
+overlay          70G  137M   70G   1% /
+shm              15G     0   15G   0% /dev/shm
+== link speed, because a slow host wastes more than it costs (lesson of 8 September)
+pypi: 200 982227 B/s
+huggingface: 200 1942 B/s
+== dependencies
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment with seed packages at: /root/venv-inf
+ + pip==26.2.1
+Activate with: source /root/venv-inf/bin/activate
+Python 3.12.3
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+vllm 0.17.1 requires openai<2.25.0,>=1.99.1, but you have openai 3.15.0 which is incompatible.
+vllm 0.17.1 requires transformers<5,>=4.56.0, but you have transformers 5.17.0 which is incompatible.
+torch 2.10.0+cu128 cuda True vllm 0.17.1 transformers 5.17.0
+INF-MLLM at 5089819
+== pages
+unknown stage prep
+find: ‘/root/gpu/out/markdown’: No such file or directory
+== done: 0 markdown files
+== prep exit 0 08:05:55

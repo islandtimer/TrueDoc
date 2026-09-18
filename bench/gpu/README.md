@@ -175,4 +175,32 @@ hours, on the Pro-alone candidate while two conversions shared the machine: scor
 on the 281 pages and the 199 crops;
 Pro on the other 1,122 pages, on 505 pages of the owner's library, on the 134 old-scan pages a second time, and on
 the crops under TrueDoc's picture-text prompt; `environment.txt` (every package, both model snapshots); the logs.
-**Not done:** Flash under our picture-text prompt; dots.mocr; Flash on a small card, or on none.
+**Not done:** dots.mocr; Flash on none. Flash under our picture-text prompt and on a small card: session 6.
+
+## Session 6 (18 September 2026): Flash asked our picture-text question, and how small a card it needs
+
+D033's last check. One RTX 4090 (24 GB) on vast.ai, US, US$0.386 an hour, `PyTorch (Vast)` template, 70 GB disk,
+Max CUDA 13.0; about 55 minutes of instance time. Only `crops_failing` went up (42 MB as one tarball, 32 minutes
+at 20-25 KB/s - the owner's uplink, slower than earlier sessions; a second parallel stream did not clearly help,
+and re-cutting the crops on the instance was declined so that every reader sees the same 92 crops). The installs
+ran during the upload: `bash run_bakeoff.sh ~/gpu/pdfs ~/gpu/out prep` - an unknown stage name builds the venv
+and installs the pins and does nothing else - followed by `hf download infly/Infinity-Parser2-Flash`. Then:
+
+    SETS=none CUSTOM_PROMPT=$HOME/gpu/picture_text_prompt.txt FIT_GB="6 8 12 16" bash run_bakeoff.sh ~/gpu/pdfs ~/gpu/out flash
+
+Server up in five minutes, 92 crops read in ten, none failed. Back here: `place_bakeoff.py infinity
+bench/gpu/out5/flash_custom/crops_failing inf2flash_custom` (the custom `inference.jsonl` places like the
+authors'), copy `olmocr2c/manifest.json` beside it, and convert the 60 crop pages three ways with
+`bench/tools/ab_pool.py <label> --subset ... --pages <the manifest's pages> --vision file:inf2flash_raw+<crops>`.
+The result is in `docs/DECISIONS.md` (D033): Flash reads most crops well and turns two of 92 into thousands of
+invented words, so olmOCR 2 keeps the crops.
+
+**The fit stage.** Flash does not serve in 6 GB of card memory; it serves in 8 (weights 4.25 GiB, KV cache 1.84
+GiB at a 32k context, 8.6 GB in use), 12 and 16. **A flaw to fix before the stage is used again:** its reads all
+failed with "requested 32768 output tokens" - the authors' client asks for 32k output tokens by default, and the
+stage serves with `--max-model-len 32768`, so nothing fits; serve the fit budgets at the full 65536 context (which
+needs a larger KV cache, so the smallest budget may move) or cap the client's output length. "Serves in 8 GB" is
+shown; "reads in 8 GB" is not.
+
+**What is on disk:** `out5/flash_custom/crops_failing/inference.jsonl` (the readings) and `out6/` (run and prep
+logs, every serve log, the fit-stage outputs, `environment.txt`).

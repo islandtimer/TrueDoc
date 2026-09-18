@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-18, 16:40 (**The quoted number is 86.8 (run 97, scored 16:25), and everything is committed; paused on your word.** Since this morning's decisions: Flash passed the invented-text check (never backed less by the page's own words than olmOCR 2 on any of 281 pages); the seven old-scan-maths checks our own handling lost were traced to a variable between dollars being escaped as money, fixed, measured on every category a model reads and carried into run 96 - 86.6 (CI 85.6-87.4), exactly +7 and nothing else moved; two more maths rules taken from what the leader's post-processing does (an aligned column of equations written one formula a row, a formula split at an operator joined) measured +9 on old-scan maths, the two rules that would put English words inside formulas were declined, and run 97 carried them: **86.8 (CI 86.0-87.7), held-out 86.0, exactly +9 and nothing lost** - old-scan maths 83.2 to 86.7 in one afternoon, all of it on tuned-on pages (the held-out fifth has not moved since run 95). The leader's 87.6 now sits just inside the top of our interval and eight tenths above us on the number. Pro alone over all 1,403 pages scores 87.1 on our scorer with its authors' post-processing and 86.1 raw, against our 86.8. `docs/PROGRESS_LOG.md` has each measurement. **Three decisions of yours, made this morning, settle what yesterday measured: Flash is
+_Last updated: 2026-09-18, 19:00 (**D033 closed: Flash fails the picture-text check, olmOCR 2 keeps the crops, the quoted 86.8 stands; the repository is on GitHub, private. Earlier in the day:** Since this morning's decisions: Flash passed the invented-text check (never backed less by the page's own words than olmOCR 2 on any of 281 pages); the seven old-scan-maths checks our own handling lost were traced to a variable between dollars being escaped as money, fixed, measured on every category a model reads and carried into run 96 - 86.6 (CI 85.6-87.4), exactly +7 and nothing else moved; two more maths rules taken from what the leader's post-processing does (an aligned column of equations written one formula a row, a formula split at an operator joined) measured +9 on old-scan maths, the two rules that would put English words inside formulas were declined, and run 97 carried them: **86.8 (CI 86.0-87.7), held-out 86.0, exactly +9 and nothing lost** - old-scan maths 83.2 to 86.7 in one afternoon, all of it on tuned-on pages (the held-out fifth has not moved since run 95). The leader's 87.6 now sits just inside the top of our interval and eight tenths above us on the number. Pro alone over all 1,403 pages scores 87.1 on our scorer with its authors' post-processing and 86.1 raw, against our 86.8. `docs/PROGRESS_LOG.md` has each measurement. **Three decisions of yours, made this morning, settle what yesterday measured: Flash is
 the standard reader of scanned pages (D033), Pro is the deep reader behind it and a live service lets its user
 choose (D034), and the number we quote is run 95's 86.4 on open weights, held-out 86.0 (D035) - second on the
 leaderboard as read on 17 September, behind 87.6.** What follows is yesterday evening's account, which those
@@ -169,7 +169,9 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
   asked our picture-text question, which needs a small rental of about 50 cents and your word to rent; and the
   invented-text check run over its saved readings, which costs nothing. **The second passed the same day**: on 281
   pages Flash is never backed less by the page's own words than olmOCR 2, and produces fewer words no other reader
-  has (1.5% against 3.3%). The picture-text check is the one still owed; if it fails, olmOCR 2 stays.)
+  has (1.5% against 3.3%). **The picture-text check ran the same evening and Flash failed it**: on 2 of 92 crops it
+  wrote thousands of invented words, so olmOCR 2 keeps the picture crops and Flash keeps the whole pages - which is
+  how run 97 was made, so nothing about the quoted number changes.)
 - (Decided 18 Sept, D034: **two tiers are kept, Pro is the deep reader we quote, and a live service lets the user
   choose** - told what each deep reader costs, how long it takes and where the page goes. On the 102 hard pages
   Pro and Claude are level, 348 and 344 of 568 checks; they differ in cost, waiting and privacy. No 140 GB card is
@@ -180,8 +182,8 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 - (Decided 18 Sept, D035: **the number we quote is run 95's 86.4** (CI 85.4-87.3, held-out 86.0), open weights,
   with run 94's 85.6 for Flash alone and run 91's hosted 85.4 as history beside it. Second on the leaderboard as
   read on 17 September.)
-- **When you want it: about 50 cents of rental** on a 24 GB card, for D033's picture-text check. The script also
-  measures how small a memory budget Flash will serve in, which answers the hardware question for users.
+- (Done 18 Sept, evening: the small rental for D033's picture-text check, one RTX 4090 for 55 minutes. Flash
+  serves in 8 GB of card memory, not 6 - the answer to "what card" for the standard reader.)
 - **Two one-time logins, yours to do (D036, 18 Sept):** a GitHub repository (private first) with push credentials
   stored on this machine - install the `gh` tool and run `gh auth login`, or push once yourself; and a Hugging Face
   account with a write token, then `hf auth login` in a terminal. After those, the push and the leaderboard entry
@@ -207,7 +209,16 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## What is being worked on right now
 
-**18 September, 17:20 - the repository is on GitHub, private: `github.com/islandtimer/TrueDoc`, master at
+**18 September, 19:00 - D033's last check is done: Flash fails on picture crops, olmOCR 2 keeps them, and the
+quoted 86.8 stands as measured.** GPU session 6 (one RTX 4090, 55 minutes): Flash read the 92 picture crops under
+our own question, and on two of them wrote thousands of words that are not on the page - an invented 1,800-row
+table of numbers for a scatter plot, and one line repeated 4,095 times - where olmOCR 2 writes a 40-word
+description at worst. Through the converter the three crop readers are level on the score (olmOCR 2 230, Flash
+228, Pro 230 of 306 checks over the 60 pages); the benchmark cannot see invented text. So: Flash on whole scanned
+pages (both its checks passed), olmOCR 2 on picture crops, Pro behind the router - which is exactly how run 97
+was made. Your decisions on the author email (leave it) and the NOTICE line (islandtimer) are recorded. **Next:
+the leaderboard entry in the strong form, then the repository public.** Before that, at 17:20:
+**the repository is on GitHub, private: `github.com/islandtimer/TrueDoc`, master at
 157a60e, tag `run-97` on 9f9b77b.** The two-week "no backup" risk is closed. Before the push: a scan of every blob
 in the history (no credential anywhere), eighteen files' personal paths replaced (`bench/tools/doc_library.py`
 finds your library through `TRUEDOC_LIBRARY` or the git-ignored `bench/library_path.txt`; the 505 manifest paths
@@ -216,17 +227,18 @@ the README given the results, a reproduction section (the three replay candidate
 committed readings) and a licence section. The clean-environment install test was running at the time of
 writing; its result goes in the log. **Still to do before the repository goes public:** your decision on the
 author email (your personal address is on all 166 commits; GitHub's noreply address would mean rewriting the
-history and every hash the docs cite), and the leaderboard entry itself, which waits on the picture-text check.
+history and every hash the docs cite) - since given: leave it - and the leaderboard entry itself.
 Run 97 scored at 16:25: **86.8 (CI 86.0-87.7)**, old-scan
 maths 388 to 397, exactly the +9 the code-against-code measure promised, nothing else moved, nothing lost; held-out
 86.0, unchanged, because both pages it moved are tuned-on. The quoted number is now this run's (D035: the chosen
 arrangement on the current code) and every page that carries it says so. **Open, in
-the order I would take them - the review's order, which I recommended and you have not yet ruled on:** (1) the
+the order you set on 18 September (the picture-text check first - done - then the entry, then the review's items):**
+(1) the leaderboard entry in the strong form, from run 97's pages (D036), then the repository public; (2) the
 status contract the review's F01 asks for, using its ten probes as acceptance cases, and the F10 repairs to
 `bench/tools/kfs_two_readers.py` (no held-out sheet in the detailed listing; marks compared, not stripped;
-critical words such as "not" flagged whatever the similarity; rows one reader misses counted); (2) publishing -
-the leaderboard entry in the strong form, from run 97's pages, once the picture-text check is done (D036), then
-the repository public; (3) the picture-text check itself (the small rental); (4) the fifteen Key Facts Sheet cells, re-listed
+critical words such as "not" flagged whatever the similarity; rows one reader misses counted); (3) two small
+product items from the crops: a geometric cap on a region's transcription (a region cannot hold more lines than its
+height allows) and the caption written twice on three run 97 pages; (4) the fifteen Key Facts Sheet cells, re-listed
 without held-out sheets, each read against its page image; (5) Pro's 100 random library pages and 25 insurance-set
 pages compared with ours; (6) the tables gap on digital pages (Pro alone 930 checks to our 913); (7) a provider for
 a served Infinity-Parser2 model; (8) the downstream trial you want to discuss. The reviewer's folder is now

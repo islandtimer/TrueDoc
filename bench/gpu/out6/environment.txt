@@ -1,0 +1,12 @@
+46610
+NVIDIA GeForce RTX 4090, 580.159.03
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+torch 2.10.0+cu128 vllm 0.17.1 transformers 5.17.0
+cfddc4106b0abc4706f05575a164f7dd35d09c46== fit: infly/Infinity-Parser2-Flash in 6 GB of a 24564 MiB card (share 0.25)
+== fit: 6 GB DOES NOT SERVE: (APIServer pid=5056)     raise RuntimeError(
+== fit: infly/Infinity-Parser2-Flash in 8 GB of a 24564 MiB card (share 0.333)
+== fit: 8 GB SERVES; 12 crops in 11 s; card memory in use 8632 MiB
+== fit: infly/Infinity-Parser2-Flash in 12 GB of a 24564 MiB card (share 0.5)
+== fit: 12 GB SERVES; 12 crops in 11 s; card memory in use 12640 MiB
+== fit: infly/Infinity-Parser2-Flash in 16 GB of a 24564 MiB card (share 0.667)
+== fit: 16 GB SERVES; 12 crops in 12 s; card memory in use 16672 MiB
