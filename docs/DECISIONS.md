@@ -693,6 +693,20 @@ interval, and that the readings are replayed from a recorded session. One dated 
 under `bench/olmocr_ref/`; the two unchecked weight licences of D007 resolved; a README a stranger can install
 from, tested in a fresh environment (the review's F06); the personal paths tidied out of the logs.
 
+**Published 18 September 2026, 19:20, on the owner's word ("publish"):** the GitHub repository made public
+(`github.com/islandtimer/TrueDoc`; the author email left as it is and NOTICE's line left as islandtimer, both his
+rulings that afternoon) and the entry uploaded to `huggingface.co/awmg/TrueDoc` - the hub gives every repository
+an account prefix, and the `truedoc` namespace belongs to someone else, so the name is `awmg/TrueDoc`. 1,411
+files: the 1,403 outputs, the scorer's four files, the card, `RESULTS.md`, `.eval_results/olmocrbench.yaml` (nine
+task ids, exact values from the counts, overall 86.8214, the dataset revision, notes saying what read which
+pages). Built and uploaded by `bench/tools/leaderboard_entry.py` and `leaderboard_publish.py`. The hub tagged the
+repository "Eval Results" at once; the leaderboard table had not yet aggregated the row twenty minutes later
+(the feature's documentation says automatic and gives no timing). **One correction made within minutes:** the
+card first listed the benchmark under `datasets:`, which on the hub means *trained on* and put TrueDoc in the
+dataset's "models trained on this" list - false, removed. After the flip to public, a web request for
+`docs/review` returned 200 for a few seconds; it was GitHub's generic landing page, and the API, the remote tree,
+the history and the raw URL all confirm the reviewer's folder was never pushed.
+
 **Done 18 September, evening, before the private push:** a scan of every blob in the history (3,666, all
 patterns for API keys, tokens, private keys, secret assignments, emails, IP logins) found no credential - the one
 "secret" is `api_key="test-key"` in a test, and the email addresses are insurers' public contact lines on

@@ -1,6 +1,6 @@
 # Status (plain English)
 
-_Last updated: 2026-09-18, 19:00 (**D033 closed: Flash fails the picture-text check, olmOCR 2 keeps the crops, the quoted 86.8 stands; the repository is on GitHub, private. Earlier in the day:** Since this morning's decisions: Flash passed the invented-text check (never backed less by the page's own words than olmOCR 2 on any of 281 pages); the seven old-scan-maths checks our own handling lost were traced to a variable between dollars being escaped as money, fixed, measured on every category a model reads and carried into run 96 - 86.6 (CI 85.6-87.4), exactly +7 and nothing else moved; two more maths rules taken from what the leader's post-processing does (an aligned column of equations written one formula a row, a formula split at an operator joined) measured +9 on old-scan maths, the two rules that would put English words inside formulas were declined, and run 97 carried them: **86.8 (CI 86.0-87.7), held-out 86.0, exactly +9 and nothing lost** - old-scan maths 83.2 to 86.7 in one afternoon, all of it on tuned-on pages (the held-out fifth has not moved since run 95). The leader's 87.6 now sits just inside the top of our interval and eight tenths above us on the number. Pro alone over all 1,403 pages scores 87.1 on our scorer with its authors' post-processing and 86.1 raw, against our 86.8. `docs/PROGRESS_LOG.md` has each measurement. **Three decisions of yours, made this morning, settle what yesterday measured: Flash is
+_Last updated: 2026-09-18, 19:45 (**TrueDoc is public: the code at `github.com/islandtimer/TrueDoc` (Apache-2.0) and the olmOCR-bench entry at `huggingface.co/awmg/TrueDoc`, 86.8 with all 1,403 outputs and the scorer's log. The leaderboard table had not yet picked the row up at 19:45 - it aggregates on its own schedule - and wants one more look.** Before that, D033 closed: Flash fails the picture-text check, olmOCR 2 keeps the crops, the quoted 86.8 stands; the repository is on GitHub, private. Earlier in the day:** Since this morning's decisions: Flash passed the invented-text check (never backed less by the page's own words than olmOCR 2 on any of 281 pages); the seven old-scan-maths checks our own handling lost were traced to a variable between dollars being escaped as money, fixed, measured on every category a model reads and carried into run 96 - 86.6 (CI 85.6-87.4), exactly +7 and nothing else moved; two more maths rules taken from what the leader's post-processing does (an aligned column of equations written one formula a row, a formula split at an operator joined) measured +9 on old-scan maths, the two rules that would put English words inside formulas were declined, and run 97 carried them: **86.8 (CI 86.0-87.7), held-out 86.0, exactly +9 and nothing lost** - old-scan maths 83.2 to 86.7 in one afternoon, all of it on tuned-on pages (the held-out fifth has not moved since run 95). The leader's 87.6 now sits just inside the top of our interval and eight tenths above us on the number. Pro alone over all 1,403 pages scores 87.1 on our scorer with its authors' post-processing and 86.1 raw, against our 86.8. `docs/PROGRESS_LOG.md` has each measurement. **Three decisions of yours, made this morning, settle what yesterday measured: Flash is
 the standard reader of scanned pages (D033), Pro is the deep reader behind it and a live service lets its user
 choose (D034), and the number we quote is run 95's 86.4 on open weights, held-out 86.0 (D035) - second on the
 leaderboard as read on 17 September, behind 87.6.** What follows is yesterday evening's account, which those
@@ -209,6 +209,15 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 ## What is being worked on right now
 
+**18 September, 19:45 - published, on your word.** The GitHub repository is public and the leaderboard entry is up
+at `huggingface.co/awmg/TrueDoc` (the hub puts an account name before every repository, and the `truedoc` name
+belongs to someone else): the card, a results page saying exactly what read which pages, the entry file with all
+nine scores, the 1,403 page outputs and the scorer's own log. The hub recognised the results at once; the
+leaderboard's table had not added the row twenty minutes later, which its documentation leaves unexplained, so it
+wants another look tomorrow. One slip caught within minutes: the card listed the benchmark under `datasets:`,
+which the hub reads as "trained on" - removed. **Next, in your order: the review's F01 status contract and the
+F10 repairs to my Key Facts Sheets tool; then the two small product items from the crops.**
+
 **18 September, 19:00 - D033's last check is done: Flash fails on picture crops, olmOCR 2 keeps them, and the
 quoted 86.8 stands as measured.** GPU session 6 (one RTX 4090, 55 minutes): Flash read the 92 picture crops under
 our own question, and on two of them wrote thousands of words that are not on the page - an invented 1,800-row
@@ -233,7 +242,8 @@ maths 388 to 397, exactly the +9 the code-against-code measure promised, nothing
 86.0, unchanged, because both pages it moved are tuned-on. The quoted number is now this run's (D035: the chosen
 arrangement on the current code) and every page that carries it says so. **Open, in
 the order you set on 18 September (the picture-text check first - done - then the entry, then the review's items):**
-(1) the leaderboard entry in the strong form, from run 97's pages (D036), then the repository public; (2) the
+(1) DONE 19:20 - the leaderboard entry in the strong form and the repository public (D036); check the
+leaderboard's table for the row; (2) the
 status contract the review's F01 asks for, using its ten probes as acceptance cases, and the F10 repairs to
 `bench/tools/kfs_two_readers.py` (no held-out sheet in the detailed listing; marks compared, not stripped;
 critical words such as "not" flagged whatever the similarity; rows one reader misses counted); (3) two small

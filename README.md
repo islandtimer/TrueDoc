@@ -6,7 +6,7 @@
 
 | Measure | Score | What it means |
 |---|---|---|
-| [olmOCR-bench](https://huggingface.co/datasets/allenai/olmOCR-bench), all 1,403 pages, all eight sections | **86.8** (bootstrap CI 86.0-87.7) | our own run (97) of the benchmark's official scorer, at dataset revision `54a96a6f`. The CPU converter reads the 1,122 pages that have a digital text layer; the 281 that do not are read by Infinity-Parser2-Flash (2.2B, Apache-2.0), and the 102 of those the converter judges beyond its own OCR by Infinity-Parser2-Pro (35B). Second against the leaderboard as read on 17 September (87.6, 85.8); not yet listed on it |
+| [olmOCR-bench](https://huggingface.co/datasets/allenai/olmOCR-bench), all 1,403 pages, all eight sections | **86.8** (bootstrap CI 86.0-87.7) | our own run (97) of the benchmark's official scorer, at dataset revision `54a96a6f`. The CPU converter reads the 1,122 pages that have a digital text layer; the 281 that do not are read by Infinity-Parser2-Flash (2.2B, Apache-2.0), and the 102 of those the converter judges beyond its own OCR by Infinity-Parser2-Pro (35B). Second by point estimate against the leaderboard as read on 18 September (87.6, 85.8). Published as a self-reported entry with all 1,403 page outputs and the scorer's log: [huggingface.co/awmg/TrueDoc](https://huggingface.co/awmg/TrueDoc) |
 | The same with Flash alone | 85.6 (CI 84.8-86.5) | run 94, for anyone who will not run a second tier |
 | A held-out fifth of the benchmark, never looked at while building rules | 86.0 | `bench/holdout.txt`; the tuned-on four fifths score 84.8 |
 | 229 checks over 25 pages of Australian insurance documents | 229 of 229 | the owner's own reading questions (`bench/insurance_holdout.txt` seals 19 further documents that were never opened) |

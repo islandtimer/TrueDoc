@@ -231,6 +231,27 @@ the fit stage, to fix before it is used again. Instance destroyed by the owner a
 instance time, all-in cost to come from the account. Everything is in `bench/gpu/out6/` (logs, fit results,
 environment) and `bench/gpu/out5/flash_custom/` (the readings).
 
+**19:00-19:45 - published (D036), on the owner's "publish".** The entry was built locally first and the owner
+shown its three reader-facing files: `bench/tools/leaderboard_entry.py` copies run 97's 1,403 outputs and the
+scorer's four files, computes the nine values from the counts (overall 86.8214, the mean of the eight section
+pass rates, agreeing with the scorer's 86.8), and writes `.eval_results/olmocrbench.yaml` in the form the hub's
+documentation specifies and the kraken entry uses (dataset id, task id, revision, value, date, source, notes),
+a results page and a card that opens "this repository holds a benchmark result, not model weights". He asked
+whether it could be named just TrueDoc: the hub prefixes every repository with its account, and the `truedoc`
+namespace is someone else's, so `awmg/TrueDoc`. Then GitHub to public (`gh repo edit --visibility public`), and
+`leaderboard_publish.py` created the repository and uploaded 1,411 files in a minute. **Two things caught in the
+first minutes.** A web request for `docs/review` on the newly public repository answered 200: it was GitHub's
+generic landing page, served for a few seconds after the flip - the API says Not Found, the remote tree has no
+such path, no commit ever held it, and the raw URL is 404; it then answered 404 like any missing path. And the
+card listed the benchmark under `datasets:`, which the hub reads as *trained on*: TrueDoc appeared in the
+dataset's "models trained or fine-tuned on this" list, which is false. Removed from the card and from the
+script within five minutes; the list no longer shows it. The hub tagged the repository "Eval Results" at once
+and serves the entry file anonymously; the dataset's leaderboard table still showed its eighteen models (a new
+one since the 17th: `jinaai/jina-ocr-v1`, 83.4, fourth) and not ours at 19:45. The feature's page calls it work in
+progress and says results appear automatically, with no timing. To check again; if a day passes without the
+row, compare our file field by field with an entry that did appear the same day, and ask on the dataset's
+community tab.
+
 ---
 
 ## 2026-09-17, afternoon and evening - GPU session 5: a stronger open reader, measured on our own pages

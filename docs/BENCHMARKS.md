@@ -27,7 +27,7 @@ top of our interval, by the same reading that called Chandra's 85.8 level with r
 above us on the number, and M7 stays not met.
 
 Source: the leaderboard on `huggingface.co/datasets/allenai/olmOCR-bench`, read 17 September 2026, 17
-entries. Every number below was then confirmed a second way, against the `.eval_results/olmocrbench.yaml`
+entries (eighteen on 18 September: `jinaai/jina-ocr-v1`, 83.4, had been added, fourth). Every number below was then confirmed a second way, against the `.eval_results/olmocrbench.yaml`
 file in the model's own repository, which is what the leaderboard reads; and each tool's eight section
 scores were averaged to check they give the overall it claims. TrueDoc is not on the leaderboard: our two
 numbers are our own runs of the official scorer over the same 1,403 pages and the same 7,019 checks, at the same dataset revision.
@@ -64,6 +64,10 @@ trained to transcribe the whole page and scores 19.7 there, and over all eight s
 **75.2**. GLM-OCR drops the same section and loses by doing it: over all eight its 75.2 would be 77.8.
 Falcon-OCR's run is the English subset. TrueDoc's numbers are the plain average of all eight, on the
 whole set, so the comparison to hold in mind is with the unstarred rows.
+
+**Published 18 September 2026:** TrueDoc's run 97 is a self-reported entry at `huggingface.co/awmg/TrueDoc`, with
+all 1,403 page outputs, the scorer's log, and a results page saying what read which pages (D036). The hub tagged
+it "Eval Results" on upload; the leaderboard's table had not aggregated the row twenty minutes later.
 
 The section scores, in the same order the benchmark reports them:
 
