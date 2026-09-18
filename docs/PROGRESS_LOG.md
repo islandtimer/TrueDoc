@@ -4,6 +4,44 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-18, late evening (20:25-21:10) - One picture is one figure: a picture the layout model also saw was written twice
+
+**How it was found.** Reading the crops for D033, a caption of olmOCR 2's stood twice on three run 97 pages. The
+cause was not in the vision stage. Every picture is proposed twice: the layout model's figure region
+(`layout/fuse.py`, provenance `layout-figure`) and the PDF's own image object (`pipeline.process_page`,
+`textlayer-image`). The fusion refuses a layout figure where a figure already stands; the later step that adds the
+image objects never looked. So a picture both saw became two blocks with near-identical boxes: two `![](figure)`
+lines in the body, a model's description twice, or - where the picture was transcribed - **the whole transcription
+twice** (the geology table of `tables/3d780c..._pg22`: 245 lines, twice). In run 97's pages, 209 of the 333 that
+have a figure line carry two together.
+
+**The rule.** Two figure boxes are one picture when each covers at least 0.8 of the other; the block that stands
+takes the PDF's own box, which is the exact one (the layout model's is a few points loose, and the crop sent to a
+model should be the picture). A layout figure holding several images is left as it was: whether a composite
+figure is one thing or four is a separate question and changes more than a repeat.
+
+**Measured, code against code** (`ab_pool.py` over the 333 pages, the before state in a worktree at 1892a25, each
+pool printing which `truedoc` it imported; run 97's readings replayed): 172 pages changed. Classified mechanically,
+every one: 162 lost only a repeated figure line; 10 lost a repeated transcription of which every line still stands
+once; **nothing added, nothing moved, nothing lost**. Checks: arXiv 249 = 249, multi-column 300 = 300, tables 312 =
+312, tiny text 74 = 74, **headers and footers 290 to 289**. The one: `bec1f712..._page_9` asks that "ANEC" be absent
+from the *first 20 characters*, a window standing in for "no running head". The page's real first heading is "ANEC
+CONCLUSIONS...". Written twice, the picture above it was 26 characters of padding that pushed the heading out of
+the window, and the check passed by luck; written once, the heading starts at character 16. The output is more
+correct and the check less satisfied; taken, and recorded here, rather than padded for. On run 97's arrangement
+that is 735 to 734 in that section and 86.82 to 86.81 overall: the quoted 86.8 is unchanged, and run 97 stays
+the run it was (tag `run-97`). A test (`tests/test_one_picture_one_figure.py`) was shown to fail on the code
+before - run from inside the worktree, after a first attempt from the repository root imported the fixed code
+and proved nothing. **The owner's documents:** insurance 0 of 25 files changed, 229 of 229; Key Facts Sheets 20
+of 190 changed, every change a repeated figure line removed, grade identical (held out 32 of 32, 375 of 375).
+Suite 732.
+
+Noticed and not built: that page's picture is the ANEC logo in its running head, which arguably should not be in
+the body at all - furniture that is a picture. A single benchmark page cannot show that a picture repeats; the
+owner's multi-page documents can.
+
+---
+
 ## 2026-09-18, evening (19:40-20:25) - How a conversion ended, carried apart from the markdown (D037); the two-readers tool repaired. The review's F01 and F10
 
 The owner's order after the entry was published: the other agent's review items next. Its ten synthetic

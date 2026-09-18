@@ -219,6 +219,9 @@ def _sideways_text_turn(page: Page) -> int:
     return 270 if down >= up else 90
 
 
+_SAME_PICTURE = 0.8     # two figure boxes are one picture when each covers this share of the other
+
+
 def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) -> Page:
     page = extract_page(pdf_page, number)
     turn = _sideways_text_turn(page) if page.quality.usable else 0
@@ -302,6 +305,18 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
         text_inside = sum(b.n_chars for b in blocks if b.kind == BlockKind.TEXT and b.bbox.overlap_fraction(img.bbox) > 0.8)
         if text_inside > 400:
             continue  # a scanned text region with an OCR layer, not a figure
+        # The layout model may have found this picture already. It is one picture, so it is one
+        # block: the fusion refuses a figure where one stands, and this step did not, so a picture
+        # both saw was written twice - two `![](figure)` lines, or a model's transcription of it
+        # twice in the body (209 of the 333 pages with a figure in run 97). The same picture is one
+        # each mostly covers; a figure holding several images is left as it was. The PDF's own box
+        # is the exact one, so the block takes it.
+        same = next((b for b in blocks if b.kind == BlockKind.FIGURE
+                     and b.bbox.overlap_fraction(img.bbox) > _SAME_PICTURE and img.bbox.overlap_fraction(b.bbox) > _SAME_PICTURE), None)
+        if same is not None:
+            same.bbox = img.bbox
+            same.meta["image_object"] = True
+            continue
         blocks.append(Block(kind=BlockKind.FIGURE, bbox=img.bbox, provenance="textlayer-image"))
 
     if opts.ocr and opts.ocr_pictures:
