@@ -29,9 +29,30 @@ _DOLLAR = re.compile(r"(?<!\\)\$")
 # money is still left for D024.
 _MATHS = re.compile(r"\\[A-Za-z]+|[\^_{}=]|\\[\\\[\](){}]")
 
+# The second kind of maths has none of those: a variable, a function of one, an expression of letters
+# and brackets - "$f(1)$", "$P$", "$a + [b - (a - b)]$". An algebra textbook's page is full of them
+# (old_scans_math/4_pg380 and 4_pg48, 18 September), and escaping them into text cost seven checks with
+# every reader that writes maths between dollars. Such a span is maths when it holds a letter, every
+# word in it is a single letter or the name of a function, and nothing in it is outside the characters
+# an expression is written with. Money fails all three ways: "5 and " has a word, "5, " has no letter,
+# and a number followed by a word ("5 a day") is the shape of a price and not of a formula.
+_LETTER_RUNS = re.compile(r"[^\W\d_]+")
+_EXPRESSION = re.compile(r"^[\w\s+\-*/.,;:()\[\]|'!<>~\u00b7\u00d7\u00f7\u00b1\u2212]+$")
+_PRICE_LEAD = re.compile(r"^\s*\d[\d,.]*\s+[^\W\d_]")
+_FUNCTIONS = frozenset("sin cos tan cot sec csc log ln exp lim max min sup inf det dim deg gcd mod arg "
+                       "sinh cosh tanh sqrt".split())
+
+
+def _looks_algebraic(body: str) -> bool:
+    body = body.strip()
+    if not body or _PRICE_LEAD.match(body) or not _EXPRESSION.match(body):
+        return False
+    words = _LETTER_RUNS.findall(body)
+    return bool(words) and all(len(w) == 1 or w.lower() in _FUNCTIONS for w in words)
+
 
 def _is_maths(body: str) -> bool:
-    return bool(body.strip()) and bool(_MATHS.search(body))
+    return bool(body.strip()) and (bool(_MATHS.search(body)) or _looks_algebraic(body))
 
 
 def _inline(text: str) -> str:

@@ -39,6 +39,42 @@ session 5 - the seven old-scan-maths checks our own handling loses, a general ma
 the 87.6, the fifteen disagreeing Key Facts Sheet cells, Pro's other 125 pages of the library. The owner wants to
 talk about the downstream trial next.
 
+**D033's first check: Flash does not invent more than olmOCR 2** (`bench/probes/corroborate_readers.py`, the 281
+pages converted under each of three readers' saved readings, D021's verdict recorded per page). The witness is the
+page's own and does not change with the reader, so the support figures compare like with like:
+
+| | olmOCR 2 | Flash | Pro |
+|---|---|---|---|
+| corroborated / low support / unverified / unchecked | 180 / 18 / 6 / 74 | 181 / 17 / 6 / 73 | 180 / 18 / 6 / 73 |
+| support on the 197 pages with a comparable witness: median | 0.917 | 0.931 | 0.932 |
+| pages backed 0.10 less than olmOCR 2 | - | 0 | 2 |
+| words no other reader produced, all 281 pages | 3.3% | 1.5% | 1.3% |
+
+Flash is never backed less than olmOCR 2 on any page and produces fewer words the others do not; on the second
+measure olmOCR 2 is the outlier. Pro's two pages (old_scans_math/5_pg174, support 0.37 against 0.71, and a
+multi-column page, 0.72 against 0.99) are not among the pages the router sends it. **Passed.**
+
+**The seven old-scan-maths checks: traced, fixed, measured.** With Pro's readings the converter scored 375
+against the plain merge's 382; with Flash's, 385 against 392. Same seven, two pages: old_scans_math/4_pg380 and
+4_pg48, an algebra textbook. Both readers write "$f(1)$", "$P$", "$a + [b - (a - b)]$", and
+`truedoc/vision/mathdelims.py` recognised maths only by a command, a script, a group or an equals sign, so those
+spans stayed between dollars and D024 escaped them into text - the check for "f(1)" then fails because it is no
+longer a formula. **The rule now:** a span is also maths when it holds a letter, every word in it is a single
+letter or the name of a function (sin, log, lim, ...), and it is written only with the characters an expression
+uses; money fails three ways ("5 and " has a word, "5, " has no letter, "5 a day" is a number followed by a word,
+which is the shape of a price). One old test flipped with its reason written in ("a bare letter is not obviously
+maths" - it is, when a model put dollars round it), four tests added, **suite 685**.
+
+Measured code against code on every category a model reads - the run-90 lesson - with `bench/tools/ab_pool.py`,
+which now takes `--pages` and `--vision` for exactly this (the before state from a worktree on PYTHONPATH, each
+worker printing which `truedoc` it imported): all 281 model-read pages under Flash's readings. **Five categories
+identical to the check (headers 113/123, tiny text 303/335, multi-column 110/145, old scans 271/526, tables
+133/143); old-scan maths 385 to 392, +7, exactly the two pages.** 34 pages' markdown changed; every new formula
+read on them is a variable, a function of one, a statistic ("p < 0.05") or an expression of letters, and not one
+is a price. The insurance set and the Key Facts Sheets cannot move: the function runs only on a model's reading,
+and their scorers convert with no model. Run 96 - the quoted arrangement, run 95's, on this code - was launched
+to carry the seven into the number.
+
 ---
 
 ## 2026-09-17, afternoon and evening - GPU session 5: a stronger open reader, measured on our own pages

@@ -70,13 +70,14 @@ fi
 echo "INF-MLLM at $(cd ~/INF-MLLM && git rev-parse --short HEAD)"
 
 echo "== pages"
-if [ -f "$HERE/pages.txt" ]; then
-  python "$HERE/fetch_pages.py" "$HERE/pages.txt" "$PDFROOT/pdfs" | tail -3
-fi
 # SETS=rest reads the rest of the benchmark, the pages that have a text layer: pages_rest.txt is
-# every benchmark page pages.txt does not list. BATCH is how many pages the client sends at once.
+# every benchmark page pages.txt does not list. SETS=none reads no set under the authors' task
+# (for a run that only wants CUSTOM_PROMPT or FIT_GB). BATCH is how many pages go at once.
 SETS=${SETS:-pdfs crops_failing crops}
 BATCH=${BATCH:-8}
+case " $SETS " in *" pdfs "*)
+  [ -f "$HERE/pages.txt" ] && python "$HERE/fetch_pages.py" "$HERE/pages.txt" "$PDFROOT/pdfs" | tail -3;;
+esac
 case " $SETS " in *" rest "*)
   python "$HERE/fetch_pages.py" "$HERE/pages_rest.txt" "$PDFROOT/rest" | tail -3;;
 esac
@@ -149,6 +150,32 @@ infinity() {  # <tag> <model> [extra vllm flags]
   echo "== $tag: done $(date +%H:%M:%S), $(find "$OUT/markdown/$tag" -name '*.md' | wc -l) markdown files"
 }
 
+fit() {  # <model> ; FIT_GB="8 12": will the model serve inside that much card memory, and read?
+  # A user deciding what they need wants to know the smallest card that will do. vLLM takes whatever
+  # share of the card it is given, so the share is set to the budget and a dozen crops are read.
+  local model=$1 total budget share
+  total=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | head -1)
+  for budget in $FIT_GB; do
+    share=$(python -c "print(round($budget * 1024 / $total, 3))")
+    echo "== fit: $model in $budget GB of a $total MiB card (share $share)"
+    nohup vllm serve "$model" --trust-remote-code \
+      --default-chat-template-kwargs '{"enable_thinking": false}' \
+      --chat-template-content-format openai --host 127.0.0.1 --port $PORT \
+      --gpu-memory-utilization "$share" --max-model-len 32768 --max-num-batched-tokens 16384 \
+      --served-model-name inf-mllm > "$OUT/serve_fit_$budget.log" 2>&1 &
+    if wait_server "$OUT/serve_fit_$budget.log" inf-mllm; then
+      rm -rf "$PDFROOT/fit_sample" && mkdir -p "$PDFROOT/fit_sample/tables"
+      find "$PDFROOT/crops_failing" -name '*.pdf' | sort | head -12 | xargs -I{} cp {} "$PDFROOT/fit_sample/tables/"
+      t0=$(date +%s)
+      python "$HERE/infer_custom.py" "$PDFROOT/fit_sample" "$OUT/markdown/fit_$budget" "$CUSTOM_PROMPT" 2>&1 | grep -a "FAILED\|\[custom\]" | tail -n 3
+      echo "== fit: $budget GB SERVES; 12 crops in $(( $(date +%s) - t0 )) s; card memory in use $(nvidia-smi --query-gpu=memory.used --format=csv,noheader | head -1)"
+    else
+      echo "== fit: $budget GB DOES NOT SERVE: $(grep -a -i 'memory\|error' "$OUT/serve_fit_$budget.log" | tail -n 2 | cut -c1-200)"
+    fi
+    stop_server
+  done
+}
+
 dots() {
   echo "== dots: serving rednote-hilab/dots.mocr"
   [ -d ~/dots_mocr_repo ] || git clone -q --depth 1 https://github.com/rednote-hilab/dots.mocr.git ~/dots_mocr_repo
@@ -176,7 +203,8 @@ dots() {
 
 for stage in $STAGES; do
   case $stage in
-    flash) CUDA_VISIBLE_DEVICES=0 infinity flash infly/Infinity-Parser2-Flash ;;
+    flash) CUDA_VISIBLE_DEVICES=0 infinity flash infly/Infinity-Parser2-Flash
+           [ -n "${FIT_GB:-}" ] && CUDA_VISIBLE_DEVICES=0 fit infly/Infinity-Parser2-Flash ;;
     pro)   echo "== waiting for the Pro weights"; wait; tail -n 2 "$OUT/download_pro.log"
            if [ "$NGPU" -gt 1 ]; then infinity pro infly/Infinity-Parser2-Pro --tensor-parallel-size "$NGPU"
            else infinity pro infly/Infinity-Parser2-Pro; fi ;;

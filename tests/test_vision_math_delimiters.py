@@ -22,8 +22,31 @@ def test_display_maths_becomes_our_own_display_delimiters():
 
 
 def test_several_formulas_on_a_line_are_all_translated():
+    # Until 18 September a bare letter was "not obviously maths" and stayed between dollars; the algebra
+    # pages below showed that a model writes $z$ only when it means the variable z.
     got = normalise_math_delimiters(r"$x^2$ and $y_1$ and $z$")
-    assert got == r"\(x^2\) and \(y_1\) and $z$", "a bare letter is not obviously maths"
+    assert got == r"\(x^2\) and \(y_1\) and \(z\)"
+
+
+def test_a_variable_or_a_function_of_one_is_maths_without_any_command():
+    """old_scans_math/4_pg380 (18 September): an algebra textbook's "$f(x)$", "$P$", "$f(1)$" have no
+    command, no script and no equals sign, and escaping them into text cost three checks on the page
+    with every reader that writes maths between dollars."""
+    got = normalise_math_delimiters(r"denoted by symbols of the form $f(x)$ , $P(x)$ , etc., and $P$ function of x; find $f(1)$ , $f(-1)$ .")
+    assert got == r"denoted by symbols of the form \(f(x)\) , \(P(x)\) , etc., and \(P\) function of x; find \(f(1)\) , \(f(-1)\) ."
+
+
+def test_an_expression_of_letters_and_brackets_is_maths():
+    # old_scans_math/4_pg48: four checks lost the same way
+    got = normalise_math_delimiters(r"12. $a + [b - (a - b)]$ . 17. $- [m - (m + n) - (m - n) - (-m + n)]$")
+    assert got == r"12. \(a + [b - (a - b)]\) . 17. \(- [m - (m + n) - (m - n) - (-m + n)]\)"
+
+
+def test_a_function_name_counts_as_maths_but_an_english_word_does_not():
+    assert normalise_math_delimiters(r"so $\sin x$ and $log n$ and $x$") == r"so \(\sin x\) and \(log n\) and \(x\)"
+    # a word between two prices is prose, and a number followed by a word is a price
+    for prose in ("between $5 and $6", "$5 or $6", "$5 a $10 item", "$5 a day, $6 a week", "from $5, $6 and $7"):
+        assert normalise_math_delimiters(prose) == prose, prose
 
 
 def test_prices_are_left_for_D024_to_escape():

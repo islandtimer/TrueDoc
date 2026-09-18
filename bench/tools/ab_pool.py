@@ -23,7 +23,18 @@ and fails silently in a thread. On Windows each worker starts by re-importing th
 
 usage (repo root):
     ab_pool.py <label> --subset tables [--subset multi_column ...] [--workers 5] [--resume]
+    ab_pool.py <label> --subset old_scans --pages bench/gpu/pages.txt --vision file:<readings>+<crops>
     ab_pages.py --compare <label>_<subset> <other label>_<subset>
+
+`--pages <file>` keeps only the pages the file lists (one "category/stem" a line, a tab and more
+after it allowed - bench/gpu/pages.txt's form), for a change that can only touch the pages a
+model reads. `--vision <spec>` turns the vision stage on with that endpoint, exactly as the bench
+command's --vision-endpoint does; without it no model reads anything, which is the right state
+for a rule that never meets a model's text and the wrong one for a rule that only meets it.
+
+The other code state runs from a worktree with PYTHONPATH pointing at it (this file stays in the
+main tree, so its own folder is first on the path and the worktree's `truedoc` comes next); the
+first worker prints which `truedoc` it imported, and that line is the check that it worked.
 """
 import concurrent.futures
 import json
@@ -38,12 +49,16 @@ AB = os.path.join(REPO, "bench", "out", "ab")
 
 
 def convert_one(job: tuple) -> tuple:
-    pdf, md_path = job
+    pdf, md_path, vision = job
     if os.path.exists(md_path) and os.path.getsize(md_path) > 0:
         return pdf, md_path, "kept"
+    import truedoc
     from truedoc.pipeline import ConvertOptions, convert
+    if not getattr(convert_one, "announced", False):
+        convert_one.announced = True
+        print("  worker imports truedoc from", os.path.dirname(truedoc.__file__), flush=True)
     try:
-        md = convert(pdf, ConvertOptions(frontmatter=False))
+        md = convert(pdf, ConvertOptions(frontmatter=False, vision_endpoint=vision))
     except Exception as exc:
         return pdf, md_path, "FAILED: " + repr(exc)[:120]
     with open(md_path, "w", encoding="utf-8") as fh:
@@ -69,6 +84,11 @@ def main() -> None:
     subsets = [args[i + 1] for i, a in enumerate(args) if a == "--subset" and i + 1 < len(args)]
     workers = int(args[args.index("--workers") + 1]) if "--workers" in args else 5
     resume = "--resume" in args
+    vision = args[args.index("--vision") + 1] if "--vision" in args else None
+    only = None
+    if "--pages" in args:
+        with open(args[args.index("--pages") + 1], encoding="utf-8") as fh:
+            only = {line.split("\t")[0].strip() for line in fh if line.strip()}
     if not subsets:
         raise SystemExit("name at least one --subset")
 
@@ -81,13 +101,15 @@ def main() -> None:
                              "choose a new label, or pass --resume if they are this code state's")
         os.makedirs(out_dir, exist_ok=True)
         for name, tests in sorted(grouped.items()):
+            if only is not None and f"{subset}/{name[:-4]}" not in only:
+                continue
             pdf = os.path.join(B, "pdfs", subset, name)
             if not os.path.exists(pdf):
                 print(f"no pdf on disk for {subset}/{name}", flush=True)
                 continue
             md_path = os.path.join(out_dir, name + ".md")
             plan.append((subset, name, tests, md_path))
-            jobs.append((pdf, md_path))
+            jobs.append((pdf, md_path, vision))
     print(f"{len(jobs)} pages over {', '.join(subsets)}, {workers} workers", flush=True)
 
     started = time.time()
