@@ -4,6 +4,42 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-18, night (21:20-21:33) - The Key Facts Sheet differences, each read against its page: six defects of ours, one of the model's
+
+The repaired two-readers tool listed 23 differences on the tuned-on sheets. Each was read against the page image
+(rendered from the PDF, the differing cell in view) and given a verdict; held-out sheets were never listed or
+opened. None of the sheets is on the sealed list (checked by name before any was opened). The adjudicated list is
+`bench/gpu/out5/pro/own/differences_with_verdicts_20260918.json`.
+
+**Eight of the 23 were the tool's error, found on the first sheet read.** RACQ's table has a dark band across it
+("Cover for valuables, collections and items away..."), and TrueDoc writes what follows the band as a second
+markdown table; the tool read only the table holding the most events, so two rows TrueDoc had word for word were
+"missing". `rows_of` now reads every table, first rows included (a test pins it). Re-run: 15 differences on 11
+sheets. *Noticed there:* the rows under the band come as a table whose first row - "High value items and
+collections | Optional | ..." - stands where markdown wants a header, so a data row is dressed as a heading.
+
+**The fifteen, by cause (entries / sheets):**
+
+| cause | verdict | what the page shows |
+|---|---|---|
+| a row split at a second value in the answer cell (4 / 2, one AAMI template) | TrueDoc wrong | "Fire and Explosion" answers "Yes" and "No" on two lines (fire yes, explosion no). TrueDoc starts a new, unlabelled row at "No", cutting the third column's sentence at "...from arcing," / "scorching, melting..." |
+| a cell's last wrapped line becomes a row of its own (4 / 3) | TrueDoc wrong | `\| \| \| 51-52 \|`, `\| \| \| PDS pg.31. \|`, "Accidental Damage.", "'Portable Contents'." - the 17 September candidate (a wrapped line opening with a capital), now seen to include a digit and a quotation mark |
+| a word written twice (2 / 2, one Apia template) | TrueDoc wrong | "item.", the last word of the row above, appears again inside the Earthquake cell ("damage that item. occurs more than 72 hours") |
+| a hidden word let into the body (1 / 1, GIO) | TrueDoc wrong | "entered" is in the PDF at the spot where the visible sentence "the insured address with your consent." is printed. Paint order: the word, then the row's opaque fill over it, then the sentence. TrueDoc judges it `covered`, and `_Visibility.verify` overturns that because the rendered patch shows ink - the *other* sentence's. D011 defeated by an overprint |
+| a table nested in a row (2 / 2, one CGU template) | TrueDoc wrong on the page, though listed by a false match | Policy / Item Limit / Overall Limit for three policies inside "High value items" and "Items away". TrueDoc splits the labels, puts policy names in the answer column and runs the limits together; the model wrote it right with row spans. Neither the shape grader nor the word comparison flags it: the comparison reads an event's first row only |
+| a row dropped (2 / 1, Honey) | **model wrong** | "High value items and collections \| No" with an empty third cell: TrueDoc has it, the model dropped it and wrote the next row as a loose line |
+
+Also one line-break hyphen kept inside a cell ("rent-ed"; the model wrote "rented").
+
+**What it means.** Thirteen of fifteen are ours, as the 17 September reading said - but that reading covered
+sheets that should not have been listed, and these are the numbers that replace it. The shape grader (99% and 100%)
+passes every one of these sheets: it asks whether the events open rows and carry answers, and a sentence cut in
+two or a stray word does not change that. Six candidate rules, none built tonight, each to be sized on its
+population first - the orphan last line and the covered-word check look the largest, and the second is a fault in
+the core reader's D011 check, not a table rule.
+
+---
+
 ## 2026-09-18, night (21:06-21:19) - A transcription cannot hold more print than its region
 
 The second thing the crops taught (D033's check, this evening): Flash turned a scatter plot into an 1,800-row

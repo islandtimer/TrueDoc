@@ -114,33 +114,28 @@ def critical(s):
 
 
 def rows_of(md):
-    """event -> (answer cell, third column) as written, from the table holding the most prescribed
-    events; and the events whose label opens more than one row anywhere in the markdown, which
-    this picks the first of and a reader of the differences should know about."""
-    best, hits = None, 0
+    """event -> (answer cell, third column) as written, from every table in the markdown, the first
+    row of each included; and the events whose label opens more than one row, of which this keeps
+    the first and a reader of the differences should know.
+
+    Every table, because a sheet's table does not always arrive as one: a full-width band inside it
+    ("Cover for valuables, collections and items away...") ends one markdown table, and the rows
+    under it come as another whose first row - a data row - stands where markdown wants a header.
+    The first version read only the table holding the most events, and on 18 September reported
+    eight rows of two RACQ sheets as missing from a reading that held every word of them."""
+    out = {}
     seen = collections.Counter()
     for block in kfs_grade.blocks(md):
-        text = " ".join(block).lower()
-        h = sum(1 for e in kfs_grade.EVENTS if e in text)
-        if h > hits:
-            best, hits = block, h
-        for line in block[1:]:
+        for line in block:
             cs = kfs_grade.cells_of(line)
-            label = kfs_grade._LEAD.sub("", cs[0]).lower() if cs else ""
+            if len(cs) < 2:
+                continue
+            label = kfs_grade._LEAD.sub("", cs[0]).lower()
             for e in kfs_grade.EVENTS:
                 if label.startswith(e):
                     seen[e] += 1
+                    out.setdefault(e, (cs[1], " ".join(cs[2:])))
                     break
-    out = {}
-    for line in (best or [])[1:]:
-        cs = kfs_grade.cells_of(line)
-        if len(cs) < 2:
-            continue
-        label = kfs_grade._LEAD.sub("", cs[0]).lower()
-        for e in kfs_grade.EVENTS:
-            if label.startswith(e) and e not in out:
-                out[e] = (cs[1], " ".join(cs[2:]))
-                break
     return out, sorted(e for e, n in seen.items() if n > 1)
 
 

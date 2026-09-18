@@ -97,3 +97,15 @@ def test_layout_json_is_recognised_however_the_model_spaced_it():
     text, was_cut = layout_text(pretty, collections.Counter(), "x")
     assert text == "Spaced out." and was_cut is False                     # it used to pass through as raw JSON
     assert layout_text("[1] A footnote, not JSON.", collections.Counter(), "x") == ("[1] A footnote, not JSON.", False)
+
+
+def test_rows_under_a_band_are_found_though_they_arrive_as_a_second_table():
+    # RACQ, 18 September: a band across the table ends one markdown table, and the rows under it
+    # come as another whose first row is a data row standing where markdown wants a header.
+    split = (_sheet(("Flood", "Yes", "Covered.")) + "\nCover for valuables, collections and items away\n\n"
+             "| High value items and collections | Optional | Specified items only. |\n| --- | --- | --- |\n"
+             "| Items away from the insured address | Optional | Australia and New Zealand only. |\n")
+    whole = _sheet(("Flood", "Yes", "Covered."), ("High value items and collections", "Optional", "Specified items only."),
+                   ("Items away from the insured address", "Optional", "Australia and New Zealand only."))
+    found, counts = two.compare(split, whole)
+    assert found == [] and counts["rows_both"] == 3 and counts["row_one_reader_only"] == 0

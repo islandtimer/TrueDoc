@@ -1,0 +1,176 @@
+[
+ {
+  "kind": "answer",
+  "event": "fire and explosion",
+  "truedoc": "Yes",
+  "model": "Yes No",
+  "sheet": "AAMI/contents-insurance/aami-fire-theft-contents-insurance-kfs_f76f6f48.pdf",
+  "verdict": "truedoc",
+  "cause": "row-split-at-second-answer",
+  "note": "One row split in two: the answer cell holds 'Yes' and 'No' on two lines (fire yes, explosion no) and the second value was taken for a new row, breaking the sentence in the third column. Model right ('Yes No', cell whole)."
+ },
+ {
+  "kind": "critical words",
+  "event": "fire and explosion",
+  "alike": 0.4917,
+  "differ": [
+   "no",
+   "unless"
+  ],
+  "truedoc": "fire - no cover for loss or damage to contents from arcing,",
+  "model": "fire - no cover for loss or damage to contents from arcing, scorching, melting, or cigarette burns unless a fire spreads from the initial burn spot. there is no cover for explosion.",
+  "sheet": "AAMI/contents-insurance/aami-fire-theft-contents-insurance-kfs_f76f6f48.pdf",
+  "verdict": "truedoc",
+  "cause": "row-split-at-second-answer",
+  "note": "One row split in two: the answer cell holds 'Yes' and 'No' on two lines (fire yes, explosion no) and the second value was taken for a new row, breaking the sentence in the third column. Model right ('Yes No', cell whole)."
+ },
+ {
+  "kind": "answer",
+  "event": "fire and explosion",
+  "truedoc": "Yes",
+  "model": "Yes No",
+  "sheet": "AAMI/contents-insurance/kfs-fire-and-theft-contents-15-12-2020_e915d90f.pdf",
+  "verdict": "truedoc",
+  "cause": "row-split-at-second-answer",
+  "note": "One row split in two: the answer cell holds 'Yes' and 'No' on two lines (fire yes, explosion no) and the second value was taken for a new row, breaking the sentence in the third column. Model right ('Yes No', cell whole)."
+ },
+ {
+  "kind": "critical words",
+  "event": "fire and explosion",
+  "alike": 0.513,
+  "differ": [
+   "no",
+   "unless"
+  ],
+  "truedoc": "fire - no cover for loss or damage to contents from arcing,",
+  "model": "fire - no cover for loss or damage to contents from arcing, scorching or cigarette burns unless a fire spreads from the initial burn spot. there is no cover for explosion.",
+  "sheet": "AAMI/contents-insurance/kfs-fire-and-theft-contents-15-12-2020_e915d90f.pdf",
+  "verdict": "truedoc",
+  "cause": "row-split-at-second-answer",
+  "note": "One row split in two: the answer cell holds 'Yes' and 'No' on two lines (fire yes, explosion no) and the second value was taken for a new row, breaking the sentence in the third column. Model right ('Yes No', cell whole)."
+ },
+ {
+  "kind": "wording",
+  "event": "accidental breakage",
+  "alike": 0.8455,
+  "truedoc": "for an extra premium cover can be purchased to cover",
+  "model": "for an extra premium cover can be purchased to cover accidental damage.",
+  "sheet": "AAMI/home-insurance/kfs-contents-15-12-2020_4d8b10fd.pdf",
+  "verdict": "truedoc",
+  "cause": "orphan-last-line",
+  "note": "The last wrapped line of the third-column cell became a row of its own (| | | 51-52 |, 'Accidental Damage.', ''Portable Contents'.'). Model right."
+ },
+ {
+  "kind": "wording",
+  "event": "items away",
+  "alike": 0.9391,
+  "truedoc": "contents items are only covered inside the home with some exceptions. we offer separate optional cover for certain categories of items anywhere in the world under",
+  "model": "contents items are only covered inside the home with some exceptions. we offer separate optional cover for certain categories of items anywhere in the world under 'portable contents'.",
+  "sheet": "ANZ Home Insurance/contents-insurance/anz-home-contents-kfs_067f2b90.pdf",
+  "verdict": "truedoc",
+  "cause": "orphan-last-line",
+  "note": "The last wrapped line of the third-column cell became a row of its own (| | | 51-52 |, 'Accidental Damage.', ''Portable Contents'.'). Model right."
+ },
+ {
+  "kind": "wording",
+  "event": "earthquake",
+  "alike": 0.9752,
+  "truedoc": "'earthquake and tsunami' - no cover for loss or damage that item. occurs more than 72 hours after the earthquake or tsunami.",
+  "model": "'earthquake and tsunami' - no cover for loss or damage that occurs more than 72 hours after the earthquake or tsunami.",
+  "sheet": "Apia/home-and-contents-insurance/ap03512a-apia-home-building-extra-kfs-23-03-21.pdf",
+  "verdict": "truedoc",
+  "cause": "word-duplicated",
+  "note": "The last word of the row above ('item.') appears again inside this cell; the page has it once. Model right."
+ },
+ {
+  "kind": "wording",
+  "event": "earthquake",
+  "alike": 0.9752,
+  "truedoc": "item. 'earthquake and tsunami' - no cover for loss or damage that occurs more than 72 hours after the earthquake or tsunami.",
+  "model": "'earthquake and tsunami' - no cover for loss or damage that occurs more than 72 hours after the earthquake or tsunami.",
+  "sheet": "Apia/home-and-contents-insurance/apia-home-building-extra-kfs-ap03512a-21-06-25-a.pdf",
+  "verdict": "truedoc",
+  "cause": "word-duplicated",
+  "note": "The last word of the row above ('item.') appears again inside this cell; the page has it once. Model right."
+ },
+ {
+  "kind": "row only one reader found",
+  "event": "accidental damage",
+  "truedoc": null,
+  "model": "$2,500/item | 20% of Contents SI or $7,500 (whichever is higher)",
+  "sheet": "CGU/home-insurance/cgu-home-contents-kfs-des1920-rev2-0725_ea909d9c.pdf",
+  "verdict": "truedoc",
+  "cause": "nested-table",
+  "note": "Listed as a row only the model found because a policy name ('Accidental Damage Home') matched the event 'accidental damage' - the tool's error. But the page holds a table nested in the 'High value items' and 'Items away' rows, and TrueDoc splits the labels, puts policy names in the answer column and runs three policies' limits into one cell; the model wrote it correctly with row spans."
+ },
+ {
+  "kind": "row only one reader found",
+  "event": "accidental damage",
+  "truedoc": null,
+  "model": "$2,500/item | 20% of Contents SI or $7,500 (whichever is higher)",
+  "sheet": "CGU/home-insurance/cgu-home-contents-kfs-des1920-rev3-1025_af9b807d.pdf",
+  "verdict": "truedoc",
+  "cause": "nested-table",
+  "note": "Listed as a row only the model found because a policy name ('Accidental Damage Home') matched the event 'accidental damage' - the tool's error. But the page holds a table nested in the 'High value items' and 'Items away' rows, and TrueDoc splits the labels, puts policy names in the answer column and runs three policies' limits into one cell; the model wrote it correctly with row spans."
+ },
+ {
+  "kind": "wording",
+  "event": "theft",
+  "alike": 0.9596,
+  "truedoc": "no cover for loss or damage caused by someone who enters the insured address with your consent. entered",
+  "model": "no cover for loss or damage caused by someone who enters the insured address with your consent.",
+  "sheet": "GIO/home-insurance/gio-home-contents-kfs-g30033a-22-03-21-b_23968530.pdf",
+  "verdict": "truedoc",
+  "cause": "hidden-word",
+  "note": "'entered' is in the PDF under the row's opaque fill, with the visible sentence printed over the same spot; TrueDoc judged it covered and the render check overturned that because the patch shows the other sentence's ink (D011 miss). Model right."
+ },
+ {
+  "kind": "row only one reader found",
+  "event": "high value items",
+  "truedoc": "No | ",
+  "model": null,
+  "sheet": "Honey Insurance/landlord-insurance/honey-insurance-key-facts-sheet-landlord-contents-2305_96ce8d63.pdf",
+  "verdict": "model",
+  "cause": "model-dropped-row",
+  "note": "The page has 'High value items and collections | No' and 'Items away from the insured address | No' with empty third cells. TrueDoc has both; the model dropped the first and wrote the second as a loose line."
+ },
+ {
+  "kind": "row only one reader found",
+  "event": "items away",
+  "truedoc": "No | ",
+  "model": null,
+  "sheet": "Honey Insurance/landlord-insurance/honey-insurance-key-facts-sheet-landlord-contents-2305_96ce8d63.pdf",
+  "verdict": "model",
+  "cause": "model-dropped-row",
+  "note": "The page has 'High value items and collections | No' and 'Items away from the insured address | No' with empty third cells. TrueDoc has both; the model dropped the first and wrote the second as a loose line."
+ },
+ {
+  "kind": "critical words",
+  "event": "accidental breakage",
+  "alike": 0.9932,
+  "differ": [
+   "51",
+   "52"
+  ],
+  "truedoc": "yes - we pay for glass that is accidentally broken in certain parts of your home. pds pg. 33 we also cover accidental damage by a tenant if your home is being rented out under the extra benefit accidental damage, malicious damage or theft by a tenant. pds pg. 31 optional - we cover accidental damage to some items under the optional benefit of advanced cover. you're not covered for accidental damage if you rent out your home. pds pg.",
+  "model": "yes - we pay for glass that is accidentally broken in certain parts of your home. pds pg. 33 we also cover accidental damage by a tenant if your home is being rented out under the extra benefit accidental damage, malicious damage or theft by a tenant. pds pg. 31 optional - we cover accidental damage to some items under the optional benefit of advanced cover. you're not covered for accidental damage if you rent out your home. pds pg. 51-52",
+  "sheet": "RACQ Insurance/building-insurance/building-key-facts-sheet--from-1-march-2017-to-28-march-2021_75dccb69.pdf",
+  "verdict": "truedoc",
+  "cause": "orphan-last-line",
+  "note": "The last wrapped line of the third-column cell became a row of its own (| | | 51-52 |, 'Accidental Damage.', ''Portable Contents'.'). Model right."
+ },
+ {
+  "kind": "critical words",
+  "event": "malicious damage",
+  "alike": 0.9831,
+  "differ": [
+   "31"
+  ],
+  "truedoc": "we refer to malicious damage as vandalism. if your home is unoccupied, you're not covered for anything that happens after the first 60 days that no one has been living in your home. pds pg.29. we also cover malicious damage by a tenant if your home is being rent-ed out under the extra benefit accidental damage, malicious damage or theft by a tenant.",
+  "model": "we refer to malicious damage as vandalism. if your home is unoccupied, you're not covered for anything that happens after the first 60 days that no one has been living in your home. pds pg.29. we also cover malicious damage by a tenant if your home is being rented out under the extra benefit accidental damage, malicious damage or theft by a tenant. pds pg.31.",
+  "sheet": "RACQ Insurance/building-insurance/building-key-facts-sheet--from-1-march-2017-to-28-march-2021_75dccb69.pdf",
+  "verdict": "truedoc",
+  "cause": "orphan-last-line",
+  "note": "The last wrapped line of the third-column cell became a row of its own (| | | 51-52 |, 'Accidental Damage.', ''Portable Contents'.'). Model right. This cell also keeps a line-break hyphen ('rent-ed'); the model wrote 'rented'."
+ }
+]
