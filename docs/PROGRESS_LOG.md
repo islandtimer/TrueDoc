@@ -75,6 +75,31 @@ is a price. The insurance set and the Key Facts Sheets cannot move: the function
 and their scorers convert with no model. Run 96 - the quoted arrangement, run 95's, on this code - was launched
 to carry the seven into the number.
 
+**What the authors' maths clean-up still wins after that, and which parts are ours to take.** Flash's readings
+merged over run 89's pages score 392 on old-scan maths raw and 407 with their post-processing (`bake_flash_post`).
+Read page by page, the fifteen checks are four things: an aligned column of equations split into one formula a row
+(+5); a formula the model broke in two at an operator joined again (+1); formulas separated by "and" or a comma
+merged into one with the word inside the maths (+7); a column of display formulas merged across line breaks
+(+2). **The first two are taken; the last two are declined** on the owner's principle - "and" inside a formula is
+worse for a reader and matches nothing but the reference's habit.
+
+- **An aligned column is one display formula a row.** The page prints a column of equations and each row is one;
+  a row continuing a derivation reads "= ..." as the page prints it; what stands before or after the environment
+  in the same formula (3_pg39 sets a bracketed "or" alternative after the column) is a formula of its own; an
+  equation number set as a row of its own stays with its equation. Only the aligned family (aligned, align,
+  gather, split, eqnarray) is split: a matrix or a cases brace is one object. The first version split only a
+  formula that was nothing but the environment and won one check; the page that mattered has the alternative
+  after it. Measured on the categories that hold such a block - only old-scan maths (13 of 36 pages) and one
+  multi-column page do, in either reader's readings, so the other four cannot move: **old-scan maths 392 to
+  401, +9**, 3_pg39 16 to 24 of 26 and 4_pg48 22 to 23; multi-column 110 to 110. Sixteen pages' markdown changed
+  and every one was read: columns of equations, derivations with their "= ..." rows, a pair of coordinate
+  equations, all as the page prints them.
+- **A formula a model split at an operator is joined.** "$...- 7n\}$ $+ [9m - ...]$" is one sum on 4_pg48; two
+  inline formulas with only blanks between them are joined when the seam is an operator, and "$x$ $y$" stays two.
+
+Seven tests added, **suite 692**. Committed after run 96 was launched, so run 96 carries the first fix alone;
+these two go into run 97.
+
 ---
 
 ## 2026-09-17, afternoon and evening - GPU session 5: a stronger open reader, measured on our own pages

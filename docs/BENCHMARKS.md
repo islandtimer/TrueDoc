@@ -123,8 +123,28 @@ models ourselves (GPU session 5) and scored the raw reading and the processed on
 is worth 19 checks, all on old-scan maths, and Pro's old-scan maths reaches 87.6 with it against the 91.3
 published. **TrueDoc's run 93, with Pro's raw readings on the pages that have no digital text layer, scores 86.4
 (CI 85.5-87.3)** - between the two leaders, above 85.8 and below 87.6, and still the plain average of all eight
-sections with no knowledge of the category. Whether Pro alone reproduces 87.6 over all 1,403 pages on our scorer
-is not yet measured: its readings are on disk (`bench/gpu/out5/pro/`), and the scoring hung twice under load.
+sections with no knowledge of the category.
+
+**18 September: Pro alone over all 1,403 pages, on our scorer.** Its readings of every page are on disk
+(`bench/gpu/out5/pro/`), placed as candidates `inf2pro_all_post` and `inf2pro_all_raw` and scored one test file at
+a time (the "hang" of the night before was the scorer starved by two conversions sharing the machine; arXiv alone
+takes five to nineteen minutes):
+
+| Pro alone, our scorer | ArXiv | OldScanMath | Tables | OldScans | Hdr/Ftr | MultiCol | TinyText | Base | **Overall** |
+|---|---|---|---|---|---|---|---|---|---|
+| with its authors' post-processing (their leaderboard configuration) | 88.2 | 87.6 | 91.0 | 58.4 | 95.4 | 83.9 | 92.5 | 100.0 | **87.1** |
+| its raw readings, what a product is handed | 87.5 | 83.4 | 90.0 | 58.4 | 96.3 | 81.1 | 92.5 | 99.9 | **86.1** |
+| published | 88.1 | 91.3 | 91.2 | 58.2 | 95.8 | 83.7 | 92.5 | 99.9 | 87.6 |
+
+The published 87.6 comes out as **87.1** here, and the half point is one section: old-scan maths 87.6 against
+their 91.3, every other section within a few tenths. The post-processing is worth a point on our scorer: +4.2 on
+old-scan maths (aligned columns split, formulas merged across "and" and commas), +2.8 on multi-column and +1.0 on
+tables (LaTeX turned to Unicode and a synonym map, applied by folder name). **So on one scorer and the same pages:
+Pro alone 86.1 raw and 87.1 processed; TrueDoc with Pro behind Flash 86.4 (run 95).** TrueDoc is ahead on arXiv
+maths (2,594 against 2,560 raw), headers and footers (735 against 732) and multi-column (739 against 717 raw), level
+on old scans, and behind on tables (913 against 920 raw and 930 processed), tiny text (Flash reads those pages;
+404 against Pro's 409) and old-scan maths. The tables gap is the 164 digital table pages, where their model reads
+better than our rules; the rest is post-processing, part of which is adopted below and part declined.
 
 Not yet found on olmOCR-bench: Docling, Adobe Extract, OvisOCR2 (a third-party blog reports Docling
 around 64 on born-digital pages [recalled, unverified]). These will be measured here if the tools can be

@@ -92,3 +92,49 @@ def test_an_equation_with_no_command_in_it_is_still_maths():
 def test_an_equals_sign_does_not_make_money_into_maths():
     # a price range has no equals sign between its two dollars
     assert normalise_math_delimiters("between $5 and $6") == "between $5 and $6"
+
+
+def test_an_aligned_column_of_equations_is_one_display_formula_per_row():
+    r"""old_scans_math/3_pg39 (18 September): the page prints three equations one under another, a
+    model transcribes them as one aligned environment, and the reference holds each on its own."""
+    reading = r"of the form $$\begin{aligned} x' &= ax + by + cz \\ y' &= dx + ey + fz \\ z' &= gx + hy + kz \end{aligned}$$ where"
+    got = normalise_math_delimiters(reading)
+    assert got == "of the form \\[x' = ax + by + cz\\]\n\n\\[y' = dx + ey + fz\\]\n\n\\[z' = gx + hy + kz\\] where"
+
+
+def test_a_row_continuing_a_derivation_keeps_its_leading_equals_sign():
+    got = normalise_math_delimiters(r"$$\begin{aligned} \int f &= \frac{1}{a} \\ &= \frac{2}{b} \end{aligned}$$")
+    assert got == "\\[\\int f = \\frac{1}{a}\\]\n\n\\[= \\frac{2}{b}\\]"
+
+
+def test_a_matrix_or_a_cases_brace_is_not_split():
+    for body in (r"\begin{pmatrix} a & b \\ c & d \end{pmatrix}", r"f(x) = \begin{cases} 1 & x > 0 \\ 0 & x \le 0 \end{cases}"):
+        assert normalise_math_delimiters("$$" + body + "$$") == "\\[" + body + "\\]"
+
+
+def test_an_aligned_environment_with_one_row_is_left_alone():
+    body = r"\begin{aligned} a &= b \end{aligned}"
+    assert normalise_math_delimiters("$$" + body + "$$") == "\\[" + body + "\\]"
+
+
+def test_an_expression_a_model_split_at_an_operator_is_joined():
+    r"""old_scans_math/4_pg48: "$...- 7n\}$ $+ [9m - (3n + 4m) + 14n]$" is one sum on the page."""
+    got = normalise_math_delimiters(r"28. $6m + \{4m - 7n\}$ $+ [9m - (3n + 4m) + 14n]$ . 29.")
+    assert got == r"28. \(6m + \{4m - 7n\} + [9m - (3n + 4m) + 14n]\) . 29."
+    got = normalise_math_delimiters(r"$a + b +$ $c$ and $x$ $y$")
+    assert got == r"\(a + b + c\) and \(x\) \(y\)", "a seam without an operator may be two things"
+
+
+def test_an_equation_number_on_a_row_of_its_own_stays_with_its_equation():
+    # multi_column/0353b31c...: a model sets "& (12)" as the last row of the environment
+    reading = r"$$\begin{aligned} \pi(t) &= \sum t_w w \\ &\quad - \sum t_w \xi \\ &\quad (12) \end{aligned}$$"
+    got = normalise_math_delimiters(reading)
+    assert got == "\\[\\pi(t) = \\sum t_w w\\]\n\n\\[\\quad - \\sum t_w \\xi \\quad (12)\\]"
+
+
+def test_an_aligned_column_followed_by_an_alternative_in_brackets_is_split_too():
+    # old_scans_math/3_pg39's second column: the bracketed "or" case after the environment is a
+    # formula of its own, and the column's rows still come out one by one
+    reading = r"$$\begin{aligned} A' &= a'A + d'B \\ B' &= b'A + e'B \end{aligned} & \left( \text{or} \quad A' = a'A \right)$$"
+    got = normalise_math_delimiters(reading)
+    assert got == "\\[A' = a'A + d'B\\]\n\n\\[B' = b'A + e'B\\]\n\n\\[\\left( \\text{or} \\quad A' = a'A \\right)\\]"

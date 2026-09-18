@@ -79,6 +79,64 @@ def _inline(text: str) -> str:
     return "".join(out)
 
 
+# A model transcribes a column of equations as one aligned environment, and the page holds a column of
+# equations: each row is an equation of its own, which is how the reader meets them and how a reference
+# transcription writes them (old_scans_math/3_pg39, 18 September: "x' = ax + by + cz" over "y' = ..."
+# over "z' = ...", four checks). A row is written as a display formula by itself, its alignment marks
+# dropped, so a row that continues a derivation reads "= ..." as the page prints it. Only the aligned
+# family is split: a matrix or a cases brace is one object, and its rows are not equations.
+_ALIGNED = re.compile(r"\\begin\{(aligned|align\*?|gather\*?|split|eqnarray\*?)\}(?P<rows>.*?)\\end\{\1\}", re.S)
+_ROW_BREAK = re.compile(r"\\\\(?:\[[^\]]*\])?")
+_ALIGN_MARK = re.compile(r"(?<!\\)&")
+_EQUATION_NUMBER = re.compile(r"(?:\\q?quad\s*)*(?:\(\d+[a-z]?\)|\\tag\{[^}]*\})\s*")
+
+
+def _aligned_rows(body: str) -> list[str] | None:
+    """The pieces of a display formula holding an aligned environment of two rows or more: what came
+    before it, each row, what came after it (old_scans_math/3_pg39 sets a bracketed alternative after
+    the column, "& \\left( \\text{or} ... \\right)"), each a formula of its own; or None."""
+    m = _ALIGNED.search(body)
+    if not m:
+        return None
+    rows = [_ALIGN_MARK.sub("", r).strip() for r in _ROW_BREAK.split(m.group("rows"))]
+    rows = [re.sub(r"\s+", " ", r) for r in rows if r.strip()]
+    # An equation number set as a row of its own ("& (12)") belongs to the equation above it.
+    merged: list[str] = []
+    for r in rows:
+        if merged and _EQUATION_NUMBER.fullmatch(r):
+            merged[-1] = merged[-1] + " " + r
+        else:
+            merged.append(r)
+    rows = merged
+    if len(rows) < 2:
+        return None
+    before = re.sub(r"\s+", " ", _ALIGN_MARK.sub("", body[:m.start()])).strip()
+    after = re.sub(r"\s+", " ", _ALIGN_MARK.sub("", body[m.end():])).strip()
+    return [p for p in [before, *rows, after] if p]
+
+
+# A model sometimes closes a formula and opens the next in the middle of one expression, so that
+# "$...- 7n\\}$ $+ [9m - ...]$" is one sum of the page's written as two (old_scans_math/4_pg48). Two
+# inline formulas with nothing but blanks between them are joined when the seam is an operator: the
+# first ends with one or the second begins with one. "$x$ $y$" is left as two, because it may be two.
+_OPERATOR_END = re.compile(r"[-+=<>*/\u00b1\u2212]\s*$|\\(?:cdot|times|pm|mp|div|leq|geq|neq|le|ge|ne|to)\s*$")
+_OPERATOR_START = re.compile(r"^\s*(?:[-+=<>*/\u00b1\u2212]|\\(?:cdot|times|pm|mp|div|leq|geq|neq|le|ge|ne|to)\b)")
+_SEAM = re.compile(r"\\\((?P<a>[^\n]*?)\\\)[ \t]+\\\((?P<b>[^\n]*?)\\\)")
+
+
+def _join_split_expressions(text: str) -> str:
+    def seam(m: re.Match) -> str:
+        a, b = m.group("a"), m.group("b")
+        if _OPERATOR_END.search(a) or _OPERATOR_START.search(b):
+            return "\\(" + a.rstrip() + " " + b.lstrip() + "\\)"
+        return m.group(0)
+
+    before = None
+    while before != text:  # three pieces need two passes
+        before, text = text, _SEAM.sub(seam, text)
+    return text
+
+
 def normalise_math_delimiters(text: str) -> str:
     """Rewrite a model's `$...$` and `$$...$$` maths as `\\(...\\)` and `\\[...\\]`."""
     if not text or "$" not in text:
@@ -86,6 +144,11 @@ def normalise_math_delimiters(text: str) -> str:
 
     def display(m: re.Match) -> str:
         body = m.group("body")
-        return "\\[" + body + "\\]" if _is_maths(body) else m.group(0)
+        if not _is_maths(body):
+            return m.group(0)
+        rows = _aligned_rows(body)
+        if rows:
+            return "\n\n".join("\\[" + r + "\\]" for r in rows)
+        return "\\[" + body + "\\]"
 
-    return _inline(_DISPLAY.sub(display, text))
+    return _join_split_expressions(_inline(_DISPLAY.sub(display, text)))
