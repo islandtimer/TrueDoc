@@ -67,7 +67,9 @@ whole set, so the comparison to hold in mind is with the unstarred rows.
 
 **Published 18 September 2026:** TrueDoc's run 97 is a self-reported entry at `huggingface.co/awmg/TrueDoc`, with
 all 1,403 page outputs, the scorer's log, and a results page saying what read which pages (D036). The hub tagged
-it "Eval Results" on upload; the leaderboard's table had not aggregated the row twenty minutes later.
+it "Eval Results" on upload; the leaderboard's table had not aggregated the row ten minutes later, though the hub's API shows the nine results
+parsed and accepted (`/api/models/awmg/TrueDoc?expand[]=evalResults`). The table has an API of its own:
+`/api/datasets/allenai/olmOCR-bench/leaderboard`.
 
 The section scores, in the same order the benchmark reports them:
 

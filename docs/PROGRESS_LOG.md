@@ -231,7 +231,7 @@ the fit stage, to fix before it is used again. Instance destroyed by the owner a
 instance time, all-in cost to come from the account. Everything is in `bench/gpu/out6/` (logs, fit results,
 environment) and `bench/gpu/out5/flash_custom/` (the readings).
 
-**19:00-19:45 - published (D036), on the owner's "publish".** The entry was built locally first and the owner
+**19:00-19:35 - published (D036), on the owner's "publish".** The entry was built locally first and the owner
 shown its three reader-facing files: `bench/tools/leaderboard_entry.py` copies run 97's 1,403 outputs and the
 scorer's four files, computes the nine values from the counts (overall 86.8214, the mean of the eight section
 pass rates, agreeing with the scorer's 86.8), and writes `.eval_results/olmocrbench.yaml` in the form the hub's
@@ -247,7 +247,8 @@ card listed the benchmark under `datasets:`, which the hub reads as *trained on*
 dataset's "models trained or fine-tuned on this" list, which is false. Removed from the card and from the
 script within five minutes; the list no longer shows it. The hub tagged the repository "Eval Results" at once
 and serves the entry file anonymously; the dataset's leaderboard table still showed its eighteen models (a new
-one since the 17th: `jinaai/jina-ocr-v1`, 83.4, fourth) and not ours at 19:45. The feature's page calls it work in
+one since the 17th: `jinaai/jina-ocr-v1`, 83.4, fourth) and not ours at 19:27, seven minutes after the upload - **I wrote "19:45" and "twenty minutes" here and in four
+other places from a sense of elapsed time, without looking at the clock; corrected at 19:35.** What the comparison found (19:30-19:45, the owner's request): nothing wrong with the file. The hub's API (`/api/models/<repo>?expand[]=evalResults`) shows our nine results parsed exactly as it parses kraken's and jina's, and reports no validation error (it does report one for another repository's rejected file, so silence means accepted); the task ids match the benchmark's `eval.yaml`; two listed entries have no `pipeline_tag`, so that is not required; the public listings know the repository (search finds it; the `eval-results` filter lists it newest of all). What differs: our notes are 681 characters and our source name 94, where no listed entry exceeds 286 and 36; and age. The leaderboard has its own API (`/api/datasets/allenai/olmOCR-bench/leaderboard`, 18 rows), and neither it nor our model page's results widget has us - but a two-day-old repository with ordinary, valid results (`luganoquant/Inkling`, 16 September) has no widget and no row on its benchmark either, so the display side lags by days or is gated, and not for anything in our file. The feature's page calls it work in
 progress and says results appear automatically, with no timing. To check again; if a day passes without the
 row, compare our file field by field with an entry that did appear the same day, and ask on the dataset's
 community tab.

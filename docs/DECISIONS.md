@@ -700,8 +700,10 @@ an account prefix, and the `truedoc` namespace belongs to someone else, so the n
 files: the 1,403 outputs, the scorer's four files, the card, `RESULTS.md`, `.eval_results/olmocrbench.yaml` (nine
 task ids, exact values from the counts, overall 86.8214, the dataset revision, notes saying what read which
 pages). Built and uploaded by `bench/tools/leaderboard_entry.py` and `leaderboard_publish.py`. The hub tagged the
-repository "Eval Results" at once; the leaderboard table had not yet aggregated the row twenty minutes later
-(the feature's documentation says automatic and gives no timing). **One correction made within minutes:** the
+repository "Eval Results" at once; the leaderboard table had not yet aggregated the row ten minutes later
+(the feature's documentation says automatic and gives no timing; the hub's API shows our nine results parsed and
+accepted like every listed entry's, and another account's two-day-old repository with valid results is not on its
+board either, so the table lags by days or is gated). **One correction made within minutes:** the
 card first listed the benchmark under `datasets:`, which on the hub means *trained on* and put TrueDoc in the
 dataset's "models trained on this" list - false, removed. After the flip to public, a web request for
 `docs/review` returned 200 for a few seconds; it was GitHub's generic landing page, and the API, the remote tree,
