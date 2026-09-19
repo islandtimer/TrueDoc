@@ -770,3 +770,39 @@ on: the benchmark converts with front matter off, and the two pages of run 97's 
 readings were cut off convert to bodies byte-identical to run 97's - one of them, `long_tiny_text/17_pg17`
 (Flash), is now reported `incomplete`, which it always was. The Key Facts Sheets were re-converted fresh and
 compared with the day before's conversions; the result is in the progress log.
+
+
+## D038 - A cell that holds a table is written as a table, inside the cell (2026-09-20, the owner's decision)
+
+**The question.** CGU's Key Facts Sheets (and Bendigo's contents sheet) set a small table inside the third cell of
+two rows: "High value items and collections | Yes | [Policy / Item Limit / Overall Limit over three rows]". Once the
+inner table's lines stopped landing in the Yes/No column (e5fecd1, 19 September) the cell held every word in reading
+order - "Policy Item Limit Overall Limit Accidental Damage Home $2,500/item 20% of Contents SI or ..." - and nothing
+of which limit belongs to which policy except that the words happen to read across. Four ways to write it were put to
+the owner with the row rendered each way: **A** the flat line (what we wrote); **B** an HTML table inside the `<td>`;
+**C** the inner rows spliced into the outer table with `rowspan` on the label and answer and `colspan` on every other
+row's third cell (how the second reader, Infinity-Parser2-Pro, wrote it); **D** one line to an inner row, cells
+parted by a bar.
+
+**The decision: B.** The outer table keeps the prescribed three columns and its heading; the inner table keeps its
+own heading row when it has one ("Policy | Item Limit | Overall Limit") and is plain rows when it has none ("Items
+away from insured address": policy and where). This is D028's principle - *a table cell holds what its box holds,
+and a list inside a cell is written as a list* - carried to the one structure D028 did not cover. A table that holds
+such a cell is an HTML table, as one with a span or a list in a cell already is.
+
+**Why not the others.** A loses the pairing, which is the cell's meaning. C rewrites the outer table's shape to suit
+one row: the prescribed heading has to span three columns, the inner heading becomes an ordinary body row, and two
+inner tables of different widths (CGU has a three-column and a two-column one) are forced onto one grid they do not
+share on the page. D invents a separator the page does not print and cannot say heading from body.
+
+**Measured before deciding.** The benchmark's own table checker, run on B and C built from CGU's row
+(19-20 September, `nested_parsers.py`): B passes all five relation checks, including "`$2,500/item` has the top
+heading `Item Limit`"; C fails that one, because in C the inner heading is a body row of the outer table. Not
+checked, and said so to the owner: how table-to-grid parsers outside our control (pandas and the like) treat a nested
+table - the strongest case for C, if a downstream consumer turns out to be one. The owner's downstream trial is still
+to be discussed; should it be a table extractor and not a model reading the file, this is the decision to revisit.
+
+**What it needs.** A cell that can carry a table (as `TableCell.listing` carries a list); the renderer writing it; our
+own tools reading rows of nested tables (`bench/tools/kfs_grade.py` and `kfs_two_readers.py` find rows with a
+non-greedy pattern that a nested `</tr>` would cut); and a detector, to be **sized on all three populations before it
+is built** - so far the structure is known on three tuned-on sheets.
