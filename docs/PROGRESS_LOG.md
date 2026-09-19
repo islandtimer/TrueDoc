@@ -4,6 +4,41 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 15:08-15:49 - The prescribed heading's second line, where it opens with a bracket
+
+Seen on CGU's sheet while reading its nested rows: the table's first *body* row was `| | Optional | (see PDS and
+other relevant policy documentation for details of others.)* |` - the second line of the prescribed heading. I had
+guessed this was the one sheet of 158 failing "header whole". It is not: that sheet is Defence Service Homes'
+building sheet, a different fault, not yet looked at - and **the grader does not see this one at all**. Counted on
+the cached conversions: **18 tuned-on sheets and 5 held out, two templates** (ALDI / BOQ / Honey, and ANZ / CGU / NRMA).
+
+**Cause.** `_heading_wraps_on` joins a heading's long cell to the line beneath it when that line starts in lower
+case. On most sheets the break falls so that it does ("...that apply to events/" over "covers (see PDS ..."); on
+these it falls before the bracket. A bracket opened on running words carries a sentence on as surely as a lower-case
+word does - `_continues` already says so for a body cell - so the heading test now accepts it
+(`_BRACKET_RUNS_ON`: four words or more, the first three without a digit or "="), and refuses what a body row opens
+with under a long heading: "(n = 45)", "(0.45)", "(see note 3)", an enumerator.
+
+**Screened exactly** (`bench/probes/pure_function_screen.py`, the header-count screen made general: any pure
+function of `aligned.py`, the old one loaded from a worktree at f504523 and asked beside the new about every call of
+every conversion): the answer differs on **23 sheet pages - the 18 and the 5, no other -, on 2 benchmark pages, on no
+insurance page.** Measured: the two benchmark pages (prose the finder takes for a table) convert byte for byte the
+same both ways, no check moves. Key Facts Sheets, all 190 fresh: exactly those 18 + 5 change and every one of the 18
+is the same edit and nothing else - the two heading lines become one, `| Event / Cover | Yes / No Optional | Some
+examples of specific conditions, exclusions or limits that apply to events/covers (see PDS and other policy
+documentation for details of others)* |` (nine as markdown tables, nine as HTML). Grade unchanged; two-reader
+comparison unchanged (two rows, both the model's). Two tests added to `tests/test_heading_interleave.py` (the
+positive one fails at f504523). Suite 770.
+
+**Why the oracle never said so.** "Header whole" asks for three parts in the header row - "event", "yes", "some
+examples" - which are the heading's *opening* words; the tail ("Optional", "...details of others)*") was never asked
+about, so a heading cut after its first line passed. Tried on the cached conversions with the tail asked for as well
+("optional", "others"): **20 of 158 tuned-on sheets and 5 of 32 held out fail before this rule, 2 and 0 after it** -
+the two being Defence Service Homes' building sheet (already failing) and a Huddle contents sheet whose heading reads
+"Yes/ No Optiona l", a word the narrow column broke. Both real. The stricter check goes in as its own commit.
+
+---
+
 ## 2026-09-19, 12:52-12:55 - The two-reader tool compares whole entries; two differences left, both the model's
 
 `bench/tools/kfs_two_readers.py` read an event's first row only. A reader that writes a table nested in a row as

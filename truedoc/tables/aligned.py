@@ -938,6 +938,10 @@ _UNIT = re.compile(r"^(\(.*\)|\[.*\]|%|\$|[a-z%$/]{1,3})$")
 _ENUMERATED = re.compile(r"^\s*\(?(?:[A-Za-z]{1,3}|\d{1,3})[.)]\s+\S")
 
 
+# A bracket opened on running words: four words or more, the first three without a digit or "=".
+_BRACKET_RUNS_ON = re.compile(r"^\s*\((?=[a-z])(?:[^\s\d=]+\s+){3}\S")
+
+
 def _fold_wrapped_heading(grid: list[list[str]], geom: list[_Row]) -> tuple[list[list[str]], list[_Row]]:
     """A heading set over two or three lines is one heading row, so join it before anything counts.
 
@@ -1025,7 +1029,11 @@ def _heading_wraps_on(grid: list[list[str]], i: int) -> bool:
             under = grid[j][k] if k < len(grid[j]) else ""
             if not under:
                 continue
-            if not under.lstrip()[:1].islower() or _ENUMERATED.match(under):
+            # In lower case - or a bracket opened on running words, which no cell of a new row opens with under a
+            # sentence left unfinished: "(see PDS and other policy documentation for details of others)*" under
+            # "...limits that apply to events/covers" stood as a body row on 23 of the 190 Key Facts Sheets, two
+            # insurers' templates. Running words: not "(n = 45)" or "(0.45)", which are a body row's.
+            if not (under.lstrip()[:1].islower() or _BRACKET_RUNS_ON.match(under)) or _ENUMERATED.match(under):
                 break
             # A colon closes what it follows, so a cell ending in one is a label, whole. Where the row below fills
             # a column whose cell above is such a label, it is a row of its own and not the heading carrying on:

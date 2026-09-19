@@ -70,3 +70,33 @@ def test_the_wrapped_cells_of_two_entries_are_not_folded_into_one_row():
     ]
     folded, _ = _fold_wrapped_heading([list(row) for row in grid], [])
     assert folded == grid
+
+
+# The heading's second line can open with a bracket instead of a lower-case word. On 23 of the 190 Key Facts Sheets
+# (two insurers' templates, read 19 September 2026) the break falls before "(see PDS ...", and "Optional | (see PDS
+# and other policy documentation for details of others)*" stood as the table's first body row.
+
+BRACKETED = [
+    ["Event/Cover", "Yes/No", "Some examples of conditions, exclusions and limits that apply to events/covers"],
+    ["", "Optional", "(see PDS and other relevant policy documentation for details of others.)*"],
+]
+
+
+def test_a_heading_carried_on_by_a_bracket_opened_on_running_words_is_one_row():
+    grid, _ = _fold_wrapped_heading([list(row) for row in BRACKETED + BODY], [])
+    assert grid[0] == ["Event/Cover", "Yes/No Optional",
+                       "Some examples of conditions, exclusions and limits that apply to events/covers "
+                       "(see PDS and other relevant policy documentation for details of others.)*"]
+    assert grid[1:] == BODY
+
+
+def test_a_bracketed_count_or_statistic_under_a_long_heading_is_a_body_row():
+    for under in ("(n = 45)", "(0.45)", "(see note 3)", "(a) first of the listed items"):
+        grid = [
+            ["Group", "Patients who completed the full twelve week course of treatment"],
+            ["", under],
+            ["Control", "(n = 41)"],
+            ["Treated", "(n = 44)"],
+        ]
+        folded, _ = _fold_wrapped_heading([list(row) for row in grid], [])
+        assert folded == grid, under
