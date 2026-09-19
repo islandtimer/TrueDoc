@@ -4,6 +4,34 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 19:53-20:26 - A table that restarts under a band: sized, and not built
+
+Markdown has no table without a heading row, so where the finder cuts one table in two, the first *data* row of the
+second part is written as a heading. Counted on the cached Key Facts Sheets: **six tuned-on sheets and two held
+out** write a data row as a heading, in three shapes - four "household_kfscts" sheets (one template) where the band
+"Cover for valuables, collections and items away from the insured address" comes out as a paragraph between two
+tables and `| High value items and collections | Optional | ... |` heads the second; Huddle's building sheet, cut
+between "Malicious Damage" and "Impacts" with nothing between; and Bendigo's contents sheet, a table nested in a row
+like CGU's.
+
+The candidate - *a table directly under another, with the same columns starting at the same places and at most one
+line between them, is the same table* - was sized before anything was designed
+(`bench/probes/table_continues_census.py`: every pair of tables one under the other, the gap, what lies in it, the
+second's first row). Insurance set: 5 pairs, 1 with matching columns, and it has a heading and a figure between its
+halves - two tables, rightly. Key Facts Sheets: 6 pairs, **4 with matching columns, all the one template**, gap 1.7
+body sizes, the band the only thing between. Benchmark, 1,122 digital pages: 79 pairs, 8 with matching columns, and
+**none the candidate should take** - the two with nothing between stand four body sizes apart (the sessions of a
+timetable; result blocks of an OCR'd page), the rest have a caption or a paragraph between.
+
+So a gate that is safe fires on one insurer's template and nowhere else in 1,527 pages. That is the chevron-marker
+case again (one document of sixty, refused on 17 September): a structural change to a page's blocks, with a wrong
+join costing far more than this fault does, is not earned by one template. And the fault is mild where it occurs:
+every word is on the page in order - the band as a line, the row under it - only the row is dressed as a heading.
+**Recorded, not built.** Huddle's cut is one sheet and not this shape (it did not come up as a matching pair);
+Bendigo's waits on the owner's answer about a table inside a cell. The probe is kept.
+
+---
+
 ## 2026-09-19, 18:51-19:51 - Run 98: the day's eleven commits, measured whole
 
 Every change today was measured on exactly the pages it could touch. Run 98 asks the other question - what do they
