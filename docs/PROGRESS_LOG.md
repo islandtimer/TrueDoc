@@ -4,6 +4,52 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 15:53-16:48 - A cell's line break is repaired as a paragraph's is; and what that did not reach
+
+**The two sheets the stricter grader fails.** Defence Service Homes' building sheet is **not a fault**: the insurer
+words its heading "Risk | Covered? | Some examples of main conditions and exclusions (...)*", our table is whole, and
+a grader that asks for the prescribed words cannot pass it - its ceiling on the tuned-on sheets is 157 of 158. Huddle's
+contents sheet is real: the PDF itself sets "Optiona" and, on a line of its own, "l".
+
+**The change** (`tables/aligned._join_lines`, which joins the lines of a cell for the text-built tables and is
+borrowed by `boxed_cells`, `fill_grid` and `rule_grid`). A line ending in a hyphen before a lower-case line was closed
+up unless *both halves were in a word list*, which kept "rent-ed", "how-ever", "switch-ing", "Sec-tion", "be-comes".
+It now asks first whether the halves make a word (then they are the word, even before a function word: "spir-" /
+"it" - found by this change's own screen, and the paragraph rule has the same slip) and otherwise uses the paragraph
+joiner's rule, `render/okf._join_at_hyphen`, which the benchmark has already shaped (its docstring records what run
+60 taught it): the hyphen stays
+in a compound the list lacks ("dual-unitary", "gram-positive", which the old test wrote "dualunitary",
+"grampositive"), in a URL, before a capital or a digit, and keeps its space when it is suspended ("intra- and").
+A word broken with no hyphen (`_word_broken_in_a_cell`) is made whole when the upper fragment is no word, the two
+together are one and the lower is in lower case; a single letter below counts unless it is "a" or "i".
+
+**Screened exactly** - and the screen itself had a hole first: three modules import `_join_lines` by name and hold
+their own reference, so hooking `aligned` alone would have missed their calls. `pure_function_screen.py` now rebinds
+the function in every `truedoc` module that holds it (four here; the functions screened earlier today have no outside
+callers, checked). Result: no insurance page; 6 sheet pages (5 tuned-on, 1 held out); **312 calls on 150 benchmark
+pages** - 156 of them a hyphen wrongly kept and now closed, 67 a compound wrongly closed and now kept (mostly right;
+wrong for words the English list lacks - "Aller-dings", "vie-le", "impervious-ness").
+
+**Measured against aa2a880.** Benchmark, all 150 pages both ways: **no check moves in any section, and only two
+bodies change** - nearly all of those joins happen inside candidates the finder then refuses as prose. Both read
+better: "Among differ-ent age groups" is "different", and two URLs keep the hyphens the old rule took out of them
+("proteccio-dedades" is "proteccio-de-dades" again - a link that did not work). Key Facts Sheets, all 190 fresh: four
+tuned-on sheets and one held out change; grade unchanged. One is the fault this started from - "if your home is being
+rent-ed out" is "rented out". **Three are a cost, and I am recording it as one:** "flood water combined with run-"
+/ "off" is now "runoff", and the same insurer writes "run-off" when the word falls mid-line (twice in those sheets).
+The meaning is the same; the spelling is not the page's. Neither joiner can know - the halves are words and so is
+the whole - unless it looks at how the document spells the word elsewhere, which is the principled repair for both
+joiners and is not built. Four tests added to `tests/test_table_hyphen_join.py`. Suite 773.
+
+**What it did not reach: Huddle's heading is unchanged.** That table is built from the page's drawn rules
+(`tables/ruled.py`, provenance `pdfium-lines`), and the ruled builder flattens a cell's lines with a plain
+`replace("\n", " ")` in three places - it never calls `_join_lines`. So every ruled table joins its cells' lines
+with a space and nothing else. No sheet shows a stranded hyphen from it (searched: none), so its cost so far is
+the broken word alone, but the class is "every table with rulings". Next: one flattening function there that uses
+the same joiner, screened the same way.
+
+---
+
 ## 2026-09-19, 15:49-15:53 - The Key Facts Sheet grader asks two harder questions
 
 Two of today's faults stood on the owner's sheets while `bench/tools/kfs_grade.py` reported nothing, so the grader

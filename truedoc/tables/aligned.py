@@ -1417,15 +1417,46 @@ def _join_lines(upper: str, lower: str) -> str:
         return upper or lower
     if upper.endswith("-") and len(upper) >= 2 and upper[-2].isalnum() and lower[:1].isalnum():
         if lower[:1].islower():
-            from truedoc.ocr.rapid import _common_words
+            # A cell's lines break as a paragraph's do, and the paragraph joiner's rule is the one that has been
+            # measured: the hyphen goes when the halves make a word ("rent-" / "ed out" is "rented out", which the
+            # older test here kept as "rent-ed" because "rent" and "ed" are each in a word list), stays in a
+            # compound the list lacks ("self-" / "employed"), and keeps its space before a function word
+            # ("40-" / "to 100").
+            # One thing is asked first, which that rule asks too late: halves that make a word ARE the word, even
+            # when the second half is a function word ("spir-" / "it" is "spirit", not the suspended hyphen of
+            # "intra- and inter-"). The screen of this change found it; the paragraph rule has the same slip and
+            # wants its own screen before it is touched.
+            from truedoc.extract.textlayer import _dictionary
+            from truedoc.render.okf import _join_at_hyphen
 
-            words = _common_words()
-            head, tail = upper[:-1].split()[-1].lower(), lower.split()[0].lower()
-            if head in words and tail.rstrip(".,;:") in words:
-                return upper + lower
-            return upper[:-1] + lower
+            head, tail = upper[:-1].split()[-1].lstrip("([\"'‘“"), lower.split()[0].rstrip(".,;:!?)]\"'’”")
+            vocab = _dictionary()
+            if vocab and head.isalpha() and tail.isalpha() and (head + tail).lower() in vocab:
+                return upper[:-1] + lower
+            return _join_at_hyphen(upper, lower)
+        return upper + lower
+    if _word_broken_in_a_cell(upper, lower):
         return upper + lower
     return upper + " " + lower
+
+
+def _word_broken_in_a_cell(upper: str, lower: str) -> bool:
+    """A word a narrow column broke with no hyphen: "Optiona" over "l", the heading of Huddle's Key Facts Sheet
+    (the PDF sets the last letter on a line of its own). The fragment above is no word, the two together are one,
+    and what follows is in lower case. A single letter below is no word of its own unless it is "a" or "i"; a
+    longer fragment must not be a word either, as `render/okf._broken_word` asks of a paragraph's lines."""
+    a = upper.split()[-1].lstrip("([\"'‘“")
+    b = lower.split()[0].rstrip(".,;:!?)]\"'’”*")
+    if not (a.isalpha() and b.isalpha() and b.islower() and len(a) >= 2 and len(a) + len(b) >= 6):
+        return False
+    if not (a.islower() or (a[:1].isupper() and a[1:].islower())):
+        return False
+    from truedoc.extract.textlayer import _dictionary
+
+    vocab = _dictionary()
+    if not vocab or a.lower() in vocab or (b in vocab if len(b) > 1 else b in "ai"):
+        return False
+    return (a + b).lower() in vocab
 
 
 def _continues(prev_text: str, text: str) -> bool:

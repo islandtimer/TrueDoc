@@ -45,7 +45,15 @@ def _install(other_root, name):
                           "rows": [[str(c)[:30] for c in r] for r in grid[:4]], "n_rows": len(grid)})
         return after
 
-    setattr(aligned, name, asked)
+    # Every module that took the function by name holds its own reference (`from ...aligned import _join_lines` in
+    # boxed_cells, fill_grid and rule_grid): load the pipeline so they all exist, then rebind each of them.
+    import truedoc.pipeline  # noqa: F401
+    rebound = 0
+    for module in list(sys.modules.values()):
+        if getattr(module, "__name__", "").startswith("truedoc") and getattr(module, name, None) is now:
+            setattr(module, name, asked)
+            rebound += 1
+    aligned._pure_screen_rebound = rebound
 
 
 def screen(job):
