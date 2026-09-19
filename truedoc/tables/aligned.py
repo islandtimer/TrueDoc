@@ -1864,6 +1864,20 @@ def _merge_rows_once(grid: list[list[str]], rows: list[_Row], size: float,
                 is_continuation = by_position = True
             else:
                 waiting = True
+        # A second value set on the second line of its cell: "Yes" for fire and "No" for explosion, one above the
+        # other, beside "Fire - no cover ... from arcing," / "scorching, melting, or cigarette burns unless..."
+        # (AAMI's fire-and-theft sheets, read against the page). "No" under "Yes" continues nothing, so the line
+        # stood as a row and cut the sentence beside it in two. But no cell of a new row opens in the middle of a
+        # sentence: under the line that opens an entry, a line with no label, one of whose cells carries running
+        # text on (three words or more, lower case, under a cell that has not closed its sentence) while the
+        # others hold a word or two, is that entry's next line. Position cannot say so - the sheet's next real row
+        # also starts one leading below. Sized first (`bench/probes/split_row_census.py`): of 174 standing rows on
+        # the benchmark with some cell carrying on, this gate takes three, each a continuation.
+        if tight and not is_continuation and not cells[0] and prev[0] and len(filled) >= 2:
+            carried = [i for i in filled if cells[i][:1].islower() and len(cells[i].split()) >= 3
+                       and prev[i].rstrip()[-1:] not in ".?!:;)"]
+            if len(carried) == 1 and all(len(cells[i].split()) <= 2 for i in filled if i not in carried):
+                is_continuation = True
         if is_continuation:
             if row.y0 - rows[here - 1].y0 > 0.5 * size:
                 pitches.append(row.y0 - rows[here - 1].y0)

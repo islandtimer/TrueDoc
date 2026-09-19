@@ -43,7 +43,19 @@ def _install():
             long_cell = any(len(c.split()) > 6 for c in row if c)
             earlier_long = any(len(c.split()) > 6 for r in grid[:n] for c in r if c)
             if long_cell and not earlier_long and not row[0] and above[0] and any(r[0] for r in grid[1:]):
-                FOUND.append({"n": n, "rows": [[c[:28] for c in r] for r in grid[:n + 2]], "columns": len(grid[0]), "body_rows": len(grid) - n})
+                FOUND.append({"kind": "long cell on a label-less line", "n": n, "rows": [[c[:28] for c in r] for r in grid[:n + 2]], "columns": len(grid[0]), "body_rows": len(grid) - n})
+
+            # The wider reading of the same fault: the last heading row has the shape of a body row further down -
+            # the same cells filled, the same cells opening with a digit (one at least beyond the label), a label.
+            def shape(r):
+                return [(bool(c), bool(c) and c.strip()[:1].isdigit()) for c in r]
+
+            last = shape(above)
+            if above[0] and any(d for _f, d in last[1:]):
+                twins = [r for r in grid[n:] if r[0] and shape(r) == last]
+                if twins:
+                    FOUND.append({"kind": "last heading row shaped like a body row", "n": n, "twins": len(twins), "columns": len(grid[0]), "body_rows": len(grid) - n,
+                                  "rows": [[c[:28] for c in r] for r in grid[:n]] + [[c[:28] for c in twins[0]]]})
         return n
 
     aligned._header_row_count = count
@@ -72,6 +84,8 @@ if __name__ == "__main__":
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
     rows = [json.loads(l) for l in open(out, encoding="utf-8")]
     rows = [r for r in rows if "n" in r]
+    for kind in sorted({r.get("kind", "") for r in rows}):
+        print("   %-44s %d tables on %d pages" % (kind, sum(1 for r in rows if r.get("kind") == kind), len({r["page"] for r in rows if r.get("kind") == kind})))
     print("tables whose heading the candidate would end a row sooner: %d on %d pages (held-out sheets among them, counted and never listed: %d)"
           % (len(rows), len({r["page"] for r in rows}), sum(1 for r in rows if r["held_out"])))
     seen = set()
@@ -82,6 +96,6 @@ if __name__ == "__main__":
         if key in seen:
             continue
         seen.add(key)
-        print("  --", r["page"][-52:], "| heading rows now:", r["n"], "| body rows:", r["body_rows"])
+        print("  --", r.get("kind", ""), "|", r["page"][-52:], "| heading rows now:", r["n"], "| body rows:", r["body_rows"])
         for cells in r["rows"]:
             print("       | " + " | ".join(cells))

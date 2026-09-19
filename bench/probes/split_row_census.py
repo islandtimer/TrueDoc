@@ -17,7 +17,7 @@ cell of a new row opens in the middle of a sentence. This census lists every row
 standing that the candidate would fold, with what the *other* cells hold, so the rule can be judged
 on its population before it is written.
 
-usage (repo root): split_row_census.py <out.jsonl> kfs|insurance|bench [workers]
+usage (repo root): split_row_census.py <out.jsonl> kfs|insurance|bench [workers [pages.txt]]
 """
 import concurrent.futures
 import json
@@ -68,6 +68,13 @@ def _install():
                 "band": bool(aligned._is_band(k, out, out_rows, columns, bands, size)),
                 "bullet": any(bool(aligned._BULLET_START.match(cells[i])) for i in filled),
                 "columns": len(cells),
+                # what a narrower gate would ask: does the table label its rows, does the row above open an entry,
+                # is the carried-on cell running text, how does the cell above it end, how long are the other cells
+                "label_share": round(sum(1 for r in out if r[0]) / max(1, len(out)), 2), "above_has_label": bool(prev[0]),
+                "cut_words": [len(head.get(i, cells[i]).split()) for i in cut], "above_ends": [prev[i].rstrip()[-1:] for i in cut],
+                "others_numeric": [bool(aligned._NUMERIC.match(head.get(i, cells[i]).strip())) for i in others],
+                "others_word_counts": [len(head.get(i, cells[i]).split()) for i in others],
+                "next_has_label": bool(out[k + 1][0]) if k + 1 < len(out) else None,
             })
         return out, out_rows
 
@@ -90,6 +97,9 @@ if __name__ == "__main__":
     from orphan_row_census import jobs
     out, which = sys.argv[1], sys.argv[2]
     todo = list(jobs(which))
+    if len(sys.argv) > 4:                                  # only the pages listed in a file, one label a line
+        keep = {l.strip() for l in open(sys.argv[4], encoding="utf-8") if l.strip()}
+        todo = [j for j in todo if j[0] in keep]
     print(len(todo), "pages", flush=True)
     with open(out, "w", encoding="utf-8") as f, concurrent.futures.ProcessPoolExecutor(max_workers=int(sys.argv[3]) if len(sys.argv) > 3 else 6) as pool:
         for rows in pool.map(census, todo, chunksize=2):

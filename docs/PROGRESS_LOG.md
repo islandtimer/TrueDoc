@@ -4,6 +4,56 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 09:58-11:30 - Two censuses, and a second value on the second line of its cell
+
+**The heading that swallows a body row, sized - nothing built.** The narrow reading of the fault part B exposed
+(the first long cell stands on a label-less line under a labelled one; `bench/probes/header_long_cell_census.py`):
+no table on the 380 Key Facts Sheet pages, none on the insurance set, three on two of the benchmark's 1,122 digital
+pages - the French case table, and a degenerate table of bare pipes. One real table is not a rule. The wider reading
+- *the last heading row has the shape of a labelled body row further down*: the same cells filled, the same cells
+opening with a digit, a label - is a population: **ten tables on six benchmark pages, five distinct templates**
+("Code | Title | Credits" with "ENGL 314 | Structure of English | 3" counted as heading, twice; "Table 3 |
+Simulation parameters" with its first two parameters; "Variable | -1 (SE) | 95% CI | P Value" with "PGY 1 | 8.4
+(1.2) | ..."; "Parameter | Sign | Initial amount | Unit" with "Depth | H | 63 | um"; the French table), none on the
+owner's documents. That is the next item, as an extension of `_header_row_count`'s own same-shape guard.
+
+**AAMI's row cut at its second answer - built, because its census was small where it mattered.** The answer cell of
+"Fire and Explosion" holds "Yes" and "No", one above the other, beside a sentence that runs past the first line;
+"No" under "Yes" continues nothing, so the line stood as a row: `| | No | scorching, melting, ... |`. Position
+cannot settle it - the sheet's next real row, "Flood", also starts one leading below. The candidate: *no cell of a
+new row opens in the middle of a sentence*. Sized (`bench/probes/split_row_census.py`, run together with the header
+census by `bench/probes/table_censuses_together.py`, one pass of conversions for both): on the benchmark 174
+standing rows have some cell that carries on, nearly all of them junk tables - prose cut into columns, maths - and
+read loosely the candidate would, on the census's listing, fold the row holding "PGY 3" into the row holding "PGY 2". Asked as the merger sees a row (tight under the row
+above, no label, **the row above has one**, exactly one cell of three words or more in lower case under a cell that
+has not closed its sentence, every other cell a word or two, no number) it takes **three** benchmark rows, each a
+continuation. On the Key Facts Sheets it takes 138: AAMI's two, and **136 lines of the prescribed heading** ("Yes/No
+/ Optional" beside "...limits that apply to events/ / covers (see PDS...") - lines `_fold_wrapped_heading` joins
+today. That was the risk, and the oracle was asked rather than argued with.
+
+**Measured against e83e6d5** (worktree; each pool printing its `truedoc`). Key Facts Sheets, all 190 fresh: **three
+change** - the two AAMI fire-and-theft sheets, where the row is whole ("Yes No" beside "Fire - no cover for loss or
+damage to contents from arcing, scorching, melting, or cigarette burns unless a fire spreads from the initial burn
+spot. There is no cover for Explosion." - what the page says and what the second reader wrote), and one held out
+(counted, not named); **the other 187 byte for byte the same**, so the heading comes out as it did; grade unchanged
+(157 of 158, 32 of 32; 1,885 of 1,885, 375 of 375). Benchmark, the 44 pages the census found a candidate on: no check
+moves and **no body changes** - the three rows sit in blocks that do not end as tables. Insurance set, code against
+code: no file differs, 229 of 229. Five tests (`tests/test_table_second_value_line.py`; the first fails at e83e6d5).
+Suite 761.
+
+**Where the two readers now stand** (`bench/tools/kfs_two_readers.py`, the 158 tuned-on sheets, after this
+morning's three rules): of 1,897 rows both readers found, no answer differs, no critical word differs, no wording
+falls under 0.98 alike; **four rows only one reader found** are all that is left of the 23 differences of 18
+September - two are CGU's table nested in a row (ours, not built), two are the row the model dropped on Honey's
+sheet (the model's). Held-out totals, never listed: one row only one reader found, one critical-word difference, five
+wordings under 0.98.
+
+A slip, caught by the clock: I wrote "11:25" and "measuring from 11:22" into the memory brief by feel while the
+clock said 11:15 and the run had started at 11:14 - corrected. And a shell patch with one heredoc inside another
+hung for two minutes; the file tools made the same two edits at once.
+
+---
+
 ## 2026-09-19, 07:57-09:55 - The last line of a wrapped cell, part B: a line under a cell of one line
 
 "Accidental Damage." under "...can be purchased to cover" (AAMI's contents sheet) is a cell's last line under a

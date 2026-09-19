@@ -38,6 +38,9 @@ PDF page
   |                                 reading (_merge_rows_once), and the line's first word must not have fitted
   |                                 above. Either fold is recorded as the lines the page sets, so the judgement
   |                                 "is this a table" never moves with it
+  |                               - a line with no label under the line that opens an entry, one of whose cells
+  |                                 carries running text on while the others hold a word or two ("No" under "Yes"),
+  |                                 is that entry's next line: no cell of a new row opens mid-sentence
   |                               - a heading line carried on under an empty cell joins the heading (_heading_wraps_on)
   v
   |  3. segment/blocks.py         lines -> paragraph blocks (gap, overlap, size, typeface rules)
