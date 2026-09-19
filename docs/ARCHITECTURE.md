@@ -42,6 +42,9 @@ PDF page
   |                                 carries running text on while the others hold a word or two ("No" under "Yes"),
   |                                 is that entry's next line: no cell of a new row opens mid-sentence
   |                               - a heading line carried on under an empty cell joins the heading (_heading_wraps_on)
+  |                               - a row under the first that has a label and the shape of a labelled row further
+  |                                 down (same cells filled, same cells opening with a number) is body, not
+  |                                 heading, however the heading's end was guessed (_header_row_count)
   v
   |  3. segment/blocks.py         lines -> paragraph blocks (gap, overlap, size, typeface rules)
   |     classify/blocks.py        heuristic kinds: heading, header/footer, page/line numbers, list, caption

@@ -4,6 +4,40 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 11:32-12:06 - A row of the body is not heading because the heading's end was hard to see
+
+The fault part B exposed on the French case table, in the wider form this morning's census sized (ten tables on
+six benchmark pages, five templates, none on the owner's documents). `_header_row_count` only ever guessed where a
+heading ends - the first row that is two-fifths numbers, the first long cell, *three rows* when neither comes soon -
+and a body row with one number in it passes under all three. What that cost was worse than the census showed:
+the rows counted as heading were not just marked `<th>`, they were **folded into the heading's cells** - `| Parameter
+Depth Width of expansion | Sign H WE | Initial amount 63 50 | Unit um um |`, `| Variable % time in clinic PGY 1 | -1
+(SE) 1.1* (.19) 8.4 (1.2) | ...`, "Table 3 Transmission speed | Simulation parameters. 50 Mbps".
+
+**The rule**, at the end of `_header_row_count`, where it sees the count the function would otherwise return: a row
+after the first that has a label, a cell beyond the label opening with a number, and the *shape* of a labelled row
+below the heading (the same cells filled, the same cells opening with a number - the function's own `shape`, which
+its long-cell guard already used one row up) is a row of the body; the heading ends before it, and before a group
+label standing alone above it ("Foundation Courses").
+
+**Screened exactly, not sampled** (`bench/probes/header_count_screen.py`): the count is a pure function of a grid, so
+the old function was loaded from a worktree at 1337fdd beside the new one and both were asked about every grid of
+every conversion - 25 insurance pages, 380 sheet pages, 1,122 benchmark pages. **They differ on ten tables on six
+benchmark pages and nowhere else**: the census's six, no other. The owner's documents cannot change (no grid of
+theirs gets a different count), so they were not converted again.
+
+**Measured on the six, code against code:** tables **+1** (`11d982c1..._pg3`, 3 of 4 -> 4 of 4), nothing lost, six
+bodies change and every one reads better: the parameters table and the residents' regression table get their first
+two rows back as rows; "Table 3 | Simulation parameters." heads its six parameters instead of swallowing two; the two
+course lists' first course and its group label are body cells, not heading cells; and the French table - the page
+part B had left worse - is now a plain six-column table, "Cas 1 Femme | 61 | Droit | ischemie | clopidrogrel |
+angioplastie" and "Cas 2 Homme | 63 | ..." each a row under "Sexe | Age | Cote | Presentation Clinique | Traitement".
+(Their second lines, "chronique | + aspirine, puis relais a 3 mois par AVK | + stent", still stand as rows of their
+own: several cells continuing at once with nothing lexical to say so - not this rule's.) Five tests
+(`tests/test_table_heading_not_body.py`; the three built from the real grids fail at 1337fdd). Suite 766.
+
+---
+
 ## 2026-09-19, 09:58-11:30 - Two censuses, and a second value on the second line of its cell
 
 **The heading that swallows a body row, sized - nothing built.** The narrow reading of the fault part B exposed

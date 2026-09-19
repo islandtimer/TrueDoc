@@ -1079,10 +1079,10 @@ def _header_row_count(grid: list[list[str]]) -> int:
     # counting it as heading merges two rows into one. The fees table
     # (tables/937a90b2 page 7) lost two courses and their fees that way: its
     # third row names a course in seven words, its first two in five.
-    if by_long_cell and first_data:
-        def shape(row: list[str]) -> list[tuple[bool, bool]]:
-            return [(bool(c), bool(c) and c.strip()[:1].isdigit()) for c in row]
+    def shape(row: list[str]) -> list[tuple[bool, bool]]:
+        return [(bool(c), bool(c) and c.strip()[:1].isdigit()) for c in row]
 
+    if by_long_cell and first_data:
         here = shape(grid[first_data])
         while (first_data >= 1 and grid[first_data][0] and grid[first_data - 1][0]
                and any(digit for _, digit in here[1:]) and shape(grid[first_data - 1]) == here):
@@ -1110,6 +1110,24 @@ def _header_row_count(grid: list[list[str]]) -> int:
             return min(n, 5)
         labelled = all(row[0] for row in grid[1:n] if any(row))
         n = 1 if (not grid[0][0] and labelled) else 3
+    # The same evidence as the long cell's guard above, looked for further down. The heading's end was only
+    # ever guessed at - the first row that is two-fifths numbers, the first long cell, three rows when neither
+    # comes soon - and a body row with one number in it passes under all of them: "Depth | H | 63 | um" under
+    # "Parameter | Sign | Initial amount | Unit", "ENGL 314 | Structure of English | 3" under "Code | Title |
+    # Credits", "Cas 1 Femme | 61 | Droit | ..." were each written as heading. A row after the first that has a
+    # label and the shape of a labelled row below the heading - the same cells filled, the same cells opening
+    # with a number, one at least beyond the label - is a row of the body, and the heading ends before it (and
+    # before a group label standing alone above it). Sized first (`bench/probes/header_long_cell_census.py`):
+    # ten tables on six benchmark pages, five templates; none on the owner's documents.
+    if n >= 2:
+        body = [shape(r) for r in grid[n:] if r[0]]
+        for i in range(1, n):
+            like = shape(grid[i])
+            if grid[i][0] and any(digit for _, digit in like[1:]) and like in body:
+                n = i
+                while n >= 2 and grid[n - 1][0] and sum(1 for c in grid[n - 1] if c) == 1:
+                    n -= 1
+                break
     return n
 
 
