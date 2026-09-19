@@ -4,6 +4,36 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 20:27-20:40 - The tables gap to Pro, opened up; and what the escaped dollar costs
+
+The owner's list has "the digital-tables gap": Pro reading every page alone passes 930 of the 1,022 table checks,
+run 98 passes 915. Compared check by check (`bench/probes/tables_gap_against_pro.py`, run 98's `failed_tests.jsonl`
+against Pro's post-processed run scored on our scorer, `inf2pro_all_post-bycat-20260918-125957/table_tests`):
+
+- **It is not fifteen checks. It is 65 against 50.** We fail 65 that Pro passes, Pro fails 50 that we pass, 42 both
+  fail. Two readers with different mistakes, not one reader a little behind.
+- Of our 65, **61 are on digital pages our own converter reads** (35 pages; 4 checks on one page a model read). Seven
+  of the 61 sit on five held-out pages - counted, not opened. **The work list is 54 checks on 30 tuned-on pages**,
+  thirteen of them holding two or more (list in the probe's output).
+- The three heaviest, looked at: (1) `fbeb6edc..._pg1`, five checks - an engineering drawing whose parts table is
+  drawn as *vector strokes*; the page has a text layer (a product label) so nothing sent it to a model, and the table
+  is simply absent from our output. A page whose text layer covers a small part of its ink is a class D019 and the
+  router do not reach - a design question, not a rule. (2) `53d3f304..._pg3`, five checks - the text layer's font map
+  is wrong: "(−0.04, 0.04)" is encoded "~20.04,0.04!"; the characters are exact and wrong, which only reading the
+  image can catch. (3) `c45171e3..._pg10`, four checks - **our table is right and fails anyway**, which led to:
+
+**The escaped dollar (D024) costs eight benchmark checks.** We write a literal dollar as `\$` so that no viewer takes
+the stretch between two prices for a formula - the owner's decision, and the right one for a reader. The benchmark's
+checks read a cell's text literally, so "\$166,852" is not "$166,852". Measured over every check of every page of run
+98, as written and with the escape taken out again (`bench/probes/escaped_dollar_cost.py`): 52 pages hold an escaped
+dollar; **eight checks pass only without the escape** (six table, one multi-column order, one old-scan order) and none
+passes only with it. Worth about **0.11 on the overall** (86.83 would read 86.94). HTML tables are not escaped, so this
+is the markdown pipe tables and running text. Nothing changed: it is the owner's decision against the owner's number,
+and it is his to weigh. (One way to have both would be to write a table that holds dollar signs as HTML, where no
+escape is needed; that is a trade of its own - HTML is harder to read raw.)
+
+---
+
 ## 2026-09-19, 19:53-20:26 - A table that restarts under a band: sized, and not built
 
 Markdown has no table without a heading row, so where the finder cuts one table in two, the first *data* row of the
