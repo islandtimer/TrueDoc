@@ -4,6 +4,29 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-20, 07:19 - Correction: the escaped dollar's cost was known, measured and accepted on 12 September
+
+Yesterday evening's entry put "D024 costs eight benchmark checks" to the owner as a finding and a decision waiting
+on him. It is neither. `docs/DECISIONS.md` has it all, and I did not open it before writing: on 12 September the
+cost was measured *before* the decision (sixteen checks of the 98 on the fifteen pages carrying one, fourteen in
+tables, "about a fifth of a point"), put to the owner as option 1 of three, and **accepted with the number in front
+of him** - "the output is to be read rendered as well as by machine, and meaning for the reader decides". The owner
+asked this morning whether the decision had not been made because it *improved* the score. The half of D024 he may
+be remembering is the other one: writing formulas as `\(...\)` - which stopped a stray dollar sign flipping every
+formula after it (it had cost 2503.05329 page 4 its check) and was measured to cost nothing, 7,019 checks identical.
+The escaping half was the one known to cost, and was chosen anyway, for the reader.
+
+What yesterday's measurement adds is only the present size of that accepted cost: **eight checks on run 98** (six
+table, two order; about 0.11 overall) against sixteen on run 80's markdown. Why it has halved is not traced - more
+tables are written as HTML now, where nothing is escaped, and the scanned pages are read by other models than on
+12 September; either could account for it, and neither is checked. Nothing is open here unless the owner wants to
+reopen D024.
+
+The slip is the one the doctrine names: a claim about a decision, made from memory, where the record was one
+`grep` away.
+
+---
+
 ## 2026-09-19, 20:27-20:36 - The tables gap to Pro, opened up; and what the escaped dollar costs
 
 The owner's list has "the digital-tables gap": Pro reading every page alone passes 930 of the 1,022 table checks,
