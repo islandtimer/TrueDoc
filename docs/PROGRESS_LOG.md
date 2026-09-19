@@ -4,6 +4,32 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 15:49-15:53 - The Key Facts Sheet grader asks two harder questions
+
+Two of today's faults stood on the owner's sheets while `bench/tools/kfs_grade.py` reported nothing, so the grader
+now asks what would have shown them. Shape only, as before; nothing here knows a right answer.
+
+- **Header whole** asked for the heading's opening words ("event", "yes", "some examples"). It now asks for its
+  closing words too ("optional", "others"): a heading cut after its first line no longer passes. On the copies kept
+  before d378e6e this fails 20 of 158 tuned-on sheets and 5 of 32 held out; today **2 of 158 and none of 32** - Defence
+  Service Homes' building sheet (failing already) and a Huddle contents sheet whose heading reads "Yes/ No Optiona l".
+- **Rows that are only a continuation** counted a one-cell row only when it started in lower case - the very test
+  the converter's own merger used, so the grader was blind exactly where the converter was. It now counts any row
+  with no label and one filled cell, the band aside ("Cover for ...", which may be written under any column). On the
+  copies kept before part B (07:41 this morning, part A already in): one tuned-on sheet ("Accidental Damage.") and
+  one held out; today **none**. (No copy from before part A was kept, so what it would have said of "51-52" and
+  "'Portable Contents'." is not measured.)
+
+Reported now: tuned on, header whole **156 of 158** (it said 157 this morning - the ruler moved, not the text);
+events 1,885 of 1,885; answers 1,885 of 1,885; no band swallowed; no continuation rows. Held out: 32 of 32, 375 of
+375, 375 of 375, none, none.
+
+The lesson is the one in `feedback-judge-the-definition-not-a-proxy`, turned on the grader: a check that shares the
+converter's test cannot see what the converter cannot. Both faults were found by reading pages and by a second
+reader, not by the oracle.
+
+---
+
 ## 2026-09-19, 15:08-15:49 - The prescribed heading's second line, where it opens with a bracket
 
 Seen on CGU's sheet while reading its nested rows: the table's first *body* row was `| | Optional | (see PDS and

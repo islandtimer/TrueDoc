@@ -17,11 +17,13 @@ elsewhere.
 Graded per document, all of it structural (nothing here knows what a correct *answer* is, only what a
 correct *shape* is):
 
-    header whole      the three prescribed header parts are in the header row, not leaked into the body
+    header whole      the prescribed header is in the header row from its first words to its last, not leaked
+                      into the body
     events in rows    each prescribed event opens a row of its own
     answers attached  that row carries a Yes / No / Optional in the answer column
     band its own row  a full-width band inside the table ("Cover for valuables...") is not swallowed
-    no orphans        no row whose only content is a lowercase continuation of the row above
+    no orphans        no row with no label whose only content is one cell - a line of the row above - other
+                      than the band
 
 A fifth of the sheets are held out by a hash of their filename and never reported alongside the rest,
 so a rule cannot be tuned until every sheet passes. Same idea as `bench/holdout.txt` (D016).
@@ -61,8 +63,10 @@ SEP = re.compile(r"^\|[\s:|-]+\|\s*$")
 _LEAD = re.compile(r"^[^0-9A-Za-z]+")
 ANSWER = re.compile(r"^\s*(yes|no|optional|yes\s*/\s*no|not covered|covered)\b", re.I)
 BAND = re.compile(r"^\|\s*([^|]{12,96}?)\s*\|(?:\s*\|)+\s*$")
-# The header's three parts, however an insurer breaks its lines across them.
-HEADER_PARTS = ("event", "yes", "some examples")
+# The header's parts, however an insurer breaks its lines across them: where each column's heading opens, and
+# where the two that wrap close ("Yes/No Optional", "... for details of others)*"). Until 19 September 2026 only
+# the openings were asked for, and 23 sheets whose heading's second line stood as the first body row passed.
+HEADER_PARTS = ("event", "yes", "some examples", "optional", "others")
 # The events the regulation lists. A buildings sheet and a contents sheet differ in the tail, so a
 # sheet is graded on the ones it actually contains, never on a fixed count.
 EVENTS = ("fire and explosion", "flood", "storm", "earthquake", "lightning", "theft",
@@ -219,7 +223,10 @@ def grade(md: str) -> dict:
     for line in body:
         cs = cells_of(line)
         filled = [c for c in cs if c]
-        if len(cs) >= 2 and len(filled) == 1 and filled[0][:1].islower():
+        # Whatever it opens with: "Accidental Damage.", "51-52" and "'Portable Contents'." stood as rows of their
+        # own until 19 September 2026 and a test for lower case never saw them. The band is the one row of the
+        # prescribed table that rightly holds a single cell, and it may be written under any column.
+        if len(cs) >= 2 and len(filled) == 1 and not cs[0] and not filled[0].lower().startswith("cover for"):
             orphans += 1
 
     return {
