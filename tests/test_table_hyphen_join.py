@@ -46,3 +46,15 @@ def test_halves_that_make_a_word_are_the_word_even_when_the_second_is_a_function
     assert _join_lines("how-", "ever, the cover") == "however, the cover"
     assert _join_lines("both intra-", "and inter-layer") == "both intra- and inter-layer"        # a suspended hyphen
     assert _join_lines("a dual-", "unitary circuit") == "a dual-unitary circuit"                  # a compound the list lacks
+
+
+def test_a_ruled_table_s_cell_is_joined_by_the_same_joiner():
+    # The builder that reads a table from its drawn rules turned every line break of a cell into a space, in
+    # three places, and never asked the joiner: Huddle's heading read "Yes/ No Optiona l".
+    from truedoc.tables.ruled import _flat
+
+    assert _flat("Yes/ No\nOptiona\nl") == "Yes/ No Optional"
+    assert _flat("if your home is being rent-\ned out") == "if your home is being rented out"
+    assert _flat("Sum\nInsured") == "Sum Insured"
+    assert _flat("2019-\n2020") == "2019-2020"
+    assert _flat(None) == "" and _flat("  \n ") == "" and _flat("Yes") == "Yes"

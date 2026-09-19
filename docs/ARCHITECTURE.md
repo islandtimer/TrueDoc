@@ -17,6 +17,8 @@ PDF page
   |     ocr/rapid.py              (only if the page has no usable text) RapidOCR -> same evidence shapes; a page read sideways is turned and read again
   v
   |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;
+  |                               a cell's lines are joined by the one joiner every table builder uses
+  |                               (aligned._join_lines: a broken word closes up, a compound keeps its hyphen);
   |                               one-row boxes too, kept only when pipeline._adopt_ruled_headers finds their column
   |                               headings just above the box - never a sentence, which crosses from one column to the
   |                               next on a word space (tables/cells.runs_across_columns)

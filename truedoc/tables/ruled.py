@@ -12,9 +12,24 @@ from truedoc.extract import pdfium_objects, pdftext_rawdict
 from truedoc.extract.handle import pymupdf_module
 from truedoc.geometry import Rect
 from truedoc.model import BBox, Block, BlockKind, Table, TableCell
-from truedoc.tables.aligned import _continues
+from truedoc.tables.aligned import _continues, _join_lines
 from truedoc.tables.cells import clean_cell_text, is_bracketed_statistic
 from truedoc.tables import ruled_pdfium
+
+
+def _flat(value) -> str:
+    """A cell's lines as one text, joined as every other table builder joins them.
+
+    The table finder hands a cell over with its line breaks in it, and until 19 September 2026 they
+    were turned into spaces here, in three places, with nothing asked: Huddle's Key Facts Sheet, whose
+    narrow answer column sets "Optiona" and then "l", was headed "Yes/ No Optiona l". `aligned._join_lines`
+    is the one joiner: a broken word closes up, a compound keeps its hyphen, anything else takes a space."""
+    text = ""
+    for line in (value or "").split("\n"):
+        line = line.strip()
+        if line:
+            text = _join_lines(text, line) if text else line
+    return text
 
 
 def fold_stacked_statistics(rows: list[list], n_cols: int) -> list[tuple[list, list[int]]]:
@@ -27,7 +42,7 @@ def fold_stacked_statistics(rows: list[list], n_cols: int) -> list[tuple[list, l
     row indices) per row; the first row (the heading) never takes a fold.
     """
     def texts(row):
-        return [((row[ci] if ci < len(row) else None) or "").replace("\n", " ").strip() for ci in range(n_cols)]
+        return [_flat(row[ci] if ci < len(row) else None) for ci in range(n_cols)]
 
     out: list[tuple[list, list[int]]] = []
     for ri, row in enumerate(rows):
@@ -347,7 +362,7 @@ def find_ruled_tables(pdf_page: "pymupdf.Page", page=None) -> list[Block]:
             else:
                 expanded.append((row, srcs, 0, 1))
         n_rows = len(expanded)
-        etexts = [[((row[ci] if ci < len(row) else None) or "").replace("\n", " ").strip() for ci in range(n_cols)] for row, _, _, _ in expanded]
+        etexts = [[_flat(row[ci] if ci < len(row) else None) for ci in range(n_cols)] for row, _, _, _ in expanded]
         espans = {(ri, ci): spans[(srcs[0], ci)] for ri, (_, srcs, _, _) in enumerate(expanded) for ci in range(n_cols) if len(srcs) == 1 and (srcs[0], ci) in spans}
         headers = heading_rows(etexts, espans)
         has_merged = False
@@ -375,7 +390,7 @@ def find_ruled_tables(pdf_page: "pymupdf.Page", page=None) -> list[Block]:
                 for extra in range(1, down):
                     covered_rows.add((ri + extra, ci))
                 val = row[ci] if ci < len(row) else None
-                text = (val or "").replace("\n", " ").strip()
+                text = _flat(val)
                 if text:
                     non_empty += 1
                 cbox = None

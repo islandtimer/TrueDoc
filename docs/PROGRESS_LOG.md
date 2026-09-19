@@ -4,6 +4,34 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 16:49-17:35 - A table read from its drawn rules joins a cell's lines as every other table does
+
+The ruled builder (`tables/ruled.py`) turned every line break inside a cell into a space - the same inline
+expression in three places, two of them feeding decisions and one the text - and never asked the joiner. One
+function now, `_flat`, folds a cell's lines with `aligned._join_lines`, at all three.
+
+**Screened exactly** (`bench/probes/ruled_flat_screen.py`; the old behaviour was an expression, not a function, so
+it is written into the probe as it stood and compared with `_flat` on every call of every conversion): no insurance
+cell; on the Key Facts Sheets one page, Huddle's; on the benchmark **126 cells on 13 pages**, none of them a
+difference of white space alone. So ruled tables had been stranding hyphens all along, only not on the owner's
+sheets, where I had searched and found none: "(reason- able cause required", "research pro- ject", "exemp- tions",
+"8:00a- 8:50a" down a timetable, "Community- based", "Non- Aboriginal", "сум- марный", "порож- нини", "Grund- skola".
+
+**Measured against 54b2eca.** Benchmark, the 13 pages both ways: no check moves; twelve bodies change, and every
+change is one of those repairs (46 words in all). Two on a Swedish page are no better than before and no worse -
+"arbe- tar" is now "arbe-tar" where the page means "arbetar": the word list is English, and halves it happens to
+know are kept as a compound. Key Facts Sheets, all 190 fresh: **exactly one sheet changes - Huddle's heading reads
+"Yes/ No Optional"** - and under the stricter grader "header whole" is **157 of 158**, which is its ceiling: the one
+left is Defence Service Homes' own wording of the heading. Held out 32 of 32; everything else as it was. One test
+added (`tests/test_table_hyphen_join.py`, six in all). Suite 774.
+
+Where the day's rule-making leaves the sheets: header whole 157 of 158 (the 158th is not a fault), every prescribed
+event in a row of its own with its answer, no band swallowed, no stray row - under a grader that this afternoon
+learnt to ask two questions it had not been asking; and against the second reader, two differences on 158 sheets,
+both the model's.
+
+---
+
 ## 2026-09-19, 15:53-16:48 - A cell's line break is repaired as a paragraph's is; and what that did not reach
 
 **The two sheets the stricter grader fails.** Defence Service Homes' building sheet is **not a fault**: the insurer
