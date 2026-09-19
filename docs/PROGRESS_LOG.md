@@ -4,7 +4,7 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
-## 2026-09-19, 20:27-20:40 - The tables gap to Pro, opened up; and what the escaped dollar costs
+## 2026-09-19, 20:27-20:36 - The tables gap to Pro, opened up; and what the escaped dollar costs
 
 The owner's list has "the digital-tables gap": Pro reading every page alone passes 930 of the 1,022 table checks,
 run 98 passes 915. Compared check by check (`bench/probes/tables_gap_against_pro.py`, run 98's `failed_tests.jsonl`
