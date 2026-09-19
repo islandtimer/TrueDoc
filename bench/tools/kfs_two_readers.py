@@ -113,10 +113,39 @@ def critical(s):
     return collections.Counter(re.sub(r"[\s,]", "", m.group(0).lower()) for m in CRITICAL.finditer(norm(s)))
 
 
+_SPANNING = re.compile(r"<t[dh][^>]*\browspan\s*=\s*[\"']?(\d+)", re.I)
+
+
+def gather_spans(md):
+    """The markdown with every HTML row whose FIRST cell spans rows made one row with the rows it
+    covers: their cells follow its own, in order.
+
+    An entry is what stands beside its label. A reader that writes a table nested in a row as
+    further rows under a row-spanning label (CGU's "High value items and collections", with Policy
+    / Item Limit / Overall Limit over three rows) and a reader that writes it all into the entry's
+    third cell hold the same words, and comparing the second's whole cell with the first's first
+    row reported four "critical words" differences on 19 September that neither reader had."""
+    def table(m):
+        rows = re.findall(r"<tr.*?</tr>", m.group(0), re.S)
+        out, k = [], 0
+        while k < len(rows):
+            cells = re.findall(r"<t[dh][^>]*>.*?</t[dh]>", rows[k], re.S)
+            span = _SPANNING.match(cells[0]) if cells else None
+            n = int(span.group(1)) if span else 1
+            for later in rows[k + 1:k + n]:
+                cells += re.findall(r"<t[dh][^>]*>.*?</t[dh]>", later, re.S)
+            out.append("<tr>" + "".join(cells) + "</tr>")
+            k += max(1, n)
+        return "<table>" + "".join(out) + "</table>"
+
+    return re.sub(r"<table.*?</table>", table, md, flags=re.S)
+
+
 def rows_of(md):
     """event -> (answer cell, third column) as written, from every table in the markdown, the first
     row of each included; and the events whose label opens more than one row, of which this keeps
-    the first and a reader of the differences should know.
+    the first and a reader of the differences should know. A row-spanning label's rows are one
+    entry (`gather_spans`).
 
     Every table, because a sheet's table does not always arrive as one: a full-width band inside it
     ("Cover for valuables, collections and items away...") ends one markdown table, and the rows
@@ -125,7 +154,7 @@ def rows_of(md):
     eight rows of two RACQ sheets as missing from a reading that held every word of them."""
     out = {}
     seen = collections.Counter()
-    for block in kfs_grade.blocks(md):
+    for block in kfs_grade.blocks(gather_spans(md)):
         for line in block:
             cs = kfs_grade.cells_of(line)
             if len(cs) < 2:

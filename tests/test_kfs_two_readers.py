@@ -109,3 +109,21 @@ def test_rows_under_a_band_are_found_though_they_arrive_as_a_second_table():
                    ("Items away from the insured address", "Optional", "Australia and New Zealand only."))
     found, counts = two.compare(split, whole)
     assert found == [] and counts["rows_both"] == 3 and counts["row_one_reader_only"] == 0
+
+
+def test_rows_under_a_row_spanning_label_are_one_entry():
+    # CGU's sheet, 19 September 2026: one reader writes the table nested in "High value items" as further
+    # rows under a row-spanning label, the other writes it all into the entry's third cell. Same words.
+    spanning = ("<table><tr><th>Event/Cover</th><th>Yes/No</th><th colspan=\"3\">Some examples</th></tr>"
+                "<tr><td rowspan=\"3\">High value items and collections</td><td rowspan=\"3\">Yes</td>"
+                "<td>Policy</td><td>Item Limit</td><td>Overall Limit</td></tr>"
+                "<tr><td>Accidental Damage Home</td><td>$2,500/item</td><td>20% of Contents SI or $7,500</td></tr>"
+                "<tr><td>Fundamentals Home</td><td>$1,000/item</td><td>$2,000</td></tr>"
+                "<tr><td>Flood</td><td>Yes</td><td colspan=\"3\">Up to the sum insured.</td></tr></table>")
+    flat = _sheet(("High value items and collections", "Yes", "Policy Item Limit Overall Limit Accidental Damage Home "
+                   "$2,500/item 20% of Contents SI or $7,500 Fundamentals Home $1,000/item $2,000"),
+                  ("Flood", "Yes", "Up to the sum insured."))
+    found, counts = two.compare(flat, spanning)
+    assert found == [] and counts["rows_both"] == 2 and counts["third_identical"] == 2
+    entries, _repeated = two.rows_of(spanning)
+    assert entries["flood"] == ("Yes", "Up to the sum insured.")            # the row after the span is its own

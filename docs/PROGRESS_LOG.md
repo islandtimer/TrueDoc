@@ -4,6 +4,25 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 12:52-12:55 - The two-reader tool compares whole entries; two differences left, both the model's
+
+`bench/tools/kfs_two_readers.py` read an event's first row only. A reader that writes a table nested in a row as
+further rows under a row-spanning label was therefore compared by a quarter of its entry, and one of those further
+rows - "Accidental Damage Home | $2,500/item | ..." - was even taken for the prescribed event "accidental damage",
+which is where the "row only one reader found: accidental damage" on CGU's two sheets had come from all along.
+`gather_spans` now makes one row of an HTML row whose first cell spans rows and the rows it covers, for both
+readers alike, before anything is compared. One test added (11 in `tests/test_kfs_two_readers.py`).
+
+**Tuned-on sheets, 158:** 1,896 rows found by both; no answer differs, no mark, no critical word, no wording under
+0.98 alike; **two rows only one reader found, both on Honey's landlord sheet, where the model dropped the row** (read
+against the page on 18 September). Of the 23 differences listed on 18 September none of TrueDoc's is left in the
+list. Two faults of ours found in that reading are not of a kind the list shows and are still open: a line-break
+hyphen kept in a cell ("rent-ed", which leaves the cell over 0.98 alike) and a data row promoted to the header of the
+table that follows a band. Held out, totals only: one row only one reader found, one critical-word difference, five
+wordings under 0.98 - not opened, and not to be.
+
+---
+
 ## 2026-09-19, 12:07-12:50 - CGU's nested table: its lines were being written into the Yes/No column
 
 Two of the four two-reader differences left were CGU's "High value items and collections" and "Items away from
