@@ -24,6 +24,17 @@ def test_join_lines_keeps_hyphen_in_compound():
     assert join_lines([_line("a state-of-"), _line("the-art tool")]) == "a state-of-the-art tool"
 
 
+def test_join_lines_keeps_a_suspended_hyphen_and_its_space():
+    assert join_lines([_line("both pre-"), _line("and post-natal care")]) == "both pre- and post-natal care"
+    assert join_lines([_line("from two-"), _line("to three-fold")]) == "from two- to three-fold"
+
+
+def test_join_lines_halves_that_make_a_word_are_the_word_even_before_a_function_word():
+    # "spir-" / "it" was written "spir- it": the function word was asked about before the word list.
+    assert join_lines([_line("in the spir-"), _line("it of the agreement")]) == "in the spirit of the agreement"
+    assert join_lines([_line("cancel with-"), _line("in 14 days")]) == "cancel within 14 days"
+
+
 def test_render_table_simple():
     cells = [
         TableCell("Name", 0, 0, is_header=True),
@@ -62,3 +73,15 @@ def test_inline_formula_broken_across_lines_is_rejoined():
     lines = [_line("we have v"), _line("x is small")]
     texts = ["we have \\(v_{p}(\Theta_{0})\notin\\)", "\\(\{-1,0\}\\) is small"]
     assert join_lines(lines, texts) == "we have \\(v_{p}(\Theta_{0})\notin \{-1,0\}\\) is small"
+
+
+def test_join_lines_a_grade_and_its_minus_are_not_half_a_word():
+    # "C-" / "or ECON 402H": the word list holds "cor". One letter is not half of a broken word.
+    assert join_lines([_line("with a minimum grade of C-"), _line("or ECON 402H")]) == "with a minimum grade of C- or ECON 402H"
+
+
+def test_join_lines_one_letter_and_a_hyphen_is_the_head_of_a_compound():
+    # No word is broken after its first letter: "Deep Q-" / "network" was written "Deep Qnetwork".
+    assert join_lines([_line("policy algorithm, Deep Q-"), _line("network (DQN)")]) == "policy algorithm, Deep Q-network (DQN)"
+    assert join_lines([_line("benefits of L-"), _line("carnitine in athletes")]) == "benefits of L-carnitine in athletes"
+    assert join_lines([_line("comprising a s-"), _line("ingle object")]) == "comprising a single object"     # unless the halves are a word

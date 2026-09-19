@@ -4,6 +4,39 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 17:36-18:49 - The paragraph joiner: two slips mended, and two of my own caught by the screen first
+
+`render/okf._join_at_hyphen` joins a line ending in a hyphen to the next, for every paragraph - and, since this
+afternoon, for every table cell. Two slips in it, both found through the table joiner's screen:
+
+- It asked whether the next word is a function word *before* asking whether the halves make a word, so "the
+  guardian spir-" / "it who watches" was written "spir- it". Halves that make a word are the word.
+- It closed up whatever the word list did not know, so one letter and a hyphen lost its hyphen: "Deep Q-" /
+  "network" was "Deep Qnetwork", "L-" / "carnitine" was "Lcarnitine", "d-" / "dimensional" was "ddimensional", and
+  Maltese "l-" / "ewwel" was "lewwel". No word is broken after its first letter; one letter and a hyphen is the head
+  of a compound.
+
+**Each of my first attempts at these was wrong in one case, and the exact screen is what said so** - a function of
+two strings, asked old and new about every join of every conversion of all 1,527 pages (`pure_function_screen.py`,
+which now takes a dotted module, several functions at once, and runs the whole conversion since a renderer's
+function is only called when the page is written). First attempt at the first slip: two joins change on 1,527 pages,
+"spirit" and **"a minimum grade of C-" / "or ECON 402H" -> "Cor ECON"** - a grade and its minus; the word list holds
+"cor". So the first half must be two letters at least. First attempt at the second slip: nine joins, eight right and
+**"a s-" / "ingle object" -> "s-ingle"** - one page does break a word after its first letter. So the one-letter rule
+yields when the halves are a word. The same screen showed that the word-first check I had put into the *cell* joiner
+at 54b2eca would have written "Cor" too; it is gone from there, and cells simply use this rule. One mechanism.
+
+**Measured against ec0b929.** No insurance page and no Key Facts Sheet holds a join that changes (screened: none), so
+neither set can move. Benchmark: the nine pages the final screen named, both ways - no check moves; eight bodies
+change by nine words, all read here: Q-network, d-dimensional, T-carbon, spirit, l-opra, l-ewwel, L-carnitine
+(twice), b-mercaptoethanol. The ninth page ("single") is byte for byte the same. Four tests added to
+`tests/test_render.py` (eleven there now). Suite 778.
+
+Two screens of forty-five minutes for nine words looks dear. It is what it cost to change a function every page
+passes through and know that nothing else moved - and both of my first drafts would have shipped a wrong word.
+
+---
+
 ## 2026-09-19, 16:49-17:35 - A table read from its drawn rules joins a cell's lines as every other table does
 
 The ruled builder (`tables/ruled.py`) turned every line break inside a cell into a space - the same inline

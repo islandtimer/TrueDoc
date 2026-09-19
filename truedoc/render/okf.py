@@ -70,12 +70,26 @@ def _join_at_hyphen(out: str, text: str) -> str:
     core = text.split(" ", 1)[0].strip(".,;:!?)]\"'")
     if not text[0].islower() or "-" in prev_word or not core:
         return out + text
-    if core.lower() in _FUNCTION_WORDS:
-        return out + " " + text
     from truedoc.extract.textlayer import _dictionary
 
     vocab = _dictionary()
     a, b = prev_word.lower().lstrip("([\"'"), core.lower()
+    if core.lower() in _FUNCTION_WORDS:
+        # Suspended - unless the halves are a word: "spir-" / "it" is "spirit", "benef-" / "it" is "benefit",
+        # and asking about the function word first wrote them "spir- it" (found 19 September 2026 by the screen
+        # of the table joiner, which borrows this rule).
+        # A suspended hyphen stands before "and", "or", "to" and makes no word with them ("pre- and post-",
+        # "two- to three-fold"); "with-" / "in", "there-" / "of", "un-" / "it" do.
+        # A half of two letters at least, as the compound test below asks: "a minimum grade of C-" / "or ECON 402H"
+        # is a grade and a minus, and the word list holds "cor" (the screen's other find, on 1,527 pages).
+        if vocab is not None and a.isalpha() and len(a) >= 2 and (a + b) in vocab:
+            return out[:-1] + text
+        return out + " " + text
+    # One letter and a hyphen is the head of a compound ("Q-" / "network", "T-" / "carbon", "L-" / "carnitine",
+    # Maltese "l-" / "ewwel"): closing it up wrote "Deep Qnetwork". Unless the halves are a word - one page of 1,527
+    # does break "s-" / "ingle".
+    if len(a) == 1 and a.isalpha() and not (vocab is not None and b.isalpha() and (a + b) in vocab):
+        return out + text
     if vocab is not None and a.isalpha() and b.isalpha() and (a + b) not in vocab and a in vocab and b in vocab and len(a) >= 2 and len(b) >= 2:
         # A prefix joins its word ("pre-" / "dialysis": the list lacks the compound), unless
         # the two vowels would meet ("anti-" / "inflammatory", "re-" / "enter").

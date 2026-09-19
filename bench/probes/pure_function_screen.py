@@ -9,7 +9,7 @@ the change can touch; convert those both ways and read them.
 Only for functions of plain arguments (lists of strings, numbers): the grid functions
 `_header_row_count(grid)`, `_heading_wraps_on(grid, i)`, `_heading_hangs_open(grid, i)`, and of strings: `_join_lines(upper, lower)`.
 
-usage (repo root): pure_function_screen.py <other code root> <function> <out.jsonl> kfs|insurance|bench [workers]
+usage (repo root): pure_function_screen.py <other code root> [<dotted module>:]<function> <out.jsonl> kfs|insurance|bench [workers]
 """
 import concurrent.futures
 import copy
@@ -24,12 +24,21 @@ sys.path.insert(0, os.path.join(REPO, "bench", "probes"))
 FOUND = []
 
 
-def _install(other_root, name):
-    from truedoc.tables import aligned
-    if getattr(aligned, "_pure_screen", False):
+def _install(other_root, names):
+    for one in names.split(","):                          # several functions ride one pass of conversions
+        _install_one(other_root, one.strip())
+
+
+def _install_one(other_root, name):
+    # "<function>" is one of tables/aligned.py; "<dotted module>:<function>" names any other ("truedoc.render.okf:_join_at_hyphen")
+    import importlib
+    module_name, _, name = name.rpartition(":")
+    aligned = importlib.import_module(module_name or "truedoc.tables.aligned")
+    full = name
+    if name in getattr(aligned, "_pure_screen", ()):
         return
-    aligned._pure_screen = True
-    spec = importlib.util.spec_from_file_location("aligned_other_state", os.path.join(other_root, "truedoc", "tables", "aligned.py"))
+    aligned._pure_screen = getattr(aligned, "_pure_screen", ()) + (name,)
+    spec = importlib.util.spec_from_file_location("other_state_" + aligned.__name__.replace(".", "_"), os.path.join(other_root, *aligned.__name__.split(".")) + ".py")
     other = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = other                       # its dataclasses look their module up by name
     spec.loader.exec_module(other)
@@ -40,7 +49,7 @@ def _install(other_root, name):
         after = now(*args)
         if before != after:
             grid = args[0] if args and isinstance(args[0], list) else []
-            FOUND.append({"other": before, "now": after,
+            FOUND.append({"function": name, "other": before, "now": after,
                           "rest": [a[-60:] if isinstance(a, str) else a for a in (args if not grid else args[1:]) if isinstance(a, (int, float, str))],
                           "rows": [[str(c)[:30] for c in r] for r in grid[:4]], "n_rows": len(grid)})
         return after
@@ -60,9 +69,9 @@ def screen(job):
     other_root, name, (label, path, number, secret) = job
     _install(other_root, name)
     del FOUND[:]
-    from truedoc.pipeline import ConvertOptions, load_document
+    from truedoc.pipeline import ConvertOptions, convert
     try:
-        load_document(path, ConvertOptions(frontmatter=False, pages=[number]))
+        convert(path, ConvertOptions(frontmatter=False, pages=[number]))      # the whole conversion: a renderer's function is only called when the page is written
     except Exception as exc:
         return [{"page": label, "error": repr(exc)[:100]}]
     hidden = {"rows": "(held out)", "rest": "(held out)"}
@@ -95,6 +104,6 @@ if __name__ == "__main__":
         seen.add(key)
         if len(seen) > 30:
             break
-        print("  --", r["page"][-56:], "| other state", r["other"], "-> now", r["now"], "| args", r["rest"], "| rows", r["n_rows"])
+        print("  --", r.get("function", ""), "|", r["page"][-56:], "| other state", r["other"], "-> now", r["now"], "| args", r["rest"], "| rows", r["n_rows"])
         for cells in r["rows"]:
             print("       | " + " | ".join(cells)[:200])

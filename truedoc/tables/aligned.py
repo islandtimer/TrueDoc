@@ -1422,17 +1422,10 @@ def _join_lines(upper: str, lower: str) -> str:
             # older test here kept as "rent-ed" because "rent" and "ed" are each in a word list), stays in a
             # compound the list lacks ("self-" / "employed"), and keeps its space before a function word
             # ("40-" / "to 100").
-            # One thing is asked first, which that rule asks too late: halves that make a word ARE the word, even
-            # when the second half is a function word ("spir-" / "it" is "spirit", not the suspended hyphen of
-            # "intra- and inter-"). The screen of this change found it; the paragraph rule has the same slip and
-            # wants its own screen before it is touched.
-            from truedoc.extract.textlayer import _dictionary
+            # (This change's own screen found that rule asking about a function word before the word list -
+            # "spir-" / "it" came out "spir- it" - and it was mended there, for paragraphs and cells alike.)
             from truedoc.render.okf import _join_at_hyphen
 
-            head, tail = upper[:-1].split()[-1].lstrip("([\"'‘“"), lower.split()[0].rstrip(".,;:!?)]\"'’”")
-            vocab = _dictionary()
-            if vocab and head.isalpha() and tail.isalpha() and (head + tail).lower() in vocab:
-                return upper[:-1] + lower
             return _join_at_hyphen(upper, lower)
         return upper + lower
     if _word_broken_in_a_cell(upper, lower):
