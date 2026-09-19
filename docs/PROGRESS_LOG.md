@@ -4,6 +4,51 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 12:07-12:50 - CGU's nested table: its lines were being written into the Yes/No column
+
+Two of the four two-reader differences left were CGU's "High value items and collections" and "Items away from
+insured address", whose third column holds a small table of its own (Policy / Item Limit / Overall Limit over three
+rows). Read against the page, our output was worse than "a row only one reader found": the label was split over two
+rows and **"Accidental Damage Home" and "Listed Events Home" stood in the Yes/No column**.
+
+**Traced on the raw rows.** `_build_table` places a row's segments by position and then asks `_headings_in_order`,
+which re-reads a row *in order* when three or more segments have sorted, repeated columns spanning exactly their
+number - written for "BM BF WM ... Total", short headings set a shade left of narrow columns. The nested table's
+second line, "and collections | Accidental Damage Home | $2,500/item 20% of Contents SI or $7,500 (whichever is
+higher)", is [0, 2, 2] by position, so it was read [0, 1, 2].
+
+**Sized before touching it** (`bench/probes/headings_in_order_census.py`, every row the rule fires on, all three
+populations): none on the insurance set; 8 on the Key Facts Sheets, all CGU's; 28 on 20 benchmark pages. My first
+idea - a heading set "a shade left" is moved a shade, so bound the distance - **the census killed**: true heading rows
+are moved up to 35 points ("F(s) | G(s) | P(s,a) | yij", "Students | Major | First Term's | ..."), CGU's 18. What
+separates is what the rule's own docstring says it is for: *short* headings. The heading rows among the 28 hold one
+to three words a segment; CGU's lines hold six and ten (the rest of the long ones are prose and maths the finder
+took for tables). The bound is `_build_table`'s own definition of a short cell, four
+words.
+
+**Measured against cbf69d3.** The function is pure and the census lists every row it fires on, so the pages that can
+change are those with a fired row holding a longer segment: 8 benchmark pages and CGU's two sheets. Benchmark, code
+against code on the 8: no check moves; one body changes, a display formula the text layer garbles and the finder
+takes for a table - junk before and junk after. Key Facts Sheets, all 190 fresh: **exactly CGU's two sheets change**,
+no held-out sheet, grade unchanged. They now read "High value items and collections | Yes | Policy Item Limit Overall
+Limit Accidental Damage Home $2,500/item 20% of Contents SI or $7,500 (whichever is higher) Listed Events Home ..."
+and "Items away from insured address | Yes | Accidental Damage Home Australia & New Zealand Listed Events Home
+Australia up to 90 consecutive days Fundamentals Home Not Covered": label whole, answer right, every word of the
+nested table in its cell in reading order. **Its structure is still lost** - which limit belongs to which policy is
+readable only because the lines read across. How OKF should write a table inside a cell is a format question for the
+owner, not a rule. (The sheets' cached copies served as the before state here, which I said this morning a cache is
+not: the exact screen of cbf69d3 showed that commit changes no grid of any sheet, so the copies made at 11:28 are
+what cbf69d3 writes.) One test added to `tests/test_table_headings_in_order.py`. Suite 767.
+
+**The two-reader count goes up, and that is the tool, not the text.** `kfs_two_readers.py` now lists eight
+differences on the tuned-on sheets where it listed four: the four rows only one reader found, plus four "critical
+words" on CGU's two events. The model writes the nested table as further rows under a row-spanning label and the
+comparison reads an event's *first* row only ("item limit overall limit"), so our whole cell is compared with a
+quarter of the model's. Both readers hold every word. Noted on 18 September as a limit of the comparison; now it
+shows. To repair: gather the rows a row-spanning label covers before comparing.
+
+---
+
 ## 2026-09-19, 11:32-12:06 - A row of the body is not heading because the heading's end was hard to see
 
 The fault part B exposed on the French case table, in the wider form this morning's census sized (ten tables on

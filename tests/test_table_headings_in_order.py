@@ -48,3 +48,17 @@ def test_offset_headings_are_read_in_order():
     assert t.n_cols == 9
     assert [c.text for c in t.cells if c.row == 0] == ["", "BM", "BF", "WM", "WF", "OM", "OF", "??", "Total"]
     assert [c.text for c in t.cells if c.row == 1] == ["Year One", "4", "4", "7", "6", "1", "0", "3", "25"]
+
+
+def test_lines_of_a_table_nested_in_a_column_are_not_a_row_of_short_headings():
+    # CGU's Key Facts Sheet, read against its page on 19 September 2026: the third column of "High
+    # value items and collections" holds a table of its own, and its second line - [0, 2, 2] by
+    # position - was read in order, which wrote "Accidental Damage Home" into the Yes/No column.
+    from truedoc.tables.aligned import _Row, _headings_in_order
+
+    def row(*texts):
+        return _Row(segments=[_seg(t, 50 + 150 * i, 50 + 150 * i + 5 * len(t), 100) for i, t in enumerate(texts)], y0=100, y1=112)
+
+    nested = row("and collections", "Accidental Damage Home", "$2,500/item 20% of Contents SI or $7,500 (whichever is higher)")
+    assert not _headings_in_order(nested, [0, 2, 2])
+    assert _headings_in_order(row("First Term's", "Students", "Graduation"), [0, 0, 2])    # short headings still are

@@ -45,6 +45,8 @@ PDF page
   |                               - a row under the first that has a label and the shape of a labelled row further
   |                                 down (same cells filled, same cells opening with a number) is body, not
   |                                 heading, however the heading's end was guessed (_header_row_count)
+  |                               - a row is re-read in order (_headings_in_order) only when it is short headings,
+  |                                 four words a segment at most: never the lines of a table nested in a column
   v
   |  3. segment/blocks.py         lines -> paragraph blocks (gap, overlap, size, typeface rules)
   |     classify/blocks.py        heuristic kinds: heading, header/footer, page/line numbers, list, caption

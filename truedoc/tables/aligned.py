@@ -750,11 +750,22 @@ def _headings_in_order(row: _Row, cols: list[int]) -> bool:
     """A row of short headings set a shade left of the narrow columns beneath
     them ("BM BF WM ... Total" over "4 4 7 ... 25"): by position two headings
     share a column and another column has none, yet the row holds one heading
-    per column of the stretch it covers. Such a row is read in order."""
+    per column of the stretch it covers. Such a row is read in order.
+
+    Short headings: every segment four words or fewer, which is what `_build_table` calls a short
+    cell. Without that the rule took a row that is nothing of the kind - "and collections |
+    Accidental Damage Home | $2,500/item 20% of Contents SI or $7,500 (whichever is higher)", the
+    lines of a table nested in the third column of CGU's Key Facts Sheet, [0, 2, 2] by position -
+    and wrote "Accidental Damage Home" into the Yes/No column, 18 points from anything that column
+    holds. Sized first (`bench/probes/headings_in_order_census.py`): distance does not separate (true
+    heading rows are moved up to 35 points), length does - the rows the rule was written for hold one
+    to three words a segment."""
     n = len(cols)
     if n < 3 or len(set(cols)) == n or cols != sorted(cols):
         return False
     if cols[-1] - cols[0] + 1 != n:
+        return False
+    if any(len(seg.text.split()) > 4 for seg in row.segments):
         return False
     return not any(_NUMERIC.match(seg.text.strip()) for seg in row.segments)
 
