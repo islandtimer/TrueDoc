@@ -4,6 +4,32 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-19, 18:51-19:51 - Run 98: the day's eleven commits, measured whole
+
+Every change today was measured on exactly the pages it could touch. Run 98 asks the other question - what do they
+come to together, on all 1,403 pages - with run 97's arrangement to the letter (the tree at f0509bb; `EXTRA=
+"--vision-endpoint file:<inf2flash_raw>+<olmocr2c> --vision-deep file:<inf2pro_raw>" bash bench/tools/launch_run.sh
+98 truedoc97`; validated 18:51-18:56: suite, gate 100, samples 46 and 61; launched 18:56, converted by 19:48, scored
+19:51; folder `bench/runs/truedoc97-20260919-194807`).
+
+**86.8 (CI 86.0-87.7) - 86.83 against run 97's 86.82.** Held-out 86.1 (1,097 of 1,255; run 97: 1,096), tuned-on 84.8
+(4,993 of 5,764). Against run 97, check by check (`bench/tools/run_diff.py`): **tables 913 -> 915, headers and
+footers 735 -> 734, every other section identical** - arXiv maths 2,594, old-scan maths 397, old scans 307,
+multi-column 739, tiny text 404, baseline 1,392.
+
+**It is exactly the sum of the parts.** The two table checks are the two the page-level A/Bs found - `c6673ff6..._pg3`
+(part B: "...Non-communicable / Diseases (2011)" one cell) and `11d982c1..._pg3` (the heading rule: "Depth | H | 63"
+a body row again). The one lost is `headers_footers/bec1f712..._page_9`, the windowed-absence accident that "one
+picture, one figure" (d5ba8bd, 18 September evening) was measured to cost and was accepted with - it landed after
+run 97 and this is its first full run. Nothing moved that a targeted measurement had not already named, in either
+direction: the screens' claim that nothing else could change held on 1,403 pages.
+
+So the quoted number stays **86.8**, and stays run 97's - the run that is tagged and published. What the day bought
+is mostly not on this ruler: 23 of the owner's sheets with their heading whole, AAMI's and CGU's rows right, the
+second reader's 23 differences down to the model's own two, a grader that can now see what it missed.
+
+---
+
 ## 2026-09-19, 17:36-18:49 - The paragraph joiner: two slips mended, and two of my own caught by the screen first
 
 `render/okf._join_at_hyphen` joins a line ending in a hyphen to the next, for every paragraph - and, since this
