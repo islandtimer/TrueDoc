@@ -4,6 +4,53 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-20, 19:52-21:13 - A ruled cell takes the columns its rectangle covers: a column's centre is the column's
+
+From the work list's permit-fee form, `tables/9e3b179d..._pg2`: fully ruled, and its vertical rules are *staggered*
+between sections - the divider between codes and descriptions stands 16 points further left beside the lower rows
+than under the first three, and the fee divider 10 points further right. A grid built from every rule has five
+columns where a reader sees three; two are slivers. The benchmark's checker takes a cell's top heading as the first
+non-empty cell of its column from the top, and its neighbour as the next column, so the page's checks failed through
+the slivers ("cell to the right ''").
+
+**Sized first** (`bench/probes/sliver_column_census.py`, every table we build, positive control on the known page):
+a column that in every row is empty or under the same cell as a neighbour. **Insurance set: none in 19 tables. Key
+Facts Sheets: none in 199. Benchmark: 14 of 389 tables, on 14 pages (2 held out), every one from the ruled reader.**
+Of the 12 tuned-on: seven staggered, one mixed, two with only a wholly empty column (another question: a form's
+blank column may be a real one, left alone), two grids of 25 and 31 columns that are probably no tables.
+
+**The cause was upstream of any fuse.** "RESIDENTIAL" has the rectangle x 37-129, which covers the code column *and*
+the sliver beside it, yet it was written over one column, and the cell beside it had no rectangle at all: a filler
+we made up. `ruled.column_spans` stretches a cell over the next column when that column's centre lies inside the
+cell's rectangle - and took the centre from *the first cell that starts in the column*. On this form that cell is a
+description running on across the next column, so the sliver 113-129 had its "centre" at 301. **Now a column runs
+from its own left edge to the next column's, and its centre is the middle of that.** A cell that reaches the wrong
+centre reaches the right one too, so this can only give a cell columns it was missing - reasoned first, then seen:
+on all ten benchmark pages it touches not one span is lost or narrowed.
+
+**Screened exactly** (`pure_function_screen.py` on `truedoc.tables.ruled:column_spans`): **insurance set 0 pages,
+Key Facts Sheets 0 of 380 pages**, benchmark 10 pages (3 held out). The screen itself fell over on the benchmark the
+first time - the function answers with a dictionary keyed by (row, column), which JSON cannot write - at the first
+page that differed; mended (`plain()`), run again in full. On the two sets it had finished, not falling over was its
+own proof that nothing differed.
+
+**Measured against 089bf27.** The 7 tuned-on pages: **tables 8 -> 12** (`9e3b179d..._pg2` 6/9 -> 8/9;
+`53179836..._pg15` 2/4 -> 4/4, where "Health System Dimension" now stands over both its columns), the other three
+sections level. All seven bodies change, and were read: on every one **the same words in the same order** (checked
+mechanically with the table tags taken out) - what changes is made-up empty cells going (1 to 44 a page) and the
+cell beside each taking the columns its rectangle covers: "SECTION I - OWNER INFORMATION", "Description: HVAC
+PARTS", "IFB No. 75175", "TRANSITAIR SYSTEMS, LLC.". No table appears or disappears. Two of the seven are poor
+before and after (a diagram read as a grid; a table in a font that maps to nothing) and only their spans move. The 3
+held-out pages: the same score either way; their three bodies change, unseen. Four tests
+(`tests/test_ruled_column_centres.py`; three fail on the code before). Suite 806.
+
+**Not done, deliberately: the fuse.** The form is still five columns underneath - each description now spans three
+of them. Removing a column that in every row lies under a cell which also covers a neighbour (the left on some rows,
+the right on others, never a cell of its own) is the second step, and the definition of a staggered rule read from
+the rules; the census probe's one-neighbour test has to be loosened to either side first. It gets its own screen.
+
+---
+
 ## 2026-09-20, 18:20-19:51 - A lone line beside a table: built, measured, and NOT committed (it moved a sentence above the wrong equation)
 
 `tables/e82a04c6..._pg5`, from the work list: the table came out headed by its first data row ("DFS to DFS"), its

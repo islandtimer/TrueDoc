@@ -44,12 +44,20 @@ def _install_one(other_root, name):
     spec.loader.exec_module(other)
     now, then = getattr(aligned, name), getattr(other, name)
 
+    def plain(answer):
+        # An answer keyed by tuples - `column_spans` gives {(row, col): span} - cannot be written as JSON: on 20
+        # September 2026 this screen fell over at the first page that differed, ten minutes into the benchmark. (On
+        # the two sets it had finished, that was itself the proof that nothing differed.)
+        if isinstance(answer, dict):
+            return {str(k): v for k, v in sorted(answer.items(), key=lambda kv: str(kv[0]))}
+        return answer
+
     def asked(*args):
         before = then(*copy.deepcopy(args))
         after = now(*args)
         if before != after:
             grid = args[0] if args and isinstance(args[0], list) else []
-            FOUND.append({"function": name, "other": before, "now": after,
+            FOUND.append({"function": name, "other": plain(before), "now": plain(after),
                           "rest": [a[-60:] if isinstance(a, str) else a for a in (args if not grid else args[1:]) if isinstance(a, (int, float, str))],
                           "rows": [[str(c)[:30] for c in r] for r in grid[:4]], "n_rows": len(grid)})
         return after

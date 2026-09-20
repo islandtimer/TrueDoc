@@ -278,12 +278,29 @@ def column_spans(cell_rects: list[list], n_cols: int) -> dict[tuple[int, int], i
 
     '% da população' sits in one cell across the value columns of a yearbook table; the
     extractor gives None for the columns it covers. The column centres come from the rows
-    that rule them."""
-    centres: list[float | None] = [None] * n_cols
+    that rule them.
+
+    A column runs from its own left edge to the next column's, and its centre is the middle of that - not the middle
+    of the first cell that happens to start in it, which was the measure until 20 September 2026. A permit-fee form
+    draws the divider between its codes and its descriptions 16 points further left under its first three rows
+    than beside them, so the grid has a sliver column there, and the first cell to start in the sliver is a
+    description that runs on across the next column: the sliver's "centre" came out at 301 where the sliver is
+    113-129, the heading "RESIDENTIAL" (37-129) did not reach it, was given one column, and an empty cell was made up
+    beside it on every such row (benchmark tables/9e3b179d..._pg2). A cell that reaches the wrong centre reaches the
+    right one too, so the right one can only give a cell the columns it was missing."""
+    lefts: list[float | None] = [None] * n_cols
+    right = None
     for rects in cell_rects:
         for ci in range(min(n_cols, len(rects))):
-            if centres[ci] is None and rects[ci] is not None:
-                centres[ci] = (rects[ci][0] + rects[ci][2]) / 2.0
+            if rects[ci] is not None:
+                lefts[ci] = rects[ci][0] if lefts[ci] is None else min(lefts[ci], rects[ci][0])
+                right = rects[ci][2] if right is None else max(right, rects[ci][2])
+    centres: list[float | None] = [None] * n_cols
+    for ci in range(n_cols):
+        if lefts[ci] is None:
+            continue
+        end = next((lefts[cj] for cj in range(ci + 1, n_cols) if lefts[cj] is not None and lefts[cj] > lefts[ci]), right)
+        centres[ci] = (lefts[ci] + end) / 2.0
     spans: dict[tuple[int, int], int] = {}
     for ri, rects in enumerate(cell_rects):
         for ci in range(min(n_cols, len(rects))):
