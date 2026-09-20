@@ -4,6 +4,44 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-20, 17:10-17:41 - An underscore TeX drew as a rule is a character of its word
+
+First thing built from the tables work list, and not a table rule. "Japanese_spaniel" came out "Japanese spaniel"
+because the PDF's text never held an underscore: in TeX's classic encodings `\_` is not a character but
+`\kern.06em\vbox{\hrule width.3em}` - a rule three tenths of an em long and 0.4 pt thick, on the baseline. A mark the
+page draws, like the ticks and arrows already read, and any identifier on such a page loses it, in a table or out.
+
+**Sized first** (`bench/probes/drawn_underscore_census.py`, every short flat rule lying in a text line, all three
+sets; it reads the PDF's raw drawings, because `page.drawings` keeps nothing under 2.5 points and an underscore in
+six-point type is 1.8 long). 3,432 such rules on 251 benchmark pages; 56 lie between two words; measured in the type
+size of the word after, **18 on five pages carry TeX's fingerprint to the hundredth** - length 0.30-0.34 em, 0.06-0.07
+em after the word before, hard against the word after, 0.02-0.03 em above the baseline, 0.4 pt. None on the Key
+Facts Sheets, none on the insurance set. What misses it, each looked at: the dashes of a dotted underline ("she's at
+the", a transcript's notation: a third of the length, under the baseline, thrice as thick); a rule between "Space"
+and "Frequency" in a plot's title, where the page shows nothing at all; a 0.93 em rule under "Value Units"; and two
+left alone for want of evidence - "Kademlia_REQ" (0.50 em, below the baseline: perhaps another producer's
+underscore) and "Target_3" (0.23 em in a scaled figure).
+
+**The reader** (`extract/textlayer._read_drawn_underscores`, after touching words are fused, digital pages only):
+between a word ending in a letter or digit and one starting with one, a rule to that fingerprint joins them as one
+word with a `_` character of the following type. Two traps met on the way. PDFium's bounding box for a *stroked*
+rule is the rule grown by its stroke width on every side (3.49 points for a rule of 2.69), which is a third of what
+is being measured - the reader takes the segment the path strokes (`PageObject.lines`) and the rectangle it fills,
+not the box. And the rule has to leave `page.drawings` once it is a character: left there, the maths reader took the
+same stroke for a bar over the new character and wrote `\overline{\_}`.
+
+**Screened exactly** (`bench/probes/drawn_underscore_screen.py`, hooking the reader on every page of all three sets,
+text layer only): 17 words on five benchmark pages, none elsewhere. **Measured against c63d399** on those five:
+**tables 12 -> 14** (`8bc04603..._pg1` "Japanese_spaniel", `3331dcc1..._pg2` "F1 Score_RCNN"), **arXiv maths 2 -> 3**
+(`2503.04690_pg4`), nothing lost, five bodies change and each is the identifiers and nothing else: sloth_bear,
+Sealyham_terrier, Japanese_spaniel; Score_RCNN, Score_YOLO; DECC23_012_DIP; ten hashtags of a German table
+(GEGEN_Masseneinwanderung, UNSER_Politiker, ...); and a formula that had lost half its subscript - "\(k_{\text{fixed}}\)
+subtraction frames" is now `\(k_{\text{fixed}\_\text{subtraction}}\) frames`, which is what the author wrote. The
+owner's documents cannot change (no rule of theirs carries the fingerprint). Five tests
+(`tests/test_drawn_underscore.py`). Suite 791.
+
+---
+
 ## 2026-09-20, 17:03-17:10 - The tables work list, sorted into kinds (first pass, nothing built)
 
 The 54 table checks on 30 tuned-on digital pages that Pro passes and we fail (`bench/probes/tables_gap_against_pro.py`),

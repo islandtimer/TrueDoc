@@ -14,6 +14,9 @@ PDF page
   |                                 *ink*, not its taller font box; the render may overturn that only on the evidence
   |                                 of characters no visible character is printed over; paint order is matched by
   |                                 position and character, so an earlier wording under a row's shading stays out
+  |                               - an underscore TeX drew as a rule (0.3 em long, on the baseline, hard against the
+  |                                 word after) is a character of the word it sits in: "Japanese_spaniel"
+  |                                 (_read_drawn_underscores), and leaves the page's drawings
   |     ocr/rapid.py              (only if the page has no usable text) RapidOCR -> same evidence shapes; a page read sideways is turned and read again
   v
   |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;

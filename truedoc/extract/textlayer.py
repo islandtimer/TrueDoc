@@ -761,6 +761,8 @@ def extract_page(pdf_page: "pymupdf.Page", number: int) -> Page:
         # Digital text: pieces of one word emitted separately are one word (OCR
         # layers are excluded, their boxes overlap for other reasons).
         page.lines = [_fuse_touching_words(l) for l in page.lines]
+        # An underscore TeX drew as a rule is a character of the word it sits in (`_read_drawn_underscores`).
+        _read_drawn_underscores(pdf_page, page, M)
         page.words = [w for l in page.lines for w in l.words]
     page.body_font_size = _body_font_size(page)
     if page.quality.kind == "ocr" and page.lines:
@@ -1476,6 +1478,111 @@ def _edge_gutters(segs: list[Line], x0: float, width: float, size: float) -> lis
             continue
         out.append((left, right))
     return out
+
+
+# TeX's underscore, in ems of the type it is set in. `\_` is not a character there: plain TeX and LaTeX's OT1
+# encoding set it as `\kern.06em\vbox{\hrule width.3em}` - a rule three tenths of an em long and 0.4 pt thick, on the
+# baseline, a kern after the word before and hard against the word after. Measured on the benchmark before this was
+# written (`bench/probes/drawn_underscore_census.py`, 20 September 2026): every one of 18 on five pages reads
+# length 0.30-0.34, kern 0.06-0.07, gap after 0.00, 0.02-0.03 above the baseline; the rules that are something else -
+# a dotted underline's dashes, a plot's tick, a 0.9 em rule under a heading - miss at least two of the four.
+_TEX_UNDERSCORE_LENGTH = (0.27, 0.37)
+_TEX_UNDERSCORE_KERN = (0.03, 0.10)
+_TEX_UNDERSCORE_TOUCH = 0.03
+_TEX_UNDERSCORE_RISE = (-0.01, 0.06)          # how far its middle stands ABOVE the baseline
+_TEX_UNDERSCORE_THICK = 0.08
+
+
+def _short_rules(pdf_page: "pymupdf.Page", M=None) -> list[BBox]:
+    """Horizontal rules no longer than a wide letter. `_extract_drawings` keeps nothing under 2.5 points, and an
+    underscore in six-point type is 1.8 points long."""
+    out: list[BBox] = []
+    objs = pdfium_objects.page_objects(pdf_page.parent.name, pdf_page.number + 1) if pdfium_objects.enabled() else None
+    if objs is not None:
+        for o in objs:
+            if o.kind != "path":
+                continue
+            # The segment a path strokes and the rectangle it fills, not its bounding box: PDFium's box for a stroked
+            # rule is the rule grown by its stroke width on every side (3.49 points for a rule of 2.69), which is a
+            # third of what is being measured.
+            half = 0.5 * (o.stroke_width or 0.0)
+            for x0, y0, x1, y1 in o.lines:
+                r = _rect((min(x0, x1), min(y0, y1) - half, max(x0, x1), max(y0, y1) + half), M)
+                if r.height <= 1.5 and 0.8 <= r.width <= 14.0:
+                    out.append(r)
+            for rect in o.rects:
+                r = _rect(tuple(rect), M)
+                if r.height <= 1.5 and 0.8 <= r.width <= 14.0:
+                    out.append(r)
+        return out
+    try:
+        for d in pdf_page.get_drawings():
+            r = _rect(d["rect"], M)
+            if r.height <= 1.5 and 0.8 <= r.width <= 14.0:
+                out.append(r)
+    except Exception:
+        pass
+    return out
+
+
+def _read_drawn_underscores(pdf_page: "pymupdf.Page", page: Page, M=None) -> None:
+    """An underscore TeX drew between two words is written between them, and they are one word.
+
+    "Japanese_spaniel" in a table of class names, "F1 Score_RCNN" in a heading, "DECC23_012_DIP" in running text: the
+    PDF's text holds the pieces and nothing between them, so they came out as separate words and an identifier lost
+    what makes it one. It is a mark the page draws, like a tick or an arrow, and is read by where and how it is drawn
+    - only TeX's own underscore, to the fingerprint above, between a letter or digit and a letter or digit."""
+    if not any(len(l.words) >= 2 for l in page.lines):
+        return
+    rules = _short_rules(pdf_page, M)
+    if not rules:
+        return
+    changed = False
+    read: list[BBox] = []
+    for li, line in enumerate(page.lines):
+        if line.rotated or len(line.words) < 2:
+            continue
+        words = sorted(line.words, key=lambda w: w.bbox.x0)
+        out: list[Word] = [words[0]]
+        for w in words[1:]:
+            prev = out[-1]
+            mark = _tex_underscore_between(prev, w, rules)
+            if mark is None:
+                out.append(w)
+                continue
+            read.append(mark)
+            first = w.chars[0]
+            under = Char(text="_", bbox=mark, font=first.font, size=first.size, flags=first.flags, color=first.color, origin_y=first.origin_y)
+            out[-1] = Word(text=prev.text + "_" + w.text, bbox=prev.bbox.union(w.bbox), chars=prev.chars + [under] + w.chars)
+            changed = True
+        if len(out) != len(words):
+            page.lines[li] = Line(words=out, bbox=line.bbox, rotated=line.rotated)
+    if changed:
+        page.words = [w for l in page.lines for w in l.words]
+        # It is a character now and no longer a rule: left among the drawings, the maths reader took the same stroke
+        # for a bar over the new character and wrote `\overline{\_}` (arxiv_math/2503.04690 page 4).
+        page.drawings = [d for d in page.drawings
+                         if not (d.kind == "hline" and d.bbox.width <= 14.0
+                                 and any(d.bbox.x0 <= m.x1 + 1.0 and d.bbox.x1 >= m.x0 - 1.0 and abs(d.bbox.cy - m.cy) <= 1.0 for m in read))]
+
+
+def _tex_underscore_between(a: Word, b: Word, rules: list[BBox]) -> BBox | None:
+    if not (a.chars and b.chars and a.text[-1:].isalnum() and b.text[:1].isalnum()):
+        return None
+    size = b.chars[0].size or 0.0
+    base = b.chars[0].origin_y
+    if size <= 0 or not base:
+        return None
+    for r in rules:
+        if not (a.bbox.x1 - 0.5 <= r.x0 and r.x1 <= b.bbox.x0 + 0.5):
+            continue
+        if (_TEX_UNDERSCORE_LENGTH[0] <= r.width / size <= _TEX_UNDERSCORE_LENGTH[1]
+                and _TEX_UNDERSCORE_KERN[0] <= (r.x0 - a.bbox.x1) / size <= _TEX_UNDERSCORE_KERN[1]
+                and abs(b.bbox.x0 - r.x1) / size <= _TEX_UNDERSCORE_TOUCH
+                and _TEX_UNDERSCORE_RISE[0] <= (base - r.cy) / size <= _TEX_UNDERSCORE_RISE[1]
+                and r.height / size <= _TEX_UNDERSCORE_THICK):
+            return r
+    return None
 
 
 def _fuse_touching_words(line: Line) -> Line:
