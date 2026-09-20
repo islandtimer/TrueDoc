@@ -4,6 +4,68 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-20, 18:15-19:47 - A column cut goes in the channel no word crosses; and the first version of it cut two phrases
+
+The check that put `tables/c8cdd4c4..._pg3` on the work list, once its invisible watermark was out of the way: the
+heading row's first cell read "Triacylglycerols (%) Palm oil*" over two columns. **Cause, watched in the code**
+(`_refine_segments`): the vote found the right empty range - from the shortest label to the first value, 73 points
+wide, because a dozen rows leave the second column empty - and then `place()` tries three points in it and no more:
+just before the words that close it, its middle, its left end. "Palm oil*" stood over the first, "Triacylglycerols"
+over the other two, and it gave up, with 9.2 points of clear page between the two headings (their word space is 2.0).
+The two boundaries beside it were cut only because their ranges' midpoints happened to fall between headings.
+
+**Built:** when all three places are refused, the widest stretch of the range in which no word of any row stands, if
+it is at least the gap that counts as a vote (0.4 of the size).
+
+**Screened exactly** (`bench/probes/column_cut_screen.py`: the other code state's function, loaded from a worktree,
+is asked the same question beside the working tree's inside a whole conversion, and the two lists of cuts compared;
+a positive control on the known page first, since a new screen that has only ever said "nothing" proves nothing).
+Insurance set: 3 pages. Key Facts Sheets: **66 pages**, 14 of them held out - every one a cut *added*, none moved
+or lost. Benchmark: 25 pages, 5 held out.
+
+**What the reading found, that no score did.** On the 20 tuned-on benchmark pages: +1 check, nothing lost - and four
+bodies changed, read against their pages. Two better: the palm-oil headings, and "CIP Code | Major", the feet of two
+stacked headings that had been one cell (`d461e0d4..._page_3`). **Two worse:** a table's sub-title cut in two,
+"Contributions from partners (thousands | of US$)" (`9a61fe78..._pg2`), and a diagram's label likewise (arXiv
+`2503.05886_pg3`). Measured, what tells them apart is the definition itself: the bad cuts divide a line on *its own
+word space* (a gap of 2.8 where its other words stand 2.8 apart; 5.2 against 5.2), the wanted one on 9.2 against
+2.0. In 5.6-point type a plain word space is half the size, and passes for a vote.
+
+**The guard:** the cut is refused if it divides any line on a gap no more than three times that line's ordinary
+space - the measure `_splits_at_shared_edges` already uses. Checked that it bites: a copy of the code with the guard
+switched off cuts the new test's title, "Contributions | from partners"; the guarded code leaves it whole.
+
+**Measured again, guarded, against 6e261ac.** Benchmark, the 20 tuned-on pages: **tables 47 -> 48**
+(`c8cdd4c4..._pg3` 4/5 -> 5/5), the other three sections unmoved, and exactly the two better bodies change. The 5
+held-out pages: the same score either way in every section, no body changes. Insurance set, code against code:
+**25 of 25 pages identical.** Key Facts Sheets, the 66 sheets, code against code
+(`bench/tools/kfs_with_code.py`, new - the grader's cache is not a before state): **66 of 66 identical**, held out
+included. Both of the owner's sets were first measured with the unguarded rule and then again with the guarded one,
+because a call in which the guard refuses one range and allows another is a state neither "before" nor "unguarded"
+had exercised. Why an added cut changes nothing there was not traced: the likeliest reason is that another route
+(`_splits_at_shared_edges`) had already made the same division, which is a guess and is tagged as one. Three tests (`tests/test_cut_in_the_clear_channel.py`). Suite 802.
+
+**Two things I told the owner that were wrong, corrected the same evening.** (1) "It can only add a cut." On
+`dddf8e29..._pg15` a cut moved 6.1 points: the second look used to cut there at 115.2; the unguarded rule made a
+first-look cut at 109.1, and the second look skips a range that already holds a cut. A cut this rule adds can stand
+in place of the second look's. Under the guard that one is refused (it divided "Item Quantity Part Number" on its
+word space) and 115.2 stands. (2) "It adds one cut on the palm-oil page." Two: the second falls between segments
+already apart and divides nothing. **The risk read for and not found:** the rule also fires on candidates that are
+not tables - the two columns of prose above the palm-oil table, a running head ("§ 381 | TITLE 21 | Page 386"), a
+book's index - and a cut in prose is how two columns of text become a false table (the court form, in this file's
+own comments). Under the rule as committed no table appears or disappears on any of the 25 pages - two tuned-on
+bodies change, both within a table that was already there - and the running head, the index and the prose come out
+byte for byte as before.
+
+Not counted: the calls on which the *guarded* rule differs. The screen ran once, on the unguarded rule; the guarded
+one can differ only on a subset of those calls, and every page among them was converted both ways again.
+
+Riding along in the screen, a count for a change not made: cuts that stand in a word space (under 0.4 of the size).
+Insurance none; Key Facts Sheets four pages, all the band "Cover for | valuables", which is never cut; benchmark 20
+on 10 pages (3 held out), in formulas and numbered references. To be looked at on its own.
+
+---
+
 ## 2026-09-20, 17:59-18:14 - An invisible watermark was being published: text inside a form drawn at nothing (D011)
 
 Found while reading the next kind of the tables work list ("a data row where the heading should be"), on

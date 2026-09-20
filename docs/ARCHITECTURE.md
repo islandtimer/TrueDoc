@@ -33,7 +33,11 @@ PDF page
   |                               A second look (_refine_segments) adds a cut judged only by the rows with words on both
   |                               sides of it, refused when every segment it would divide crosses on a word space; it
   |                               sharpens a table the first look found and never makes one of its own
-  |                               (find_aligned_tables). A band laid across a table (_band_segments, _is_band) neither
+  |                               (find_aligned_tables). A cut is placed just before the words that close its range,
+  |                               else mid-range, else at its left end; when a word stands on all three, in the widest
+  |                               stretch no word of any row stands in - unless that divides a line on its own word
+  |                               space (the gap must be over three times the line's ordinary space, or no cut is made).
+  |                               A band laid across a table (_band_segments, _is_band) neither
   |                               votes on a cut nor is divided, and spans the grid. _merge_wrapped_rows folds a wrapped
   |                               cell into its row, and _label_carries_on carries a label on to its second line when
   |                               the short value beside it is left empty (a capitalised second line only when the

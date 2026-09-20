@@ -671,7 +671,38 @@ def _refine_segments(rows: list[_Row], size: float, second_look: bool = True) ->
         for c in (x - 1.0, (start + x) / 2.0, start + 1.0):
             if not straddled(c):
                 return c
-        return None
+        # All three can land on a heading's words while a channel no word crosses runs between them. A table whose
+        # first column is empty on a dozen rows votes a range from the shortest label to the first value, 73 points
+        # wide; "Triacylglycerols (%)" stood over its left end and its middle, "Palm oil*" over its right end, and the
+        # 9.2-point channel between the two headings (the word space is 2.0) went unfound, so they came out as one
+        # heading over two columns - while the next two boundaries were cut only because their ranges' midpoints
+        # happened to fall between headings (benchmark tables/c8cdd4c4..._pg3). The widest stretch of the range that
+        # no word stands in, if it is wider than the gap that counts as a vote.
+        inside = sorted((max(w.bbox.x0, start), min(w.bbox.x1, x)) for w in all_words if w.bbox.x1 > start and w.bbox.x0 < x)
+        clear: tuple[float, float] | None = None
+        edge = start
+        for w0, w1 in inside + [(x, x)]:
+            if w0 - edge >= 0.4 * size and (clear is None or w0 - edge > clear[1] - clear[0]):
+                clear = (edge, w0)
+            edge = max(edge, w1)
+        if clear is None:
+            return None
+        c = (clear[0] + clear[1]) / 2.0
+        # ... and it divides no line on that line's own word space. In 5.6-point type a plain word space is half the
+        # size, wide enough to vote and to pass for a channel: the first version of this cut a table's sub-title,
+        # "Contributions from partners (thousands | of US$)", on a gap of 2.8 where its other words stand 2.8 apart,
+        # and a diagram's label likewise (5.2 against 5.2); the headings it was written for stand 9.2 apart against a
+        # word space of 2.0. The measure `_splits_at_shared_edges` uses: over three times the line's ordinary space.
+        for s in all_segments:
+            ws = sorted(s.words, key=lambda w: w.bbox.x0)
+            gaps = [b.bbox.x0 - a.bbox.x1 for a, b in zip(ws, ws[1:])]
+            for i, (a, b) in enumerate(zip(ws, ws[1:])):
+                if a.bbox.x1 <= c <= b.bbox.x0:
+                    others = sorted(g for j, g in enumerate(gaps) if j != i)
+                    space = others[len(others) // 2] if others else 0.3 * size
+                    if gaps[i] <= 3.0 * max(space, 0.0):
+                        return None
+        return c
 
     for start, x in ranges(need):
         c = place(start, x)
