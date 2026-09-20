@@ -111,10 +111,14 @@ def jobs(which):
     else:
         b = os.path.join(REPO, "bench", "data", "olmocr-bench", "bench_data", "pdfs")
         scans = {l.split("\t")[0].strip() for l in open(os.path.join(REPO, "bench", "gpu", "pages.txt"), encoding="utf-8") if l.strip()}
+        # The benchmark's held-out pages are counted and never listed, as the held-out sheets are: a census that prints
+        # what a page says would otherwise put a held-out page's words in front of whoever writes the next rule.
+        held = {l.strip()[:-4] for l in open(os.path.join(REPO, "bench", "holdout.txt"), encoding="utf-8")
+                if l.strip() and not l.startswith("#")}
         for p in sorted(glob.glob(os.path.join(b, "*", "*.pdf"))):
             label = os.path.basename(os.path.dirname(p)) + "/" + os.path.basename(p)[:-4]
             if label not in scans:
-                yield (label, p, 1, False)
+                yield (label, p, 1, label in held)
 
 
 if __name__ == "__main__":
