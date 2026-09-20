@@ -102,6 +102,11 @@ PDF page
   |                               their headings (rebuild_side_by_side_lists)
   |     tables/cell_lists.py      a list inside a table cell - entries opened by a tick, cross or bullet at a hanging
   |                               indent, sub-lists, a note - is kept as a list and written as <ul><li> (list_cells; D028)
+  |     tables/cell_tables.py     a table inside a table cell - three lines or more, every one broken at a gap no word
+  |                               space makes, the pieces after it starting at one place - is built from the cell's own
+  |                               lines, kept only if it says what the cell said, and written as a <table> inside the
+  |                               <td>; its first row is a heading only if it names and the rows beneath count
+  |                               (table_cells; D038)
   |  6c. vision/ (optional)     pages with no usable text are read from their image by a served
   |                              model (olmOCR 2 behind an OpenAI-style endpoint) or Anthropic's API
   |                              (`anthropic[:model]`, key from ANTHROPIC_API_KEY); then icon-only table

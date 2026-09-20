@@ -802,6 +802,15 @@ checked, and said so to the owner: how table-to-grid parsers outside our control
 table - the strongest case for C, if a downstream consumer turns out to be one. The owner's downstream trial is still
 to be discussed; should it be a table extractor and not a model reading the file, this is the decision to revisit.
 
+**Correction, the same day (11:10), to "measured before deciding".** The five-of-five result holds only where the
+nested table sits in the outer table's LAST column, as CGU's does. The benchmark's `parse_html_tables` gathers an
+outer table's rows with `find_all("tr")` and a row's cells with `find_all(["th", "td"])`, both of which descend
+into a nested table: the inner rows become outer rows and the columns to the right of the nested cell shift. On the
+one benchmark page where the detector fires (`tables/637951191e..._pg2`, a field-trial table) that costs a check:
+"`97 a` has the top heading `Jul-11-2018`", 2 of 3 to 1 of 3. One check of 7,019; the scorer's bookkeeping, as
+D024's cost is. It is also the first observed case of the risk named above - a table-walking parser misreading a
+table that holds another - and the owner was told so.
+
 **What it needs.** A cell that can carry a table (as `TableCell.listing` carries a list); the renderer writing it; our
 own tools reading rows of nested tables (`bench/tools/kfs_grade.py` and `kfs_two_readers.py` find rows with a
 non-greedy pattern that a nested `</tr>` would cut); and a detector, to be **sized on all three populations before it

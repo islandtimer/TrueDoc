@@ -4,6 +4,56 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-20, 09:47-11:10 - D038 built: a table inside a cell is written as a table, inside the cell
+
+The owner decided it at 09:47 ("Go with B"; D038 in `docs/DECISIONS.md`, the four options shown to him rendered).
+
+**Groundwork** (3e2c0b8): `TableCell.inner`, as `listing` carries a list; `render_table` goes to HTML for it and
+writes the inner table inside the `<td>`; and our own tools, which found rows with non-greedy patterns that a nested
+`</tr>` cuts, walk the tags with nesting counted (`kfs_grade.html_parts`, used by `blocks` and by
+`kfs_two_readers.gather_spans`). Checked neutral on all 578 sheet files we hold, ours and the model's.
+
+**Sized first** (`bench/probes/nested_table_census.py`). The signal: a body cell of three lines or more, *every* line
+broken at a gap no word space makes, the pieces after the gap starting at one place. A first version counted every
+ticked list (a list breaks each line after its mark, at the same place) - only pieces after a gap *within the row*
+count, and a row opening with a mark leaves the cell to D028. Result: no insurance cell; on the Key Facts Sheets
+CGU's four cells and nothing else; on the benchmark's 1,122 digital pages one page, a field-trial table that rules
+one cell round each treatment's product lines (name, rate, unit, timing) - the same thing in another document.
+
+**The stage** (`tables/cell_tables.py`, after `list_cells`): the inner table is built from the cell's own lines by
+the builder every text-built table goes through (`aligned.table_from_lines`), and kept only if it says what the cell
+said, word for word in order; none with spans. Its first row is a heading only on evidence, and type gives none -
+CGU sets "Policy | Item Limit | Overall Limit" in the face, size and colour of its rows (checked in the PDF) - so:
+no cell of the first row holds a digit, and in some column every row beneath does. "Accidental Damage Home |
+Australia & New Zealand" is therefore a row, as it is on the page.
+
+**Screened exactly** (`bench/probes/inner_table_screen.py`, hooking `read_inner_table` on every page of all three
+sets): CGU's two sheets (four cells), the one benchmark page (five cells), nothing else in 1,527 pages.
+
+**Measured against 3e2c0b8.** Key Facts Sheets, all 190 fresh: exactly CGU's two change; grade unchanged (header
+whole 157 of 158, held out 32 of 32); two-reader comparison unchanged, two rows, both the model's. The rows now read
+`<td>High value items and collections</td><td>Yes</td><td><table><tr><th>Policy</th><th>Item Limit</th><th>Overall
+Limit</th></tr><tr><td>Accidental Damage Home</td><td>$2,500/item</td>...` and, for "Items away", three plain rows.
+Six tests (`tests/test_table_inside_a_cell.py`), one in `test_render.py`, one in `test_kfs_two_readers.py`. Suite 786.
+
+**The benchmark page loses a check, and that corrects what I told the owner before he decided.** `637951191e..._pg2`
+goes from 2 of 3 to 1 of 3: "`97 a` has the top heading `Jul-11-2018`" now fails. Cause, read in the scorer:
+`parse_html_tables` collects an outer table's rows with `table.find_all("tr")` and a row's cells with
+`row.find_all(["th", "td"])`, both of which descend into a nested table - so the inner rows become rows of the outer
+table, the outer row counts the inner cells as its own, and every column to the RIGHT of the nested table shifts. My
+test this morning had passed five of five because CGU's nested table sits in the LAST column, where nothing shifts;
+I gave him that as "the benchmark's checker reads this form", which it does only there. Cost today: one check of
+7,019 (about 0.01). It is D024's kind of cost - the scorer's bookkeeping, not the page's meaning - but it also says
+something true about the form he chose: a parser that walks tables the naive way, and the benchmark's is one, misreads
+a table that holds another. That was the flip-fact I named for the downstream trial; it is now observed, not
+supposed. Recorded in D038.
+
+Left as it is: on that page six of the eleven treatment cells are not taken (each holds a row with no wide gap, or
+lacks the shared start), so five read as inner tables and six as lines. Truthful, uneven; one benchmark page does not
+earn a rule for siblings.
+
+---
+
 ## 2026-09-20, 07:19 - Correction: the escaped dollar's cost was known, measured and accepted on 12 September
 
 Yesterday evening's entry put "D024 costs eight benchmark checks" to the owner as a finding and a decision waiting

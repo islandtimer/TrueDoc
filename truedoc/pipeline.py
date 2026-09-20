@@ -22,6 +22,7 @@ from truedoc.segment.order import assign_reading_order
 from truedoc.tables.aligned import find_aligned_tables
 from truedoc.tables.boxed_cells import join_boxed_rows
 from truedoc.tables.cell_lists import list_cells
+from truedoc.tables.cell_tables import table_cells
 from truedoc.tables.cells import clean_cell_text, runs_across_columns
 from truedoc.tables.fill_grid import redraw_tables
 from truedoc.tables.list_columns import rebuild_side_by_side_lists
@@ -291,6 +292,9 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
         # not-covered lists).
         rebuild_side_by_side_lists(page, blocks)
         list_cells(page, blocks)
+        # And a table set inside a cell is written as a table, inside the cell (D038): after the lists, which own every
+        # cell whose lines open with a mark.
+        table_cells(page, blocks)
 
     if opts.math:
         blocks = _apply_math(page, blocks, regions)
