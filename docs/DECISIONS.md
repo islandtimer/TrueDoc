@@ -815,3 +815,57 @@ table that holds another - and the owner was told so.
 own tools reading rows of nested tables (`bench/tools/kfs_grade.py` and `kfs_two_readers.py` find rows with a
 non-greedy pattern that a nested `</tr>` would cut); and a detector, to be **sized on all three populations before it
 is built** - so far the structure is known on three tuned-on sheets.
+
+
+## D039 - How well TrueDoc converts the owner's documents is measured by whether a reader gets the right answer about their cover (2026-09-21, the owner's decision)
+
+**The question.** On 20 September the owner asked whether we have a way of determining how well TrueDoc converts his
+insurance corpus. Checked against the files, the answer was: not for the corpus. The insurance set is 25 pages from
+16 documents, 229 checks, 229 passing - tuned on and saturated, a tripwire. The Key Facts Sheets oracle (D027) is a
+real measure with a real hold-out, of one two-page prescribed form. The sealed slice (D030) is 19 documents that have
+never been scored. The library is 1,176 PDFs, most of them policy booklets, and those have no measure at all. And the
+same evening two table changes had passed every check they met while splitting a phrase and putting a sentence above
+the wrong equation: checks sample a page, and neither sampled what broke.
+
+**What the number is to mean** (the owner, in his words): "the meaning to the reader is retained. Which leads to the
+reader getting the right answer to a question about their cover." So neither "the words are all there" nor "the
+structure is right" - those are diagnostics. The Key Facts oracle already is this measure, for one kind of document:
+"is this event covered?", with the law fixing the answer.
+
+**The test** (decided 21 September 2026, 08:37: "go ahead as described"). A pilot of 30 pages first.
+1. *Pages are drawn, not chosen*: at random from the eligible library, spread over insurers and kinds of page (tables,
+   lists, prose, ticks and crosses); never the sealed 19, the insurance set's pages or a Key Facts Sheet. Half are held
+   out by a hash of the name: of those only the score is ever seen by whoever writes TrueDoc's rules.
+2. *Questions are written from the picture of the page*, by a model that never sees TrueDoc's output, about five a
+   page, with the answer beside each. Kinds are fixed in advance so they cannot drift to easy prose: is X covered and
+   on what condition; a limit or an excess, table look-ups among them (which number belongs to which row and
+   column); is Y in a list of exclusions; a tick or a cross; a time limit; a definition. Answers are typed - yes / no /
+   optional, an amount, a list, a short phrase - so that marking is mostly mechanical.
+3. *The owner rules on the doubtful ones*, with the page in front of him. His answer stands.
+4. *A second model answers every question twice*: from the picture, and from TrueDoc's text of that page alone.
+5. *Marking.* Right from TrueDoc's text: meaning kept. Right from the picture and wrong from the text: TrueDoc lost
+   it - recorded as *missing* ("the text does not say") or *wrong* (a confident wrong answer, the worse of the two
+   for a reader). Wrong even from the picture: a bad question, thrown out, counted against nobody.
+6. *The same questions against a plain text dump of the PDF*, so that the result is a gap and not a bare number.
+
+Reported: the share of questions on which meaning survived, with an interval; by kind of question and kind of page;
+missing against wrong. What the pilot is for: whether the answering model is right from the picture at least nine
+times in ten (if not, the instrument is too noisy and is rethought); how many rulings fall to the owner; the cost a
+page. If it holds, a few hundred pages for a number worth quoting; at a milestone the same method scores the sealed 19.
+
+**What it is not.** It is a test we run, not a feature of TrueDoc: it says how TrueDoc does on a kind of document,
+and nothing about the document a user converted this morning. A confidence report on a single conversion is a
+separate thing, of which only a beginning exists (D037's status, the hidden-text list, marks not placed); it is to
+be built *from* this test, because a confidence score means something only once it has been checked against what
+really went wrong. The second model is a second witness and not a judge: it is no more accurate than TrueDoc as a
+converter (on the benchmark's tables each passes what the other fails), but it reads the picture where TrueDoc reads
+the file's text, so the two fail for different reasons, and answering one question is a far easier job than
+converting a page. Where both share a blind spot, only a person cures it: more of the owner's rulings, fewer pages.
+What it cannot see: a fault no question touches.
+
+**Corrected before anything was built.** I described the two model roles to the owner as "Pro writes the questions,
+Flash answers", and he agreed to that wording. In this project Flash and Pro are Infinity-Parser2-Flash and -Pro
+(D033, D034): models that transcribe a page, run on a rented card. They do not write a policyholder's questions or
+answer them. The roles need a general model that can look at a page; the one route this project has to such a model
+is Claude over the Anthropic API (D025, `truedoc/vision/anthropic_api.py`), on a key the owner sets himself. **Open,
+the owner's: which model plays each role, and on whose bill.** Nothing that depends on it is built until he says.
