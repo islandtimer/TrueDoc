@@ -120,8 +120,9 @@ def _broken_word(a: str, b: str) -> bool:
 
 def render_table(table: Table) -> str:
     grid = table.grid()
-    # A list inside a cell (D028) needs HTML as a span does: a markdown table's cell holds one line.
-    if table.has_merged or any(c.listing is not None for c in table.cells):
+    # A list inside a cell (D028) needs HTML as a span does: a markdown table's cell holds one line. So does a table
+    # inside a cell (D038).
+    if table.has_merged or any(c.listing is not None or c.inner is not None for c in table.cells):
         return _render_html_table(table, grid)
     rows: list[list[str]] = []
     for r in range(table.n_rows):
@@ -210,7 +211,11 @@ def _render_html_table(table: Table, grid) -> str:
             if cell.colspan > 1:
                 attrs += f' colspan="{cell.colspan}"'
             tag = "th" if cell.is_header else "td"
-            body = _listing_html(cell.listing) if cell.listing is not None else _html_escape(cell.text)
+            if cell.inner is not None:
+                # A table the cell holds is written as a table, inside the cell (D038), on the cell's own line.
+                body = _render_html_table(cell.inner, cell.inner.grid()).replace("\n", "")
+            else:
+                body = _listing_html(cell.listing) if cell.listing is not None else _html_escape(cell.text)
             out.append(f"<{tag}{attrs}>{body}</{tag}>")
         out.append("</tr>")
     out.append("</table>")

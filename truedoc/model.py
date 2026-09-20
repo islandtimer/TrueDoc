@@ -259,6 +259,7 @@ class TableCell:
     bbox: Optional[BBox] = None
     is_header: bool = False
     listing: Optional[CellList] = None   # the cell's text read as the list it is set as (D028); `text` stays whole
+    inner: Optional[Table] = None        # the cell's text read as the table it is set as (D038); `text` stays whole
 
 
 @dataclass

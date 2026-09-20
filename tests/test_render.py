@@ -85,3 +85,19 @@ def test_join_lines_one_letter_and_a_hyphen_is_the_head_of_a_compound():
     assert join_lines([_line("policy algorithm, Deep Q-"), _line("network (DQN)")]) == "policy algorithm, Deep Q-network (DQN)"
     assert join_lines([_line("benefits of L-"), _line("carnitine in athletes")]) == "benefits of L-carnitine in athletes"
     assert join_lines([_line("comprising a s-"), _line("ingle object")]) == "comprising a single object"     # unless the halves are a word
+
+
+def test_a_table_inside_a_cell_is_written_as_a_table_inside_the_cell():
+    # D038 (the owner, 20 September 2026): CGU's "High value items and collections | Yes | [Policy / Item Limit / ...]".
+    inner = Table(n_rows=2, n_cols=3, bbox=BBox(0, 0, 10, 10), cells=[
+        TableCell("Policy", 0, 0, is_header=True), TableCell("Item Limit", 0, 1, is_header=True), TableCell("Overall Limit", 0, 2, is_header=True),
+        TableCell("Fundamentals Home", 1, 0), TableCell("$1,000/item", 1, 1), TableCell("$2,000", 1, 2)])
+    outer = Table(n_rows=2, n_cols=3, bbox=BBox(0, 0, 10, 10), cells=[
+        TableCell("Event/Cover", 0, 0, is_header=True), TableCell("Yes/No Optional", 0, 1, is_header=True), TableCell("Some examples", 0, 2, is_header=True),
+        TableCell("High value items and collections", 1, 0), TableCell("Yes", 1, 1),
+        TableCell("Policy Item Limit Overall Limit Fundamentals Home $1,000/item $2,000", 1, 2, inner=inner)])
+    md = render_table(outer)
+    assert md.startswith("<table>") and md.count("<table>") == 2
+    assert ("<td><table><tr><th>Policy</th><th>Item Limit</th><th>Overall Limit</th></tr>"
+            "<tr><td>Fundamentals Home</td><td>$1,000/item</td><td>$2,000</td></tr></table></td>") in md
+    assert "<th>Event/Cover</th>" in md and "<td>Yes</td>" in md

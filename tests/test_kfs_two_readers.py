@@ -127,3 +127,25 @@ def test_rows_under_a_row_spanning_label_are_one_entry():
     assert found == [] and counts["rows_both"] == 2 and counts["third_identical"] == 2
     entries, _repeated = two.rows_of(spanning)
     assert entries["flood"] == ("Yes", "Up to the sum insured.")            # the row after the span is its own
+
+
+def test_a_table_inside_a_cell_is_that_cell_s_words_whichever_way_the_other_reader_wrote_it():
+    # D038 (20 September 2026): TrueDoc writes the nested table inside the cell; the other reader spliced its rows
+    # into the outer table under a row-spanning label. Same entry, same words.
+    import kfs_grade
+
+    nested = ("<table><tr><th>Event/Cover</th><th>Yes/No</th><th>Some examples</th></tr>"
+              "<tr><td>High value items and collections</td><td>Yes</td><td><table>"
+              "<tr><th>Policy</th><th>Item Limit</th><th>Overall Limit</th></tr>"
+              "<tr><td>Fundamentals Home</td><td>$1,000/item</td><td>$2,000</td></tr></table></td></tr>"
+              "<tr><td>Flood</td><td>Yes</td><td>Up to the sum insured.</td></tr></table>")
+    spliced = ("<table><tr><th>Event/Cover</th><th>Yes/No</th><th colspan=\"3\">Some examples</th></tr>"
+               "<tr><td rowspan=\"2\">High value items and collections</td><td rowspan=\"2\">Yes</td>"
+               "<td>Policy</td><td>Item Limit</td><td>Overall Limit</td></tr>"
+               "<tr><td>Fundamentals Home</td><td>$1,000/item</td><td>$2,000</td></tr>"
+               "<tr><td>Flood</td><td>Yes</td><td colspan=\"3\">Up to the sum insured.</td></tr></table>")
+    rows = kfs_grade.blocks(nested)
+    assert len(rows) == 1 and len(rows[0]) == 3                     # one table of three rows: the row after the nested one is not lost
+    assert kfs_grade.cells_of(rows[0][1])[2] == "Policy Item Limit Overall Limit Fundamentals Home $1,000/item $2,000"
+    found, counts = two.compare(nested, spliced)
+    assert found == [] and counts["rows_both"] == 2

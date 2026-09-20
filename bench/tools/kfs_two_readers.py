@@ -125,20 +125,24 @@ def gather_spans(md):
     / Item Limit / Overall Limit over three rows) and a reader that writes it all into the entry's
     third cell hold the same words, and comparing the second's whole cell with the first's first
     row reported four "critical words" differences on 19 September that neither reader had."""
-    def table(m):
-        rows = re.findall(r"<tr.*?</tr>", m.group(0), re.S)
+    def table(html):
+        rows = kfs_grade.html_parts(html, "tr", inside=True)
         out, k = [], 0
         while k < len(rows):
-            cells = re.findall(r"<t[dh][^>]*>.*?</t[dh]>", rows[k], re.S)
+            cells = kfs_grade.html_parts(rows[k], ("td", "th"), inside=True)
             span = _SPANNING.match(cells[0]) if cells else None
             n = int(span.group(1)) if span else 1
             for later in rows[k + 1:k + n]:
-                cells += re.findall(r"<t[dh][^>]*>.*?</t[dh]>", later, re.S)
+                cells += kfs_grade.html_parts(later, ("td", "th"), inside=True)
             out.append("<tr>" + "".join(cells) + "</tr>")
             k += max(1, n)
         return "<table>" + "".join(out) + "</table>"
 
-    return re.sub(r"<table.*?</table>", table, md, flags=re.S)
+    # Outermost tables only, nesting respected (`kfs_grade.html_parts`): a table inside a cell (D038) stays inside
+    # its cell, and its words are that cell's words - the other way of writing the same entry.
+    for whole in kfs_grade.html_parts(md, "table"):
+        md = md.replace(whole, table(whole), 1)
+    return md
 
 
 def rows_of(md):

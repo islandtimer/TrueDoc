@@ -135,15 +135,44 @@ def blocks(md: str) -> list[list[str]]:
             i = j
             continue
         i += 1
-    for m in re.finditer(r"<table.*?</table>", md, re.S):
+    for table in html_parts(md, "table") or re.findall(r"<table.*?</table>", md, re.S):
         rows = []
-        for r in re.findall(r"<tr.*?</tr>", m.group(0), re.S):
-            cells = [re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", c)).strip()
-                     for c in re.findall(r"<t[dh][^>]*>.*?</t[dh]>", r, re.S)]
+        # A reader's HTML is not always closed tag for tag (a model's reply cut short, a `<td>` never shut): nesting
+        # cannot be counted there, and the plain pattern - which such a table was always read with - reads it still.
+        balanced = all(len(re.findall(r"<%s\b" % n, table, re.I)) == len(re.findall(r"</%s>" % n, table, re.I)) for n in ("tr", "td", "th"))
+        for r in (html_parts(table, "tr", inside=True) if balanced else re.findall(r"<tr.*?</tr>", table, re.S)):
+            parts = html_parts(r, ("td", "th"), inside=True) if balanced else re.findall(r"<t[dh][^>]*>.*?</t[dh]>", r, re.S)
+            cells = [re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", c)).strip() for c in parts]
             rows.append("| " + " | ".join(cells) + " |")
         if rows:
             found.append(rows)
     return found
+
+
+_TAG = re.compile(r"<(/?)(table|tr|td|th)\b[^>]*>", re.I)
+
+
+def html_parts(html: str, names, inside: bool = False) -> list[str]:
+    """The outermost `<name>...</name>` stretches of `html`, tags included, nesting respected.
+
+    A table inside a cell (D038) puts a `</tr>` and a `</table>` inside the outer row, where a non-greedy pattern
+    stops: the outer table lost every row after the nested one. With `inside`, `html` is itself one element (a table,
+    a row) and its own tags are stepped over, so its rows or cells are found and not the element again. A nested
+    table's words stay in the cell that holds it, in order, which is what that cell read as before."""
+    names = (names,) if isinstance(names, str) else tuple(names)
+    out, depth, start, base = [], 0, None, 1 if inside else 0
+    for m in _TAG.finditer(html):
+        closing, name = bool(m.group(1)), m.group(2).lower()
+        if not closing:
+            if depth == base and name in names and start is None:
+                start = m.start()
+            depth += 1
+        else:
+            depth -= 1
+            if depth == base and name in names and start is not None:
+                out.append(html[start:m.end()])
+                start = None
+    return out
 
 
 def cells_of(line: str) -> list[str]:
