@@ -221,11 +221,22 @@ def _clip_box(raw, obj) -> tuple | None:
 
 
 def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, depth: int = 0,
-          handles: dict | None = None, clips: dict | None = None) -> None:
+          handles: dict | None = None, clips: dict | None = None,
+          veil: float = 1.0, veils: dict | None = None) -> None:
     if len(out) >= _MAX_OBJECTS:
         return
     kind_id = raw.FPDFPageObj_GetType(obj)
     if kind_id == raw.FPDF_PAGEOBJ_FORM and depth < 8:
+        # The opacity a form is drawn with comes down with its children too. A journal's "ARTICLE IN PRESS", 72-point
+        # type across the page, sits in a form drawn under `/CA 0 /ca 0`; inside it the text sets its own opacity
+        # back to 1, so the character says "visible" and the page shows nothing (benchmark tables/c8cdd4c4..._pg3).
+        # PDFium reports the form's alpha as it reports a path's. The larger of the two alphas: text may be filled,
+        # stroked or both, and only a form that shows neither is sure to show none of it.
+        # The smallest on the way down, not the product: a form inside a form inherits the outer one's opacity and
+        # reports it again, so multiplying would count it twice. At nothing - the only value read - the two agree.
+        _, fill_alpha = _colour(raw.FPDFPageObj_GetFillColor, obj)
+        _, stroke_alpha = _colour(raw.FPDFPageObj_GetStrokeColor, obj)
+        veil = min(veil, max(fill_alpha, stroke_alpha))
         # A form's children are measured in the form's own space, not the page's, so its matrix
         # has to come down with them. Missed at first, and it cost 38 checks of the tables
         # category: one page's rules all landed 178.5pt from where they belonged, because that is
@@ -242,7 +253,7 @@ def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, dep
         for i in range(count):
             child = raw.FPDFFormObj_GetObject(obj, i)
             if child:
-                _walk(raw, child, order, out, flip, combined, depth + 1, handles, clips)
+                _walk(raw, child, order, out, flip, combined, depth + 1, handles, clips, veil, veils)
         return
 
     left, bottom, right, top = (ctypes.c_float() for _ in range(4))
@@ -290,6 +301,8 @@ def _walk(raw, obj, order: list, out: list, flip, matrix: tuple = _IDENTITY, dep
         # every `doc[i]`, so a caller that wants to join characters to objects must walk on the
         # same handle it reads the text from. The order numbers are what carry across loads.
         handles[ctypes.cast(obj, ctypes.c_void_p).value] = order[0]
+    if veils is not None and kind == "text" and veil < 1.0:
+        veils[ctypes.cast(obj, ctypes.c_void_p).value] = veil
     if clips is not None and kind == "text" and depth == 0:
         # Where the page clips this text (a Word-made PDF boxes every paragraph): the text
         # page ignores clipping, and the reader drops what was never shown. Top level only -
@@ -317,13 +330,15 @@ def page_box(page) -> tuple[float, float, float, float]:
     return tuple(float(v) for v in box)
 
 
-def walk_page(raw, page, handles: dict | None = None, clips: dict | None = None) -> list[PageObject]:
+def walk_page(raw, page, handles: dict | None = None, clips: dict | None = None,
+              veils: dict | None = None) -> list[PageObject]:
     """Everything drawn on an already-loaded pypdfium2 page, in painting order.
 
     `handles`, when given, is filled with object pointer -> order for this load, so the caller
     can join the text page's characters (`FPDFText_GetTextObject`) to what was drawn; `clips`,
     when given, with object pointer -> the clip box of each top-level text object that has one,
-    in MuPDF's page space.
+    in MuPDF's page space; `veils`, when given, with object pointer -> the opacity of the forms
+    a text object is drawn inside, where that is under 1.
     """
     x_off, _y0, _x1, y_top = page_box(page)
 
@@ -339,7 +354,7 @@ def walk_page(raw, page, handles: dict | None = None, clips: dict | None = None)
     for i in range(count):
         obj = raw.FPDFPage_GetObject(handle, i)
         if obj:
-            _walk(raw, obj, order, out, flip, handles=handles, clips=clips)
+            _walk(raw, obj, order, out, flip, handles=handles, clips=clips, veils=veils)
     return out
 
 

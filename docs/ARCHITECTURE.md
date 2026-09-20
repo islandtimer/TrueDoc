@@ -14,6 +14,8 @@ PDF page
   |                                 *ink*, not its taller font box; the render may overturn that only on the evidence
   |                                 of characters no visible character is printed over; paint order is matched by
   |                                 position and character, so an earlier wording under a row's shading stays out
+  |                                 ; text inside a form drawn at zero opacity is hidden whatever it says of itself
+  |                                 (pdfium_objects carries each form's alpha down to its text objects)
   |                               - an underscore TeX drew as a rule (0.3 em long, on the baseline, hard against the
   |                                 word after) is a character of the word it sits in: "Japanese_spaniel"
   |                                 (_read_drawn_underscores), and leaves the page's drawings

@@ -372,12 +372,13 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
             # `doc[i]`, and object pointers do not survive a reload. The order numbers do.
             handles: dict[int, int] = {}
             clips: dict[int, tuple] = {}       # text object -> its clip box, where it has one
+            veils: dict[int, float] = {}       # text object -> the opacity of the forms it is drawn inside, under 1
             widths_tables: dict | None = None  # the page's /Widths, read only if a code needs them
             font_buf, font_flags = ctypes.create_string_buffer(256), ctypes.c_int()
             try:
-                objects = pdfium_objects.walk_page(raw_api, page, handles, clips)
+                objects = pdfium_objects.walk_page(raw_api, page, handles, clips, veils)
             except Exception:
-                handles, objects = {}, []
+                handles, objects, veils = {}, [], {}
             # The thin horizontal rules - fraction bars among them - from the same walk, for
             # the line join. (Not through `page_objects`, whose document cache would hold the
             # file open; a test's temporary page could then not be deleted.)
@@ -600,6 +601,9 @@ def _geometry(path: str, page_number: int, wanted: set[int]) -> tuple[dict[int, 
                 if obj:
                     pointer = ctypes.cast(obj, ctypes.c_void_p).value
                     order = handles.get(pointer, -1)
+                    # A character is no more opaque than the forms around it are drawn: text that sets itself to 1
+                    # inside a form drawn at 0 is on no reader's page (D011).
+                    alpha = min(alpha, veils.get(pointer, 1.0))
                     try:
                         invisible = raw_api.FPDFTextObj_GetTextRenderMode(obj) == invisible_mode
                     except Exception:

@@ -4,6 +4,59 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-20, 17:59-18:14 - An invisible watermark was being published: text inside a form drawn at nothing (D011)
+
+Found while reading the next kind of the tables work list ("a data row where the heading should be"), on
+`tables/c8cdd4c4..._pg3`. Our page opened with "# S", "# S", "# E", wrote "PPalm kernel oil*" above the table, headed
+the table "CCLa | R6.8", and held cells like "LND E1.0", "C1.0 3.7" and "T0.8 I0.1 0.7". The page image shows none of
+those letters. They spell **ARTICLE IN PRESS**: 72-point type at 45 degrees across the page, in a form the page draws
+under an ExtGState of `/CA 0 /ca 0` - at nothing. Inside the form the text sets its own opacity back to 1, so the
+character's own alpha, which is all the hidden-text reader looked at, said "visible". (MuPDF's text trace says
+opacity 1.0 too.) PDFium does report the *form's* alpha - `FPDFPageObj_GetFillColor` on the form object gives 0 -
+so the fact is there to be read.
+
+**Sized** (`bench/probes/veiled_form_census.py`, every page's objects on all three sets, each form's alpha carried
+down): text under a form drawn at nothing - **one page, that one**; none on the Key Facts Sheets, none on the
+insurance set. Text under a *faint* form (a library's pale "(c) Biodiversity Heritage Library" at 0.2): one page, and
+a reader sees it, so it stays. Fills and images under faint forms: ten benchmark pages and two Key Facts pages;
+nothing reads those values.
+
+**Built** (`extract/pdfium_objects._walk`, `extract/pdftext_rawdict`): the opacity a form is drawn with comes down
+to the text objects inside it (the smallest on the way down - a nested form inherits and reports the outer one's
+again, so a product would count it twice; the larger of fill and stroke alpha, so only a form that shows neither
+hides anything), and a character is no more opaque than that. Only zero is read anywhere (`opacity == 0.0`), so
+exactly the text the census found can change. It is hidden text under D011: out of the body, listed in the front
+matter. Three tests (`tests/test_text_in_a_transparent_form.py`: hidden at nothing - fails on the code before; read
+at 0.2; read in an ordinary form). Suite 799.
+
+**Measured against 4a58814** on the page: **checks 4/5 -> 4/5 - the benchmark is blind to it** - and the body: the
+three headings gone, the heading row back on top of its table, "R6.8" -> "6.8", and the seven cells that held
+watermark letters ("I", "LND E1.0", "NND", "C1.0 3.7", "T0.8 I0.1 0.7", "R2.6 1.8", "A10.1 POL") give the values
+they had swallowed back to their own columns ("1.0 | ND", "3.7 | 1.0", "0.7 | 0.8 | 0.1"). What is still wrong on that page is the check that put it on the list: the heading row's first cell reads
+"Triacylglycerols (%) Palm oil*" across two columns, though the gap between the two headings is 1.15 em against a
+word space of 0.25 em and the cut between every other pair of headings was made. Next to look at.
+
+**A slip found and mended: my census helper never marked the BENCHMARK's held-out pages.**
+`bench/probes/orphan_row_census.jobs` flags held-out Key Facts Sheets, so that a census counts them and never prints
+what they say; for the benchmark it passed `False` for every page. Since 19 September every census and screen of
+mine over the benchmark has therefore listed held-out pages with the rest (counted now, names not read: e.g. 28 of
+the 150 pages the cell-joiner screen named, 39 of 251 in the underscore census, 10 of 57 in the table-continues
+census). What that did and did not touch: the rules were designed from tuned-on pages (the work list excludes the
+held-out ones by construction, and I checked that the two guard corrections a screen prompted - "Cor", "s-ingle" -
+came from tuned-on pages); but screens' changed pages were A/B'd and read without telling the two kinds apart, so
+the held-out score is no longer evidence that is clean of my eyes for the rules of 19-20 September. The quoted
+number is the whole benchmark and is unaffected. Mended: `jobs` reads `bench/holdout.txt` and flags those pages;
+the probes already mask what a flagged page says.
+
+**Sized, not built: text set on a slant** (`bench/probes/diagonal_text_census.py`). The line builder calls a line
+rotated only past 60 degrees, so a 45-degree watermark is level text to it - which is how the letters above got into
+table cells. Visible ones exist: six tuned-on benchmark pages hold text turned 25-65 degrees ("PREPRINT" at 100
+points, "For Peer Review", a study guide's and a leaflet's diagonal title, 386 slanted axis labels of one chart), none
+on the Key Facts Sheets or the insurance set. PDFium's angle also reports sheared italics as 12-23 degrees, so a
+threshold has to sit above those. Next after the heading kind, as its own change with its own screen.
+
+---
+
 ## 2026-09-20, 17:42-17:58 - A Wingdings arrow is a character; an arrow known only by its glyph id is sized and left
 
 The rest of the work list's second kind (a character the page shows and the text layer does not hold): three checks
