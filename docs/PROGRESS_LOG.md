@@ -4,6 +4,67 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-21, 08:37-09:00 - D039's pilot, run: the test works, repeats, and cannot tell TrueDoc from a plain text dump
+
+The owner parked the tables list on the evening of the 20th and asked how well TrueDoc converts *his* documents. D039
+records what the number is to mean (a reader gets the right answer to a question about their cover) and the test. He
+chose to run the pilot on this session's helper agents through the Workflow tool rather than on a paid API.
+
+**A correction made before anything was built.** I had told him "Pro writes the questions, Flash answers", and he
+agreed to that wording; in this project those names are Infinity-Parser2's two page-transcribing models (D033, D034),
+which can do neither. Found by checking the premise, not by accident; he was told, and D039 carries it.
+
+**The draw** (`bench/tools/meaning_draw.py`, seed 39). Eligible: 951 documents = 1,176 less the sealed 19, the 190
+Key Facts Sheets and the insurance set's 16. A seeded shuffle, one page of each document at random, at most two
+documents of an insurer in each half, held out by a hash of the file name. Three pages without a text layer were
+dropped (in the product a model reads those, and none was running). Forty candidates a half were converted, their kind
+read off the conversion, and 24 a half laid out kind by kind: pictures, TrueDoc's text and a plain PyMuPDF text dump,
+each under a name that says nothing and shares nothing with the others.
+
+**The workflow** (`bench/tools/meaning_pilot_workflow.js`; 231 helpers, no errors, three and a half minutes). One
+helper per candidate sees only the page's picture, says whether it holds anything a policyholder would ask about
+(38 looked at, 8 not usable), and writes five typed questions with kinds fixed in
+advance (two table look-ups where there is a table, one on ticks or crosses, one on what is in a list). The first 15
+usable pages of each half are the pilot. Three helpers answer blind - from the picture, from one text, from the other,
+not told which text is whose. A marker sees question, true answer and given answer only. Where the picture answer is
+not marked correct the question is thrown out, and a fresh helper looks at the picture to say who was right. For the
+held-out half the workflow returns counts, and which question was marked how - never a word of a page or a question.
+
+**What came back.** 30 pages, 149 questions.
+- *The instrument:* the picture answers are right on **146 of 149 (98.0%)** - the bar was nine in ten. The three
+  thrown out were all marked "partial" - none wrong, none missing - and the fresh look sided with the question
+  writer on each. The marker never disagreed with the mechanical check of amounts and yes/no. **Two questions would have gone to
+  the owner, not the ten to fifteen I guessed** - and on both, all three answers agree with the truth, so no ruling
+  of his can change a number.
+- *TrueDoc:* **144 of 146, 98.6% (95% interval 95.1-99.6).** *The plain text dump:* **142 of 146, 97.3%
+  (93.2-98.9).** **Not one wrong answer from either, in 292 answers.** What was not correct was partial or missing.
+- *By half:* tuned-on 72/73 each. Held out: TrueDoc 72/73, plain 70/73 - the plain dump's three are all on pages
+  of ticks and crosses (two partial, one missing), where TrueDoc is 25 of 25; TrueDoc's one is a phrase on a prose page.
+- *The tuned-on misses, read:* neither separates TrueDoc from the plain text. One question's truth was longer than
+  any answer gave, the picture's included (thrown out). On the other the two texts gave the same answer, adding "you
+  pay the $500 excess", which the marker called partial; whether the page says so was not checked.
+- *It repeats.* A replay I expected to come wholly from the cache ran part of itself again: the same 149 questions,
+  the same totals over the two halves together, and two marks of 447 moved, in opposite directions, both of them marks
+  of a picture answer (the one I may see had added a true detail).
+
+**What it means.** The test is sound and it is nearly blind. On the owner's digital pages, read by a capable model
+one page at a time, the meaning survives a plain text dump almost as well as it survives TrueDoc: the words are all in
+both, and a strong reader puts a flattened table back together in its head. The two-question gap is inside the noise.
+The one place the pilot separates them is the one we would have predicted - ticks and crosses, which a text dump
+drops. So as built this measures that *both* are near the ceiling, not how good TrueDoc is. To make it see, the
+conditions have to be the ones where structure carries the meaning: questions that need several rows or columns at
+once (how many events are optional; which items have a limit above a figure); whole documents and not single pages,
+where running heads, broken order and tables that continue overleaf start to matter; a smaller reader, of the kind
+used at scale, which leans on clean structure far more; pages with no text layer, which this draw left out and where
+TrueDoc differs most; or a use that is not a model at all (a table turned into a grid).
+
+**Limits, said plainly.** One model family wrote the questions, answered them and marked them. No record exists of
+which library documents I have read pages of in past weeks, so some held-out documents may not be new to me. 146
+questions put the interval at about plus or minus two points. Nothing of the held-out half has passed my eyes but
+counts.
+
+---
+
 ## 2026-09-20, 19:52-21:13 - A ruled cell takes the columns its rectangle covers: a column's centre is the column's
 
 From the work list's permit-fee form, `tables/9e3b179d..._pg2`: fully ruled, and its vertical rules are *staggered*
