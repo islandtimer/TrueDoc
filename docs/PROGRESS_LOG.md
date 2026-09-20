@@ -4,6 +4,73 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-20, 18:20-19:51 - A lone line beside a table: built, measured, and NOT committed (it moved a sentence above the wrong equation)
+
+`tables/e82a04c6..._pg5`, from the work list: the table came out headed by its first data row ("DFS to DFS"), its
+real headings ("Parameters | Mean | SE | Units | Distribution | Source") left above it as paragraphs. **Cause, watched
+in `_find_runs`:** the journal sets its caption in the margin, "Table 1 Base case input per" / "year"; the first line
+lies in the page's top strip and is left out, the second ("year", x 51-66, 113 points left of the table) falls
+between the heading row and the group label under it ("Survival probabilities"); two lone rows running close a run,
+and it closed on a heading row alone.
+
+**Built:** `_beside_the_run` - a lone one-segment line two sizes clear of the width of the run's rows of several
+cells, and of the next three rows to come (so a short label under a centred heading stays), is stepped over: no row,
+no break. The page then opens "Parameters | | Mean | SE | Units | Distribution | Source", and `8/9 -> 9/9`.
+
+**Screened exactly** (`bench/probes/table_runs_screen.py`, the candidates `_find_runs` gathers under both code
+states, with a positive control on the known page): insurance set 0 pages, Key Facts Sheets 0 of 380 pages,
+benchmark 13 pages (3 held out) - sharing no page with the column-cut change, so each difference is this rule's.
+
+**The reading, and why it does not go in.** Scores: +1, everything else level, the 3 held-out pages level. Bodies:
+the target page better; arXiv `2503.08118_pg5` better - the "table" that vanished was Figure 1's vertex labels with
+the figure's caption chopped across four cells ("The Gröbner fan | and its | Gröbner cones | for An-"), and the
+caption is a sentence again; **arXiv `2503.07452_pg8` worse: "The k residual constraint, defined as:" stands between
+equations (13) and (14) on the page and came out above equation (12)**, which makes (12) - the x-velocity bound -
+the k constraint. Right words, wrong order, wrong meaning. (That page is poorly written in both states: its numbered
+equations are also read as a table. The rule did not cause that; it moved the sentence.) It fired there because
+ordinary body text at the left of the column also "stands clear" of a run of *centred* equations. One held-out body
+changed, unseen.
+
+**The definition, then the census** (`bench/probes/margin_line_census.py`). What a margin line is: the continuation
+of a text block that stands beside the table - a line directly above it, one leading away, flush with it, itself
+clear of the run. Of the 20 lines the loose rule stepped over on tuned-on pages (23 with the held-out pages'):
+twelve are on arXiv pages and **none** fits - equation numbers "(5)", "(5.12)", lead-ins "where", "and", "by:",
+body sentences; seven are lines of the *neighbouring text column* of a two-column page, which do fit, and whose page
+came out identical because the builder refused the candidate; **one is "year".**
+
+**Decision: not built.** The narrowed rule changes one page in 1,527 and nothing of the owner's, where even the loose
+rule never fired; it is worth one check. Against that, stepping over a neighbouring column's lines removes the brake
+that stops one column's rows being strung into a run past the other's, and what that does on two-column documents
+outside these three sets cannot be measured here. What would flip it: margin-set table captions turning out to be
+common in the owner's library or the benchmark. Kept so that it can be revived in minutes - the screen, the census,
+and the function (its four tests were not kept: they assert the rule, and would fail without it):
+
+```python
+def _beside_the_run(row, run, after, size):      # called at the top of _find_runs' loop, for a one-segment row
+    multi = [r for r in run if _is_multicell(r, size)]
+    if not multi:
+        return False
+    multi += [r for r in after if _is_multicell(r, size)]          # after = rows[index + 1:index + 4]
+    x0 = min(s.bbox.x0 for r in multi for s in r.segments)
+    x1 = max(s.bbox.x1 for r in multi for s in r.segments)
+    seg = row.segments[0]
+    return seg.bbox.x1 <= x0 - 2.0 * size or seg.bbox.x0 >= x1 + 2.0 * size
+    # to narrow: and a line of the page directly above `seg`, flush with it, also outside x0..x1 (needs the page's
+    # lines, which `find_aligned_tables` has and `_find_runs` does not; "Table 1 Base case input per" is in the top strip)
+```
+
+**The "heading" kind of the work list, read through: six pages, six causes.** An invisible watermark (fixed,
+6e261ac) and a cut placed on a heading (fixed, 4aa7257) on one page; this margin line (left); rows ruled off with
+cells centred vertically, written a row per text line (`508eb272..._pg13` - the big one); a form whose vertical rules
+are staggered between sections, so the ruled grid has five columns for three and two slivers that never hold text of
+their own (`9e3b179d..._pg2`); a caption set inside the table's ruled box as a full-width first row
+(`31d7e5e5..._pg162`); and a table that is a picture, which the model transcribed with seven headings over eight
+cells (`3d780cdc..._pg22` - the reader's, not a table rule's). Also seen on `e82a04c6..._pg5` and not touched:
+"4 × 325" comes out "4 9 325" (a symbol font's code for the times sign), and "Atos / Med." is an orphan row the
+flush-left rule misses because it is indented.
+
+---
+
 ## 2026-09-20, 18:15-19:47 - A column cut goes in the channel no word crosses; and the first version of it cut two phrases
 
 The check that put `tables/c8cdd4c4..._pg3` on the work list, once its invisible watermark was out of the way: the
