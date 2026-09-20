@@ -981,6 +981,14 @@ _SYMBOL_MARKS = {
     "wingdings": {0xFC: "✓", 0xFB: "✗", 0xFE: "☑", 0xFD: "☒", 0x6C: "●", 0x6D: "○", 0x6E: "■", 0x6F: "□", 0x75: "◆", 0xA8: "□"},
     "webdings": {0x61: "✓", 0x72: "✗"},
 }
+# Wingdings' arrows. An arrow set inside a word carries the word's meaning - "INTMRK→BRDORT" names a path of a model
+# from one construct to another, and came out "INTMRKBRDORT" (benchmark tables/b5c5b866..._pg4, 20 September 2026):
+# the code is private-use, the renderer strips those, and the reader of private-use glyphs leaves a font alone once it
+# has set such a character inside a word. Each code below was DRAWN from the font file and looked at, not recalled:
+# DF-E6 the light arrows, E7-EE the heavy, EF-F8 the open ones (FB-FE came out as the tick, cross and boxes already
+# above, which checks the sheet). Wingdings proper only: Wingdings 2 and 3 draw other things at these codes.
+_WINGDINGS_ARROWS = dict(zip(range(0xDF, 0xF9), "←→↑↓↖↗↙↘" "⬅➡⬆⬇⬉⬈⬋⬊" "⇦⇨⇧⇩⬄⇳⬁⬀⬃⬂"))
+_WINGDINGS_PROPER = _re.compile(r"wingdings(?![\s_-]*[23])", _re.I)
 
 
 # Free-standing accent glyphs and the combining marks they stand for. The grave
@@ -1100,6 +1108,8 @@ def _symbol_font_mark(font: str, text: str) -> str:
     if len(text) != 1 or not (0xF000 <= ord(text) <= 0xF0FF):
         return text
     f = font.lower()
+    if _WINGDINGS_PROPER.search(f) and ord(text) - 0xF000 in _WINGDINGS_ARROWS:
+        return _WINGDINGS_ARROWS[ord(text) - 0xF000]
     for name, table in _SYMBOL_MARKS.items():
         if name in f:
             return table.get(ord(text) - 0xF000, text)

@@ -4,6 +4,49 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-20, 17:42-17:58 - A Wingdings arrow is a character; an arrow known only by its glyph id is sized and left
+
+The rest of the work list's second kind (a character the page shows and the text layer does not hold): three checks
+on two pages, and the two pages hold their arrows in two different ways.
+
+**"INTMRK→BRDORT" came out "INTMRKBRDORT"** (`tables/b5c5b866..._pg4`, a table of hypotheses, each a path from one
+construct to another). The arrow is a character, Wingdings code E0, which reaches us as the private-use U+F0E0; the
+renderer strips private-use characters, and the reader of private-use glyphs (`_read_private_glyphs`) rightly leaves
+a font alone once it has set such a character *inside* a word. `_symbol_font_mark` already names Wingdings' tick,
+cross and boxes from their codes; it now names the arrows too (`_WINGDINGS_ARROWS`): DF-E6 the light ones, E7-EE the
+heavy, EF-F8 the open. Every code was **drawn from the font file and looked at** (a contact sheet of
+`C:/Windows/Fonts/wingding.ttf`), not recalled - and FB-FE came out as the tick, cross and boxes the table already
+held, which checks the sheet. Wingdings proper only (`_WINGDINGS_PROPER`): Wingdings 2 and 3 draw other things at
+those codes, and the older table's substring test would have matched them.
+
+**Screened** (`bench/probes/wingdings_arrow_screen.py`, the text layer of every page of all three sets): five arrows
+on that one benchmark page; none on the Key Facts Sheets' 380 pages, none on the insurance set. **Measured against
+b64378b** on the page: **tables 5/7 -> 7/7**; the body changes in five cells ("BRDORT→INTERDVU" ... "JOBSAT→BRDORT")
+and nowhere else. Five tests (`tests/test_wingdings_arrows.py`). Suite 796.
+
+**"⇨ Post-deal" - sized, not built.** `tables/9921f236..._pg349` also sets its arrow in Wingdings, but the producer
+re-encoded the subset (codes 1, 2, 3 in order of first use) and wrote no Unicode map: MuPDF says U+FFFD, PDFium the
+bare code 2, the drawing reader says "unknown", and the check wants "⇨" exactly. One thing still names the glyph:
+the subset kept the font's glyph ids - 226 glyph slots, the whole font's count, three of them filled - and glyph 214
+of Microsoft's Wingdings (5.01) is code F0, the open right arrow the page draws. Census
+(`bench/probes/wingdings_glyph_id_census.py`, all three sets, every Wingdings character whose code is not an arrow's
+and whose glyph id is): **six characters, that one page, nothing else.** A rule for one page resting on one
+producer's subsetting habit is not built. What would bring it back: the owner's library showing re-encoded Wingdings
+*ticks or crosses* - an answer, not an ornament - where the glyph id would be exact and the drawing reader is a
+judgement.
+
+One slip on the way: `textlayer.py` imports `re` as `_re`, so the first screen died at import and measured nothing;
+seen in its output, fixed, rerun.
+
+**Next kind: a data row or the caption standing where the heading should be (6).** First page read against its image
+(`508eb272..._pg13`, a review's table of studies): the fault is not the heading. The table is ruled off between rows,
+its cells are centred vertically and hold one to five lines each, and we wrote a row for every text line: the head
+came out a table of its own (three rows), the first study as loose paragraphs, and the other five studies as a second
+table of 19 rows with the second study ("Porcine (4)") as its heading. The heading check fails because the table is
+shredded. To be sized as what it is: rows ruled off, cells centred.
+
+---
+
 ## 2026-09-20, 17:10-17:41 - An underscore TeX drew as a rule is a character of its word
 
 First thing built from the tables work list, and not a table rule. "Japanese_spaniel" came out "Japanese spaniel"

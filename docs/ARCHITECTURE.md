@@ -17,6 +17,8 @@ PDF page
   |                               - an underscore TeX drew as a rule (0.3 em long, on the baseline, hard against the
   |                                 word after) is a character of the word it sits in: "Japanese_spaniel"
   |                                 (_read_drawn_underscores), and leaves the page's drawings
+  |                               - an arrow set in Wingdings is named from its code, as its tick and cross are
+  |                                 (_WINGDINGS_ARROWS, each code drawn from the font and looked at; not Wingdings 2/3)
   |     ocr/rapid.py              (only if the page has no usable text) RapidOCR -> same evidence shapes; a page read sideways is turned and read again
   v
   |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;
