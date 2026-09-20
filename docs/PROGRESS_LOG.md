@@ -4,6 +4,43 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-20, 17:03-17:10 - The tables work list, sorted into kinds (first pass, nothing built)
+
+The 54 table checks on 30 tuned-on digital pages that Pro passes and we fail (`bench/probes/tables_gap_against_pro.py`),
+each run through the benchmark's own checker with what we wrote beside it
+(`bench/probes/tables_gap_dossier.py`: the checker's words, and for a cell it cannot find, the cell of ours that holds
+the words or is most like them). The checker says: no table at all 9, no such cell 28, relation not satisfied 17.
+Sorted by cause, from those words and our cells (pages not yet all read against their images - the counts are a
+first pass, and the kinds are what matter):
+
+- **Not a table rule's to fix - 16.** A parts table drawn as vector strokes on a page with a little real text (5); a
+  PDF whose font map writes "(" as "~" (5); the escaped dollar, D024, decided (6: `c45171e3` 4, `cf7ccdf5` 2).
+- **A character the page shows and the text layer does not hold - 5.** *The underscore*: "Japanese_spaniel" is
+  "Japanese spaniel" and "F1 Score_RCNN" is "F1 Score RCNN" in ours (2). Looked at in the PDFs: the text layer has
+  no underscore at all - "Japanese" and "spaniel" are separate spans - because LaTeX sets `\_` as a small drawn rule
+  at the baseline. A mark drawn as a shape, like the ticks and arrows we already read; every arXiv page with an
+  identifier in it is exposed, in and out of tables. Arrows: "INTMRK→BRDORT" is "INTMRKBRDORT" (2) and "⇨ Post-deal"
+  is "Post-deal" (1).
+- **A data row or the caption standing where the heading should be - 6.** Top heading found = the first data row
+  ("Porcine (4)", "DFS to DFS", "CCLa", "New residential building 500 sq. ft. and under.") or the table's caption
+  ("Table 14: ..."), and one heading row shifted a column ("Soil thick." over the soil-type column).
+- **A blank where the neighbour should be - 6.** "Cell above ''", "cell to the right ''": a value set on another line
+  than its label, a heading over two levels ("P | R" under "Lexical Features").
+- **Columns fused - about 6.** "4.79±0.37 4.81±0.31 4.77±0.51" in one cell; "83 10.6%:"; two pages of small numbers
+  to be looked at.
+- **Rows or labels fused, or a wrapped cell's first line left alone - 5.** "F. oxysporum Fresh weight (g)" (a group
+  label run into the first entry), "Frequency" without its "(f)", "Planning for and managing residential," cut at
+  its first line, a value and its bracketed statistic apart.
+- **No table found where there is one - 4** (`f5e5d540_pg12`, a trial-reference table).
+- **Singles - 6:** words on the page but outside the table (3, two pages), a row label spanning one line out
+  ("Verbal" for "Nonverbal" - the "Cas 2 Homme" fault again), a p-value a column out, one character that differs
+  ("Dcrr" for "Dcrc").
+
+So of 54, about 16 are out of reach of any table rule, and the single most general thing in the list is not a table
+fault: a drawn underscore. That is sized next, on all three sets, before anything is built.
+
+---
+
 ## 2026-09-20, 09:47-11:10 - D038 built: a table inside a cell is written as a table, inside the cell
 
 The owner decided it at 09:47 ("Go with B"; D038 in `docs/DECISIONS.md`, the four options shown to him rendered).
