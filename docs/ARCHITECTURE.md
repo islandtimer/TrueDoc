@@ -186,6 +186,14 @@ PDF page
 OKF markdown
 ```
 
+**Beside the pipeline: two issues of one document, page by page** (`truedoc/versions.py`, D040). `page_prints` reads
+what each page prints with PDFium - not TrueDoc's conversion, so a match stands however TrueDoc comes to read the page -
+splitting its running lines (a line at the head or foot that a page beside prints too, numbers aside: D029's
+definition) from its body. `match` pairs each page of a new issue with the page of the old one it reprints, keeping
+both orders: `same`, `restamped` (the body word for word; the running lines differ in numbers and month names only),
+`changed` (passages that differ listed, those with a figure apart), `new`, `dropped`. Only a same or restamped page
+keeps what a person confirmed about it; `bench/probes/version_census.py` measures what carries over in the library.
+
 ## Principles the code follows
 
 - **Evidence first.** Characters come from the PDF's own text layer whenever one exists. Models decide *what kind of thing* an area is; they never replace characters that the PDF already provides.

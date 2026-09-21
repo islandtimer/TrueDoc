@@ -4,6 +4,49 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-21, 21:56-22:05 - D040's third step: two issues of a document matched page by page; a third of the pages carry over
+
+D040 point 2: a new document is matched page by page with the version it replaces; unchanged pages keep what was
+confirmed, changed pages are checked afresh. `truedoc/versions.py` does the matching; the store of confirmations it
+serves is the next step.
+
+**What a page is, for matching.** What it prints, read by PDFium - not TrueDoc's conversion, which changes whenever
+TrueDoc does, so a match stands however TrueDoc comes to read the page (`page_prints`). Its running lines are set
+apart: a line in the head or foot band (12% of the page's height each) that a page beside prints too, numbers aside -
+D029's definition of a running head, judged by what it means rather than by where it sits. The rest is the body, as
+words in reading order.
+
+**How pages are paired and classed** (`match`). Each page of the new issue with the page of the old one it reprints,
+keeping both orders - issues add, drop and reword pages, they do not shuffle them - by the pairing that holds the most
+word pairs in common, pages under half alike never paired. Classed: `same` (every word, running lines included),
+`restamped` (the body word for word; the running lines differ in numbers and month names only - a date, a form code's
+digits, a page number), `changed` (the passages that differ listed, those holding a figure apart: D040's "figures are
+checked every time"), `new`, and `dropped`. A line taken for running wrongly - a table's heading repeated at each page's
+head - cannot hide a change of wording, because only numbers and month names may differ for `restamped`; and a one-page
+document has no page beside to show its foot runs, so a new date there makes the page `changed`, never assumed
+unchanged. A page moved elsewhere comes out dropped where it was and new where it is: checked afresh. Seven tests
+(`tests/test_versions.py`) on PDFs built the way the insurers' are.
+
+**Measured on the library** (`bench/probes/version_census.py`: every document against the nearest other document of
+its folder, the two nearest by shared word pairs matched in full; 1,157 documents, the sealed 19 left out, none
+unreadable; 90 seconds). 332 of the 490 tuned-on documents have another issue in the library (half their pages or
+more matched), 29 of them only an exact copy of another file. Over the other 303 documents, 5,227 pages: **same 32%,
+restamped 5%, changed 53%, new 10%**; 2,058 of the 2,757 changed pages have a figure among their changes. The held-out
+half, counted only - 438 documents, 8,360 pages: same 30%, restamped 2%, changed 53%, new 15%. The two halves agree.
+Read on one pair (Seniors' home PDS of August 2020 against February 2021, 50 of 84 pages changed): the changes are real
+edits, most small - "Type" to "Types", "cover/s" to "cover(s)", "While in your home there..." to "There...", a hyphen to
+an en dash, the PDS's own date and a cross-reference among the figures - with the page numbers rightly taken as running.
+
+**What it means for D040.** Carrying confirmations by version saves the review of about a third of a reissued
+document's pages. Half its pages are edited somewhere, most lightly: a changed page need not be reviewed whole - the
+review can show only the passages that changed against the confirmed issue, and a lesson about the page's layout
+(D040's second kind) still holds where the layout has not moved. Both belong to the next steps.
+
+**Next:** the store of confirmations. It holds the documents' own words, so it cannot live in this repository, which
+is public: where it lives is the owner's call.
+
+---
+
 ## 2026-09-21, 20:40-21:55 - The measurement worktrees retired; Webdings' triangle bullet named from its code, and kept apart from its item
 
 The owner's order: the clean-up first, then the "4" bullet, then back to D040.
