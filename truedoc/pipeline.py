@@ -44,10 +44,13 @@ class ConvertResult:
     issues: list[Issue]
     pages: list[int]
     sha256: str
+    # TrueDoc's own close calls (D040), one record each: what it decided about a piece of the page, why, and whether
+    # it could check. For now the lines at a page's edge it leaves out of the body; more kinds follow.
+    decisions: list[dict] = field(default_factory=list)
 
     def as_dict(self) -> dict:
         return {"completion": self.completion, "pages": list(self.pages), "sha256": self.sha256,
-                "issues": [i.as_dict() for i in self.issues]}
+                "issues": [i.as_dict() for i in self.issues], "decisions": list(self.decisions)}
 
 
 def page_count(path: str) -> int:
@@ -157,6 +160,22 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
     imprint = [dict(page=p.number, **e) for p in doc.pages for e in (p.meta.get("imprint") or [])]
     if imprint:
         doc.metadata["imprint"] = imprint[:200]
+    # A running head or foot: the same line on the pages beside. Out of the body, and now kept once for the document
+    # with the pages it ran on, so nothing the pages print is lost without trace (D040).
+    running: dict[str, dict] = {}
+    for p in doc.pages:
+        for e in (p.meta.get("running") or []):
+            entry = running.setdefault(e["text"], {"text": e["text"], "pages": [], "provenance": e["provenance"]})
+            entry["pages"].append(p.number)
+    if running:
+        doc.metadata["running"] = list(running.values())[:200]
+    # TrueDoc's own close calls (D040): every one, with its page. Not written into the front matter - it is for the
+    # checks and the review built on them - but a call that could not be checked is said out loud.
+    doc.metadata["decisions"] = [dict(page=p.number, **d) for p in doc.pages for d in (p.meta.get("decisions") or [])]
+    unchecked = sorted({d["page"] for d in doc.metadata["decisions"] if not d["checked"] and d.get("kept_in")})
+    if unchecked:
+        doc.add_issue("edge-unchecked", f"lines at the edge of pages {unchecked} were left out of the body without a page "
+                      "beside to show they run; they are kept under imprint, marked checked: false", "note", unchecked)
     # Marks found and placed nowhere: a tick the table missed, a chevron between two statements. Kept with the page
     # and the box they were drawn in, so nothing found is lost without trace. A shape we cannot read is left out.
     marks = [{"page": p.number, "kind": m["kind"], "bbox": m["bbox"]}
@@ -411,6 +430,10 @@ def _list_levels(blocks: list[Block], size: float) -> None:
     close()
 
 
+_WORDS = re.compile("[a-z]{2,}")            # what `layout.fuse._repeated_beside` compares by default
+_FIGURES = re.compile("[a-z0-9]{2,}")       # ... and what a line of figures only is compared by (D040)
+
+
 def _record_imprint(page: Page, blocks: list[Block], pdf_page=None) -> None:
     """Furniture that no page beside prints there is the document's imprint; keep it, out of the body (D029).
 
@@ -425,25 +448,74 @@ def _record_imprint(page: Page, blocks: list[Block], pdf_page=None) -> None:
     names one, because the layout model labels some folios page footers ("Page 1 of 3" on a two-page TMD) and a
     folio counts the artifact's pages, not the document's matter; so are turned stamps, whose bands this question
     cannot read.
+
+    **An unknown is not a discard** (D040). Whether a line runs is asked of the pages beside it, and a document of one
+    page - or one whose neighbouring pages are scanned - has none to ask: `_repeated_beside` answers None. Until 21
+    September 2026 only a definite "no page beside prints it" kept the line, so an unknown was left out of the body and
+    recorded nowhere. A GIO strata SPDS of one page lost its whole foot that way - the issuer, "SPDS prepared on
+    29/07/14" and the form code - while the conversion called itself complete, and a reader could not tell which
+    version of the document they held (found by the meaning test, D039). Such a line is now kept as imprint, marked
+    `checked: false`: no page beside prints it, as far as anything can tell.
+
+    **Every such call is written down** (D040, TrueDoc's own close calls): each line at a page's edge left out of the
+    body gets a record in `page.meta["decisions"]` - what it was, what was done with it, why, and whether the call
+    could be checked. A line that runs is recorded too, under `running`, once for the document, so that nothing the
+    page prints is thrown away without trace: a Key Facts Sheet's "The content of this Key Facts Sheet is prescribed
+    by the Australian Government..." stands on both of its pages, runs, and was dropped without a word.
     """
     if pdf_page is None:
         return
     from truedoc.classify.blocks import _PAGE_NUMBER
     from truedoc.layout.fuse import _repeated_beside
 
+    role_of = {BlockKind.HEADER: "header", BlockKind.FOOTER: "footer", BlockKind.PAGE_NUMBER: "page-number"}
     seen: set[str] = set()
     kept: list[dict] = []
+    running: list[dict] = []
+    decisions: list[dict] = []
     for b in blocks:
-        if b.kind not in (BlockKind.HEADER, BlockKind.FOOTER):
+        if b.kind not in role_of:
             continue
         text = " ".join(b.text.split())
-        if not text or text in seen or any(l.rotated for l in b.lines) or _PAGE_NUMBER.match(text):
+        if not text:
             continue
-        if _repeated_beside(b, page, pdf_page) is False:
-            seen.add(text)
+        record = {"kind": "edge-line", "role": role_of[b.kind], "text": text[:500], "source": b.provenance,
+                  "bbox": [round(v, 1) for v in (b.bbox.x0, b.bbox.y0, b.bbox.x1, b.bbox.y1)],
+                  "decided": "left out of the body"}
+        if b.kind == BlockKind.PAGE_NUMBER or _PAGE_NUMBER.match(text):
+            decisions.append(dict(record, because="a page number", kept_in=None, checked=True))
+            continue
+        if any(l.rotated for l in b.lines):
+            decisions.append(dict(record, because="a turned stamp at the page's edge", kept_in=None, checked=False))
+            continue
+        if text in seen:
+            continue
+        seen.add(text)
+        runs = _repeated_beside(b, page, pdf_page)
+        what = "it"
+        if runs is None and not _WORDS.findall(text.lower()) and _FIGURES.findall(text.lower()):
+            # A line of figures only - a phone number at every page's head, a form code - is compared by its figures:
+            # asked in words it has none, so it could never be shown to run, and "13 22 44" would be kept as an
+            # unchecked imprint on every page of a sixty-page PDS (found by the word check, 21 September 2026).
+            runs = _repeated_beside(b, page, pdf_page, pattern=_FIGURES)
+            what = "the same figures"
+        if runs is True:
+            running.append({"text": text[:500], "provenance": b.provenance})
+            decisions.append(dict(record, because="the pages beside it print %s in the same place" % what, kept_in="running", checked=True))
+        elif runs is False:
             kept.append({"text": text[:500], "provenance": b.provenance})
+            decisions.append(dict(record, because="no page beside it prints %s" % what, kept_in="imprint", checked=True))
+        else:
+            kept.append({"text": text[:500], "provenance": b.provenance, "checked": False})
+            why = ("there is no page beside it to compare with" if _FIGURES.findall(text.lower())
+                   else "it holds nothing that can be compared with the pages beside it")
+            decisions.append(dict(record, because=why, kept_in="imprint", checked=False))
     if kept:
         page.meta["imprint"] = kept
+    if running:
+        page.meta["running"] = running
+    if decisions:
+        page.meta["decisions"] = decisions
 
 
 _HEADING_LABEL = re.compile(r"^(?:[IVXLC]{1,6}\.?|\d{1,2}(?:\.\d{1,2}){0,3}\.?|[A-Z]\.)$")
@@ -1741,4 +1813,5 @@ def convert_with_status(path: str, opts: ConvertOptions | None = None) -> Conver
     doc = load_document(path, opts)
     ropts = RenderOptions(frontmatter=opts.frontmatter, page_markers=opts.page_markers)
     return ConvertResult(markdown=render_document(doc, ropts), completion=doc.completion, issues=doc.all_issues(),
-                         pages=[p.number for p in doc.pages], sha256=doc.sha256)
+                         pages=[p.number for p in doc.pages], sha256=doc.sha256,
+                         decisions=list(doc.metadata.get("decisions") or []))

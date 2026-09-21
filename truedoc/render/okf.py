@@ -530,6 +530,7 @@ def render_frontmatter(doc: Document, body: str = "") -> str:
         "corroboration": _corroboration_summary(doc) or None,
         "hidden_text": doc.metadata.get("hidden_text") or None,
         "imprint": doc.metadata.get("imprint") or None,
+        "running": doc.metadata.get("running") or None,
         "marks_not_placed": doc.metadata.get("marks_not_placed") or None,
         "warnings": list(doc.warnings),
         "issues": [i.as_dict() for i in doc.all_issues()] or None,

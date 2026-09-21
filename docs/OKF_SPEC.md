@@ -25,13 +25,15 @@ OKF allows any extra keys, so everything specific to TrueDoc sits under one key,
 | `version` | the TrueDoc version that wrote the file |
 | `sha256`, `pages` | checksum of the PDF bytes and the number of pages converted |
 | `completion` | how the conversion ended (D037): `complete` - everything asked for ran and every page was read; `degraded` - every page has content, but a stage that was asked for did not run or a lesser reader stood in; `incomplete` - content is known to be missing (a page nothing could read, a model's reply cut off at its length limit). The worst issue decides |
-| `confidence` | 0..1, TrueDoc's own estimate of meaning fidelity |
+| `confidence` | 0..1, **a label for where the text came from, not a measure of how right it is**: the mean over pages of 0.9 for a page with a text layer, 0.6 for one read by OCR, 0.5 for one read by a vision model, 0 for one nothing could read. A page read perfectly and a page that lost a line score the same. (Until 21 September 2026 this row called it "an estimate of meaning fidelity", which it never was; D040 builds a real one from checks and confirmed outcomes.) |
 | `language` | best-effort, when known |
 | `pages_with_ocr` | page numbers whose text came from image OCR (no usable text layer) |
 | `turned_pages` | pages that lay on their side (a landscape scan of a portrait page, a table printed sideways) and were turned upright before reading: `page` and `turn` in degrees clockwise; omitted when there are none |
 | `hidden_text` | text a reader cannot see, kept out of the body (page, reason, text); omitted when there is none |
+| `imprint` | a line at a page's edge that no page beside prints there - an issuer and licence, a copyright line, a preparation date - kept out of the body and recorded here (D029): `page`, `text`, `provenance`; `checked: false` when there was no page beside to compare with (a one-page document, or neighbours that are scanned), so it is kept rather than lost (D040); omitted when there is none |
+| `running` | a running head or foot - the same line on the pages beside - kept out of the body and recorded **once** for the document with the `pages` it ran on (D040), so nothing a page prints is thrown away without trace; omitted when there is none |
 | `warnings` | human-readable notes about anything uncertain |
-| `issues` | the same notes for software, one entry each: `code` (stable: `unreadable-pages`, `reply-cut-off`, `stage-unavailable`, `reader-fallback`, `reading-implausible`, `hidden-text`, `pages-turned`, `low-support`, `witness-failed`, or `warning` for a sentence nobody classified), `severity` (`note` / `degraded` / `incomplete`), `pages`, `message`; omitted when there are none |
+| `issues` | the same notes for software, one entry each: `code` (stable: `unreadable-pages`, `reply-cut-off`, `stage-unavailable`, `reader-fallback`, `reading-implausible`, `hidden-text`, `pages-turned`, `low-support`, `witness-failed`, `edge-unchecked` - a line at a page's edge left out of the body with no page beside to show it runs, kept under `imprint` - or `warning` for a sentence nobody classified), `severity` (`note` / `degraded` / `incomplete`), `pages`, `message`; omitted when there are none |
 
 ## File shape
 

@@ -149,7 +149,12 @@ PDF page
   |  7. render/okf.py             markdown body (hyphenation repair, cross-column joins, tables,
   |                               empty output for unreadable pages) + YAML front matter
   |                               - furniture no page beside prints is the document's imprint: kept under
-  |                               `truedoc.imprint` with its page, never in the body (D029)
+  |                               `truedoc.imprint` with its page, never in the body (D029); furniture with no page
+  |                               beside to ask (a one-page file) is kept there too, `checked: false`, never dropped,
+  |                               and a running head or foot is kept once under `truedoc.running` with its pages (D040)
+  |                               - every line at a page's edge left out of the body is a recorded decision - what,
+  |                               why, whether it could be checked - in `ConvertResult.decisions` (D040), which
+  |                               bench/tools/word_check.py uses to tell a deliberate removal from a loss
   |                               - a drawn mark no cell, line or picture takes is kept under
   |                               `truedoc.marks_not_placed` with its page and box, and published nowhere
   |                               - a stage asked for that could not run is named under `truedoc.warnings`

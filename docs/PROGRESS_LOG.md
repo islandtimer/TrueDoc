@@ -4,6 +4,83 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-21, 11:00-17:30 - D040's first two steps: TrueDoc records what it leaves out at a page's edge, and the word check
+
+The owner asked how to create certainty in the conversions of his library, with review where it is uncertain; that
+it work on each new document as it arrives; and that a person's answer be kept as a lesson. D040 records what was
+agreed. This entry is its first two steps.
+
+**A correction, found while agreeing it.** I had told the owner that the running-head rule dropped the GIO strata
+SPDS's footer. It did not. The layout model labels the three lines a page footer, and D029 keeps such a line as
+imprint only when the pages beside are known *not* to print it (`_repeated_beside(...) is False`); a one-page file has
+no page beside, the answer is None, and the line was neither published nor recorded. An unknown treated as a discard.
+
+**Step 1 - TrueDoc records its own close calls, starting at the page's edge** (`pipeline._record_imprint`). Every
+header, footer and page number left out of the body now gets a record - what it was, what was done with it, why, and
+whether the call could be checked - in `ConvertResult.decisions`. Three behaviours change, none of them in the body:
+- *An unknown is kept, not dropped:* imprint with `checked: false`, and a note (`edge-unchecked`, severity note; the
+  conversion stays complete). The GIO footer, "SPDS prepared on 29/07/14" with it, is kept.
+- *A running head or foot is kept once* for the document under a new front-matter key, `truedoc.running`, with the
+  pages it ran on. A Key Facts Sheet's prescribed "The content of this Key Facts Sheet is prescribed by the Australian
+  Government..." stands on both its pages and was thrown away without trace.
+- *A line of figures is compared by its figures.* The word check showed "unchecked" calls on documents of many pages:
+  `layout.fuse._repeated_beside` compares letter-words only, so AAMI's "13 22 44" at every page's head, or a form code,
+  could never be shown to run - my first record even gave the wrong reason ("no page beside it") and would have kept
+  the phone number as an unchecked imprint on every page. `_repeated_beside` gained an optional `pattern`; its default,
+  and so every rule that decides the body, is unchanged; the record alone asks again with figures counted.
+
+The spec (`docs/OKF_SPEC.md`) documents `imprint`'s `checked`, `running` and the `edge-unchecked` code, and no longer
+calls `confidence` "an estimate of meaning fidelity" - it is a label for where a page's text came from (0.9 text layer,
+0.6 OCR, 0.5 vision model, 0 unreadable), and says nothing about whether it is right.
+
+**Step 2 - the word check** (`bench/tools/word_check.py`). A page's printed words, read a second, independent way
+(PyMuPDF, where TrueDoc reads with PDFium), against what TrueDoc wrote plus what it owned up to leaving out (its edge
+decisions, its hidden text). One document as it arrives (`--pdf`), or a random sample of the library (`--sample`).
+Held-out documents - odd hash of the name (D039) or held out by the Key Facts oracle - report counts only; the sealed
+19 are never opened. What differs is sorted into four kinds: **missing** (neither written nor owned up to: a loss),
+**glued** (words TrueDoc ran together: a fault), **respaced** (words the *reference* broke that TrueDoc kept whole: not
+a fault) and **repaired** (a text layer's short-spelled ligature, "afer", that TrueDoc writes "after").
+
+**It was wrong three times on the way, and each was caught by reading the page.** (1) I told the owner a whole table was
+missing from CBA's home PEDG, from a print I had cut short; TrueDoc had written every tick and cross. The check had
+counted the PDF's *accessibility text* - the tick labelled "Applies", the cross "does not apply", a star "asterisk" -
+which PyMuPDF puts into its text as a span in a stand-in font though nothing draws it; read with `TEXT_IGNORE_ACTUALTEXT`,
+130 "lost" words became 10. (2) Invisible text and symbol-font characters are marks for the eye or for a screen reader,
+not printed words, and are left out of the reference. (3) The first "respaced" rule excused three words of a real loss
+because the same words stood on a line TrueDoc had written whole; a line now counts as respaced only when most of its
+words failed to match. Seven tests (`tests/test_word_check.py`), one checked to fail under the old rule.
+
+**Measured.** The body is unchanged everywhere, as intended: insurance set 25 of 25, Key Facts Sheets 190 of 190,
+benchmark headers_footers 266 of 266, byte for byte, against 259c43a - measured before and again after the figures
+change. Every measure reads the body without the front matter (`ab_pool`, `kfs_grade`, `insurance_with_code` and
+`truedoc/bench/olmocr.py` all convert with `frontmatter=False`). Suite 818.
+
+**The first sample: 150 documents of the library, one random page each** (seed 40; 64 tuned-on pages, 85 held out, 1
+without a text layer). Tuned-on: 26,931 printed words; **missing 11 on 2 pages, glued 6 on 4 pages**, added 0,
+respaced 32, repaired 5, 5 edge calls kept unchecked. Held out, counted only: 33,500 words; missing 6 on 1 page,
+**glued 20 on 12 pages**, added 139 (unexamined - most likely text TrueDoc read from pictures, which a text layer does
+not hold), respaced 6. Read, the tuned-on faults are:
+- **A cover table's two-level column headings torn apart** (CBA home PEDG, page 3). The ticks and crosses are all there,
+  but "Building Cover", "Contents Cover", "Accidental damage (to your Building)" and "The excess amount is stated on
+  your Certificate of Insurance" come out partly as stray headings above the table and partly not at all, and the
+  table's heading row reads "| | | Cover | Building) | Contents) |": a reader cannot tell which column is which. The
+  word check sees ten lost words of it; the damage - unlabelled columns - is structure, which is the second reader's job.
+- **Words run together where a styled piece meets the next word**: "Step 1 Understanding the Facts Sheet" as
+  "Step1Understanding" on four Key Facts Sheets of four insurers - AAMI, Apia, Qantas, TIO (the step number stands in a
+  box of its own), and, from the meaning test, a Webdings bullet written "4" and run into its word ("4artificial grass
+  or turf"). The commonest fault in the sample: 16 of 149 pages (4 of 64 tuned-on, 12 of 85 held out). A fault in the
+  code: one generic fix.
+
+**Also seen, not changed.** TrueDoc drops the invisible accessibility text without listing it under `hidden_text`, as
+D011 asks (nothing is lost - the tick carries the meaning). A turned stamp at a page's edge is recorded in the
+decisions but kept nowhere in the front matter: D029 left turned stamps out of the imprint because whether they run
+cannot be asked; D040's "an unknown is not a discard" argues for keeping them, marked unchecked - the owner's to decide.
+
+**Next, by D040's order:** version matching, the store of confirmations, the review page, the second reader, a pilot
+on one or two insurers. The glued-words fault is a lesson of the first kind - a code fault, fixed generically.
+
+---
+
 ## 2026-09-21, 09:20-10:59 - The meaning test, round 2: it now has teeth, it still cannot prove a difference, and it found three faults
 
 The pilot could not tell TrueDoc's text from a plain dump. The diagnosis was that its questions named the thing they

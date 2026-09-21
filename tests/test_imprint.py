@@ -74,6 +74,12 @@ def test_a_folio_the_layout_model_calls_a_footer_is_not_imprint(tmp_path):
     assert (page.meta.get("imprint") or []) == [], page.meta.get("imprint")
 
 
-def test_with_no_page_beside_to_ask_nothing_is_recorded(tmp_path):
-    # A one-page file - every olmOCR-bench file is one - cannot show whether a line runs, so nothing is claimed.
-    assert _imprint(tmp_path, [ISSUER]) == []
+def test_with_no_page_beside_to_ask_the_line_is_kept_unchecked(tmp_path):
+    # A one-page file - every olmOCR-bench file is one - cannot show whether a line runs. Until 21 September 2026
+    # nothing was recorded then, and the line was left out of the body too, so it was lost: a GIO strata SPDS of one
+    # page lost its issuer and "SPDS prepared on 29/07/14" that way (D040). It is kept now, and marked as unchecked,
+    # so nothing is claimed that was not shown.
+    doc = load_document(_document(tmp_path, [ISSUER]), OFF)
+    kept = doc.metadata.get("imprint") or []
+    assert [e["text"] for e in kept] == [ISSUER]
+    assert kept[0]["checked"] is False

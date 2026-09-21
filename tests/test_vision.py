@@ -115,7 +115,12 @@ def test_text_over_a_scan_is_read_by_the_model_and_its_running_head_witnessed(tm
     assert len(_Fake.calls) == 1
     assert "Hello from the model" in md and "[^inferred]" in md
     assert "Ordinary text that the PDF carries" not in md
-    assert "JOURNAL OF EXAMPLES 1921" not in md
+    # Dropped from the body and recorded: since D040 (21 September 2026) the record is the front matter's imprint,
+    # marked unchecked - a one-page file has no page beside to show the head runs - where before it was recorded
+    # nowhere and this assertion could look at the whole file.
+    front, body = md.split("\n---\n", 1)
+    assert "JOURNAL OF EXAMPLES 1921" not in body
+    assert "JOURNAL OF EXAMPLES 1921" in front and "checked: false" in front
     assert "OCR layer" in md
 
 

@@ -869,3 +869,49 @@ Flash answers", and he agreed to that wording. In this project Flash and Pro are
 answer them. The roles need a general model that can look at a page; the one route this project has to such a model
 is Claude over the Anthropic API (D025, `truedoc/vision/anthropic_api.py`), on a key the owner sets himself. **Open,
 the owner's: which model plays each role, and on whose bill.** Nothing that depends on it is built until he says.
+
+
+## D040 - Certainty is built by checking each document, recording TrueDoc's own close calls, and asking a person only what the checks cannot settle; a person's answer is kept as a lesson (2026-09-21, the owner's decision)
+
+**The question.** Two rounds of the meaning test (D039) showed that on ordinary digital pages TrueDoc's text and a
+plain dump are too close for any affordable sample to separate, and that reading the failures finds real faults. The
+owner asked how to create certainty in the conversions of his insurance library, and where a conversion is not certain,
+a way to review it and confirm what it should say. He added two requirements: the library is not static - insurers
+revise their documents - so all of it must work on each new document as it arrives; and a person's confirmation
+must be retained as a lesson, so the same question is not sent back to a person again. He also asked for a review of
+TypeSafe's Jev (announced the same day) for anything TrueDoc should take.
+
+**Agreed** ("agreed. lets proceed", 21 September 2026, 16:08):
+
+1. **Evidence is stacked, cheapest first.** (a) Nothing lost: every word printed on the page is in the output or is
+   accounted for as a deliberate removal. (b) TrueDoc records its own close calls - what it decided, what else it
+   could have been, how sure it was. (c) A second, independent reader agrees (Infinity-Parser2 on a rented machine,
+   D032, never the sealed 19). (d) A person confirms only what the first three cannot settle.
+2. **It runs per document.** A new document is matched page by page with the version it replaces: unchanged pages
+   keep what was confirmed, changed pages are checked afresh. When TrueDoc changes, confirmed documents are converted
+   again and any confirmed page that now comes out differently is flagged, so the confirmations become TrueDoc's
+   regression tests.
+3. **Three kinds of lesson.** A fault in TrueDoc is fixed in the code, generically, and stops everywhere. A decision
+   about a layout ("this table has these columns"; "this line at the foot is content") is kept against a fingerprint of
+   the layout and applies to every page built the same way. A value on one document is kept for that document, and
+   reused only where the same page reappears unchanged. **Lessons settle structure; figures are checked every time** -
+   insurers change figures between versions, so a lesson removes the need to ask and never overrides disagreeing
+   evidence. Automatically settled items are spot-checked, to measure how often a lesson is misapplied.
+4. **D027 holds.** Layout lessons are data about documents, kept apart from TrueDoc's code and out of every
+   measurement of TrueDoc; a lesson that recurs across insurers becomes a generic rule in the code.
+5. **Order of work:** record decisions (starting with the calls that have caused faults - footers and headers,
+   table columns, symbols); the word check; version matching; the store of confirmations; the review page; the second
+   reader; a pilot on one or two insurers to measure the review load before scaling.
+6. **Jev is parked.** It reads no images, so it cannot read a page; its own documentation lists counting, numbers,
+   dates, negation and multi-step reasoning as weaknesses, which is most of what an insurance question is; its
+   "calibrated confidence" is a formula over its own probabilities, with no measurement against outcomes published;
+   "cannot hallucinate" means only that it cannot answer outside the options supplied. Revisit if it publishes
+   calibration on held-out data and gains image support. **What is taken from it is the idea:** a decision is a typed
+   choice among alternatives with a probability, and work is routed by it - act when sure, ask a person when not. The
+   probability TrueDoc attaches is to be *earned* from confirmed outcomes, which the review loop produces.
+
+**Found while agreeing it, and corrected.** I told the owner that the running-head rule dropped the GIO strata SPDS's
+footer (D039's round 2). It did not: TrueDoc reads the three lines, the layout model labels them a page footer, and a
+footer is left out of the body; D029 keeps such a line as the document's imprint only when the pages beside it are
+*known not* to print it (`_repeated_beside(...) is False`), and a document of one page cannot be asked, so the answer
+is "unknown" and the line was neither published nor recorded. An unknown was treated as a discard.

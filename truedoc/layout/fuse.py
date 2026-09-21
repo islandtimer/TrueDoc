@@ -266,7 +266,7 @@ def _same_line(words: list[str], band: list[str]) -> bool:
     return all(any(word == other for other in seen) for word in words)
 
 
-def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
+def _repeated_beside(b: Block, page: Page, pdf_page, pattern: re.Pattern | None = None) -> bool | None:
     """Whether the pages beside this one print this block's line in the same band at their head or foot.
 
     A running head or foot runs: the same words at the same height, page after page. Up to two pages each side
@@ -275,11 +275,17 @@ def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
     the foot for one in the lower half, so a page of another height is asked at the same place. The file is
     read again through PDFium by its path, as the readers read it. None when no page beside it has a text
     layer to ask - a file of one page, or pages beside it that are scanned - and nothing then shows whether
-    the block runs.
+    the block runs. None too for a line with no word of two letters in it, since words are what is compared.
+
+    `pattern` says what counts as a word; the default is letters only, and every rule that decides what goes in
+    the body asks with it. Only the record of what was left out (`pipeline._record_imprint`, D040) asks again with
+    figures counted, for a line of nothing but figures - AAMI's "13 22 44" at the head of every page, a form code
+    "A03185 30/06/25 A" at a foot - which the letters-only question can never answer.
     """
+    word = pattern or _WORD
     path = getattr(getattr(pdf_page, "parent", None), "name", None)
     index = getattr(pdf_page, "number", None)
-    words = _WORD.findall(b.text.lower())
+    words = word.findall(b.text.lower())
     if not path or index is None or not words:
         return None
     size = b.size or page.body_font_size or 10.0
@@ -310,7 +316,7 @@ def _repeated_beside(b: Block, page: Page, pdf_page) -> bool | None:
             finally:
                 textpage.close()
                 other.close()
-            if _same_line(words, _WORD.findall(band.lower())):
+            if _same_line(words, word.findall(band.lower())):
                 return True
     except Exception:
         return None
