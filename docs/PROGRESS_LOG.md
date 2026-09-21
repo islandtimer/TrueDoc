@@ -4,6 +4,65 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-21, 09:20-10:59 - The meaning test, round 2: it now has teeth, it still cannot prove a difference, and it found three faults
+
+The pilot could not tell TrueDoc's text from a plain dump. The diagnosis was that its questions named the thing they
+asked about, so finding that word and reading on was enough, on either text. Round 2
+(`bench/tools/meaning_test_structure.js`, 219 helpers, 14.2M tokens - I told the owner 10-12M, and it ran over)
+changed two things on the same 30 pages: five new questions a page that a keyword search cannot settle (counting
+every row that meets a condition, comparing across rows, a value needing the right row *and* column, a term the page
+uses twice, whether something is absent, a condition stated elsewhere on the page), and a second, smaller reader
+beside the strong one, standing in for what a product would use at scale. Both question sets went to both readers on
+both texts: a 2x2, 293 questions after the unanswerable ones were dropped.
+
+**A flaw of the pilot's, found and fixed here.** Its answerers were handed paths ending `.../td/<hex>.md` and
+`.../plain/<hex>.txt`: the folder and the extension told a helper which text was TrueDoc's. Round 2 puts both texts
+in one folder, same extension, opaque names. The pilot's numbers were taken with that leak open.
+
+**The test now has teeth, and still cannot prove a difference.** The pilot drew no wrong answer at all; round 2 drew
+plenty, so the questions bite. Paired over both halves (McNemar):
+
+| reader | TrueDoc | plain dump | only TrueDoc right | only plain right | p |
+|---|---|---|---|---|---|
+| strong | 272/293 | 275/293 | 10 | 13 | 0.68 |
+| small | 270/293 | 263/293 | 15 | 8 | 0.21 |
+
+The small reader favours TrueDoc on every kind of page but prose (marks +4 net, table +2, list +2), and on the
+held-out half alone it is 138 against 131 (p=0.12). Nothing reaches significance. At this discordant rate about three
+times the questions - ninety pages, some 45M tokens - would be needed for a two-point difference, and that is a lot to
+spend on a maybe.
+
+**What the failures were worth, which is the real result.** Reading the tuned-on failures found three faults, none of
+which the benchmark, the insurance set or the Key Facts oracle can see:
+
+1. **A one-page document loses its footer entirely.** A GIO strata SPDS (`t12`): "Issued by: AAI Limited ...",
+   "SPDS prepared on 29/07/14" and the form code are in neither the body nor the front matter, and
+   `completion: complete`, `warnings: []`. Checked against the whole document, which is that one page, so it is not an
+   artefact of converting a page alone. A reader cannot tell which version of the SPDS they hold. The test caught it
+   as a question the plain dump answered and TrueDoc could not.
+2. **A Key Facts Sheet's prescribed statement is removed as a running head.** "The content of this Key Facts Sheet is
+   prescribed by the Australian Government and is a requirement under the Insurance Contracts Act 1984" stands on both
+   pages of the sheet, so the running-head rule takes it. It is required by law to be there. (bda7609 gave back 13
+   headings and 12 prescribed statements on 16 September; this is a case that rule does not reach.)
+3. **A Webdings bullet set hard against its word comes out as "4artificial".** On `t03` a storm exclusion's list
+   reads "4a design fault ... 4lack of maintenance ... 4artificial grass or turf": the bullet is the character "4" in
+   Webdings, and the same trap as yesterday's Wingdings arrows - a symbol character set *inside* a word puts its font
+   in `_read_private_glyphs`'s `spelled` set, so the glyph reader skips it, and the word builder glues it on. The
+   plain dump at least leaves "artificial" a word. Twelve of them on that page.
+
+**What I now think the test is for.** Not a scoreboard. On clean digital pages the two texts are close enough that
+no affordable sample separates them, and the pilot plus round 2 have now spent about 27M tokens establishing that.
+What the same machinery does cheaply and well is find faults: three in one reading of fifteen pages, each one a
+sentence a reader needed and did not get. The recommendation is to keep drawing random pages and mine the failures,
+and - if a number is still wanted - to measure it where the two texts actually differ (pages of ticks and crosses,
+tables that continue overleaf, pages with no text layer) rather than on pages where both are at the ceiling.
+
+**Limits.** One model family still plays every part. 293 questions put a two-point gap inside the noise. Five of the
+150 tuned-on questions came back unmarked (one page's marker returned the new questions' marks only). The held-out
+half returned counts and words-free marks, nothing else.
+
+---
+
 ## 2026-09-21, 08:37-09:00 - D039's pilot, run: the test works, repeats, and cannot tell TrueDoc from a plain text dump
 
 The owner parked the tables list on the evening of the 20th and asked how well TrueDoc converts *his* documents. D039
