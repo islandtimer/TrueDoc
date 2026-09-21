@@ -928,3 +928,34 @@ And the next piece of work: **words run together where a styled piece meets the 
 written "4" and run into its word ("4artificial"), a Key Facts Sheet's step number in a box of its own run into its
 heading ("Step1Understanding") - the commonest real fault of the first sample, a fault of the code, to be fixed
 generically (D040's lesson of the first kind).
+
+
+## D041 - TrueDoc stays one generic engine; the owner's insurance product is built in layers on it, in a separate private repository (2026-09-22, the owner's decision)
+
+**The question.** D040's next step, a store of a person's confirmations, holds the owner's documents' own words, and
+this repository is public. The owner asked whether to carry on here or port a copy of TrueDoc to a new repository and
+tailor it to the insurance corpus.
+
+**Decided** ("ok lets go with layering", 22 September 2026): **layering, not a copy.** TrueDoc stays one engine, in
+this public repository, generic and measured on its benchmark and the owner's insurance measures. The owner's
+insurance product lives in its own private repository and uses TrueDoc as a dependency pinned to one commit; moving
+the pin is deliberate, and re-converts every page a person has confirmed there, flagging any that now reads
+differently - so those confirmations become TrueDoc's regression tests on real documents.
+
+- **Why not a copy.** About 86% of the engine's code serves insurance documents as much as the benchmark (only the
+  maths rebuilding, about 14%, does not, and it can be switched off). The fixes the insurance library drove - words
+  run together beside a large step number, a symbol-font bullet read as "4" - were generic, and this benchmark
+  screened them for breakage for free; a copy would need each fix made twice, and would drift. Template-specific rules
+  would not survive reissues either: half the pages of a reissued document are edited (`version_census.py`).
+- **What stays here.** How a PDF is read; the generic checks and tools - the word check, version matching
+  (`truedoc/versions.py`), the decision records (D040 steps 1-3); the benchmark and the insurance measures. A reading
+  fault found through the product is fixed here, generically, measured here, then pinned there.
+- **What moves there.** D040's remaining steps - the store of confirmations, the review page, the second reader, the
+  pilot - and everything insurance-specific: which document applies to which product, lessons and layout fingerprints
+  (data, never code here: D027), the evidence records and the product's explanations. The owner's sealed documents
+  (D030) and this project's held-out material keep their rules there.
+- **What TrueDoc owes the product next** (generic, and useful to any caller): a map from each passage and table cell to
+  its page and position that travels with the markdown, and the exact commit that wrote a conversion (the output names
+  only the package version today).
+- **What would reopen it.** TrueDoc ceasing to matter as a public, benchmark-scored converter; or an insurance need
+  met only by a reading rule that costs the benchmark and cannot be made a switch.

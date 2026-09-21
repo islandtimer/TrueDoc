@@ -4,6 +4,23 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-22, 07:50-08:55 - One repository or two: D041, layering
+
+The owner asked to discuss carrying on in this repository against porting a copy of TrueDoc to a new one tailored to
+the insurance corpus. Measured for the discussion: the engine is 19,896 lines; the maths rebuilding, 2,777 (14%), is
+the only part that serves the benchmark alone - text reading (5,753), tables (4,120), the model readers (1,251),
+layout, marks and the rest serve insurance documents as much. The owner chose layering (D041): TrueDoc stays one
+generic engine here; the owner's insurance product is built on it in its own private repository, pinned to a TrueDoc
+commit (dd32201 at the start), and D040's remaining steps - the store of confirmations, the review page, the second
+reader, the pilot - continue there, in a session of its own. The product's repository was set up from this session
+(its README, decisions and status; no document committed). Two things found while setting it up, for this project:
+the product's document collector holds the live library - 71 documents this project's copy lacks, new versions among
+them - while this project's measures keep reading their frozen copy, so they stay comparable; and all 19 sealed
+documents are in that library too, where the seal holds as here. What TrueDoc owes the product next, generically: a
+passage-to-page map travelling with the markdown, and the exact commit in each conversion.
+
+---
+
 ## 2026-09-22, 07:34-07:45 - The docs brought up to date
 
 The owner asked that every document be current before the next discussion. Read against the state of the work:
