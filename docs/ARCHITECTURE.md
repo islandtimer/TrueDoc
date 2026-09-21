@@ -21,6 +21,10 @@ PDF page
   |                                 (_read_drawn_underscores), and leaves the page's drawings
   |                               - an arrow set in Wingdings is named from its code, as its tick and cross are
   |                                 (_WINGDINGS_ARROWS, each code drawn from the font and looked at; not Wingdings 2/3)
+  |                               - Webdings' triangles likewise (_WEBDINGS_TRIANGLES): its right-pointing one, a list
+  |                                 bullet the glyph reader takes for an arrow head, is written as the triangular bullet
+  |                                 "‣" that every list rule knows; a mark read from a symbol font (bullet, box, tick,
+  |                                 cross) shares no word with its neighbour however close its box - an arrow may
   |                               - a gap beside a numeral set at twice its words' size or more is judged in the words'
   |                                 type, not the numeral's: a Key Facts Sheet's 48-point step number, 3.3 points from
   |                                 "STEP" and from its heading, is a word of its own, and a capital after it starts one

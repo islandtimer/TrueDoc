@@ -989,6 +989,15 @@ _SYMBOL_MARKS = {
 # above, which checks the sheet). Wingdings proper only: Wingdings 2 and 3 draw other things at these codes.
 _WINGDINGS_ARROWS = dict(zip(range(0xDF, 0xF9), "←→↑↓↖↗↙↘" "⬅➡⬆⬇⬉⬈⬋⬊" "⇦⇨⇧⇩⬄⇳⬁⬀⬃⬂"))
 _WINGDINGS_PROPER = _re.compile(r"wingdings(?![\s_-]*[23])", _re.I)
+# Webdings' triangles, each DRAWN from the font file and looked at (21 September 2026): 33 points left, 34 right, 35 up,
+# 36 down, small and solid. The right-pointing one bullets lists in six documents of the owner's library - 608 of
+# them, every one opening a line; the four that may be read are one design, a home PDS of June 2016 sold as Budget
+# Direct, Aussie and Australia Post - and the text layer names it by its code: "4 INSURANCE CERTIFICATE", "4 artificial
+# grass or turf", and "We will pay up to: 4 10% of your home sum insured", a figure a reader could take for 410%. The glyph reader takes it for
+# an arrow head, which it rightly does not write, or cannot read it at all where the item's first letter reaches into its
+# box, so the code names it (D013: marks set in symbol fonts are mapped from their font codes). It is written as the
+# triangular bullet, which every list rule already knows; the other three as the shapes they are.
+_WEBDINGS_TRIANGLES = {0x33: "◂", 0x34: "‣", 0x35: "▴", 0x36: "▾"}
 
 
 # Free-standing accent glyphs and the combining marks they stand for. The grave
@@ -1133,6 +1142,15 @@ def _dingbat_font(font: str) -> bool:
     return any(key in name for key in _DINGBAT_FONTS)
 
 
+def _webdings_code(c: Char) -> str | None:
+    """What a Webdings character draws, where its code alone says so (`_WEBDINGS_TRIANGLES`): the text layer gives the
+    code either as itself ("4") or in the private-use range (U+F034)."""
+    if len(c.text) != 1 or "webding" not in (c.font or "").split("+")[-1].lower().replace(" ", "").replace("-", ""):
+        return None
+    code = ord(c.text) - 0xF000 if 0xF000 <= ord(c.text) <= 0xF0FF else ord(c.text)
+    return _WEBDINGS_TRIANGLES.get(code)
+
+
 def _read_private_glyphs(pdf_page: "pymupdf.Page", page: Page) -> None:
     """A character whose code cannot mean what it draws is read by what its font draws.
 
@@ -1175,6 +1193,12 @@ def _read_private_glyphs(pdf_page: "pymupdf.Page", page: Page) -> None:
         for word in line.words:
             for c in word.chars:
                 if not private(c) or c.font in spelled or _needs_ink(c.font) or is_math_font(c.font):
+                    continue
+                named = _webdings_code(c)
+                if named is not None:
+                    word.text = word.text.replace(c.text, named)
+                    c.text = named
+                    read.add(id(word))
                     continue
                 # Read through a square around the glyph's box. The box is the font's: a bullet's is as tall as its
                 # line and a third as wide, and drawn onto the reader's square grid the dot inside came out flattened.
@@ -1662,11 +1686,16 @@ def _fuse_touching_words(line: Line) -> Line:
             continue
         # The two word breaks `_chars_to_words` makes by type rather than by gap hold here too, or this pass undoes
         # them: a numeral set far larger than its words is judged in the letters' type (3.3 points from "STEP" is
-        # under a tenth of 48, not of 16), and a code in a dingbat font shares no word with text.
+        # under a tenth of 48, not of 16), and a code in a dingbat font shares no word with text. Nor does the mark
+        # `_read_private_glyphs` has since read from such a code - a bullet, box, tick or cross: Budget Direct's
+        # Webdings bullet, its box a point into its item, came out "‣garages," 101 times over 40 pages. An arrow is
+        # not such a mark, and stays inside its word ("INTMRK→BRDORT").
         a = next((c for c in reversed(prev.chars) if not c.text.isspace()), None)
         b = next((c for c in w.chars if not c.text.isspace()), None)
         if a is not None and b is not None:
-            if (_dingbat_font(a.font) != _dingbat_font(b.font) and a.text.isalnum() and b.text.isalnum()) or _numeral_then_capital(a, b):
+            if ((_dingbat_font(a.font) != _dingbat_font(b.font) and a.text.isalnum() and b.text.isalnum())
+                    or _numeral_then_capital(a, b)
+                    or any(_dingbat_font(c.font) and c.text in _DRAWN_MARKS for c in (a, b))):
                 out.append(w)
                 continue
             if _big_numeral(a, b):

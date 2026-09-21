@@ -104,3 +104,35 @@ def test_which_fonts_draw_symbols_and_which_spell():
     assert not _dingbat_font("SymbolMT")
     assert not _dingbat_font("Symbol")
     assert not _dingbat_font("Helvetica")
+
+
+# Webdings' right-pointing triangle, as its font draws it: small and solid (drawn from webdings.ttf, 21 September 2026).
+TRIANGLE = [(330, 200), (700, 450), (330, 700)]
+
+
+def test_a_webdings_4_is_the_triangular_bullet_it_draws(tmp_path):
+    """Budget Direct's home PDS of 2016 bullets its list with Webdings' "4", and it came out "4 INSURANCE CERTIFICATE".
+    The glyph reader takes the triangle for an arrow head, which it does not write; the code names it (D013)."""
+    page = _read(tmp_path, ord("4"), TRIANGLE, "Webdings", words_after="INSURANCE CERTIFICATE")
+    assert page.lines[0].text.startswith("‣ INSURANCE CERTIFICATE"), page.lines[0].text
+
+
+def test_the_triangle_is_named_whichever_way_the_text_layer_gives_its_code(tmp_path):
+    page = _read(tmp_path, 0xF034, TRIANGLE, "Webdings")
+    assert [c.text for c in page.chars] == ["‣"]
+
+
+def test_the_triangle_is_named_even_where_its_item_reaches_into_its_box(tmp_path):
+    """A storm exclusion's list: the item's first letter starts 1.1 points inside the bullet's box, and the glyph reader
+    reads nothing where other ink reaches into a glyph's box. The code does not depend on the drawing."""
+    page = _read(tmp_path, ord("4"), TRIANGLE, "Webdings", words_after="artificial grass or turf", gap=-1.1, size=10)
+    assert [c.text for c in page.chars][0] == "‣"
+    assert "4" not in "".join(l.text for l in page.lines)
+    # and it stays a word of its own: the pass that joins touching pieces of one word made "‣artificial" of it
+    assert [w.text for w in page.words][:2] == ["‣", "artificial"], [w.text for w in page.words]
+
+
+def test_the_table_is_webdings_own(tmp_path):
+    """Wingdings' "4" draws something else altogether; Webdings' codes name nothing in another font."""
+    page = _read(tmp_path, ord("4"), TRIANGLE, "Wingdings-Regular")
+    assert "‣" not in [c.text for c in page.chars]

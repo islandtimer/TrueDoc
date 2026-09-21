@@ -4,6 +4,82 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-21, 20:40-21:55 - The measurement worktrees retired; Webdings' triangle bullet named from its code, and kept apart from its item
+
+The owner's order: the clean-up first, then the "4" bullet, then back to D040.
+
+**The clean-up.** Fifty-one measurement worktrees had piled up in `bench/out/wt_*` since 15 September - 1.2 GB,
+74,957 files, every one synced by OneDrive. Eleven were clean checkouts of past commits; 34 held changes never
+committed in them; six had been half-removed by earlier `git worktree remove` calls that failed on OneDrive's locks,
+their `.git` link gone and git's records left behind. Before anything moved, every uncommitted change was saved as a
+patch - `bench/out/worktree_patches/<name>.patch`, untracked files included, local and never pushed - with a README
+saying, file by file, whether that exact content is in a commit. Most is; the rest are drafts superseded by what was
+committed (the shafted-arrow reader, the private-glyph reader's early rounds, the cell lists) and a "width cap"
+experiment that never was. The six unlinked folders were compared file by file with the commits git's records name:
+identical, bar a downloaded OCR model cache. Then the 51 folders and git's 52 records were moved out of OneDrive to
+`C:\Users\griff\TrueDoc_retired_worktrees` - nothing deleted; the owner deletes that folder when satisfied. `git
+worktree list` shows the main tree alone and `git fsck` finds nothing wrong. **Correction:** I had put the pile at
+"roughly 2 GB at most", from the three largest; it was 1.2 GB.
+
+**The census first.** `bench/probes/dingbat_census.py` counts every character set in a symbol font across the library
+(1,157 documents, the sealed 19 left out; PyMuPDF, a reader independent of TrueDoc's) by font and code, and
+`bench/probes/dingbat_readings.py` reads one tuned-on example page per frequent code and says what TrueDoc wrote there.
+Most are read right - Wingdings' squares and discs, every tick and cross. Webdings' code 0x34 is not: 608 of them,
+every one opening a line, on 74 pages of six documents, written "4". **Correction:** I told the owner these came from
+two insurers and were not one stray template. The four documents that may be read are one design, a home PDS of 23
+June 2016 sold as Budget Direct, Aussie and Australia Post (the two held out sit in the same folders); the census had
+counted the library's top folders, and the archive is one folder holding several brands. It now counts the brand's
+folder - the lesson of 16 September again: count distinct wording, not copies.
+
+**What the reader sees, and why TrueDoc missed it.** A small solid triangle bullets each item (drawn from
+`webdings.ttf` and looked at: 33 points left, 34 right, 35 up, 36 down). The glyph reader (`_read_private_glyphs`)
+takes it for an arrow head ("arrow-right", 0.38 on Budget Direct's page 2) - an arrow it rightly does not write, since
+flow arrows standing on rules have read as crosses - or reads nothing where the item's first letter reaches a point
+into the glyph's box (the meaning test's storm exclusion). Until this evening's fix (2cf21a5) the "4" was glued to its
+item, and the reader skipped the font altogether. D013 already says marks set in symbol fonts are mapped from their font codes:
+`_WEBDINGS_TRIANGLES` names the four, the right-pointing one as "‣", the triangular bullet every list rule already
+knows (the body's `_LIST_START`, a cell's `cell_lists.BULLETS`, the lone-mark joiner's `_MARK_GLYPHS`), the others as
+the shapes they are.
+
+**A second fault, found by the first A/B.** With the bullet named, 101 bullets on the 40 readable pages came out
+glued to their items - "‣garages," - where the old code had written "4 garages,". `_fuse_touching_words`, which joins
+pieces of one word emitted separately, runs after the glyph reader, and the guard I added there in 2cf21a5 kept apart
+only a letter or digit in a symbol font; "‣" is neither. Now a mark read from a symbol font - bullet, box, tick or cross
+(`_DRAWN_MARKS`) - shares no word with its neighbour however close its box; an arrow still may ("INTMRK→BRDORT").
+
+**Measured, code against code** (before: a worktree of 2cf21a5; each run names the `truedoc` it imported):
+- *Text-layer screen:* the insurance set 0 of 25 pages change, the Key Facts Sheets 0 of 380, the benchmark 0 of
+  1,122; and every library page holding a symbol-font character - 3,229 pages of 320 documents, 1,739 of them held
+  out - changes on exactly the 74 Webdings pages (40 tuned-on, 34 held out, counted), each changed line the bullet
+  renamed in place (306 lines) or a lone bullet joined to its item (two pages, the same words). The guard moved
+  nothing else anywhere.
+- *The 74 pages converted in full:* no word lost or gained on any readable page (the 314 stray "4"s aside), no bullet
+  left glued, 166 list items where there were none; all 34 held-out pages change. Read (Budget Direct's pages 2, 6, 7
+  and 8, Aussie's 3 and 6; Budget Direct's page 2 and Aussie's page 6 against their page images): the cover tables
+  now hold their lists as lists inside the cells (D028) - "includes:"
+  garages, carports and other domestic outbuildings; verandahs, patios... item by item - and Aussie's "We will pay up
+  to: 4 10% of your home sum insured or 4 10% of your contents sum insured", where a reader could take the figure for
+  410%, is now two items of 10%.
+- Four tests (`tests/test_dingbat_glyphs.py`) with a font built to Webdings' codes: three fail on the old code; a
+  guard (Webdings' codes name nothing in Wingdings) passes on both. Suite 834.
+- A slip of mine, caught by those tests: a `cd` into the before-worktree moved the session's working directory there,
+  and the next `python -m pytest` on the main tree's tests imported the worktree's old code - three tests failed for
+  no reason, and a suite run from there skipped 17 tests that need benchmark pages. Retiring the worktree ended it; the
+  memory on checking imports where they run now covers it.
+
+**Seen, not changed.** In Aussie's additional-benefits table the second benefit's cell is split over four rows, so its
+two bullets stay "‣ 10%" in separate rows rather than a list; the rows were split before this change (the known
+wrapped-cell fault). And the census found the same fault in other fonts, both GIO's: a Wingdings 3 "`" - a solid blue
+triangle on the page, though that code draws an outlined arrow in the system's Wingdings 3 - 1,775 of them in 7
+documents, written as a markdown backtick; and a chevron "›", 2,220 in 11 documents, named by its text layer but
+known to no list rule. The glyph reader sees both as right-pointing arrow heads. A rule "an arrow head opening a line
+of words is a bullet" would fix both, but it loosens a guard set on purpose and needs its own measure: the owner's
+call.
+
+**Next:** D040's steps, as the owner ordered - version matching first.
+
+---
+
 ## 2026-09-21, 19:17-20:30 - Words run together beside a big step number or a dingbat bullet: fixed in the word builder, and the 16 September diagnosis corrected
 
 The owner ruled on the two questions the word check raised (appended to D040 in `docs/DECISIONS.md`): invisible
