@@ -4,6 +4,27 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-22, 07:34-07:45 - The docs brought up to date
+
+The owner asked that every document be current before the next discussion. Read against the state of the work:
+- `docs/STATUS.md`: "Where we are" still described 17-18 September - a paragraph for 22 September now leads it. "Things
+  you may need to do" still asked for the GitHub and Hugging Face logins (done 18-19 September), a ruling on the order
+  of the next work (the owner set it on 18 September: the picture-text check, the leaderboard entry, the review's
+  F01/F10 - all done) and a remote for backup (the repository has been on GitHub since 19 September); those are marked
+  done, and the six questions actually open are listed first - where the store of confirmations lives, one repository
+  or two, GIO's two misread bullets, `--strict` as the default, partly-vector pages to a model and a full benchmark
+  run, and the retired worktrees' folder for the owner to delete.
+- `README.md`: "Where it stands" dated 22 September; a row for the word check (17 of 60,431 printed words lost on one
+  page each of 150 library documents) and a paragraph on certainty per document (D039, D040).
+- `docs/ROADMAP.md`: milestone M19, certainty per document (D039, D040), with its three steps done and what is next;
+  M7b's symbol-font bullets; the test count.
+- `bench/README.md`: 29 tools it never mentioned - every tool for the owner's documents, the meaning test, the word
+  check, the reader swap's comparisons and the leaderboard entry - with the rules on sealed and held-out documents.
+Checked and current: `docs/BENCHMARKS.md` (run 98 is the last), `docs/OKF_SPEC.md`, `docs/DECISIONS.md`,
+`docs/ARCHITECTURE.md`, `docs/MODEL_CHOICE.md`, `docs/GPU_PLAN.md`, `bench/probes/README.md`.
+
+---
+
 ## 2026-09-21, 21:56-22:05 - D040's third step: two issues of a document matched page by page; a third of the pages carry over
 
 D040 point 2: a new document is matched page by page with the version it replaces; unchanged pages keep what was

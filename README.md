@@ -2,7 +2,7 @@
 
 **TrueDoc turns any PDF into machine-readable text (OKF markdown with a YAML front matter block) and is built to win on _meaning accuracy_: does the output say what a human reading the page would understand it to say?**
 
-## Where it stands (18 September 2026)
+## Where it stands (22 September 2026)
 
 | Measure | Score | What it means |
 |---|---|---|
@@ -11,6 +11,16 @@
 | A held-out fifth of the benchmark, never looked at while building rules | 86.0 | `bench/holdout.txt`; the tuned-on four fifths score 84.8 |
 | 229 checks over 25 pages of Australian insurance documents | 229 of 229 | the owner's own reading questions (`bench/insurance_holdout.txt` seals 19 further documents that were never opened) |
 | 190 insurers' Key Facts Sheets, header and answers | 99% / 100% | `bench/tools/kfs_grade.py`, a fifth of the sheets held out |
+| Words printed on a page and lost in the conversion, one page each of 150 random library documents | 17 of 60,431, on 3 pages | `bench/tools/word_check.py` (D040): every printed word is either in the output or recorded as deliberately left out; none run together since 2cf21a5 |
+
+**Certainty on one's own documents (D039, D040).** A score says how a converter does on average; a person relying on
+one document wants to know about that document. So TrueDoc records the close calls it makes - every line it leaves
+out at a page's edge, what it did with it, why, and whether it could check (`ConvertResult.decisions`; a line it could
+not check is kept, `checked: false`, never dropped) - and the word check reads each page a second, independent way to
+account for every printed word. When an insurer reissues a document, `truedoc/versions.py` pairs each new page with
+the page it reprints and says whether it is the same, only re-dated, edited (the passages that changed, figures
+apart), or new: across the library a third of the pages carry over between issues. A store of a person's
+confirmations, a review page and a second reader are the next steps.
 
 The model readings those scores replay are committed under `bench/gpu/out5/`, so every number can be re-scored without a GPU ("Reproducing the benchmark number", below). `docs/BENCHMARKS.md` has every run, the leaderboard as read, and what each competitor's number was measured on.
 

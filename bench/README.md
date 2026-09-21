@@ -50,6 +50,28 @@ Small scripts used in the improvement loop. Each finds the repository from its o
 
 The tools from `ab_pages.py` down are run from the repository root rather than finding it from their own location.
 
+## Tools for the owner's documents (`bench/tools/`)
+
+The owner's library - a few hundred Australian insurers' PDSs, Key Facts Sheets and guides, public documents - is not
+in the repository; `doc_library.py` finds it (`TRUEDOC_LIBRARY`, or its path on one line in `bench/library_path.txt`).
+Three rules hold in every tool: the 19 documents sealed in `bench/insurance_holdout.txt` are never opened (D030);
+library documents held out by the meaning test (odd hash of the file name, D039) or by the Key Facts oracle
+(`kfs_grade.held_out`) are counted, never named; and nothing derived from the library's words goes in the repository
+beyond what the logs quote.
+
+- `insurance_score.py`: the insurance set's 229 checks over 25 pages, run by the benchmark's own machinery, with markdown escapes undone first. `insurance_with_code.py <code root> <out>` converts the set with the `truedoc` at a given root (a worktree of the commit before a change, then the repository), and `insurance_diff.py` names every check whose outcome differs between two such folders.
+- How the set was made: `insurance_pick_pages.py` (half the pages at random, half for their ruled tables), `insurance_convert_pages.py`, `insurance_verify_checks.py` (each check's quotation read again by a second reader), `insurance_dossier.py` and `dossier_two_column.py` (the owner's review cards).
+- The Key Facts Sheets beside `kfs_grade.py`: `kfs_with_code.py` (the sheets under a given code root, and a comparison of two folders), `kfs_changed.py` (sheets whose conversion differs from saved copies), `kfs_two_readers.py` (TrueDoc against a model that saw only the page, cell by cell).
+- `word_check.py` (D040): is every word printed on a page in TrueDoc's output, or recorded as deliberately left out? A second, independent reading (PyMuPDF) against the output plus TrueDoc's own decisions; the differences sorted into missing, glued, split, respaced and repaired. `--pdf <file>` for a document as it arrives, `--sample N --seed 40` for the library.
+- The meaning test (D039): `meaning_draw.py` draws the pages and lays out what each reader may see; `meaning_pilot_workflow.js` and `meaning_test_structure.js` are the two rounds, run with the Workflow tool (questions written by helpers who see only a page's picture); `meaning_export_questions.py` puts questions on disk so another reader can be asked them without passing through anyone's eyes.
+- `icon_census.py`, `icon_dossier.py`: the library's icons, and the review that closed that question (`docs/ICONS_REVIEW.md`).
+- In `bench/probes/`, cited by the log: `line_signature.py` (the stage screen - the text layer's lines of every page of a population under two code roots, compared), `dingbat_census.py` and `dingbat_readings.py` (every symbol-font character in the library, and what TrueDoc writes for each), `step_space_census.py`, and `version_census.py` (how much of a document carries over from its nearest other issue, by `truedoc/versions.py`).
+
+## The reader swap and the leaderboard (kept runnable, finished work)
+
+- `engine_census.py`, `reader_compare.py`, `reader_generalise.py` (with `_generalise_worker.py`), `objects_compare.py`, `render_compare.py`, `hidden_compare.py`, `rotated_clip_check.py`: PyMuPDF against PDFium, stage by stage, as the reader was swapped (M18, D007, D022).
+- `leaderboard_entry.py` builds the olmOCR-bench entry for run 97 as a folder (page outputs, the scorer's files, `.eval_results/olmocrbench.yaml`, the card); `leaderboard_publish.py` uploads it with the token `hf auth login` stored, which it never reads or prints.
+
 ## Scoring only (outputs already exist)
 
 ```bash
