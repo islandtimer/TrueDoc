@@ -121,7 +121,61 @@ def classify_boundaries(lines: list[list[str]], lost: collections.Counter, added
     return +glued, +respaced
 
 
-_SYMBOL_FONTS = ("wingding", "webding", "dingbat", "marlett", "monotypesorts")
+def classify_splits(td_lines: list[list[str]], lost: collections.Counter, added: collections.Counter) -> collections.Counter:
+    """The mirror of glued: a word as the reference reads it that TrueDoc wrote as several. Sort it out of `lost` and
+    `added`.
+
+    The reference is a text layer read by another program, with spacing rules of its own, and it runs words together
+    too: where a Key Facts Sheet's step number has no space character beside it and its box touches the next word's,
+    PyMuPDF reads "1Understanding" and "3Other" though the page prints a clear space. While TrueDoc ran the same words
+    together the two agreed and the check saw nothing; once TrueDoc wrote them apart, the first run counted them missing
+    - words whose every letter TrueDoc wrote (21 September 2026). Split is not a loss, and it is not proof of either
+    reader's fault: the page decides, so on a tuned-on page the words are listed to be read. Two shapes: a missing word
+    that is several consecutive words of one of TrueDoc's lines, each of them added; or a missing word that is an added
+    word with a numeral of up to three digits at one end, where TrueDoc wrote that numeral right beside it
+    ("1understanding" against "1 Understanding", the "1" having matched another "1" of the page). Beside it, not merely
+    somewhere: a printed "12" lost is not excused by a stray "2"."""
+    split = collections.Counter()
+    for l in sorted(lost, key=len, reverse=True):
+        for toks in td_lines:
+            i = 0
+            while lost[l] > 0 and i < len(toks):
+                joined, j = "", i
+                while j < len(toks) and len(joined) < len(l):
+                    joined += toks[j]
+                    j += 1
+                window = toks[i:j]
+                if joined == l and len(window) > 1 and all(added[t] >= window.count(t) for t in set(window)):
+                    for t in window:
+                        added[t] -= 1
+                    lost[l] -= 1
+                    split[l] += 1
+                    i = j
+                else:
+                    i += 1
+    beside = collections.Counter(x + " " + y for toks in td_lines for x, y in zip(toks, toks[1:]))
+    for l in list(lost):
+        for a in list(added):
+            if lost[l] <= 0 or added[a] <= 0 or len(l) <= len(a):
+                continue
+            if l.endswith(a):
+                extra = l[:len(l) - len(a)]
+                pair = extra + " " + a
+            elif l.startswith(a):
+                extra = l[len(a):]
+                pair = a + " " + extra
+            else:
+                continue
+            if len(extra) <= 3 and extra.isdigit() and beside[pair] > 0:
+                n = min(lost[l], added[a], beside[pair])
+                lost[l] -= n
+                added[a] -= n
+                beside[pair] -= n
+                split[l] += n
+    return +split
+
+
+_SYMBOL_FONTS =("wingding", "webding", "dingbat", "marlett", "monotypesorts")
 
 
 def printed_text(page) -> str:
@@ -237,7 +291,9 @@ def check_page(job):
     added = td - (ref + turned)
     repaired = reconcile_repairs(lost, added)
     lost, added = +lost, +added
-    blob = re.sub(r"\W", "", unicodedata.normalize("NFKC", body + " " + " ".join(text for _why, text in owned)).lower())
+    split = classify_splits([token_list(l, markup=True) for l in body.splitlines()], lost, added)
+    lost, added = +lost, +added
+    blob =re.sub(r"\W", "", unicodedata.normalize("NFKC", body + " " + " ".join(text for _why, text in owned)).lower())
     glued, respaced = classify_boundaries([token_list(l) for l in reference.splitlines()], lost, added, blob)
     lost, added = +lost, +added
     # Text on its side is judged as a run of letters: a turned stamp at the page's edge is read in pieces by one reader
@@ -246,8 +302,10 @@ def check_page(job):
     fragments = collections.Counter({w: n for w, n in turned.items() if w in blob})
     respaced += fragments
     lost += turned - fragments
-    out.update(ref_words=sum(ref.values()) + sum(turned.values()), body_words=sum(td.values()), accounted_words=sum(accounted.values()),
-               missing=sum(lost.values()), glued=sum(glued.values()), added=sum(added.values()),
+    import truedoc
+    out.update(code=os.path.dirname(truedoc.__file__),
+               ref_words=sum(ref.values()) + sum(turned.values()), body_words=sum(td.values()), accounted_words=sum(accounted.values()),
+               missing=sum(lost.values()), glued=sum(glued.values()), split=sum(split.values()), added=sum(added.values()),
                respaced=sum(respaced.values()), repaired=sum(repaired.values()),
                decisions=len(page.meta.get("decisions") or []),
                # kept though it could not be shown to run; a turned stamp is left uncounted here (it is kept nowhere)
@@ -255,6 +313,7 @@ def check_page(job):
                turned_stamps=sum(1 for d in page.meta.get("decisions") or [] if d["because"].startswith("a turned stamp")))
     if not secret:
         out.update(missing_words=sorted(lost.elements())[:60], glued_words=sorted(glued.elements())[:30],
+                   split_words=sorted(split.elements())[:30],
                    added_words=sorted(added.elements())[:60], repairs=sorted(repaired)[:20],
                    owned=[(why, text[:120]) for why, text in owned][:12])
     return out
@@ -310,14 +369,18 @@ if __name__ == "__main__":
         mine = [r for r in checked if r["held_out"] == half]
         if not mine:
             continue
-        print("%-9s pages %3d | printed words %6d | MISSING %4d on %3d pages | GLUED %3d on %3d pages | added %4d | "
-              "respaced (the reference's) %4d | repaired %3d | unchecked edge calls %d"
+        print("%-9s pages %3d | printed words %6d | MISSING %4d on %3d pages | GLUED %3d on %3d pages | SPLIT %3d on %3d pages | "
+              "added %4d | respaced (the reference's) %4d | repaired %3d | unchecked edge calls %d"
               % (name, len(mine), sum(r["ref_words"] for r in mine),
                  sum(r["missing"] for r in mine), sum(1 for r in mine if r["missing"]),
                  sum(r["glued"] for r in mine), sum(1 for r in mine if r["glued"]),
+                 sum(r["split"] for r in mine), sum(1 for r in mine if r["split"]),
                  sum(r["added"] for r in mine), sum(r["respaced"] for r in mine), sum(r["repaired"] for r in mine),
                  sum(r["unchecked"] for r in mine)))
-    print("no text layer: %d | errors: %d" % (sum(1 for r in rows if r.get("no_text_layer")), sum(1 for r in rows if "error" in r)))
-    for r in sorted((r for r in checked if not r["held_out"] and (r["missing"] or r["glued"])), key=lambda r: -(r["missing"] + r["glued"]))[:20]:
-        print("   %-58s p%-3d missing %3d glued %2d | %s | glued: %s" % (r["document"][-58:], r["page"], r["missing"], r["glued"],
-                                                                      " ".join(r["missing_words"][:10]), " ".join(r["glued_words"][:4])))
+    print("no text layer: %d | errors: %d | code: %s" % (sum(1 for r in rows if r.get("no_text_layer")), sum(1 for r in rows if "error" in r),
+                                                        sorted({r["code"] for r in checked})))
+    for r in sorted((r for r in checked if not r["held_out"] and (r["missing"] or r["glued"] or r["split"])),
+                    key=lambda r: -(r["missing"] + r["glued"] + r["split"]))[:20]:
+        print("   %-58s p%-3d missing %3d glued %2d split %2d | %s | glued: %s | split: %s" % (
+            r["document"][-58:], r["page"], r["missing"], r["glued"], r["split"], " ".join(r["missing_words"][:10]),
+            " ".join(r["glued_words"][:4]), " ".join(r["split_words"][:4])))

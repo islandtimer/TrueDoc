@@ -915,3 +915,16 @@ footer (D039's round 2). It did not: TrueDoc reads the three lines, the layout m
 footer is left out of the body; D029 keeps such a line as the document's imprint only when the pages beside it are
 *known not* to print it (`_repeated_beside(...) is False`), and a document of one page cannot be asked, so the answer
 is "unknown" and the line was neither published nor recorded. An unknown was treated as a discard.
+
+**Two rulings, the owner's, 21 September 2026, 19:17** ("the invisible accessibility text can stay dropped. sideways text at the page
+edge stays out"), on questions the first word-check sample raised:
+- *Invisible accessibility text stays dropped and unlisted.* A PDF's text for screen readers behind a visible mark -
+  CBA's tick labelled "Applies", its cross "does not apply" - is not written into the body and not listed under
+  `hidden_text`. D011's listing is for text hidden from a reader; this text stands for a mark the reader does see.
+- *Text set sideways at a page's edge stays out of the front matter.* A turned form code or title is recorded in the
+  decisions only, as D029 has it; D040's "an unknown is not a discard" is not extended to it.
+
+And the next piece of work: **words run together where a styled piece meets the next word** - a Webdings bullet
+written "4" and run into its word ("4artificial"), a Key Facts Sheet's step number in a box of its own run into its
+heading ("Step1Understanding") - the commonest real fault of the first sample, a fault of the code, to be fixed
+generically (D040's lesson of the first kind).

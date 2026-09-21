@@ -1221,6 +1221,34 @@ def _read_private_glyphs(pdf_page: "pymupdf.Page", page: Page) -> None:
         page.words = [w for l in page.lines for w in l.words]
 
 
+def _big_numeral(a: Char, b: Char) -> bool:
+    """One of two neighbours is a digit set at twice the size or more of the letter beside it.
+
+    A numeral set far larger than the words beside it is a word of its own, and a space beside it is judged in the
+    letters' type, not the numeral's. A Key Facts Sheet sets its step number at 48 points between "STEP" at 16 and
+    "Understanding the Fact Sheet" at 12, 3.3 points from each: a word space for 12- or 16-point type, and under 8% of
+    48, so it was taken for kerning and "STEP1Understanding" came out on every sheet of that design - noted on 16
+    September 2026 and put down to the PDF, and found again by the word check (D040). Beside three step numbers in five
+    the text layer does hold the space - the file's own, or one PDFium puts in the gap - and it was thrown away here;
+    beside the rest the boxes touch, and the space the page shows comes from the type (`_numeral_then_capital`). A
+    letter set large is not one: a drop cap is the start of its word."""
+    big, small = (a, b) if a.size >= b.size else (b, a)
+    return big.text.isdigit() and small.text.isalpha() and big.size >= 2.0 * max(small.size, 1.0)
+
+
+def _numeral_then_capital(a: Char, b: Char) -> bool:
+    """A numeral set large meets a letter where no word can run on: a new word however close the boxes sit.
+
+    A digit is a narrow glyph in a wide box, so on some sheets of the same design the boxes touch though the page shows
+    a clear space: the "1"'s box reaches the "U" of "Understanding" (144.9 against 144.8 on Apia's), and on others the
+    "1" starts a point after the "P" of "STEP" (93.1 against 94.1 on AAMI's of 2023). A letter before a numeral twice
+    its size never runs on into it, and a capital after one starts a word; a small letter after a numeral may be an
+    ordinal's suffix ("1st"), and is left to the gap."""
+    if not _big_numeral(a, b):
+        return False
+    return (a.text.isdigit() and b.text.isupper()) or (a.text.isalpha() and b.text.isdigit())
+
+
 def _chars_to_words(chars: list[Char], ocr_layer: bool = False) -> list[Word]:
     """Group a line's characters into words.
 
@@ -1305,7 +1333,9 @@ def _chars_to_words(chars: list[Char], ocr_layer: bool = False) -> list[Word]:
                 # a real one however tight the setting ("However, state" at 0.07 em
                 # in Caslon); the kerning-gap doubt is about spaces inside words.
                 after_punct = prev.text in ",;:!?" or (prev.text == "." and nxt.text.isupper())
-                if not after_punct and nxt.bbox.x0 - prev.bbox.x1 < 0.08 * max(prev.size, nxt.size, 1.0):
+                # Beside a numeral set far larger than its words the space is real however narrow it looks against
+                # the numeral (`_big_numeral`).
+                if not after_punct and not _big_numeral(prev, nxt) and nxt.bbox.x0 - prev.bbox.x1 < 0.08 * max(prev.size, nxt.size, 1.0):
                     continue
             flush()
             after_space = True
@@ -1314,9 +1344,20 @@ def _chars_to_words(chars: list[Char], ocr_layer: bool = False) -> list[Word]:
         if prev is not None and current:
             gap = c.bbox.x0 - prev.bbox.x1
             size = max(c.size, prev.size, 1.0)
+            if _dingbat_font(prev.font) != _dingbat_font(c.font) and prev.text.isalnum() and c.text.isalnum():
+                # A letter or digit in a dingbat font is a code for a picture, not a letter (see
+                # `_read_private_glyphs`), so it shares no word with the text beside it. A Webdings bullet set hard
+                # against its item - its box a point into the next letter, no space between - made "4artificial grass
+                # or turf" of a storm exclusion list (found by the word check, D040). A mark already named as one
+                # ("→", "✓") is left where it stands: "INTMRK→BRDORT" is one path of a model, and one word.
+                flush()
+            elif _numeral_then_capital(prev, c) or (_big_numeral(prev, c) and gap > max(0.13 * min(c.size, prev.size), 0.9)):
+                # The same numeral where the text layer has no space at all ("STEP" then "1", 3.3 points apart): the
+                # gap is a word space in the letters' type, whatever it is in the numeral's.
+                flush()
             # No explicit space but a visible gap: treat as a word break. Justified
             # narrow columns squeeze word spaces to about 0.14 em.
-            if gap > max(0.13 * size, 0.9) and gap > 1.6 * median_gap:
+            elif gap > max(0.13 * size, 0.9) and gap > 1.6 * median_gap:
                 flush()
             elif gap > raw_median + 0.25 * size:
                 # Glyph boxes wider than the glyphs (a font whose declared widths are
@@ -1619,6 +1660,17 @@ def _fuse_touching_words(line: Line) -> Line:
         if w.after_space:
             out.append(w)
             continue
+        # The two word breaks `_chars_to_words` makes by type rather than by gap hold here too, or this pass undoes
+        # them: a numeral set far larger than its words is judged in the letters' type (3.3 points from "STEP" is
+        # under a tenth of 48, not of 16), and a code in a dingbat font shares no word with text.
+        a = next((c for c in reversed(prev.chars) if not c.text.isspace()), None)
+        b = next((c for c in w.chars if not c.text.isspace()), None)
+        if a is not None and b is not None:
+            if (_dingbat_font(a.font) != _dingbat_font(b.font) and a.text.isalnum() and b.text.isalnum()) or _numeral_then_capital(a, b):
+                out.append(w)
+                continue
+            if _big_numeral(a, b):
+                size = max(min(a.size, b.size), 1.0)
         if w.bbox.x0 - prev.bbox.x1 < base + 0.1 * size and w.bbox.y_overlap(prev.bbox) > 0:
             out[-1] = Word(text=prev.text + w.text, bbox=prev.bbox.union(w.bbox), chars=prev.chars + w.chars)
         else:

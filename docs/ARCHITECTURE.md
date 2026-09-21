@@ -21,6 +21,12 @@ PDF page
   |                                 (_read_drawn_underscores), and leaves the page's drawings
   |                               - an arrow set in Wingdings is named from its code, as its tick and cross are
   |                                 (_WINGDINGS_ARROWS, each code drawn from the font and looked at; not Wingdings 2/3)
+  |                               - a gap beside a numeral set at twice its words' size or more is judged in the words'
+  |                                 type, not the numeral's: a Key Facts Sheet's 48-point step number, 3.3 points from
+  |                                 "STEP" and from its heading, is a word of its own, and a capital after it starts one
+  |                                 however close the boxes (_big_numeral, _numeral_then_capital; in _chars_to_words and
+  |                                 in _fuse_touching_words, which would otherwise re-join them); a letter or digit in a
+  |                                 dingbat font shares no word with the text beside it
   |     ocr/rapid.py              (only if the page has no usable text) RapidOCR -> same evidence shapes; a page read sideways is turned and read again
   v
   |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;

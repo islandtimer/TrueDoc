@@ -2,8 +2,9 @@
 
 The check sets the words a page prints against what TrueDoc wrote and what it owns up to leaving out. What differs is
 sorted: *repaired* (a ligature the text layer spells short, which TrueDoc puts right), *glued* (words TrueDoc ran
-together - a fault), *respaced* (words the reference reader broke apart - not TrueDoc's fault) and *missing* (a real
-loss). Each test is one of the pages that made the rule.
+together - a fault), *split* (a word as the reference reads it that TrueDoc wrote as several - the page decides whose
+fault), *respaced* (words the reference reader broke apart - not TrueDoc's fault) and *missing* (a real loss). Each
+test is one of the pages that made the rule.
 """
 import collections
 import importlib.util
@@ -46,6 +47,37 @@ def test_a_symbol_run_into_its_word_is_glued():
     lost, added = C({"artificial": 1}), C({"4artificial": 1})
     glued, _ = wc.classify_boundaries(lines, lost, added, blob="")
     assert glued == C({"4artificial": 1}) and +lost == C()
+
+
+def test_words_the_reference_ran_together_and_truedoc_wrote_apart_are_split():
+    # AAMI's contents Key Facts Sheet, page 2: the reference reads "3Other" and "4Seek" - no space character, the boxes
+    # touching - where the page prints "Step 3 Other things to consider"; TrueDoc writes the space.
+    td_lines = [["step", "3", "other", "things", "to", "consider"], ["step", "4", "seek", "more", "information"]]
+    lost, added = C({"3other": 1, "4seek": 1}), C({"3": 1, "other": 1, "4": 1, "seek": 1})
+    split = wc.classify_splits(td_lines, lost, added)
+    assert split == C({"3other": 1, "4seek": 1}) and +lost == C() and +added == C()
+
+
+def test_a_numeral_the_page_prints_elsewhere_still_leaves_a_split():
+    # Apia's: the reference's "1understanding" against TrueDoc's "1 Understanding", where the "1" TrueDoc wrote matched
+    # another "1" of the page, so only "understanding" is left over.
+    lost, added = C({"1understanding": 1}), C({"understanding": 1})
+    split = wc.classify_splits([["step", "1", "understanding", "the", "fact", "sheet"]], lost, added)
+    assert split == C({"1understanding": 1}) and +lost == C() and +added == C()
+
+
+def test_a_number_lost_is_not_excused_by_a_stray_digit():
+    # A printed "12" lost, and a "2" TrueDoc wrote elsewhere with no "1" beside it: a loss, not a split.
+    lost, added = C({"12": 1}), C({"2": 1})
+    assert wc.classify_splits([["clause", "2", "applies"], ["page", "1"]], lost, added) == C()
+    assert lost["12"] == 1 and added["2"] == 1
+
+
+def test_a_word_lost_is_not_excused_by_a_letter_short_of_it():
+    # "cover" lost and "over" written elsewhere is a loss and a stray word, not a split: the extra is a letter.
+    lost, added = C({"cover": 1}), C({"over": 1})
+    assert wc.classify_splits([["over"]], lost, added) == C()
+    assert lost["cover"] == 1 and added["over"] == 1
 
 
 def test_a_letter_spaced_title_the_reference_broke_is_respaced():

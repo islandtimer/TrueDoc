@@ -4,6 +4,92 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-21, 19:17-20:30 - Words run together beside a big step number or a dingbat bullet: fixed in the word builder, and the 16 September diagnosis corrected
+
+The owner ruled on the two questions the word check raised (appended to D040 in `docs/DECISIONS.md`): invisible
+accessibility text stays dropped and unlisted, and text set sideways at a page's edge stays out of the front matter.
+And chose the next piece of work: the words run together, the commonest fault of the first sample.
+
+**It had been seen before, and put down to the wrong cause.** The owner recalled it had been looked at. It had: on 16
+September, reading the Key Facts Sheets' page tops after the imprint change, the entry "2026-09-14 to 2026-09-17" of
+this log noted page 2's "Step 3 Other things to consider" coming out "Step3Other things to consider" on 29 of 33
+sheets, "the spaces around its large numeral lost", and my working notes put it down to the file - "spaces lost in the
+text layer - visible now, not caused" - and left it. I did not check it. Counted now, on the 158 tuned-on sheets
+(`bench/probes/step_space_census.py`, PDFium's text layer, every digit set at 30 points or more): beside roughly three
+step numbers in five the text layer does hold the space - the file's own space character (240 of 572 sides after the
+number, 150 of 594 before it), or one PDFium puts in the gap (89 and 221), or a clear gap (7 and 4) - and TrueDoc
+threw it away. Beside the rest (236 after, 219 before) nothing in the file marks it: a digit is a narrow glyph in a
+wide box, and the "1"'s box reaches the "U" of "Understanding" (144.9 against 144.8 on Apia's) though the page shows a
+clear space. So the diagnosis was wrong for most of the spaces, and "not caused" was the wrong conclusion for all of
+them: the type settles every one. TrueDoc lost them in three places, each judging a gap against the larger of the two
+sizes beside it - the 48-point numeral's, not the 12- or 16-point words':
+- `_chars_to_words` drops a space narrower than 8% of the larger size as a kerning artefact (TIO's 2.8-point space);
+- with no space, it breaks a word only at a gap over 13% of the larger size (Qantas's 3.3 points against 48);
+- `_fuse_touching_words` re-joins words closer than a tenth of the larger size - it undid the first version of the fix.
+
+**The fix** (`truedoc/extract/textlayer.py`), by type, never by page:
+- `_big_numeral`: a digit set at twice the size or more of the letter beside it. The gaps beside it are judged in the
+  letters' type: a space there is kept, and with none a gap over 13% of the smaller size (or 0.9 point) is a break.
+- `_numeral_then_capital`: that numeral followed by a capital, or preceded by a letter, is a word break however close
+  the boxes - a letter never runs on into a numeral twice its size, and a capital after one starts a word. A small
+  letter after it is left to the gap, so an ordinal's suffix stays on its number ("1st"); a large *letter* is not a
+  numeral, so a drop cap still starts its word ("The").
+- A letter or digit in a dingbat font shares no word with the text beside it: the Webdings bullet set a point into
+  "artificial" (the meaning test's find) is no longer run into it. A mark already named stays inside its word
+  ("INTMRK→BRDORT", one path of a model, as 4a58814 made it).
+- `_fuse_touching_words` keeps both breaks.
+Eight tests (`tests/test_words_run_together.py`), each with a page's own geometry: five fail on the old code, three
+guards (the named arrow, the drop cap, "1st") pass on both.
+
+**Not fixed, a separate fault:** the Webdings bullet is read as its code, the digit "4", not as the triangle it draws.
+On the meaning test's page (t03, converted under both code states) the storm exclusions' cell read "loss or damage to:
+4fences and gates ... 4artificial grass or turf 4garden retaining walls ..." and now reads "4 fences and gates ... 4
+artificial grass or turf 4 garden retaining walls ...": each bullet where it stands, no longer part of a word, still a
+stray "4". The Wingdings arrows' trap in another font: name the glyph from its code, drawn from the font and looked at.
+
+**Measured, code against code** (the before state a worktree of 25a3724; each run prints the `truedoc` it imported):
+- *The stage screen* (`bench/probes/line_signature.py`, new: the text layer's lines of every page of a population,
+  held-out pages as a hash; the compare now reports pages that failed to read instead of skipping them): the insurance
+  set 0 of 25 pages change (screened again on the final code); the benchmark 1 of 1,122, a maths line on a tables
+  page ("j=1Œi" to "j=1 Œi"; converted in full the body is the same and its one check passes both ways); the Key
+  Facts Sheets 288 of 380 pages, 237 tuned-on and 51 held out (counted). Every one of the 451 changed tuned-on lines
+  is a step heading that only gained spaces ("STEP 1 Understanding", 16 September's "Step 3 Other", "4 Seek" on a
+  line of its own), and no step heading is left run together on any tuned-on sheet.
+- *The Key Facts grade* (`kfs_grade.py --fresh`): unchanged - header whole 157 of 158, held out 32 of 32; events and
+  answers 1,885 of 1,885, held out 375 of 375.
+- *The owner's insurance set:* nothing changes at the text layer, so nothing downstream can.
+- Suite 830.
+
+**The word check, run again - and a fault of the check that the fix exposed.** On the same 150 documents (seed 40)
+the new code first read glued 26 on 16 pages down to 0 - but *missing* up from 11 to 15 on the tuned-on half and from
+6 to 15 held out. The four new tuned-on "losses" were "1understanding" (Apia's; AAMI's building), "3other" and
+"4seek" (AAMI's contents, page 2): the *reference* reading a step heading as one word where the page prints a space
+(looked at: "STEP 3 Other things to consider", "STEP 4 Seek more information"). PyMuPDF has spacing rules of its own
+and runs these together too. While TrueDoc did the same the two agreed and the check saw nothing - so the first
+sample's 26 glued words undercounted the fault; the screen found 451 lines. The check gained the mirror of glued,
+**split** (`classify_splits`: a word as the reference reads it that TrueDoc wrote as several; listed on a tuned-on page
+to be read, the page deciding whose fault), four tests, and each row now names the `truedoc` it ran. Its first version
+paired a lost "1understanding" with any leftover "understanding" on the page, so a lost "12" could have been excused
+by a stray "2"; the numeral must now stand right beside its word in TrueDoc's text. Both code states, run again with
+the one check:
+
+| 150 documents, one page each | missing | glued | split | added |
+|---|---|---|---|---|
+| tuned-on (64 pages, 26,931 words), 25a3724 | 11 on 2 pages | 6 on 4 | 0 | 0 |
+| tuned-on, the fix | 11 on 2 pages | **0** | 4 on 3 | 0 |
+| held out (85 pages, 33,500 words, counted), 25a3724 | 6 on 1 page | 20 on 12 | 0 | 139 |
+| held out, the fix | 6 on 1 page | **0** | 9 on 7 | 139 |
+
+Missing and added do not move; respaced, repaired and the unchecked edge calls are the same in both states too. Of the
+three tuned-on pages with a split, AAMI's contents page 2 had no glued word before - both readers ran "3Other" together,
+the blind spot itself. The held-out split is 9 words on 7 pages, all among the 12 whose glued count fell, and the same 7
+on which the first run counted new missing words (compared by script, never shown); what they are cannot be read.
+
+**Next**, by D040's order: version matching, the store of confirmations, the review page, the second reader, a pilot
+on one or two insurers. Small and separate: the Webdings bullet named from its code.
+
+---
+
 ## 2026-09-21, 11:00-17:30 - D040's first two steps: TrueDoc records what it leaves out at a page's edge, and the word check
 
 The owner asked how to create certainty in the conversions of his library, with review where it is uncertain; that
