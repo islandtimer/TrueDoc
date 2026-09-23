@@ -959,3 +959,33 @@ differently - so those confirmations become TrueDoc's regression tests on real d
   only the package version today).
 - **What would reopen it.** TrueDoc ceasing to matter as a public, benchmark-scored converter; or an insurance need
   met only by a reading rule that costs the benchmark and cannot be made a switch.
+
+
+## D042 - Reading faults are sized before they are fixed; five fixed as general rules, one left as knowledge about its design (2026-09-23, the owner's decisions)
+
+**The rule the owner set for this work.** A reading fault is sized on the benchmark, the insurance set and the library
+before any code, and the sizes are reported first. A pattern with nothing like it on the benchmark, found in one
+design only, does not become a general rule: it becomes a switch that is off by default, or knowledge about that
+design kept with whoever converts it. A fix is written in geometry and typography, never in a document's words, and is
+measured on the benchmark (the held-back fifth held back), the Key Facts Sheets and the insurance set, with every
+page whose output changes read.
+
+**Decided, as general rules** (sizes in the progress log, 23 September):
+- *A side label read before the lines it heads* ("go ahead with F2 then F3", 23 September) - built, c079c0b.
+- *A picture a mark's size in a table or at a line's head is an icon, not a figure* (same) - built, 6093c53.
+- *A side note in a drawn box read into the paragraph beside it* ("For F1, lets make it a general rule", 23
+  September): in the library every tuned-on case is one design, but the benchmark has one (a boxed note on a journal
+  page), so the rule may be general. To be built as "the prose inside a drawn box stays together and never joins
+  lines outside it", guarded against a figure's frame round its labels.
+- *Lists set side by side with no rules between their rows, cut one row per printed line* ("we start on the F4 and
+  F5 builds"): four insurers' designs and relatives on the benchmark. Rows to be found from the content - the bullets
+  and the row label - each list kept whole, as a ruled cell's list already is (D028).
+- *A page called unreadable when nothing was lost* (same): blank pages, ruled pages for notes, pages of a few words
+  and pages in several scripts end their documents `incomplete` (131 of 1,157 library documents for no other reason).
+  Such a page is to be reported for what it is, not as a loss; a page in several scripts is read. Which pages a vision
+  reader reads, when one is configured, does not change - the six such benchmark pages are read by one in the quoted
+  runs.
+
+**Left as knowledge about its design** ("F6 as template knowledge", 23 September): text an interactive PDF prints under
+its navigation buttons, repeated down a side margin. Found in two documents of one design, one of which writes it into
+the text; a rule dropping repeated margin text would also drop a template's real side headings. No rule here.
