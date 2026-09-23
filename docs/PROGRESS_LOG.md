@@ -4,7 +4,7 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
-## 2026-09-23, 15:00-16:55 - Three more reading faults sized: a boxed side note, lists cut per line, pages called unreadable
+## 2026-09-23, 14:57-16:51 - Three more reading faults sized: a boxed side note, lists cut per line, pages called unreadable
 
 Sized before any code, as the owner asked (`bench/probes/box_list_blank_census.py`: a screen of every page without the
 layout model; flagged pages converted with the product's options, up to three a document for the box and two for the
