@@ -135,7 +135,11 @@ PDF page
   |                               placeholder; each recorded with the page's decisions
   |     tables/list_columns.py    then, the marks in place: lists set side by side with no boxes, cut at their lines by a
   |                               text-built table, are read column by column and rebuilt as one row of list cells under
-  |                               their headings (rebuild_side_by_side_lists)
+  |                               their headings (rebuild_side_by_side_lists). Since D042 a column may open with words
+  |                               before its entries, close with a note, or hold prose; a short label at the first
+  |                               column's edge heads the row it stands level with; a rule drawn across the table divides
+  |                               rows and sets its headings apart - taken only where an entry of one column carries on
+  |                               beside another column's new entry (_crossing), which a table of records never shows
   |     tables/cell_lists.py      a list inside a table cell - entries opened by a tick, cross or bullet at a hanging
   |                               indent, sub-lists, a note - is kept as a list and written as <ul><li> (list_cells; D028)
   |     tables/cell_tables.py     a table inside a table cell - three lines or more, every one broken at a gap no word

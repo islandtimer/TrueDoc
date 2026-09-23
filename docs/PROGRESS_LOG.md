@@ -4,7 +4,58 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
-## 2026-09-23, 18:59-20:13 - A page the text check turns down is called unreadable only where something may be lost (D042)
+## 2026-09-23 20:14 - 2026-09-24 02:27 - Lists set side by side are read as lists wherever the rows are their printed lines (D042)
+
+Built as the owner decided. The layout model's table region hands the text-built finder two or three columns of lists,
+and the finder cuts them into a row per printed line: the example PDS's cover table ("Buildings" as a label spanning 23
+rows, "• buildings located outside" in one row and "Australia" in the next, the two lists interleaved). D028's rebuild
+(`tables/list_columns.py`) read such a table column by column, but only where every column opened with an entry. It now
+also takes:
+- a column opening with words before its entries (`CellList.lead`), closing with a note, or holding prose;
+- a label beside the lists - the first column's row span, or short blocks at its edge with no mark (`_label_blocks`; a
+  block opening in lower case or with a bracket carries the label above on: "Contents" over "(continued...)") - heading
+  the row it stands level with;
+- a rule drawn across the table, its pieces a column at a time (`_rules_across`): under the top rows it ends the
+  headings, even a heading row of marks ("✓ Covered"); lower down it divides two rows;
+- a heading split over a column of marks and the words beside it ("We" / "do not cover") joined, and one spanning
+  several columns spanning them still; a cell of several marks run together ("• •") taken as marks.
+So wide a reading is taken only where the page shows the rows are printed lines, not records (`_crossing`): an entry of
+one column - opened at a row's start or inside a cell - carried on beside a row where another column opens an entry. A
+table of records starts its cells level and is left alone. A line alone in its row is no section label when it starts
+further in than the column's marks (it carries an entry on) or in lower case ("such as:"). One entry is not a list and
+keeps its bullet.
+
+**Measured** (`bench/probes/list_columns_screen.py`: every page converted once with the layout model, the committed
+rebuild and the working tree's run on the same tables). Benchmark 0 of 1,403 pages, Key Facts 0 of 380, insurance set 0
+of 25. Library, the 2,351 pages the sizing screen flagged: 122 pages (45 tuned on, 77 held out) - 117 tables rebuilt
+that were not, 1 rebuilt before and not now (held out), 4 rebuilt differently. Without the layout model the screen
+finds 4, since these tables are built from the model's regions: a screen that reaches this stage needs the model on.
+The first screen of the build found 50 pages; reading them turned up five faults, all fixed before the second: a table
+the committed code had rebuilt wrong (a heading merged into the body, "such as:" made a heading across both columns) that
+the new code refused; a column of bullets not taken as marks, so a sliver of first words became a column of its own
+("We rent • • The the"); a label and its "(continued...)" split into two rows; a heading lost where the finder split it
+over a marks column; an entry opening inside a cell unseen, so the cut was not recognised.
+
+**Read**, all 45 tuned-on pages, the tables before and after, and the pages against their images for each design: the
+example cover table (whole: "Buildings" beside "Your:" + three items + the address condition, and eleven exclusions) and
+its sister pages, 10 pages in three PDSs of that design; a when / how much / what's covered layout, 25 pages in 12 PDSs
+of one design family sold under eight brands; target market determinations' suitable / not suitable and cover-for
+columns (5); a four-step claims layout (Incident, Lodge, Assess, Settle; 3), whose step headings one PDS had lost and
+now has; a we cover / we do not cover table (1). Every one reads as the page sets it. Left as they
+were: a small table the finder built across a two-column page (a row of three tank items beside the tail of another
+list - wrong before and after), and where the finder took a table's first body line for a heading row, it stays one.
+
+Not built, noticed: "Continued next page..." at a column's foot is read as the rest of its last entry (`build_listing`
+takes a line right of the hanging indent as carrying on; shared with D028's cell lists); a column's second list, after a
+paragraph, is kept as that paragraph's words, bullets inline (a cell list has one lead, one list and one note); a
+calendar icon read as a tick stops one landlord PDS's feature table (the words check refuses a tick it cannot place);
+the finder drops a "What's not covered?" heading on one page, before and after.
+
+Tests: `tests/test_list_columns.py` 2 -> 15; each of the 25 guards cut out in turn fails one. Suite 890.
+
+---
+
+## 2026-09-23, 18:59-20:14 - A page the text check turns down is called unreadable only where something may be lost (D042)
 
 Built as the owner decided. A page the text-layer check turns down (`textlayer._assess_quality`: under twenty letters
 and figures, or a quarter of its longer words looking like no language) and that no reader replaces was always

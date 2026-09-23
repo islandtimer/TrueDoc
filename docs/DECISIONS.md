@@ -979,7 +979,8 @@ page whose output changes read.
   lines outside it", guarded against a figure's frame round its labels.
 - *Lists set side by side with no rules between their rows, cut one row per printed line* ("we start on the F4 and
   F5 builds"): four insurers' designs and relatives on the benchmark. Rows to be found from the content - the bullets
-  and the row label - each list kept whole, as a ruled cell's list already is (D028).
+  and the row label - each list kept whole, as a ruled cell's list already is (D028). Built 24 September
+  (`tables/list_columns.py`): 122 library pages, none on the benchmark, the Key Facts Sheets or the insurance set.
 - *A page called unreadable when nothing was lost* (same): blank pages, ruled pages for notes, pages of a few words
   and pages in several scripts end their documents `incomplete` (131 of 1,157 library documents for no other reason,
   counted with OCR off; with OCR on, as the product runs, 108 end `incomplete` in all). Such a page is to be reported
