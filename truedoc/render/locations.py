@@ -273,7 +273,7 @@ def build_map(doc: Document, markdown: str, trace: dict) -> dict:
             elif block.lines:
                 _emphasis(block, piece_text, body_start + start, bold, italic)
     found_exact = exact
-    unreadable = {p for i in doc.all_issues() if i.code == "unreadable-pages" for p in (i.pages or [])}
+    unreadable = {p for i in doc.all_issues() if i.code in ("unreadable-pages", "ocr-failed") for p in (i.pages or [])}
     ocr = set(doc.metadata.get("pages_with_ocr") or [])
     pages = []
     for page in doc.pages:

@@ -24,6 +24,9 @@ _MIN_SCORE = 0.5
 
 _engine = None
 _lock = threading.Lock()
+# The recognition model the engine was started with in this process, for the build record: the one on disk when the
+# record is made may not be it - the engine falls back on its own where the English one could not be had.
+recognition: Optional[str] = None
 
 # The bundled recognition model is Chinese+English and tends to drop the spaces
 # between English words; the English PP-OCRv3 model (same Apache-2.0 model zoo)
@@ -33,17 +36,32 @@ _EN_REC_FILE = "PP-OCRv3/en_PP-OCRv3_rec_infer.onnx"
 _MODELS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "models", "rapidocr")
 
 
+_FETCH_WAIT = 600  # seconds a process waits for another to finish fetching the model before going on without it
+
+
 def english_rec_model_path() -> Optional[str]:
-    """Path to the English recognition model, downloading it on first use. None if unavailable."""
+    """Path to the English recognition model, downloading it on first use. None if unavailable.
+
+    Several conversions started together on a fresh install all find the model missing at once. Each used to fetch it
+    for itself into the same place while others were already loading it - the likeliest reason six started so on 24
+    September lost OCR on the first page two of them read, in the half-minute the model took to arrive (the error
+    itself was not kept). Now one process fetches it under a lock the others wait on, and each looks again once it
+    holds the lock: the file is written once, and read whole.
+    """
     if os.environ.get("TRUEDOC_OCR_LANG", "en").lower() != "en":
         return None
     local = os.path.join(_MODELS_DIR, _EN_REC_FILE.replace("/", os.sep))
     if os.path.exists(local):
         return local
     try:
+        from filelock import FileLock
         from huggingface_hub import hf_hub_download
 
-        return hf_hub_download(_EN_REC_REPO, _EN_REC_FILE, local_dir=_MODELS_DIR)
+        os.makedirs(_MODELS_DIR, exist_ok=True)
+        with FileLock(os.path.join(_MODELS_DIR, "fetch.lock"), timeout=_FETCH_WAIT):
+            if os.path.exists(local):
+                return local
+            return hf_hub_download(_EN_REC_REPO, _EN_REC_FILE, local_dir=_MODELS_DIR)
     except Exception:
         return None
 
@@ -76,7 +94,7 @@ def _limit_onnx_threads() -> None:
 
 
 def _get_engine():
-    global _engine
+    global _engine, recognition
     if _engine is None:
         with _lock:
             if _engine is None:
@@ -85,7 +103,15 @@ def _get_engine():
 
                 rec = english_rec_model_path()
                 _engine = RapidOCR(rec_model_path=rec) if rec else RapidOCR()
+                recognition = os.path.basename(rec) if rec else "the engine's own"
     return _engine
+
+
+def reset_engine() -> None:
+    """Drop the engine, so the next page starts one afresh: after a reading that failed, the engine may be the fault."""
+    global _engine
+    with _lock:
+        _engine = None
 
 
 def ocr_page(pdf_page: "pymupdf.Page") -> tuple[list[Line], float]:

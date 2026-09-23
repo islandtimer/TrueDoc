@@ -39,6 +39,10 @@ PDF page
   |                               a page turned down only for its words in other scripts (TextQuality.script_kind,
   |                               textlayer._garbled_in_its_script) is read from its layer. `kind`, which decides what
   |                               OCR and a vision reader read, is unchanged
+  |                               - a reading that raises is tried once more with a fresh engine (pipeline._read_by_ocr);
+  |                               a page it fails on twice, where something may be lost, is `ocr-failed`, not unreadable,
+  |                               and the build record lists it (D043). The English recognition model is fetched once,
+  |                               under a lock every process waits on (rapid.english_rec_model_path)
   v
   |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;
   |                               a cell covers every column whose centre its rectangle holds, a column running from

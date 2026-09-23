@@ -4,6 +4,31 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-24, 07:43-08:31 - An OCR that fails is tried again and said out loud; its model is fetched once (D043)
+
+Built on the owner's word ("yes, build 1 and 2, no need to reproduce"), after the entry below.
+- `pipeline._read_by_ocr`: a reading that raises is tried once more, the engine dropped first (`rapid.reset_engine`) so
+  the second try starts its own; a page read at the second try records what the first met (`ocr_retried`), a page
+  that fails twice keeps its layer and records why (`ocr_failed`). An OCR module that cannot be imported fails the
+  page, not the conversion, as before.
+- `load_document`: a page OCR failed on twice, where something may be missing (D042's `lost`), is reported
+  `ocr-failed` (incomplete) - "converting again may read them", with the error - and not `unreadable-pages`; a page
+  that loses nothing (blank by D042's test) raises no issue. The location map calls an `ocr-failed` page unreadable.
+- `build.record`: `readers.ocr` lists `failed` and `retried` pages with their errors, and names the recognition model
+  the engine started with in this process (`rapid.recognition`), no longer only the one found on disk - an engine that
+  could not have the English model falls back on its own.
+- `rapid.english_rec_model_path`: the model is fetched under a file lock every process waits on (`filelock`, which
+  `huggingface_hub` brings), each looking again once it holds it: written once, read whole.
+
+Tests `tests/test_ocr_failure.py` (4); all 11 guard cuts fail a test. Suite 903. On the cover itself, with a corrupt
+model on disk so the engine truly cannot start: tried twice (`INVALID_PROTOBUF`), `ocr-failed` on page 1, `incomplete`,
+the build record's `failed`, the map's `unreadable`.
+
+**Measured: nothing changes where OCR does not fail.** The benchmark's 169 tuned-on pages whose layer the check turns
+down - every page OCR reads - converted by 8db2251 and by this tree (six long-lived workers each, the same options):
+169 of 169 byte-identical. The Key Facts Sheets (380 pages) and the insurance set (25) have no page OCR reads, so
+the code is not reached there. The benchmark's held-back fifth (34 such pages) was not converted.
+
 ## 2026-09-24, 06:56-07:28 - A cover said to read worse since D042: OCR that failed, not a reading rule; sized, no code
 
 The owner passed on a cover that read worse at 8db2251 than at dd32201: one full-page picture with a short text layer

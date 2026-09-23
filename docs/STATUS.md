@@ -134,7 +134,7 @@ edge, the word check accounts for every printed word, and version matching tells
 document - and the first faults they found are fixed (words run together beside a big step number; a symbol-font
 bullet read as "4"). You then decided (D041) that TrueDoc stays one generic engine here and your insurance product is
 built on it in its own private repository, where the store of confirmations and the rest of D040 continue. The suite
-stands at 899 (24 September).
+stands at 903 (24 September).
 
 **17 September, evening.** Three measures, as before, and one of them has a new row. On the public exam the code
 as it stands scores **84.2 with olmOCR 2** reading the scanned pages (run 92) and **86.4 with Infinity-Parser2-Pro**
@@ -184,6 +184,14 @@ and cut one row per printed line are read as whole lists wherever the page shows
 benchmark, the Key Facts Sheets or the insurance set. **F1 is built** (small hours): prose set in a drawn box stays
 with its box - no benchmark check moves, the Key Facts grades are unchanged (their boxed warning is now a paragraph of its
 own), the insurance set scores 229 of 229. All three are pushed.
+
+24 September (D043): a cover reported to read worse since then was checked first - it reads the same under both
+commits; in the run that reported it, OCR had failed on it while its model was still being fetched, and TrueDoc said
+nothing but "unreadable". **Built, on your word:** a reading that fails is tried once more with a fresh engine; a page
+it fails on twice is reported `ocr-failed` ("converting again may read it"), not unreadable, and the build record
+lists it; the OCR model is fetched once, under a lock, however many conversions start together. Nothing changes where
+OCR does not fail. The fix first proposed - keep a layer's words where OCR misses them - was sized and set aside: OCR
+lost none of your words on 159 library pages where it replaced a layer.
 
 Open now (22 September):
 - (Decided 22 Sept, D041: **layering.** TrueDoc stays one generic engine here; your insurance product is built on it

@@ -740,7 +740,7 @@ converter without its layout model and exited 0. The warnings existed; nothing a
 |---|---|---|
 | `complete` | everything asked for ran and every page was read | (notes only: `pages-turned`, `hidden-text`, `low-support`, `witness-failed`, and since D042 `blank-pages`) |
 | `degraded` | every page has content, but a stage that was asked for did not run, or a lesser reader stood in | `stage-unavailable` (layout model, vision stage, deep reader), `reader-fallback` (the deep reader returned nothing; a model's partial reading set aside for the page's own text), `reading-implausible` (added the same evening: a transcription holding more print than its page or picture could, set aside - `truedoc/vision/capacity.py`) |
-| `incomplete` | content is known to be missing | `unreadable-pages`, `reply-cut-off` |
+| `incomplete` | content is known to be missing | `unreadable-pages`, `reply-cut-off`, and since D043 `ocr-failed` |
 
 An issue is `code` (stable, for software), `severity`, `pages`, `message` (the sentence `warnings` has always
 held; `Document.add_issue` writes both, and a bare sentence some caller appends is still reported, as a note).
@@ -993,3 +993,26 @@ page whose output changes read.
 **Left as knowledge about its design** ("F6 as template knowledge", 23 September): text an interactive PDF prints under
 its navigation buttons, repeated down a side margin. Found in two documents of one design, one of which writes it into
 the text; a rule dropping repeated margin text would also drop a template's real side headings. No rule here.
+
+## D043 - An OCR that fails is tried again and said out loud; its model is fetched once (2026-09-24, the owner's decision)
+
+**What was found.** A cover reported to read worse since D042 read the same under both commits; what differed was one
+run, where OCR raised on the first page two of six workers read, started together on a fresh install in the
+half-minute the English recognition model took to arrive - each process fetching it for itself. OCR's failure was a
+log warning and nothing else, and the page was then reported `unreadable-pages`: a verdict on the page for what was
+the reader's fault, and no word that converting again would read it. The fix the report proposed - keep the layer's
+words where OCR misses them - was sized and set aside: where OCR replaced a layer that held words, on 159 library
+pages, it lost none but a misread and page-number digits (progress log, 24 September).
+
+**The decision** ("yes, build 1 and 2", 24 September):
+- *A failed reading is tried once more, the engine started afresh* (`pipeline._read_by_ocr`); a page read at the second
+  try says what the first met (`ocr_retried`).
+- *A page whose OCR fails twice, and where something may be missing, is reported `ocr-failed`* (incomplete), not
+  `unreadable-pages`, with what OCR met and that converting again may read it; a page that loses nothing (blank by
+  D042's test) raises no issue. The build record lists both kinds of page under `readers.ocr` (`failed`, `retried`)
+  and the recognition model the engine actually started with; the location map calls an `ocr-failed` page unreadable.
+- *The model is fetched once* (`ocr.rapid.english_rec_model_path`): under a lock every process waits on, each looking
+  again once it holds it, so the file is written once and read whole.
+
+Nothing changes where OCR does not fail. The exact error that run met was not reproduced (its error stream was
+discarded, and reproducing needs a fresh download); saying a failure out loud stands whatever the cause.

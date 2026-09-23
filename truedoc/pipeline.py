@@ -199,9 +199,16 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
     # A page the text check turned down, and no reader replaced, is unreadable only where something on it may be lost
     # (D042): a blank page, or one holding a page number or a heading over lines for notes, is said to be blank.
     fates = {p.number: _lost_on(p) for p in doc.pages if not p.quality.usable and p.quality.kind != "ocr-truedoc"}
-    unreadable = [n for n, fate in fates.items() if fate == "lost"]
+    # Where OCR was asked for and failed, the page was not read, rather than read and found wanting: said as that, since
+    # converting it again may read it (`_read_by_ocr`).
+    failed = {p.number: p.meta["ocr_failed"] for p in doc.pages if p.meta.get("ocr_failed") and fates.get(p.number) == "lost"}
+    unreadable = [n for n, fate in fates.items() if fate == "lost" and n not in failed]
     if unreadable:
         doc.add_issue("unreadable-pages", f"pages without readable text: {unreadable}", "incomplete", unreadable)
+    if failed:
+        doc.add_issue("ocr-failed", f"OCR was asked for and failed on pages {sorted(failed)}, so they hold only what the "
+                      f"PDF's own text layer holds and something on them may be missing; converting again may read "
+                      f"them: {next(iter(failed.values()))}", "incomplete", sorted(failed))
     blank = [n for n, fate in fates.items() if fate == "blank"]
     if blank:
         doc.add_issue("blank-pages", f"pages with a few words on them at most - a page number, a heading over ruled "
@@ -301,6 +308,45 @@ def _sideways_text_turn(page: Page) -> int:
 _SAME_PICTURE = 0.8     # two figure boxes are one picture when each covers this share of the other
 
 
+_OCR_TRIES = 2          # a reading that fails is tried once more, with the engine started afresh
+
+
+def _read_by_ocr(page: Page, pdf_page: "pymupdf.Page", number: int) -> Page:
+    """TrueDoc's OCR on a page the text check turned down; the page, turned first if OCR finds it lies on its side.
+
+    OCR is optional, so its failure never fails a conversion - but it is no longer silent. A reading that raised was
+    once a warning in a log and nothing else, and the page was then reported unreadable, a verdict on the page for what
+    was the reader's fault. Now a failed reading is tried once more with a fresh engine; a page that fails twice keeps
+    its layer and says why in `ocr_failed`, and one read at the second try says what the first met in `ocr_retried`
+    (`load_document` reports the one, the build record lists both).
+    """
+    import logging
+
+    try:
+        from truedoc.ocr import rapid
+    except Exception as exc:
+        page.meta["ocr_failed"] = f"{type(exc).__name__}: {exc}"[:200]
+        return page
+    failure = None
+    for _ in range(_OCR_TRIES):
+        try:
+            rapid.apply_ocr(page, pdf_page)
+            turn = page.meta.pop("ocr_turn", 0)
+            if turn:
+                turned = _turn_page(pdf_page, number, turn)
+                rapid.apply_ocr(turned, pdf_page, allow_turn=False)
+                page = turned
+            if failure is not None:
+                page.meta["ocr_retried"] = failure
+            return page
+        except Exception as exc:
+            failure = f"{type(exc).__name__}: {exc}"[:200]
+            logging.getLogger("truedoc").warning("ocr failed on page %d: %s", number, failure)
+            rapid.reset_engine()
+    page.meta["ocr_failed"] = failure
+    return page
+
+
 def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) -> Page:
     page = extract_page(pdf_page, number)
     turn = _sideways_text_turn(page) if page.quality.usable else 0
@@ -308,18 +354,7 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
         page = _turn_page(pdf_page, number, turn)
     if not page.quality.usable:
         if opts.ocr:
-            try:
-                from truedoc.ocr.rapid import apply_ocr
-
-                apply_ocr(page, pdf_page)
-                turn = page.meta.pop("ocr_turn", 0)
-                if turn:
-                    page = _turn_page(pdf_page, number, turn)
-                    apply_ocr(page, pdf_page, allow_turn=False)
-            except Exception as exc:  # OCR is optional: never fail a conversion because of it
-                import logging
-
-                logging.getLogger("truedoc").warning("ocr failed: %s", exc)
+            page = _read_by_ocr(page, pdf_page, number)
         if page.quality.kind == "none" and not page.images and _unseen_by_the_layer(page) is None:
             # Where OCR did not look, whether the drawings could be holding words (`_lost_on`).
             from truedoc.extract import pdfium_objects

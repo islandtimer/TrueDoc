@@ -108,14 +108,27 @@ def _ocr() -> dict:
     except Exception:
         pass
     try:
-        # Looked for on disk only: asking the OCR module for it would fetch it, and a record must not download.
-        from truedoc.ocr.rapid import _EN_REC_FILE, _MODELS_DIR
+        # The model the engine started with, where it started in this process; else looked for on disk only: asking the
+        # OCR module for it would fetch it, and a record must not download.
+        from truedoc.ocr import rapid
 
-        local = os.path.join(_MODELS_DIR, _EN_REC_FILE.replace("/", os.sep))
+        local = os.path.join(rapid._MODELS_DIR, rapid._EN_REC_FILE.replace("/", os.sep))
         english = os.environ.get("TRUEDOC_OCR_LANG", "en").lower() == "en" and os.path.exists(local)
-        out["recognition"] = os.path.basename(local) if english else "the engine's own"
+        out["recognition"] = rapid.recognition or (os.path.basename(local) if english else "the engine's own")
     except Exception:
         pass
+    return out
+
+
+def _ocr_trouble(doc) -> dict:
+    """Pages whose OCR failed twice, with what it met, and pages read at the second try (`pipeline._read_by_ocr`)."""
+    out: dict = {}
+    failed = [{"page": p.number, "error": p.meta["ocr_failed"]} for p in doc.pages if p.meta.get("ocr_failed")]
+    retried = [{"page": p.number, "error": p.meta["ocr_retried"]} for p in doc.pages if p.meta.get("ocr_retried")]
+    if failed:
+        out["failed"] = failed
+    if retried:
+        out["retried"] = retried
     return out
 
 
@@ -143,7 +156,8 @@ def record(opts, seconds: float, doc=None) -> dict:
         except Exception as exc:
             readers["layout"] = {"ran": False, "why": repr(exc)[:120]}
     if opts.ocr:
-        readers["ocr"] = dict(_ocr(), ran=bool(doc is not None and doc.metadata.get("pages_with_ocr")))
+        readers["ocr"] = dict(_ocr(), ran=bool(doc is not None and doc.metadata.get("pages_with_ocr")),
+                              **(_ocr_trouble(doc) if doc is not None else {}))
     if opts.vision_endpoint:
         readers["vision"] = {"model": opts.vision_model, "where": _where(opts.vision_endpoint)}
     if opts.vision_deep:
