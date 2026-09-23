@@ -242,6 +242,19 @@ Done or decided earlier:
 
 ## What is being worked on right now
 
+**23 September, 14:57 - three things a conversion can now carry with it.** (1) *What made it*: every conversion
+records the commit of TrueDoc that made it, every option, the readers (layout model, OCR, any vision reader) with their
+versions and where they ran, and how long it took - in the front matter and the status file - so a conversion made
+before a change can be told from one made after. (2) *A location map* (`--map <file>`): one JSON file beside the text
+saying, for every paragraph, heading, list item, table cell and figure, which page and which box on it it came from and
+exactly where it lies in the text, with bold and italic as ranges; a paragraph that runs over a page break keeps both
+of its boxes. The text itself is unchanged - checked byte for byte on your insurance set - and every range was placed
+exactly on all 456 pages checked. (3) *Printed page numbers*: the number each page prints, read from its head and
+foot lines (running lines too), kept only when it runs on from the pages beside it, and where it applies - the page, or
+the left or right half of a two-page spread. Next, in the order you set: size the three remaining reading faults (a
+boxed side note read into the paragraph beside it; a table of lists with no rules between its rows; blank and ruled
+"Notes" pages counted as unreadable) and report the sizes before any code.
+
 **23 September, 12:40 - a side label read before the lines it heads; the item icon next.** You asked for three
 reading faults to be sized before any code, then decided: the first two fixed as general rules, the third kept as
 knowledge about the one design that has it.
