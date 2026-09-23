@@ -109,6 +109,26 @@ Status on 3 September (evening): all five items are built and tested against sta
 
 Resolved (owner, 3 September, evening): one tag, `[^inferred]`, for every model source. The model's name lives in the tag's definition and in each `truedoc.inferred` entry, not in the body, so the text stays readable and a program still finds every inferred item by one search.
 
+## The location map (a file beside the text)
+
+Asked for (`--map <file>` on the command line, `ConvertOptions(location_map=True)` and `ConvertResult.location_map`
+from Python), a conversion also writes one JSON file saying where every passage of its text came from; the markdown is
+character for character the same with it or without it. Offsets count characters (Unicode code points) of the
+markdown as written, lines ending in `\n`, front matter included; `markdown.sha256` is the checksum of that text in
+UTF-8, so a map is never read against another version of it.
+
+| field | holds |
+| --- | --- |
+| `markdown` | `characters`, `body_start` (where the body begins after the front matter), `sha256`, `newline`, and `all_found_in_place` - true when every range was placed exactly (the parts joined and the renderer's last cleanups replayed gave the body character for character); false would mean parts were found by searching, and any not found have `range: null` |
+| `document` | the PDF's `sha256` and the number of pages converted |
+| `build` | the same record as `truedoc.build` |
+| `pages` | per page: `page` (its number in the file), `size` (points), `read` (`text layer`, `ocr` or `model`), `state` (`read`, `empty` - nothing of it in the body - or `unreadable`), `range` (the stretch of text it wrote), `printed` (the numbers it prints, each with where it `applies` - the `page`, or the `left half` / `right half` of a spread - and the box of the line it stands in) |
+| `blocks` | per paragraph, heading, list item, table, figure or note as written: `id`, `kind`, `range`, `boxes` (the page and box of every piece of the page that went into it - two for a paragraph joined over a page or column break, which also has `pieces`, each with its own range) |
+| `cells` | per table cell: `id`, `table` (its block's id), `row`, `col`, `rowspan`, `colspan`, `header`, `page`, `box`, `range` (`null` for a cell with nothing written in it, marked `empty`) |
+| `emphasis` | `bold` and `italic`, each a list of `[start, end]` ranges, always written, empty when there are none |
+
+Boxes are in the page's points with the origin at the top left, clipped to the page.
+
 ## Reading the file back
 
 Any YAML parser reads the front matter; any markdown renderer shows the body. To know whether the conversion can be relied on as a whole, read `truedoc.completion` first, and `truedoc.issues` for the pages and reasons; a document nothing could be read from still has a front matter block, with an empty body under it. A caller that asks for no front matter gets the same from `truedoc.pipeline.convert_with_status` or the command line's `--status <file>`, and `--strict` turns anything short of `complete` into exit code 3. To find what TrueDoc was unsure about, look at `truedoc.warnings`, `truedoc.pages_with_ocr`, `truedoc.ocr_regions` (pictures on digital pages read with OCR, with `--ocr-pictures`) and `truedoc.hidden_text`. To mark a file as reviewed, change `status` to `stable` and add:

@@ -4,6 +4,34 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-23, 14:35-15:00 - A location map beside the text
+
+Page markers already say where a page starts, but they cut a paragraph that runs over a page break in two, and they
+say nothing about where on the page a passage stands. The location map is a JSON file beside the markdown
+(`--map <file>`; `ConvertOptions(location_map=True)`, `ConvertResult.location_map`), the text unchanged: per page its
+size, how it was read, its state and the stretch of text it wrote; per paragraph, heading, list item, table, figure
+or note its kind, its range of characters in the markdown and the page and box of every piece that went into it (a
+paragraph joined over a break has both, each with its own range); per table cell its row, column, spans, box and
+range; bold and italic as ranges, always written. `docs/OKF_SPEC.md` has the fields.
+
+*How ranges are exact* (`truedoc/render/locations.py`). The renderer notes, as it writes, which block wrote each part
+and which piece of a joined paragraph; nothing it writes changes (`render_document(..., trace=...)`; the formula-joining
+step moved to module level so both use it). The parts are joined as the renderer joins them and its last cleanups
+replayed with its own patterns - glyph codes dropped, "…" as "...", a formula split over two lines joined - tracking
+every character; when the replay gives the body exactly, every range is exact. The first version looked each part up
+in the finished body instead and could not place parts on 10 of 281 benchmark pages (seven maths papers, where the
+formula join crosses parts, and three others); the replay places them all. A box is clipped to its page (a picture set
+to bleed past the edge was 1.3 pt outside it on one held-out page).
+
+*Checked on real pages* (`bench/probes/location_map_check.py`): every part placed in place, ranges in order, every box
+on its page, every written cell found inside its table, every emphasis range inside a block - the insurance set's 25
+pages (markdown byte for byte the same as converted without the map, 25 of 25), a fifth of the benchmark's digital
+pages (281) and 150 library pages drawn by seed: 0 faults; 6,870 blocks, 5,844 cells, 1,328 bold and 1,437 italic
+ranges. Suite 860 (+4, `tests/test_location_map.py`: every block's range holds its text, every box inside its page, a
+paragraph over a page break with both boxes, a bold term as a range, the text the same with the map or without).
+
+---
+
 ## 2026-09-23, 14:05-14:35 - Every conversion says what made it
 
 A conversion recorded `truedoc/0.0.1` and nothing more, so one made before a change could not be told from one made

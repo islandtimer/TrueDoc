@@ -134,7 +134,7 @@ edge, the word check accounts for every printed word, and version matching tells
 document - and the first faults they found are fixed (words run together beside a big step number; a symbol-font
 bullet read as "4"). You then decided (D041) that TrueDoc stays one generic engine here and your insurance product is
 built on it in its own private repository, where the store of confirmations and the rest of D040 continue. The suite
-stands at 856 (23 September).
+stands at 860 (23 September).
 
 **17 September, evening.** Three measures, as before, and one of them has a new row. On the public exam the code
 as it stands scores **84.2 with olmOCR 2** reading the scanned pages (run 92) and **86.4 with Infinity-Parser2-Pro**

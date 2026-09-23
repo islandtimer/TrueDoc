@@ -50,6 +50,8 @@ class ConvertResult:
     decisions: list[dict] = field(default_factory=list)
     # What made it (`truedoc.build.record`): code and commit, options, readers and where they ran, seconds taken.
     build: dict = field(default_factory=dict)
+    # The location map, when `ConvertOptions.location_map` asked for one (`truedoc.render.locations.build_map`).
+    location_map: dict | None = None
 
     def as_dict(self) -> dict:
         return {"completion": self.completion, "pages": list(self.pages), "sha256": self.sha256,
@@ -97,6 +99,9 @@ class ConvertOptions:
     # measured medians on those pages were 0.84 where olmOCR coped and 0.36 where it did not.
     vision_deep_wordlike: float = 0.6
     render: RenderOptions = field(default_factory=RenderOptions)
+    # A location map beside the text (`truedoc.render.locations`): every passage's page and box, and its place in the
+    # text as a range of characters. The text is the same with it or without it.
+    location_map: bool = False
 
 
 def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
@@ -1870,6 +1875,14 @@ def convert_with_status(path: str, opts: ConvertOptions | None = None) -> Conver
 
     doc.metadata["build"] = record(opts, time.perf_counter() - started, doc)
     ropts = RenderOptions(frontmatter=opts.frontmatter, page_markers=opts.page_markers)
-    return ConvertResult(markdown=render_document(doc, ropts), completion=doc.completion, issues=doc.all_issues(),
+    trace: dict | None = {} if opts.location_map else None
+    markdown = render_document(doc, ropts, trace=trace)
+    location_map = None
+    if trace is not None:
+        from truedoc.render.locations import build_map
+
+        location_map = build_map(doc, markdown, trace)
+    return ConvertResult(markdown=markdown, completion=doc.completion, issues=doc.all_issues(),
                          pages=[p.number for p in doc.pages], sha256=doc.sha256,
-                         decisions=list(doc.metadata.get("decisions") or []), build=doc.metadata["build"])
+                         decisions=list(doc.metadata.get("decisions") or []), build=doc.metadata["build"],
+                         location_map=location_map)

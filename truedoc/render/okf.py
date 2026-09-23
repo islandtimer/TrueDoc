@@ -353,31 +353,42 @@ def _join_dangling_formulas(body: str) -> str:
     numbers alone are not maths. A formula that ends in a dangling relation
     or operator has no such reading: the numbers belong to it.
     """
-    def repl(m: re.Match) -> str:
-        arithmetic = m.group(2).replace(" ", "").replace("\n", "").replace("×", r"\times ").replace("·", r"\cdot ")
-        return m.group(1) + arithmetic + "\\)"
-    body = _DANGLING_FORMULA.sub(repl, body)
+    body = _DANGLING_FORMULA.sub(_dangling_arithmetic, body)
     # Two inline formulas split by a line break, the first ending in a dangling
     # relation ("\(\sigma(x)=\)" then "\([\sigma(x_1),...]^T\)"), are one formula.
-    body = _SPLIT_FORMULA.sub(r"\1 ", body)
+    body = _SPLIT_FORMULA.sub(_SPLIT_FORMULA_JOIN, body)
     return body
 
 
-def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
+_SPLIT_FORMULA_JOIN = r"\1 "
+
+
+def _dangling_arithmetic(m: re.Match) -> str:
+    """The arithmetic after a formula's dangling relation, pulled into the formula (`_join_dangling_formulas`)."""
+    arithmetic = m.group(2).replace(" ", "").replace("\n", "").replace("×", r"\times ").replace("·", r"\cdot ")
+    return m.group(1) + arithmetic + "\\)"
+
+
+def render_document(doc: Document, opts: RenderOptions | None = None, trace: dict | None = None) -> str:
+    """The markdown of a document. `trace`, when given, is filled with which block wrote each part of the body and
+    where the body starts (`truedoc.render.locations` builds the location map from it); it changes nothing written."""
     opts = opts or RenderOptions()
     parts: list[str] = []
+    sources: list[list[tuple]] = []     # for each part: (page, block or None, the text it wrote), in order
     prev_block: Block | None = None     # the last text block rendered, for paragraph joins
     prev_index = -1                     # its index in `parts`
     figures_since = True                # only figure placeholders rendered since it
     for page in doc.pages:
         if opts.page_markers:
             parts.append(f"<!-- page: {page.number} -->")
+            sources.append([(page.number, None, parts[-1])])
             figures_since = False
         if page.meta.get("vision_model"):
             # D015: a page read by a model says so where the reader will see it. D019: a hidden
             # OCR layer is not the author's text, so such a page is read by the model too.
             why = "the PDF's own text layer is an OCR layer, not the author's text" if page.meta.get("vision_replaced") in ("ocr", "suspect") else "the PDF holds no text for it"
             parts.append(f"> This page was read from its image by a model ({page.meta['vision_model']}); {why}.{INFERRED_TAG}")
+            sources.append([(page.number, None, parts[-1])])
             prev_block = None
         for block in page.ordered_blocks():
             if opts.drop_headers_footers and block.kind in (BlockKind.HEADER, BlockKind.FOOTER, BlockKind.PAGE_NUMBER):
@@ -414,8 +425,10 @@ def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
                 )
             ):
                 parts[prev_index] = _join_paragraphs(parts[prev_index], text)
+                sources[prev_index].append((page.number, block, text))
             else:
                 parts.append(text)
+                sources.append([(page.number, block, text)])
                 if block.kind == BlockKind.FIGURE:
                     block.meta["page"] = page.number
                     continue  # a figure neither starts nor ends a paragraph
@@ -425,6 +438,7 @@ def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
             prev_block = block
     if any(p and INFERRED_TAG in p for p in parts):
         parts.append(INFERRED_DEFINITION)
+        sources.append([(None, None, INFERRED_DEFINITION)])
     body = "\n\n".join(p for p in parts if p is not None).rstrip()
     # Raw glyph codes of maths-extension fonts (control and private-use characters)
     # that no formula claimed must not leak into the text.
@@ -437,10 +451,15 @@ def render_document(doc: Document, opts: RenderOptions | None = None) -> str:
     # treat a one-character document as matching anything. With a front matter block asked for,
     # the block is still written - it is where the file says that nothing could be read, and an
     # empty file says nothing at all (D037; without one, `convert_with_status` carries it).
+    if trace is not None:
+        trace.update(parts=list(parts), sources=sources, body=body, body_start=0)
     if not body:
         return render_frontmatter(doc, body) + "\n" if opts.frontmatter else ""
     if opts.frontmatter:
-        return render_frontmatter(doc, body) + "\n\n" + body + "\n"
+        head = render_frontmatter(doc, body) + "\n\n"
+        if trace is not None:
+            trace["body_start"] = len(head)
+        return head + body + "\n"
     return body + "\n"
 
 

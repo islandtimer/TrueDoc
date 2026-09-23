@@ -172,6 +172,9 @@ PDF page
   |                               bench/tools/word_check.py uses to tell a deliberate removal from a loss
   |     build.py                  what made the conversion - package, commit, options, readers and where they
   |                               ran, seconds - into `truedoc.build`, `ConvertResult.build` and `--status`
+  |     render/locations.py       the location map beside the text (`--map`): every block's and cell's page, box and
+  |                               range of characters, bold and italic as ranges; from the renderer's trace, the
+  |                               body's last cleanups replayed so every range is exact; the text itself unchanged
   |                               - a drawn mark no cell, line or picture takes is kept under
   |                               `truedoc.marks_not_placed` with its page and box, and published nowhere
   |                               - a stage asked for that could not run is named under `truedoc.warnings`

@@ -29,6 +29,7 @@ def convert(
     vision_pages_only: bool = typer.Option(False, "--vision-pages-only", help="With the vision stage on, read only unreadable pages; do not ask about icons and figures"),
     strict: bool = typer.Option(False, "--strict", help="Exit with code 3 when the conversion is not complete (a page nothing could read, a stage that could not run, a model reply cut off). The file is still written"),
     status: Optional[Path] = typer.Option(None, "--status", help="Write how the conversion ended to this file as JSON: completion, pages, and every issue with its code"),
+    location_map: Optional[Path] = typer.Option(None, "--map", help="Write the location map to this file as JSON: every block's and table cell's page, box and range of characters in the text, bold and italic as ranges; the text itself is unchanged"),
 ):
     """Convert a PDF. Exit codes: 0 converted (any issues are listed on stderr and in the front matter);
     2 the request cannot be met (a page selection the document does not have); 3 with --strict, converted
@@ -42,7 +43,8 @@ def convert(
     except ValueError as exc:
         raise typer.BadParameter(str(exc), param_hint="--pages")
     opts = ConvertOptions(frontmatter=frontmatter, page_markers=page_markers, pages=page_list, layout=layout, math=math, ocr=ocr, ocr_pictures=ocr_pictures,
-                          doc_type=doc_type, vision_endpoint=vision_endpoint, vision_model=vision_model, vision_regions=not vision_pages_only, vision_deep=vision_deep)
+                          doc_type=doc_type, vision_endpoint=vision_endpoint, vision_model=vision_model, vision_regions=not vision_pages_only, vision_deep=vision_deep,
+                          location_map=location_map is not None)
     try:
         result = convert_with_status(str(pdf), opts)
     except PageSelectionError as exc:
@@ -57,6 +59,9 @@ def convert(
     if status is not None:
         status.parent.mkdir(parents=True, exist_ok=True)
         status.write_text(json.dumps(result.as_dict(), indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    if location_map is not None:
+        location_map.parent.mkdir(parents=True, exist_ok=True)
+        location_map.write_text(json.dumps(result.location_map, ensure_ascii=False) + "\n", encoding="utf-8")
     # How it ended goes to stderr whatever was asked for: a body written to stdout, or one with no
     # front matter, or an empty one, carries no status of its own (D037).
     if result.issues:
