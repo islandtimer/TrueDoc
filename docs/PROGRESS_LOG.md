@@ -4,7 +4,61 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
-## 2026-09-23 20:14 - 2026-09-24 02:27 - Lists set side by side are read as lists wherever the rows are their printed lines (D042)
+## 2026-09-24, 02:28-04:57 - Prose inside a drawn box stays with its box (D042)
+
+Built as the owner decided, as a general rule. The block builder (`segment/blocks.py`) takes each line into the open
+block its span overlaps; a paragraph made wide by full-measure lines above took a boxed note's lines as they came, so
+the note stood between the paragraph's lines ("Occasionally, circumstances beyond the control of our" / "If relevant,
+please see our" / "Financial Hardship and/" / "should speak to us about your situation"). Now a drawn box that holds
+prose keeps its lines: a line in it joins only a block in the same box - the smallest that holds it - and a line
+outside joins none inside; nor does a short lowercase piece of the note pass for the rest of a line beside it.
+
+What counts as a box of prose, each part learnt from a page that went wrong without it:
+- two of its lines of four words or more run across half its width - a figure's frame round its axis labels, a
+  chart's scale, and a table's shaded label cell ("Customer objectives, / financial situation and / needs") hold short
+  ones; kept apart, a target market determination's label cell let the full-width sentence above swallow the column
+  beside it;
+- no line runs across its side - a shaded room of a floor plan behind a note split the note into four paragraphs, and a
+  coloured panel behind a title's first lines sent the title's second line after its third;
+- not every line on the page is in it;
+- a reader sees it - a white shape with no outline, as design tools leave behind a page's text frames, is none
+  (`Drawing.unseen`, set where the drawings are read, by PDFium or MuPDF): one Key Facts design's white frame round its
+  last section parted "STEP 4" from its sentence on every sheet.
+A line lies in a box when it runs within the box's sides and its middle is inside: large type's glyph boxes stand past
+the panel they are set in.
+
+**Measured.** Benchmark: the block screen (`bench/probes/block_screen.py`, every page's lines grouped by both
+builders) names 32 pages (4 held out); converted both ways (`ab_pages.py`), 106 of 146 checks before and after, no page
+moved; the text of two tuned-on pages changes, both read: the benchmark's boxed correspondence note on a journal page
+now whole ("... Faculty of Public Health, College of Medicine, University of Ibadan, Ibadan, Nigeria.", where the right
+column's lines had stood in it - the column's continuation is still joined after the note's last line, a reading-order
+fault of the note's place, as before), and a TV-listings grid of drawn day boxes whose listings now gather by their
+day's box (read poorly both ways). Key Facts Sheets (190, converted in full both ways): the grades unchanged - headers whole 157 of
+158 tuned on and 32 of 32 held out, every prescribed event its own row with its answer; 44 sheets' text differs (6 held
+out), and all 38 tuned-on read the same way: the warning the law prescribes, set in a shaded box, is its own paragraph
+instead of run into the sentence before it. Insurance set: 229 of 229 both ways; one page's text differs, a heading's
+level. Library: the block screen names 1,291 of 23,400 pages (632 tuned on, 659 held out) in 391 documents; one
+tuned-on page of each such document converted both ways (171, with the layout model): 142 read the same, and the 29
+that differ were all read - 22 only in paragraph breaks or heading levels (12 of them the Key Facts warning parted as
+above), and 7 in more: three pages of the example design where a boxed note had been threaded through the text, now
+whole ("If your buildings sum insured is inadequate, we will only pay up to the sum insured ..." where it had read
+"... damaged parts we will only pay up to the sum insured or any applicable standard because we won't have appointed
+the supplier policy limits"); a table's heading row parted from its first row; labels and a limit no longer glued to
+the text beside them; and one worse - a bold sentence under a shaded table row written as two headings. The example
+design's landlord PDS pages 60 and 68, read against their images: each boxed note whole, its own paragraph. The version
+before the label-cell and crossing guards differed on 49 of 212 such pages, four of them worse (a note split in four
+over a floor plan, a title's lines out of order, a target market sentence swallowing the column beside it, a footnote
+cut before its last word): the guards came from those four, and all four now read as before.
+
+Noticed, not built: a callout's drawn arrow is placed inside the note's first line ("If your buildings sum ← insured
+is inadequate"), as the marks stage places an arrow at a line; the paragraphs of the example page's body still run
+together where their gaps are small, as before.
+
+Tests: `tests/test_boxed_notes.py` (9); each of the 16 guards cut out in turn fails one. Suite 899.
+
+---
+
+## 2026-09-23 20:14 - 2026-09-24 02:28 - Lists set side by side are read as lists wherever the rows are their printed lines (D042)
 
 Built as the owner decided. The layout model's table region hands the text-built finder two or three columns of lists,
 and the finder cuts them into a row per printed line: the example PDS's cover table ("Buildings" as a label spanning 23

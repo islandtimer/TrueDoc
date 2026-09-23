@@ -976,7 +976,9 @@ page whose output changes read.
 - *A side note in a drawn box read into the paragraph beside it* ("For F1, lets make it a general rule", 23
   September): in the library every tuned-on case is one design, but the benchmark has one (a boxed note on a journal
   page), so the rule may be general. To be built as "the prose inside a drawn box stays together and never joins
-  lines outside it", guarded against a figure's frame round its labels.
+  lines outside it", guarded against a figure's frame round its labels. Built 24 September (`segment/blocks.py`),
+  guarded too against a table's label cell (lines of a word or three), a shape a line runs across (a floor plan's room,
+  a panel behind a title) and a box no reader sees (a white frame with no outline).
 - *Lists set side by side with no rules between their rows, cut one row per printed line* ("we start on the F4 and
   F5 builds"): four insurers' designs and relatives on the benchmark. Rows to be found from the content - the bullets
   and the row label - each list kept whole, as a ruled cell's list already is (D028). Built 24 September

@@ -317,6 +317,7 @@ class Drawing:
     bbox: BBox
     width: float = 0.0
     fill: bool = False
+    unseen: bool = False         # filled white, or not at all, with no outline: drawn, and nothing on a white page shows it
 
 
 @dataclass

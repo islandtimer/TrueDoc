@@ -2452,6 +2452,9 @@ def _extract_drawings(pdf_page: "pymupdf.Page", M=None) -> list[Drawing]:
     return _drawings_from_mupdf(pdf_page, M)
 
 
+_WHITE = 0.985    # a fill this light in every channel is the page's white
+
+
 def _drawings_from_objects(objs: list, M=None) -> list[Drawing]:
     """The same rulings and shaded boxes, from PDFium's list of what is drawn.
 
@@ -2477,7 +2480,8 @@ def _drawings_from_objects(objs: list, M=None) -> list[Drawing]:
             seen.add(key)
             out.append(Drawing(kind="vline", bbox=r, width=width, fill=fill))
         elif o.kind == "path" and r.width >= 8.0 and r.height >= 8.0:
-            out.append(Drawing(kind="rect", bbox=r, width=width, fill=fill))
+            unseen = o.stroke is None and (o.fill is None or min(o.fill) > _WHITE)      # PDFium reports a clear fill as none
+            out.append(Drawing(kind="rect", bbox=r, width=width, fill=fill, unseen=unseen))
     return out
 
 
@@ -2522,7 +2526,9 @@ def _drawings_from_mupdf(pdf_page: "pymupdf.Page", M=None) -> list[Drawing]:
             seen.add(key)
             out.append(Drawing(kind="vline", bbox=r, width=width, fill=fill))
         elif r.width >= 8.0 and r.height >= 8.0:
-            out.append(Drawing(kind="rect", bbox=r, width=width, fill=fill))
+            colour = p.get("fill")
+            unseen = p.get("color") is None and (colour is None or p.get("fill_opacity") == 0 or min(colour) > _WHITE)
+            out.append(Drawing(kind="rect", bbox=r, width=width, fill=fill, unseen=unseen))
     return out
 
 

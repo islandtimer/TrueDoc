@@ -3,6 +3,15 @@
 A block is a run of vertically adjacent lines that overlap horizontally and
 share a font size. The rules are deliberately conservative: it is easier for
 later stages to merge two blocks than to split one.
+
+Prose set inside a drawn box stays with its box (D042): a note boxed beside a paragraph ("If relevant,
+please see our Financial Hardship ... policies") was threaded line by line into the paragraph, its lines between the
+paragraph's. A line inside such a box joins only a block inside the same box, and a line outside joins none inside.
+A box holds prose when two of its lines of four words or more run across half its width; a figure's frame round its
+axis labels holds short ones, a table's shaded label cell holds a word or three, and a box round all the page's text
+divides nothing. It is a box set round its text: a shape a line runs across - a room of a floor plan behind a note, a
+panel behind a title's first lines - is none. And it is a box a reader sees: a white shape with no outline, as design
+tools leave behind a page's text frames, is none.
 """
 
 from __future__ import annotations
@@ -97,9 +106,55 @@ def _fragment_host(line: Line, open_blocks: list[Block], size: float, gutters: l
     return None
 
 
+_NOTE_LINES = 2       # a drawn box holds prose when this many of its lines ...
+_NOTE_ACROSS = 0.5    # ... run across this share of its width or more ...
+_NOTE_WORDS = 4       # ... each of this many words at least: a label cell's two or three words are no prose
+_NOTE_SLACK = 1.0     # a line within this of a box's sides is inside it (pt)
+
+
+def _within(inner: BBox, outer: BBox) -> bool:
+    """A line lies in a box when it runs within the box's sides and its middle is inside: large type's glyph boxes stand
+    above and below the letters, past the box they are set in (a title in a dark panel, its first line's box above the
+    panel's top)."""
+    s = _NOTE_SLACK
+    return inner.x0 >= outer.x0 - s and inner.x1 <= outer.x1 + s and outer.y0 <= inner.cy <= outer.y1
+
+
+def _crosses(line: Line, box: BBox) -> bool:
+    """Does the line run across one of the box's sides - its middle level with the box, starting on one side of an edge
+    and ending on the other? A shape drawn behind text (a room of a floor plan, a panel behind a title) does; a box set
+    round its own text does not."""
+    if not box.y0 <= line.bbox.cy <= box.y1:
+        return False
+    s = _NOTE_SLACK
+    return any(line.bbox.x0 < edge - s and line.bbox.x1 > edge + s for edge in (box.x0, box.x1))
+
+
+def _boxed_prose(page: Page, lines: list[Line]) -> list[BBox]:
+    """The drawn boxes that hold prose, smallest first."""
+    written = [l for l in lines if l.words]
+    out = []
+    for d in page.drawings:
+        if d.kind != "rect" or d.unseen:
+            continue
+        inside = [l for l in written if _within(l.bbox, d.bbox)]
+        if len(inside) == len(written) or any(_crosses(l, d.bbox) for l in written):
+            continue
+        prose = [l for l in inside if l.bbox.width >= _NOTE_ACROSS * d.bbox.width and len(l.words) >= _NOTE_WORDS]
+        if len(prose) >= _NOTE_LINES:
+            out.append(d.bbox)
+    return sorted(out, key=lambda b: b.area)
+
+
+def _box_of(line: Line, boxes: list[BBox]) -> int | None:
+    """The smallest box of prose the line lies in, as its place in `boxes`."""
+    return next((i for i, b in enumerate(boxes) if _within(line.bbox, b)), None)
+
+
 def build_blocks(page: Page, lines: list[Line] | None = None) -> list[Block]:
     lines = sorted(page.lines if lines is None else lines, key=lambda l: (round(l.bbox.y0, 1), l.bbox.x0))
     starts = [(l.bbox.x0, l.bbox.y0) for l in lines if l.words]
+    boxes = _boxed_prose(page, lines)
     blocks: list[Block] = []
     open_blocks: list[Block] = []
     top_zone = 0.09 * page.height
@@ -110,8 +165,10 @@ def build_blocks(page: Page, lines: list[Line] | None = None) -> list[Block]:
         if not line.words:
             continue
         size = max(line.size, 0.7 * line.bbox.height) or page.body_font_size or 10.0
+        box = _box_of(line, boxes) if boxes else None
         if _is_fragment(line) and not _starts_a_column(line, starts, size):
-            host = _fragment_host(line, open_blocks, size, page.meta.get("column_gutters") or [])
+            host = _fragment_host(line, [b for b in open_blocks if b.meta.get("box") == box], size,
+                                  page.meta.get("column_gutters") or [])
             if host is not None:
                 last = host.lines[-1]
                 last.words.extend(line.words)
@@ -124,7 +181,7 @@ def build_blocks(page: Page, lines: list[Line] | None = None) -> list[Block]:
         for blk in open_blocks:
             if heading_line:
                 break
-            if blk.meta.get("closed"):
+            if blk.meta.get("closed") or blk.meta.get("box") != box:
                 continue
             last = blk.lines[-1]
             # On a hidden OCR layer the boxes are far taller than the declared size,
@@ -187,6 +244,8 @@ def build_blocks(page: Page, lines: list[Line] | None = None) -> list[Block]:
                 best, best_score = blk, score
         if best is None:
             blk = Block(kind=BlockKind.TEXT, bbox=line.bbox, lines=[line])
+            if box is not None:
+                blk.meta["box"] = box
             if heading_line:
                 blk.meta["closed"] = True
                 blk.meta["heading_like"] = True

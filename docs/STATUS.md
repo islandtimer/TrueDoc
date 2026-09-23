@@ -134,7 +134,7 @@ edge, the word check accounts for every printed word, and version matching tells
 document - and the first faults they found are fixed (words run together beside a big step number; a symbol-font
 bullet read as "4"). You then decided (D041) that TrueDoc stays one generic engine here and your insurance product is
 built on it in its own private repository, where the store of confirmations and the rest of D040 continue. The suite
-stands at 863 (23 September).
+stands at 899 (24 September).
 
 **17 September, evening.** Three measures, as before, and one of them has a new row. On the public exam the code
 as it stands scores **84.2 with olmOCR 2** reading the scanned pages (run 92) and **86.4 with Infinity-Parser2-Pro**
@@ -181,7 +181,9 @@ navigation buttons (F6) stay knowledge about their one design. **F4 is built** (
 for notes or a page in several scripts no longer ends its document `incomplete` - 108 library documents to 1, whose
 page holds a picture; which pages a vision reader reads is unchanged. **F5 is built** (night): lists set side by side
 and cut one row per printed line are read as whole lists wherever the page shows the cut - 122 library pages, 0 on the
-benchmark, the Key Facts Sheets or the insurance set. F1 (the boxed side note) is next.
+benchmark, the Key Facts Sheets or the insurance set. **F1 is built** (small hours): prose set in a drawn box stays
+with its box - no benchmark check moves, the Key Facts grades are unchanged (their boxed warning is now a paragraph of its
+own), the insurance set scores 229 of 229. All three are pushed.
 
 Open now (22 September):
 - (Decided 22 Sept, D041: **layering.** TrueDoc stays one generic engine here; your insurance product is built on it

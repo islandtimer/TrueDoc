@@ -83,6 +83,10 @@ PDF page
   |                                 four words a segment at most: never the lines of a table nested in a column
   v
   |  3. segment/blocks.py         lines -> paragraph blocks (gap, overlap, size, typeface rules)
+  |                               - prose set in a drawn box stays with its box (D042): a line in a box where two lines
+  |                               of four words or more run across half its width joins only a block in that box, and a
+  |                               line outside joins none inside; a shape a line runs across, or one no reader sees
+  |                               (Drawing.unseen: white, no outline), is no box
   |     classify/blocks.py        heuristic kinds: heading, header/footer, page/line numbers, list, caption
   |                               - a line at a page's head is a running head only if a page beside it prints it there
   |                               - a line at its foot is a running foot unless it is a sentence (eight words, hardly
