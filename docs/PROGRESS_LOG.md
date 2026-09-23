@@ -4,6 +4,39 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-24, 06:56-07:28 - A cover said to read worse since D042: OCR that failed, not a reading rule; sized, no code
+
+The owner passed on a cover that read worse at 8db2251 than at dd32201: one full-page picture with a short text layer
+(50 letters) over it; its strapline and the brand name gone, the page reported `unreadable-pages`, the document
+`incomplete`. The question put with it: does OCR replace the layer with a reading that sees less than the layer holds?
+
+**Checked before anything else, three ways.** (1) Converted alone, both commits read the page the same: OCR kept (73
+letters, the layer's three lines and the two the picture holds), `complete`. The copy of 8db2251 the other run used is
+file-for-file the commit; run alone in that run's own environment it reads the page the same too, as it does six copies
+started at once. (2) With OCR off, both commits write exactly the page that run wrote: the layer's three lines, the
+strapline and the name missing, `unreadable-pages`. So the page that run wrote is what either commit writes when OCR
+does not run on it, and D042 did not change the verdict - before it, a page the check rejected and OCR did not replace
+was unreadable too. (3) Across that run, two pages lost OCR, both the first page a worker read, in the first six
+documents, started at once on a fresh install in the second its model folder was made; the English recognition model
+finished arriving 29 seconds later, and every OCR page read after that came out word for word as in the earlier run
+(8 of 8). The built-in fallback model reads both pages and is kept, so the reading was not rejected: OCR raised, and
+`process_page` swallows that into a log warning (that run discarded its error stream, so the message is gone).
+
+**The question, sized anyway** (`bench/probes/ocr_over_layer_census.py`: every page of the 23 September screens whose
+layer was rejected but holds a letter or figure, OCR run as the pipeline runs it). Library 199 pages (116 held out):
+OCR kept 159; on them the layer held 10,150 letters and figures, of which OCR lacks 111 - no word of the owner's lost
+but a misread ("50s" read "50g") and page-number digits; the three largest are layer words run together that OCR wrote
+apart and in another order. OCR added 1,331 - brand names and straplines the pictures hold. Benchmark 24 pages (4 held
+out): OCR kept 15; the loss that is real is one page whose layer is clean Japanese and English, replaced by the
+English OCR model (1,225 letters), and a few CJK and accented letters on two others - the several-script case already
+noted, not a cover's. Insurance set: no page's layer is rejected.
+
+**What it shows.** No reading rule is wanted for the cover: OCR sees more than the layer there, and a rule keeping the
+layer's words where OCR misses them would change nothing on the library. What is wrong is TrueDoc's: an OCR that
+fails is said nowhere - the page is then reported unreadable, which reads as a verdict on the page, not on the reader -
+and the English model is fetched on first use by whichever process finds it missing, which a fresh install with
+several workers meets at once. Reported to the owner; no code until his word.
+
 ## 2026-09-24, 02:28-04:57 - Prose inside a drawn box stays with its box (D042)
 
 Built as the owner decided, as a general rule. The block builder (`segment/blocks.py`) takes each line into the open
