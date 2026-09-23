@@ -4,6 +4,29 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-23, 15:00-15:20 - The numbers a page prints, where each applies, checked against the pages beside
+
+TrueDoc left page numbers out of the body and kept no record of them, and a page number printed inside a running line
+("Page 30 | Household Insurance Policy") was recorded only as a running line. `classify.page_numbers.
+assign_printed_numbers` now reads every edge line TrueDoc leaves out of the body (its decisions, D040), running lines
+included, and takes each number that stands alone (not part of a date, a code, a range of years or an amount). A number
+is kept only when a page up to two places away prints one that runs on from it - as many more as the pages between, or
+twice as many on the same half of the page, which is how a spread counts; a section tab at the head of page after page
+("2", "2", "2") and a form code or a year run on from nothing and are dropped. Where a page keeps two numbers, one on
+each half and the second one more, it is a spread and each applies to its half; otherwise a number applies to the page.
+Pages beside that were not converted in the same run are read from the file's strips, so a page converted alone is
+still checked. The numbers go into the location map (`pages[].printed`: the number, where it applies, the box of its
+line); the body is unchanged.
+
+On four whole documents: a 2017 household PDS, 90 of 100 pages numbered, every one the file's page less one (the first
+draft, reading every number in the page's strips rather than its edge lines, also kept a "4" and an "8" from the body
+near the foot of one page); a building PDS printed as spreads, file page 18 as 32 on the left half and 33 on the right;
+a 2021 household PDS, 89 of 120, every one the file's page; a home PDS, 71 of 73. Suite 863 (+3,
+`tests/test_printed_numbers.py`: a running line's number, a spread's two, a section tab dropped - its "2" is among the
+page's edge lines and the run-on rule is what removes it).
+
+---
+
 ## 2026-09-23, 14:35-15:00 - A location map beside the text
 
 Page markers already say where a page starts, but they cut a paragraph that runs over a page break in two, and they

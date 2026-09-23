@@ -22,7 +22,7 @@ Milestones M2 to M6 loop: build, measure, look at failures, fix, repeat.
 
 | # | State | Evidence |
 |---|---|---|
-| M0 | done | Official scorer runs locally; 860 unit tests (23 Sept; 528 on 14 Sept); quick regression check on 13 pages (`bench/quick_check.py`); the loop's helper tools in `bench/tools/` |
+| M0 | done | Official scorer runs locally; 863 unit tests (23 Sept; 528 on 14 Sept); quick regression check on 13 pages (`bench/quick_check.py`); the loop's helper tools in `bench/tools/` |
 | M1 | done | First full run 48.6 (about 43 once a scorer artefact is removed) |
 | M2 | done | Its four sections all beat Marker 1.10.1 at run 63: headers and footers 68.6 -> 96.8 (Marker 86.6), multi-column 68.4 -> 82.9 (80.0), tiny text 88.5 (85.7), baseline 99.8 (99.3). The multi-column family of rules (runs 61 to 63) closed the last gap |
 | M3 | done | Tables 32.7 -> 88.2 at run 63, past MinerU 2.5's 84.9 and Chandra 0.1.0's 88.0, the best published figure for the section at the time - **no longer, as of 17 Sept: Chandra OCR 2 publishes 92.1, Infinity-Parser2-Pro 91.2 and dots.mocr 90.7, against our 88.3.** 121 of 1,022 checks still fail, a long tail of one-page shapes. **14 Sept, on the owner's documents:** graded on the structure the law prescribes, the Key Facts Sheets (D027) read their header whole on 95% of the sheets tuned on and 97% held out, from 34% and 16% on 13 Sept, with the Yes/No answer in its own column for 98.9% of prescribed events |

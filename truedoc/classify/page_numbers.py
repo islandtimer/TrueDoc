@@ -188,3 +188,81 @@ def release_pointers(pdf_page, page: Page, blocks: list[Block]) -> None:
                 and runs_beside(b.text, b.bbox, page.height, pdf_page) is False):
             b.kind = BlockKind.TEXT
             b.provenance = "page-pointer"
+
+
+# The numbers a page prints (E3): read from every line at its edge that TrueDoc leaves out of the body - a running line
+# too ("Page 30 | Household Insurance Policy" carries its page's number) - one number to a position, kept only when it
+# runs on from the pages beside it.
+_PRINTED = re.compile(r"(?<![\w./:\-–,$])(\d{1,4})(?![\w./:\-–%$,])")
+
+
+def _printed_in(text: str, box) -> list[dict]:
+    """Each number standing alone in an edge line, and where along the line it stands: its share of the line's
+    characters laid over the line's box."""
+    x0, y0, x1, y1 = box
+    out = []
+    for m in _PRINTED.finditer(text):
+        a, b = m.start() / max(1, len(text)), m.end() / max(1, len(text))
+        out.append({"value": int(m.group(1)), "number": m.group(1), "x": x0 + (a + b) / 2 * (x1 - x0),
+                    "box": [round(v, 1) for v in (x0, y0, x1, y1)]})
+    return out
+
+
+def assign_printed_numbers(pages: list[Page], path: str) -> None:
+    """The numbers each page prints, and where each applies: `page.meta["printed_numbers"]`.
+
+    Three rules. **Every edge line is read**, running lines included: the lines at a page's edge TrueDoc leaves out of
+    the body are in its decisions (D040), and a number standing alone in one (not part of a date, a code or an amount) is
+    a candidate. **A number is kept only when it runs on from the pages beside it**: a page up to two places away prints a
+    number as many more as the pages between (the pages counted one each), or twice as many on the same half of the page
+    (a spread, two pages printed on one). A section tab at the head of page after page ("2", "2", "2") runs on from
+    nothing and is dropped, and so is a form code or a year. **A number belongs to a position**: where a page keeps two,
+    one on each half, the second one more than the first, it is a spread, and each applies to its half; otherwise a
+    number applies to the page. The pages beside are read from the file's own text in their strips when they were not
+    converted in this run (`_strip`), so a single page converted alone is still checked against its neighbours.
+    """
+    try:
+        import pypdfium2 as pdfium
+
+        pdf = pdfium.PdfDocument(path)
+        count = len(pdf)
+        pdf.close()
+        info = os.stat(path)
+        stamp = (info.st_size, info.st_mtime_ns)
+    except Exception:
+        return
+    own: dict[int, list[dict]] = {}
+    for p in pages:
+        found: list[dict] = []
+        for d in p.meta.get("decisions") or []:
+            if d.get("kind") == "edge-line" and d.get("text") and d.get("bbox") and not d["because"].startswith("a turned"):
+                found.extend(_printed_in(d["text"], d["bbox"]))
+        own[p.number - 1] = found
+    beside: dict[int, list[dict]] = {}
+
+    def numbers_of(i: int) -> list[dict]:
+        if i in own:
+            return own[i]
+        if i not in beside:
+            strip = _strip(path, stamp, i) if 0 <= i < count else None
+            beside[i] = [] if strip is None else [n for y0, y1, x0, x1, text in strip[1] for n in _printed_in(text, (x0, y0, x1, y1))]
+        return beside[i]
+
+    for p in pages:
+        i = p.number - 1
+        half = p.width / 2
+        kept: list[dict] = []
+        for c in own.get(i, []):
+            left = c["x"] < half
+            runs = any(d["value"] - c["value"] == j - i
+                       or (d["value"] - c["value"] == 2 * (j - i) and (d["x"] < half) == left)
+                       for j in range(i - _REACH, i + _REACH + 1) if j != i and 0 <= j < count
+                       for d in numbers_of(j))
+            if runs and all(k["value"] != c["value"] for k in kept):
+                kept.append(dict(c, left=left))
+        lefts = [k for k in kept if k["left"]]
+        rights = [k for k in kept if not k["left"]]
+        spread = len(kept) == 2 and len(lefts) == 1 and len(rights) == 1 and rights[0]["value"] == lefts[0]["value"] + 1
+        p.meta["printed_numbers"] = [{"number": k["number"],
+                                      "applies": ("left half" if k["left"] else "right half") if spread else "page",
+                                      "box": k["box"]} for k in kept]

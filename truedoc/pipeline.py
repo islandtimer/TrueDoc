@@ -180,6 +180,11 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
     # TrueDoc's own close calls (D040): every one, with its page. Not written into the front matter - it is for the
     # checks and the review built on them - but a call that could not be checked is said out loud.
     doc.metadata["decisions"] = [dict(page=p.number, **d) for p in doc.pages for d in (p.meta.get("decisions") or [])]
+    # The numbers each page prints, read from its edge lines and kept only where they run on from the pages beside
+    # (`classify.page_numbers.assign_printed_numbers`); the location map carries them.
+    from truedoc.classify.page_numbers import assign_printed_numbers
+
+    assign_printed_numbers(doc.pages, path)
     unchecked = sorted({d["page"] for d in doc.metadata["decisions"] if not d["checked"] and d.get("kept_in")})
     if unchecked:
         doc.add_issue("edge-unchecked", f"lines at the edge of pages {unchecked} were left out of the body without a page "
