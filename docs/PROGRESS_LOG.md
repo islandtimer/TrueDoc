@@ -4,6 +4,46 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-23, 12:40-14:00 - A picture a mark's size in a table or at a line's head is an icon, not a figure
+
+The second of the owner's two general rules (the entry below sizes it). The layout model calls every small drawing a
+picture, so an item's tick, cross or dollar in a circle, and each tick down a table's columns, became an empty
+`![](figure)` on a line of its own - 29 stacked above one summary table whose cells already held the ticks, one between
+an exclusion's lead and the list under it. D013 already had the rule and the layout model's pictures never met it: a
+mark the reader can read is its character where it stands (the mark reader has already put it in its cell or at the
+head of its line), a mark in a cell it cannot read is the cell's "[icon]", an unreadable shape beside running text is
+decoration.
+
+*The rule* (`pipeline._icons_are_not_pictures`, after the figures are gathered, before the reading order): a figure
+block with no text of its own, not a single mark standing for itself (`mark_only`), in a box the mark reader would look
+at (`marks.mark_sized`: 3 to 30 points a side on a letter page, scaled with a bigger page, no more than 2.5 times as
+long as it is wide), is not written when its centre lies in a table or it heads a line of text (a line level with it
+starting within three body sizes to its right, or over it). Each one is recorded with the page's decisions (D040):
+where it stood and what the mark reader made of it, if anything. A picture that size standing on its own stays a
+figure. `_record_imprint` now adds its edge-line decisions to the page's list instead of replacing it. The vision
+stage is untouched: it reads a cell's icon from the marks and the page's images, never from these blocks, and already
+leaves pictures under half an inch alone.
+
+*Measured, code against code.* `bench/probes/icon_picture_screen.py` converts every page and counts the pictures the
+rule kept out: benchmark 18 of 1,403 pages (4 held out), 28 icons - scored with the rule on and stashed, 95 of 106
+checks both ways, no page moved; Key Facts Sheets 0 of 380 pages; the insurance set 10 of 25 pages, 46 icons, 229 of
+229 both ways (`insurance_diff.py`: 0 checks changed). The library sample's 166 tuned-on pages with such a placeholder,
+converted with the rule switched off and on at run time: placeholders 1,522 -> 224, and on every page nothing but
+placeholder lines differs. Read against their pages, with every picture taken out drawn round: on 12 pages of 12
+insurers and the 14 tuned-on benchmark pages, each one is an icon or a small logo - a table's ticks and crosses (their
+characters still in the cells), the symbols over a summary table's columns, event pictures beside their names, a clock
+beside "72-hour exclusion period", an envelope beside an address, TV channel logos in a listings grid, a route marker,
+a monogram - none of it a picture the placeholder had said anything about. Suite 853 (+5, `tests/test_icon_pictures.py`).
+
+*Mended in passing:* `bench/tools/insurance_diff.py` did not know the set's own `list_item` checks (D028) and counted
+all five as failures in every folder, so its totals read 224 where the scorer reads 229; it now runs them as
+`insurance_score.py` does.
+
+Still open, noticed while reading: the circled dollar and the circled tick are not read as marks ("●" or nothing) - the
+placeholder is gone, the meaning is still not in the text; a summary table's event pictures read as marks ("● Flood").
+
+---
+
 ## 2026-09-23, 08:25-12:35 - A side label is read before the lines it heads; the item icon and the navigation button sized
 
 The owner asked for three reading faults to be sized before any code was written, then (after the sizes) for the

@@ -123,6 +123,9 @@ PDF page
   |                              - a shafted arrow, drawn or cut out of a square, before a chevron (_shafted_arrow):
   |                                its head meeting on the shaft's line, never from what erasing a ring leaves
   |                              - a glyph's mark (glyph=True): alone in its box, a dot the same upside down
+  |     pipeline._icons_are_not_pictures  after the figures are gathered: a picture a mark's size (marks.mark_sized)
+  |                               in a table or at the head of a line is an icon, not a figure (D013) - never a
+  |                               placeholder; each recorded with the page's decisions
   |     tables/list_columns.py    then, the marks in place: lists set side by side with no boxes, cut at their lines by a
   |                               text-built table, are read column by column and rebuilt as one row of list cells under
   |                               their headings (rebuild_side_by_side_lists)

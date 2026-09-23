@@ -13,7 +13,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join("bench", "tools"))
-from insurance_score import OUT, unescape  # noqa: E402
+from insurance_score import OUT, ListItemTest, unescape  # noqa: E402
 from olmocr.bench.tests import load_single_test  # noqa: E402
 
 
@@ -30,9 +30,12 @@ def outcomes(folder: str, name: str) -> list[tuple[str, str, bool]]:
         raw.setdefault("id", f"{name}_{n}")
         raw.setdefault("pdf", name + ".pdf")
         raw.setdefault("page", 1)
-        quoted = " ".join(str(raw.get("text") or raw.get("cell") or raw.get("before") or "").split())
+        quoted = " ".join(str(raw.get("text") or raw.get("cell") or raw.get("item") or raw.get("before") or "").split())
         try:
-            good = bool(load_single_test(raw).run(md)[0])
+            # The set's own kind (D028), run as insurance_score.py runs it: without it the five list-item checks fail
+            # in every folder, and a total read off this tool is five short of the score (found 23 September 2026).
+            test = ListItemTest(raw) if raw.get("type") == "list_item" else load_single_test(raw)
+            good = bool(test.run(md)[0])
         except Exception:
             good = False
         found.append((raw.get("type", "?"), quoted, good))

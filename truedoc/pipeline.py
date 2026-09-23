@@ -342,6 +342,7 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
             same.meta["image_object"] = True
             continue
         blocks.append(Block(kind=BlockKind.FIGURE, bbox=img.bbox, provenance="textlayer-image"))
+    _icons_are_not_pictures(page, blocks)
 
     if opts.ocr and opts.ocr_pictures:
         _ocr_text_pictures(pdf_page, page, blocks)
@@ -351,6 +352,54 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
     _record_imprint(page, blocks, pdf_page)
     page.blocks = blocks
     return page
+
+
+_ICON_HEAD_GAP = 3.0    # in body sizes: a picture heads a line starting this close to its right, as a mark does
+
+
+def _icons_are_not_pictures(page: Page, blocks: list[Block]) -> None:
+    """A picture a mark's size that stands in a table, or heads a line of text, is an icon and not a figure.
+
+    A tick, a cross or a dollar in a circle opening every item, the ticks down a table's columns: drawn small and
+    repeated, and the layout model calls each one a picture. Written as pictures they were empty placeholders, each on
+    a line of its own - 29 stacked above one summary table whose cells already held the ticks, one between an
+    exclusion's lead and the list under it. D013 has the rule: a mark that can be read is written as its character
+    where it stands (the mark reader has put it in its cell or at the head of its line already), a mark in a cell that
+    cannot be read is the cell's "[icon]", and an unreadable shape beside running text is decoration, left out. The
+    layout model's pictures never met that rule; this is where they do. A picture of that size standing on its own -
+    not in a table, not at a line's head - is left a figure. Each one taken out is recorded with the page's decisions
+    (D040), with what the mark reader made of it.
+    """
+    from truedoc.marks import mark_sized
+
+    size = page.body_font_size or 10.0
+    tables = [b.bbox for b in blocks if b.kind == BlockKind.TABLE]
+    lines = [l for b in blocks if b.kind not in (BlockKind.TABLE, BlockKind.FIGURE) for l in b.lines if not l.rotated]
+    read = [m for m in (page.meta.get("marks") or []) if m.get("kind") != "unknown"]
+    kept: list[Block] = []
+    for b in blocks:
+        box = b.bbox
+        if b.kind is not BlockKind.FIGURE or b.lines or b.text_override is not None or b.meta.get("mark_only") \
+                or not mark_sized(box, page):
+            kept.append(b)
+            continue
+        if any(t.contains_point(box.cx, box.cy) for t in tables):
+            where = "in a table"
+        elif any(not (l.bbox.y1 < box.y0 or l.bbox.y0 > box.y1)
+                 and abs(l.bbox.cy - box.cy) <= 0.7 * max(l.bbox.height, box.height)
+                 and (-1.0 <= l.bbox.x0 - box.x1 <= _ICON_HEAD_GAP * size or l.bbox.contains_point(box.cx, box.cy))
+                 for l in lines):
+            where = "at the head of a line"
+        else:
+            kept.append(b)
+            continue
+        mark = next((m["kind"] for m in read if box.contains_point((m["bbox"][0] + m["bbox"][2]) / 2, (m["bbox"][1] + m["bbox"][3]) / 2)), None)
+        page.meta.setdefault("decisions", []).append({
+            "kind": "icon", "text": "", "decided": "not written as a picture", "source": b.provenance,
+            "bbox": [round(v, 1) for v in (box.x0, box.y0, box.x1, box.y1)],
+            "because": "a picture the size of a mark, %s" % where + (" (read as a %s)" % mark if mark else ""),
+            "kept_in": None, "checked": mark is not None})
+    blocks[:] = kept
 
 
 # A sub-list is set further in than the entry it belongs to, and no further in than a list goes: three steps is a deep
@@ -515,7 +564,7 @@ def _record_imprint(page: Page, blocks: list[Block], pdf_page=None) -> None:
     if running:
         page.meta["running"] = running
     if decisions:
-        page.meta["decisions"] = decisions
+        page.meta.setdefault("decisions", []).extend(decisions)
 
 
 _HEADING_LABEL = re.compile(r"^(?:[IVXLC]{1,6}\.?|\d{1,2}(?:\.\d{1,2}){0,3}\.?|[A-Z]\.)$")

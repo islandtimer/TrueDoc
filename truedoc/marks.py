@@ -74,6 +74,11 @@ def _page_scale(page: Page) -> float:
     return max(1.0, side / _LETTER_PT)
 
 
+def mark_sized(b: BBox, page: Page) -> bool:
+    """A box a mark could be drawn in on this page: the size the mark reader looks at, scaled as it scales."""
+    return _small(b, _page_scale(page))
+
+
 def _small(b: BBox, scale: float = 1.0) -> bool:
     if b.width < _MIN_PT * scale or b.height < _MIN_PT * scale:
         return False
