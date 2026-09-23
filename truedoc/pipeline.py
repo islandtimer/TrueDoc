@@ -7,6 +7,7 @@ import hashlib
 import os
 import pathlib
 import re
+import time
 from dataclasses import dataclass, field
 
 from truedoc.classify.blocks import _LIST_START, _assign_heading_levels, classify_blocks
@@ -47,10 +48,12 @@ class ConvertResult:
     # TrueDoc's own close calls (D040), one record each: what it decided about a piece of the page, why, and whether
     # it could check. For now the lines at a page's edge it leaves out of the body; more kinds follow.
     decisions: list[dict] = field(default_factory=list)
+    # What made it (`truedoc.build.record`): code and commit, options, readers and where they ran, seconds taken.
+    build: dict = field(default_factory=dict)
 
     def as_dict(self) -> dict:
         return {"completion": self.completion, "pages": list(self.pages), "sha256": self.sha256,
-                "issues": [i.as_dict() for i in self.issues], "decisions": list(self.decisions)}
+                "issues": [i.as_dict() for i in self.issues], "decisions": list(self.decisions), "build": dict(self.build)}
 
 
 def page_count(path: str) -> int:
@@ -1859,8 +1862,14 @@ def convert_with_status(path: str, opts: ConvertOptions | None = None) -> Conver
     """The markdown, and how the conversion ended, whatever the markdown looks like: an empty
     body and a body without front matter carry no status of their own (D037)."""
     opts = opts or ConvertOptions()
+    started = time.perf_counter()
     doc = load_document(path, opts)
+    # What made this conversion - the commit, the options, the readers and where they ran, the time - so that one made
+    # before a change can be told from one made after it.
+    from truedoc.build import record
+
+    doc.metadata["build"] = record(opts, time.perf_counter() - started, doc)
     ropts = RenderOptions(frontmatter=opts.frontmatter, page_markers=opts.page_markers)
     return ConvertResult(markdown=render_document(doc, ropts), completion=doc.completion, issues=doc.all_issues(),
                          pages=[p.number for p in doc.pages], sha256=doc.sha256,
-                         decisions=list(doc.metadata.get("decisions") or []))
+                         decisions=list(doc.metadata.get("decisions") or []), build=doc.metadata["build"])

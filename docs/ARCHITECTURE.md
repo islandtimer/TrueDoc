@@ -170,6 +170,8 @@ PDF page
   |                               - every line at a page's edge left out of the body is a recorded decision - what,
   |                               why, whether it could be checked - in `ConvertResult.decisions` (D040), which
   |                               bench/tools/word_check.py uses to tell a deliberate removal from a loss
+  |     build.py                  what made the conversion - package, commit, options, readers and where they
+  |                               ran, seconds - into `truedoc.build`, `ConvertResult.build` and `--status`
   |                               - a drawn mark no cell, line or picture takes is kept under
   |                               `truedoc.marks_not_placed` with its page and box, and published nowhere
   |                               - a stage asked for that could not run is named under `truedoc.warnings`

@@ -4,6 +4,23 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-23, 14:05-14:35 - Every conversion says what made it
+
+A conversion recorded `truedoc/0.0.1` and nothing more, so one made before a change could not be told from one made
+after - and a before-and-after measure is exactly that comparison. `truedoc/build.py` writes a record into the front
+matter (`truedoc.build`), into `convert_with_status(...).build` and into the `--status` file: the package version and
+Python; the commit - from the installation's own `direct_url.json` when TrueDoc was installed from a git address,
+otherwise from git in the folder the package was imported from, with `modified: true` when the package's own files
+differ from it (a worktree on the path is reported as itself); every option in force; the readers - the PDFium build,
+the layout model with its revision and the `transformers` and `torch` versions that ran it and whether it ran, the OCR
+engine with its recognition model and whether any page used it, the vision and deep readers with where they ran (an
+address without its user name or password, "the Anthropic API", or "readings replayed from disk"); and the seconds it
+took. Nothing downloads for the record: the OCR model is looked for on disk, not fetched. Git is asked once a process.
+Bodies are untouched (the benchmark, the Key Facts Sheets and the insurance set are scored on bodies). Suite 856 (+3,
+`tests/test_build_record.py`).
+
+---
+
 ## 2026-09-23, 12:40-14:00 - A picture a mark's size in a table or at a line's head is an icon, not a figure
 
 The second of the owner's two general rules (the entry below sizes it). The layout model calls every small drawing a

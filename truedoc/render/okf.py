@@ -534,6 +534,8 @@ def render_frontmatter(doc: Document, body: str = "") -> str:
         "marks_not_placed": doc.metadata.get("marks_not_placed") or None,
         "warnings": list(doc.warnings),
         "issues": [i.as_dict() for i in doc.all_issues()] or None,
+        # What made the conversion (truedoc.build): the commit, the options, the readers and where they ran, the time.
+        "build": doc.metadata.get("build") or None,
     }
     fm = {
         "type": doc.metadata.get("type") or "Document",
