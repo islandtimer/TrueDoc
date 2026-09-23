@@ -4,7 +4,7 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
-## 2026-09-23, 15:00-15:20 - The numbers a page prints, where each applies, checked against the pages beside
+## 2026-09-23, 14:47-14:57 - The numbers a page prints, where each applies, checked against the pages beside
 
 TrueDoc left page numbers out of the body and kept no record of them, and a page number printed inside a running line
 ("Page 30 | Household Insurance Policy") was recorded only as a running line. `classify.page_numbers.
@@ -27,7 +27,7 @@ page's edge lines and the run-on rule is what removes it).
 
 ---
 
-## 2026-09-23, 14:35-15:00 - A location map beside the text
+## 2026-09-23, 14:03-14:47 - A location map beside the text
 
 Page markers already say where a page starts, but they cut a paragraph that runs over a page break in two, and they
 say nothing about where on the page a passage stands. The location map is a JSON file beside the markdown
@@ -55,7 +55,7 @@ paragraph over a page break with both boxes, a bold term as a range, the text th
 
 ---
 
-## 2026-09-23, 14:05-14:35 - Every conversion says what made it
+## 2026-09-23, 13:58-14:03 - Every conversion says what made it
 
 A conversion recorded `truedoc/0.0.1` and nothing more, so one made before a change could not be told from one made
 after - and a before-and-after measure is exactly that comparison. `truedoc/build.py` writes a record into the front
