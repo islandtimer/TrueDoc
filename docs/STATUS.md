@@ -177,7 +177,10 @@ Trust the PDF's own text when it has any (it is exact, and no model can beat it)
 
 Decided 23 September (D042): today's nine commits pushed; the next builds are the page called unreadable when nothing
 was lost (F4) and lists set side by side cut per line (F5), then the boxed side note (F1) as a general rule; the
-navigation buttons (F6) stay knowledge about their one design. Nothing is waiting on you until those are measured.
+navigation buttons (F6) stay knowledge about their one design. **F4 is built** (evening): a blank page, a ruled page
+for notes or a page in several scripts no longer ends its document `incomplete` - 108 library documents to 1, whose
+page holds a picture; which pages a vision reader reads is unchanged. F5 is next. Nothing is waiting on you until
+those are measured; nothing since 5e8b734 is pushed.
 
 Open now (22 September):
 - (Decided 22 Sept, D041: **layering.** TrueDoc stays one generic engine here; your insurance product is built on it

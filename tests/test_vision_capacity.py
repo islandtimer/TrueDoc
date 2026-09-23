@@ -72,8 +72,12 @@ class _Reader:
 
 
 def _blank(path):
+    """A scan: a page holding only a picture, which nothing but a model can read (a blank page loses nothing, D042)."""
     pdf = pymupdf.open()
-    pdf.new_page(width=612, height=792)
+    page = pdf.new_page(width=612, height=792)
+    picture = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 60, 80), 0)
+    picture.clear_with(200)
+    page.insert_image(page.rect, pixmap=picture)
     pdf.save(str(path))
     pdf.close()
     return str(path)

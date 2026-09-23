@@ -335,6 +335,9 @@ class TextQuality:
     invisible_fraction: float = 0.0  # text drawn invisibly (typical of OCR layers)
     image_coverage: float = 0.0   # fraction of page covered by images
     kind: str = "none"            # "none" | "digital" | "ocr" | "suspect"
+    # The kind with each word judged in its own script (`textlayer._garbled_in_its_script`): a page in several scripts
+    # the check turns down reads as "digital" here, and is read from its layer when no model reads it (D042).
+    script_kind: str = ""
 
     @property
     def usable(self) -> bool:

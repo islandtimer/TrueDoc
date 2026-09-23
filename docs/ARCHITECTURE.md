@@ -32,6 +32,13 @@ PDF page
   |                                 in _fuse_touching_words, which would otherwise re-join them); a letter or digit in a
   |                                 dingbat font shares no word with the text beside it
   |     ocr/rapid.py              (only if the page has no usable text) RapidOCR -> same evidence shapes; a page read sideways is turned and read again
+  |                               - a page the text check turns down, and no reader replaces, is unreadable only where
+  |                               something on it may be lost (pipeline._lost_on, D042): with no picture, and no words in
+  |                               its drawings that its layer lacks - OCR saw none, or, where OCR did not look, nothing
+  |                               is drawn with a curve (pdfium_objects.curve_segments) - it is `blank-pages`, a note;
+  |                               a page turned down only for its words in other scripts (TextQuality.script_kind,
+  |                               textlayer._garbled_in_its_script) is read from its layer. `kind`, which decides what
+  |                               OCR and a vision reader read, is unchanged
   v
   |  2. tables/ruled.py           tables with visible rulings, found from the page's drawn rules by tables/ruled_pdfium.py;
   |                               a cell covers every column whose centre its rectangle holds, a column running from

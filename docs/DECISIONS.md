@@ -738,7 +738,7 @@ converter without its layout model and exited 0. The warnings existed; nothing a
 
 | `completion` | means | today's issues of that severity |
 |---|---|---|
-| `complete` | everything asked for ran and every page was read | (notes only: `pages-turned`, `hidden-text`, `low-support`, `witness-failed`) |
+| `complete` | everything asked for ran and every page was read | (notes only: `pages-turned`, `hidden-text`, `low-support`, `witness-failed`, and since D042 `blank-pages`) |
 | `degraded` | every page has content, but a stage that was asked for did not run, or a lesser reader stood in | `stage-unavailable` (layout model, vision stage, deep reader), `reader-fallback` (the deep reader returned nothing; a model's partial reading set aside for the page's own text), `reading-implausible` (added the same evening: a transcription holding more print than its page or picture could, set aside - `truedoc/vision/capacity.py`) |
 | `incomplete` | content is known to be missing | `unreadable-pages`, `reply-cut-off` |
 
@@ -981,10 +981,11 @@ page whose output changes read.
   F5 builds"): four insurers' designs and relatives on the benchmark. Rows to be found from the content - the bullets
   and the row label - each list kept whole, as a ruled cell's list already is (D028).
 - *A page called unreadable when nothing was lost* (same): blank pages, ruled pages for notes, pages of a few words
-  and pages in several scripts end their documents `incomplete` (131 of 1,157 library documents for no other reason).
-  Such a page is to be reported for what it is, not as a loss; a page in several scripts is read. Which pages a vision
-  reader reads, when one is configured, does not change - the six such benchmark pages are read by one in the quoted
-  runs.
+  and pages in several scripts end their documents `incomplete` (131 of 1,157 library documents for no other reason,
+  counted with OCR off; with OCR on, as the product runs, 108 end `incomplete` in all). Such a page is to be reported
+  for what it is, not as a loss; a page in several scripts is read. Which pages a vision reader reads, when one is
+  configured, does not change - the six such benchmark pages are read by one in the quoted runs. Built 23 September
+  (`pipeline._lost_on`): 108 documents to 1, whose page holds a picture.
 
 **Left as knowledge about its design** ("F6 as template knowledge", 23 September): text an interactive PDF prints under
 its navigation buttons, repeated down a side margin. Found in two documents of one design, one of which writes it into

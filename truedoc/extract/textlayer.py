@@ -2584,7 +2584,37 @@ def _looks_garbled(token: str) -> bool:
     return False
 
 
-def _garbage_fraction(page: Page) -> tuple[float, int]:
+# Scripts written without spaces between words: what the text layer hands over as one of their "words" is a run of
+# text - a sentence, often - with its full-width commas and stops inside it.
+_UNSPACED_SCRIPTS = frozenset(("CJK", "HIRAGANA", "KATAKANA", "THAI", "LAO", "KHMER", "MYANMAR", "TIBETAN"))
+
+
+def _unspaced(ch: str) -> bool:
+    return unicodedata.name(ch, "").split(" ", 1)[0] in _UNSPACED_SCRIPTS
+
+
+def _garbled_in_its_script(token: str) -> bool:
+    """`_looks_garbled`, with each word judged in its own script's writing (D042).
+
+    A vowel sign or an accent is part of its letter, not a symbol inside a word: Devanagari, Gurmukhi and Arabic set
+    theirs as characters of their own (Unicode's mark categories), and "महत्वपूर्ण" has three. And a script written
+    without spaces between words brings a run of text to the measure as one word, its full-width commas and stops
+    inside it: only what lies between such characters and their punctuation is judged, as the words it is. A broken
+    Latin layer is as broken as it was - "0Ql.5)')81" is judged the same beside an ideograph as on its own.
+    """
+    core = "".join(c for c in token if not unicodedata.category(c).startswith("M"))
+    pieces, piece = [], []
+    for c in core:
+        if _unspaced(c) or (not c.isalnum() and unicodedata.east_asian_width(c) in ("W", "F")):
+            pieces.append("".join(piece))
+            piece = []
+        else:
+            piece.append(c)
+    pieces.append("".join(piece))
+    return any(_looks_garbled(p) for p in pieces)
+
+
+def _garbage_fraction(page: Page, judge=_looks_garbled) -> tuple[float, int]:
     """Share of the page's longer tokens that look garbled, and how many tokens were judged.
 
     Pages carrying maths fonts are not judged: formulas are full of symbols
@@ -2597,7 +2627,7 @@ def _garbage_fraction(page: Page) -> tuple[float, int]:
     tokens = [w.text for w in page.words if len(w.text.strip(".,;:!?()[]{}\"'")) >= 4]
     if not tokens:
         return 0.0, 0
-    return sum(1 for t in tokens if _looks_garbled(t)) / len(tokens), len(tokens)
+    return sum(1 for t in tokens if judge(t)) / len(tokens), len(tokens)
 
 
 def _assess_quality(page: Page, visibility: _Visibility) -> TextQuality:
@@ -2618,22 +2648,30 @@ def _assess_quality(page: Page, visibility: _Visibility) -> TextQuality:
     invisible, total = visibility.drawn_invisible, visibility.drawn_total
     q.invisible_fraction = invisible / total if total else 0.0
 
+    q.kind = q.script_kind = _judged(q, q.garbage_fraction, n_tokens)
+    if q.kind == "suspect":
+        # Judged again with each word in its own script, a page of notices in eleven languages reads cleanly, where its
+        # vowel signs and its Chinese sentences looked like no language. Which pages a model reads is still decided by
+        # `kind` (D042).
+        q.script_kind = _judged(q, *_garbage_fraction(page, _garbled_in_its_script))
+    return q
+
+
+def _judged(q: TextQuality, garbage: float, n_tokens: int) -> str:
     if q.n_alnum < 20:
-        q.kind = "none"
-    elif q.bad_fraction > 0.2:
-        q.kind = "suspect"
-    elif q.garbage_fraction > 0.2 and n_tokens >= 30:
+        return "none"
+    if q.bad_fraction > 0.2:
+        return "suspect"
+    if garbage > 0.2 and n_tokens >= 30:
         # A broken OCR layer, or a font with no usable character mapping. Ordinary
         # pages measure 0.00-0.02, a mediocre but readable OCR layer about 0.08, an
         # unreadable one about 0.24.
-        q.kind = "suspect"
-    elif q.invisible_fraction > 0.5 or (q.image_coverage > 0.6 and q.invisible_fraction > 0.1):
-        q.kind = "ocr"
-    elif q.image_coverage > 0.85 and q.n_alnum < 200:
-        q.kind = "suspect"
-    else:
-        q.kind = "digital"
-    return q
+        return "suspect"
+    if q.invisible_fraction > 0.5 or (q.image_coverage > 0.6 and q.invisible_fraction > 0.1):
+        return "ocr"
+    if q.image_coverage > 0.85 and q.n_alnum < 200:
+        return "suspect"
+    return "digital"
 
 
 def _body_font_size(page: Page) -> float:

@@ -196,9 +196,16 @@ def load_document(path: str, opts: ConvertOptions | None = None) -> Document:
              if not m.get("placed") and m.get("kind") != "unknown"]
     if marks:
         doc.metadata["marks_not_placed"] = marks[:200]
-    unreadable = [p.number for p in doc.pages if not p.quality.usable and p.quality.kind != "ocr-truedoc"]
+    # A page the text check turned down, and no reader replaced, is unreadable only where something on it may be lost
+    # (D042): a blank page, or one holding a page number or a heading over lines for notes, is said to be blank.
+    fates = {p.number: _lost_on(p) for p in doc.pages if not p.quality.usable and p.quality.kind != "ocr-truedoc"}
+    unreadable = [n for n, fate in fates.items() if fate == "lost"]
     if unreadable:
         doc.add_issue("unreadable-pages", f"pages without readable text: {unreadable}", "incomplete", unreadable)
+    blank = [n for n, fate in fates.items() if fate == "blank"]
+    if blank:
+        doc.add_issue("blank-pages", f"pages with a few words on them at most - a page number, a heading over ruled "
+                      f"lines, a name in a logo - and nothing else to read: {blank}", "note", blank)
     # A stage that was asked for and could not run is said out loud, so no one reads this conversion as the
     # converter's own answer (see `_detect_layout`).
     without = [p.number for p in doc.pages if p.meta.get("layout_unavailable")]
@@ -235,6 +242,44 @@ def _turn_page(pdf_page: "pymupdf.Page", number: int, turn: int) -> Page:
     page = extract_page(pdf_page, number)
     page.meta["turned"] = turn
     return page
+
+
+_READABLE = 20          # letters and figures: fewer, and a page holds no readable text (`textlayer._assess_quality`)
+_WORD = re.compile(r"[^\W_]+")
+
+
+def _unseen_by_the_layer(page: Page) -> int | None:
+    """The letters and figures TrueDoc's OCR saw on the page in words its text layer does not hold, or None where OCR
+    did not look. A reading OCR turned down still witnesses what is on the page (`ocr.rapid.apply_ocr`)."""
+    if page.meta.get("ocr_empty"):
+        return 0
+    witness = page.meta.get("witness_lines")
+    if witness is None:
+        return None
+    layer = {w.lower() for word in page.words for w in _WORD.findall(word.text)}
+    return sum(len(w) for text, _y0, _y1 in witness for w in _WORD.findall(text) if w.lower() not in layer)
+
+
+def _lost_on(page: Page) -> str:
+    """What became of a page whose text layer the check turned down and that no reader replaced (D042):
+    "read", "blank", or "lost" - something on it may be missing from the text.
+
+    Read: a page the check doubts only for its words in other scripts (`TextQuality.script_kind`), whose layer was
+    written. Blank: a page with under twenty letters and figures and no picture, whose drawings hold no words its layer
+    lacks - OCR saw fewer than twenty letters and figures more than the layer holds (a logo's word or two), or, where OCR
+    did not look, none of them is drawn with a curve, as a letter drawn as a shape is. A ruled page for notes, a page
+    holding only its number, a page with nothing on it. Anything else - a picture, a garbled layer, a drawing OCR read
+    words from or that no one looked at - may be holding words the text lacks.
+    """
+    q = page.quality
+    if q.kind == "suspect":
+        return "read" if q.script_kind in ("digital", "ocr") and page.lines else "lost"
+    if q.kind != "none" or page.images:
+        return "lost"
+    unseen = _unseen_by_the_layer(page)
+    if unseen is None:
+        return "blank" if page.meta.get("curves") == 0 else "lost"
+    return "blank" if unseen < _READABLE else "lost"
 
 
 def _sideways_text_turn(page: Page) -> int:
@@ -275,6 +320,11 @@ def process_page(pdf_page: "pymupdf.Page", number: int, opts: ConvertOptions) ->
                 import logging
 
                 logging.getLogger("truedoc").warning("ocr failed: %s", exc)
+        if page.quality.kind == "none" and not page.images and _unseen_by_the_layer(page) is None:
+            # Where OCR did not look, whether the drawings could be holding words (`_lost_on`).
+            from truedoc.extract import pdfium_objects
+
+            page.meta["curves"] = pdfium_objects.curve_segments(pdf_page.parent.name, number)
         if not page.lines:
             page.blocks = []
             return page

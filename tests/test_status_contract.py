@@ -36,9 +36,14 @@ def _two_pages(path):
     return str(path)
 
 
-def _blank_page(path):
+def _scanned_page(path):
+    """A page holding a picture and no text: nothing read it (OCR is off), and the picture may hold words. A blank page
+    is not this - nothing is lost from it (D042)."""
     pdf = pymupdf.open()
-    pdf.new_page()
+    page = pdf.new_page()
+    picture = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 60, 80), 0)
+    picture.clear_with(200)
+    page.insert_image(page.rect, pixmap=picture)
     pdf.save(str(path))
     pdf.close()
     return str(path)
@@ -64,7 +69,7 @@ def test_a_document_nothing_could_read_still_says_so_in_its_front_matter():
 
 
 def test_without_front_matter_the_body_stays_empty_and_the_result_carries_the_status(tmp_path):
-    result = convert_with_status(_blank_page(tmp_path / "blank.pdf"), ConvertOptions(frontmatter=False, **FAST))
+    result = convert_with_status(_scanned_page(tmp_path / "scan.pdf"), ConvertOptions(frontmatter=False, **FAST))
     assert result.markdown == ""
     assert result.completion == "incomplete"
     assert [(i.code, i.pages) for i in result.issues] == [("unreadable-pages", [1])]
@@ -132,8 +137,8 @@ def test_the_command_line_says_no_with_exit_code_2(tmp_path):
 
 
 def test_strict_turns_an_incomplete_conversion_into_exit_code_3_and_status_is_written(tmp_path):
-    pdf = _blank_page(tmp_path / "blank.pdf")
-    out, status = tmp_path / "blank.md", tmp_path / "blank.status.json"
+    pdf = _scanned_page(tmp_path / "scan.pdf")
+    out, status = tmp_path / "scan.md", tmp_path / "scan.status.json"
     runner = CliRunner()
     common = ["convert", pdf, "--no-layout", "--no-math", "--no-ocr", "-o", str(out), "--status", str(status)]
     r = runner.invoke(app, common)
@@ -187,7 +192,7 @@ class _CutOffReader:
 
 
 def test_the_pipeline_names_the_page_and_keeps_what_was_read(tmp_path):
-    pdf = _blank_page(tmp_path / "scan.pdf")
+    pdf = _scanned_page(tmp_path / "scan.pdf")
     with patch("truedoc.vision.make_provider", return_value=_CutOffReader()):
         result = convert_with_status(pdf, ConvertOptions(vision_endpoint="stub:", **FAST))
     assert "A cover statement that was read in full" in result.markdown      # most of a page beats none of it

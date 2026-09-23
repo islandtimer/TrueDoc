@@ -358,6 +358,49 @@ def walk_page(raw, page, handles: dict | None = None, clips: dict | None = None,
     return out
 
 
+def curve_segments(path: str, page_number: int) -> int | None:
+    """How many curves the paths on one page (1-based) draw, forms opened, or None if PDFium cannot read it.
+
+    A letter drawn as an outline is made of curves; a rule, a box or a band of colour is not. A page whose text layer
+    holds next to nothing, and whose drawings have no curve, is not holding words drawn as shapes (`pipeline._lost_on`).
+    """
+    if not path:
+        return None
+    try:
+        import pypdfium2.raw as raw
+
+        from truedoc.extract import render
+
+        page = render.document(path)[page_number - 1]      # held while its handle is walked
+        handle = page.raw
+    except Exception:
+        return None
+    count = 0
+
+    def walk(obj, depth: int) -> None:
+        nonlocal count
+        kind = raw.FPDFPageObj_GetType(obj)
+        if kind == raw.FPDF_PAGEOBJ_FORM and depth < 8:
+            for i in range(raw.FPDFFormObj_CountObjects(obj)):
+                child = raw.FPDFFormObj_GetObject(obj, i)
+                if child:
+                    walk(child, depth + 1)
+        elif kind == raw.FPDF_PAGEOBJ_PATH:
+            for i in range(min(raw.FPDFPath_CountSegments(obj), 2000)):
+                seg = raw.FPDFPath_GetPathSegment(obj, i)
+                if seg and raw.FPDFPathSegment_GetType(seg) == raw.FPDF_SEGMENT_BEZIERTO:
+                    count += 1
+
+    try:
+        for i in range(min(raw.FPDFPage_CountObjects(handle), _MAX_OBJECTS)):
+            obj = raw.FPDFPage_GetObject(handle, i)
+            if obj:
+                walk(obj, 0)
+    except Exception:
+        return None
+    return count
+
+
 # Five stages ask for the same page's objects (drawings, images, mark candidates, ruled tables,
 # hidden text), so the last few pages' lists are kept. Plain dataclasses; no handle is held.
 _CACHE: dict[tuple, list] = {}

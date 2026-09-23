@@ -4,6 +4,50 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-23, 18:59-20:13 - A page the text check turns down is called unreadable only where something may be lost (D042)
+
+Built as the owner decided. A page the text-layer check turns down (`textlayer._assess_quality`: under twenty letters
+and figures, or a quarter of its longer words looking like no language) and that no reader replaces was always
+reported `unreadable-pages`, ending its document `incomplete`. Now `pipeline._lost_on` judges what the page holds:
+- **blank** (`blank-pages`, a note): no picture, under twenty letters and figures, and no words in its drawings that
+  its layer lacks - TrueDoc's OCR saw fewer than twenty letters and figures more than the layer holds, or, where OCR
+  did not look, none of the drawings has a curve (`pdfium_objects.curve_segments`; a letter drawn as a shape is made of
+  curves, a rule or a band of colour is not);
+- **read**: the check doubted the page only for its words in other scripts. `_garbled_in_its_script` judges each word
+  in its own script's writing - a vowel sign or an accent is part of its letter, and a script written without spaces
+  brings a sentence as one "word", full-width commas inside - and the page's verdict so judged is kept beside its
+  verdict (`TextQuality.script_kind`); where that is `digital` and the layer was written, nothing is lost;
+- **lost**, as before, for anything else: a picture, a garbled layer, a drawing OCR read words from or one no one
+  looked at.
+`kind` is untouched, so which pages OCR and a vision reader read does not change.
+
+**Correction to this afternoon's sizing.** Its screen ran without OCR, and the product runs with it. With OCR
+(`bench/probes/unread_pages_census.py`, every one of the library's 359 rejected pages converted with the product's
+options): OCR's own reading replaces the layer on 201 (covers over a full-page picture, mostly), and 158 stay
+unreadable - 83 nearly empty but for drawings, 44 blank, 19 ruled for notes, 11 in several scripts, 1 a picture - so
+**108** documents end `incomplete` (64 held out, 26 insurers), not 221.
+
+**Measured.** Library: 108 documents to **1** (held out, a page holding a picture); of the 158 pages, 146 blank, 11
+read, 1 lost. Benchmark, the 21 rejected pages that are not scans: 8 ending `incomplete` to 5 - the three in several
+scripts are read; four garbled layers and one page whose Latin is garbled stay lost. The verdict (`kind`) is the same,
+field by field, on all 1,403 benchmark pages, the 380 Key Facts pages and the 25 of the insurance set
+(`bench/probes/quality_kind_screen.py`, the committed module loaded under another name), and neither the Key Facts
+Sheets nor the insurance set has a page the check turns down. Only the status moves: the letters written are the same
+both ways on all 380 pages converted. **Read**: the 62 tuned-on library pages whose status changed, against their
+images - 56 blank (white, a solid colour, a grey page with a yellow triangle, ruled pages headed "Notes") and 6 pages
+of notices in eleven languages, read. One back cover holds only a brand's name in its logo, drawn as shapes, which OCR
+saw: blank, and the note's wording now says a logo may be there.
+
+Tests: `tests/test_unread_pages.py` (14); each of the twelve guards cut out in turn fails one. Two older tests had used
+a blank page as the page nothing could read; they now use a page holding a picture (`test_status_contract.py`,
+`test_vision_capacity.py`). Suite 877.
+
+Noticed, not built: on one benchmark page, in Japanese and English, TrueDoc's own OCR replaces a layer that reads
+cleanly in its scripts and writes only the English (none in the library); the Arabic paragraph of the notices page is
+written garbled (not traced).
+
+---
+
 ## 2026-09-23, 14:57-16:51 - Three more reading faults sized: a boxed side note, lists cut per line, pages called unreadable
 
 Sized before any code, as the owner asked (`bench/probes/box_list_blank_census.py`: a screen of every page without the
