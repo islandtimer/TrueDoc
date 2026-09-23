@@ -4,6 +4,46 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-23, 15:00-16:55 - Three more reading faults sized: a boxed side note, lists cut per line, pages called unreadable
+
+Sized before any code, as the owner asked (`bench/probes/box_list_blank_census.py`: a screen of every page without the
+layout model; flagged pages converted with the product's options, up to three a document for the box and two for the
+lists, so every library count is a floor; the sealed 19 left out, held-out documents counted only).
+
+**A side note in a drawn box, read into the paragraph beside it.** The screen is broad - a filled or outlined box of
+two lines or more with body lines beside it: 2,091 library pages in 470 documents, 72 benchmark pages, 6 of the
+insurance set. The fault, one block holding lines from inside a box of prose and from outside it: library 13 pages in
+7 documents (3 held out) - every tuned-on one a single design, one insurer's 2020-2024 home, landlord and contents PDSs
+(5 of the landlord PDS's 34 boxed pages); the one other insurer's hit, read, is a two-column table, not a note.
+Benchmark 5 pages (2 held out); of the 3 tuned-on, one is a boxed correspondence note on a journal page, one a boxed
+map with prose beside it, one a figure's frame round its axis labels. Insurance set 0. A first version of the fault test
+also caught figures' frames round their labels; it now asks for two lines across half the box's width.
+
+**Lists set side by side with no rules between rows, cut one row per printed line.** Screen: 2,351 library pages in 404
+documents, 21 benchmark pages, 2 of the insurance set. Fault (a bullet-led cell not ending its sentence, its carried-on
+words in the next filled cell below): library tuned-on 7 pages in 6 documents of 6 insurers - read, 4 are the shape
+(the example PDS's cover table, a three-column when / how much / not covered layout, a TMD's suitable / not suitable
+lists, a bundled-cover example) and 3 its relatives (two tables of contents with wrapped entries, a summary table with
+rules whose pictograms read as dots); held-out 15 pages in 10 documents of 7 insurers. Benchmark 1 (a two-column
+index). Insurance set 0. The first test counted a dash before a number ("-0.05") and a table's ticks and crosses as
+bullets; it no longer does.
+
+**A page counted unreadable when nothing was lost.** A page fails `textlayer._assess_quality` and is reported
+`unreadable-pages`, ending its document `incomplete`, when it holds under 20 letters and figures (`none`), when a
+quarter of its words look like no language (a page in several scripts), or when a picture covers it and it holds under
+200 (`suspect`). Library, 359 pages so rejected: a few words and drawings (section dividers, "Notes", "This page has
+been intentionally left blank") 160, a cover over a full-page picture 83, blank 44, ruled for notes 30, several scripts
+11, a picture or a scan 31. 221 of the 1,157 documents end `incomplete` without a vision reader; 131 of them (74 held
+out, 29 insurers) only for blank, ruled, few-word or several-script pages, 198 counting the covers. Benchmark 203
+rejected pages, 182 of them scans; 5 in several scripts (one of them, read, a garbled Latin layer the script count
+mistook) and one nearly empty - all six on the list the vision reader reads in the quoted runs, so a fix that trusted
+such a layer would change which pages a model reads. Insurance set 0. The page in several scripts in the example PDS
+is not dropped: its text is written (its Arabic garbled) and the page is still called unreadable.
+
+Not sized: a table continued over a page break - every benchmark file is one page, so the benchmark cannot show it.
+
+---
+
 ## 2026-09-23, 14:47-14:57 - The numbers a page prints, where each applies, checked against the pages beside
 
 TrueDoc left page numbers out of the body and kept no record of them, and a page number printed inside a running line
