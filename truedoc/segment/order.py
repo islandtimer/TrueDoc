@@ -15,12 +15,26 @@ from truedoc.model import BBox, Block, BlockKind
 _NON_TEXT = {BlockKind.FIGURE, BlockKind.TABLE}
 _EXCLUDED = {BlockKind.HEADER, BlockKind.FOOTER, BlockKind.PAGE_NUMBER}
 
+# A side label: a few words set in a narrow column at the left, the top of its first line level with the top of the
+# first line of the block beside it - a "yes" beside what is covered, a term beside its definition, a step's number
+# beside the step. It governs what runs beside and below it, so it is read immediately before that block.
+_LABELLED = {BlockKind.TEXT, BlockKind.HEADING, BlockKind.LIST_ITEM, BlockKind.TITLE, BlockKind.CAPTION}
+_LABEL_WORDS = 4          # a label is a few words ...
+_LABEL_LINES = 4          # ... on a few lines ...
+_LABEL_SHARE = 0.18       # ... in a column no wider than this share of the page
+_LEVEL = 0.4              # the two tops level within this share of the shorter line's height
+_GUTTER = 0.8             # the label stands apart from the block beside it by at least this many body sizes ...
+_GUTTER_MAX = 0.4         # ... and by no more than this share of the page
+_BODY_WORDS = 4           # the block beside it is running text, not the next of a row of short labels
+_LABEL_COLUMN = 0.75      # the label's column holds labels: at least this share of what stands in it is label-shaped ...
+_PAIRED = 0.5             # ... and at least this share of those labels head a block beside them
+
 
 def assign_reading_order(blocks: list[Block], page_width: float, body_size: float) -> None:
     body = [b for b in blocks if b.kind not in _EXCLUDED]
     excluded = [b for b in blocks if b.kind in _EXCLUDED]
     min_gap = max(4.0, 0.6 * (body_size or 10.0))
-    ordered = _cut(body, min_gap, depth=0)
+    ordered = _seat_side_labels(_cut(body, min_gap, depth=0), page_width, body_size or 10.0)
     order = 0
     for b in ordered:
         b.order = order
@@ -29,6 +43,94 @@ def assign_reading_order(blocks: list[Block], page_width: float, body_size: floa
     for b in sorted(excluded, key=lambda b: (b.bbox.y0, b.bbox.x0)):
         b.order = order
         order += 1
+
+
+def _words(b: Block) -> int:
+    """Words of letters or figures: a tick or a bullet set before a label is not one of its words."""
+    return sum(1 for l in b.lines for w in l.words if any(ch.isalnum() for ch in w.text))
+
+
+def _letters(b: Block) -> int:
+    return sum(1 for l in b.lines for w in l.words for ch in w.text if ch.isalpha())
+
+
+def _label_shaped(b: Block, page_width: float) -> bool:
+    """A few words, of letters: a figure alone ("05" beside a stage's title, the parts of a document numbered in a
+    row of discs) is as often the ornament of a heading as the head of the text beside it."""
+    return (b.kind in _LABELLED and bool(b.lines) and len(b.lines) <= _LABEL_LINES and 1 <= _words(b) <= _LABEL_WORDS
+            and _letters(b) >= 2 and b.bbox.width <= _LABEL_SHARE * page_width)
+
+
+def _seat_side_labels(ordered: list[Block], page_width: float, body_size: float) -> list[Block]:
+    """Each side label read immediately before the block it heads.
+
+    The cut reads a label column in one of two wrong ways. A column this narrow is not split off (the guard against a
+    gutter of line numbers), so the label is weighed against the wide line beside it by their centres - and a label
+    whose box reaches a fraction of a point lower comes after the first line it governs, which then reads as the last
+    line of the group above: an exclusion as a thing covered. A wider label column is split off and read whole, every
+    label before any of the text they head. Both are repaired by pairing, after the cut: a label goes immediately
+    before the block whose first line is level with its own. Only where the label's column holds labels - a
+    paper's section heading in its left column, level by chance with a line of the right column, stands among long
+    lines of body text and is left where it is.
+    """
+    labels = [b for b in ordered if _label_shaped(b, page_width)]
+    if not labels:
+        return ordered
+    text = [b for b in ordered if b.kind in _LABELLED and b.lines and _letters(b)]
+    lines = [(b, l.bbox) for b in ordered if b.lines for l in b.lines]
+    found: dict[int, Block] = {}
+    for lab in labels:
+        top = lab.lines[0].bbox
+        # Not a piece of running text: a word a justified line's wide spaces cut loose has the paragraph's lines
+        # crossing it above and below; a label's column is clear over and under it, or holds the next label.
+        near = 1.5 * top.height
+
+        def crossing(ln: BBox) -> bool:
+            return ln.x0 < lab.bbox.x0 - 1.0 and ln.x1 > lab.bbox.x1 + 1.0
+
+        over = any(b is not lab and crossing(ln) and 0 <= top.y0 - ln.y1 <= near for b, ln in lines)
+        under = any(b is not lab and crossing(ln) and 0 <= ln.y0 - lab.bbox.y1 <= near for b, ln in lines)
+        if over and under:
+            continue
+        best = None
+        for other in text:
+            if other is lab or _label_shaped(other, page_width):
+                continue
+            first = other.lines[0].bbox
+            gap = first.x0 - lab.bbox.x1
+            if gap < _GUTTER * body_size or gap > _GUTTER_MAX * page_width:
+                continue
+            if abs(first.y0 - top.y0) > _LEVEL * min(top.height, first.height):
+                continue
+            if _words(other) < _BODY_WORDS or other.bbox.width < 2.0 * lab.bbox.width:
+                continue
+            # Nothing stands between the label and its line: in a row of cells, the next cell, not a later one.
+            if any(b is not lab and b is not other and ln.x0 >= lab.bbox.x1 - 1.0 and ln.x1 <= first.x0 + 1.0
+                   and min(ln.y1, top.y1) - max(ln.y0, top.y0) > 0.5 * min(ln.height, top.height) for b, ln in lines):
+                continue
+            if best is None or gap < best[0]:
+                best = (gap, other)
+        if best is not None:
+            found[id(lab)] = best[1]
+    # The column must be one of labels, each heading the text beside it. A list set in two columns of short entries
+    # has its first entry level with the first entry of the other column, and nothing more: the rest of its entries
+    # face nothing.
+    partner: dict[int, Block] = {}
+    for lab in labels:
+        if id(lab) not in found:
+            continue
+        edge = found[id(lab)].lines[0].bbox.x0
+        column = [o for o in text if o.bbox.x1 < edge - 1.0 and o.bbox.x0 <= lab.bbox.x1 and o.bbox.x1 >= lab.bbox.x0]
+        shaped = [o for o in column if _label_shaped(o, page_width)]
+        if len(shaped) < _LABEL_COLUMN * len(column) or sum(1 for o in shaped if id(o) in found) < _PAIRED * len(shaped):
+            continue
+        partner[id(lab)] = found[id(lab)]
+    if not partner:
+        return ordered
+    seated = [b for b in ordered if id(b) not in partner]
+    for lab in sorted((b for b in ordered if id(b) in partner), key=lambda b: b.bbox.x0):
+        seated.insert(seated.index(partner[id(lab)]), lab)
+    return seated
 
 
 def _region(blocks: list[Block]) -> BBox:

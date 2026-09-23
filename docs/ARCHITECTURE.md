@@ -111,7 +111,9 @@ PDF page
   |     math/reconstruct.py       glyphs + rules -> LaTeX (fractions, scripts, radicals, matrices, accents)
   v
   |  6. segment/order.py          reading order: column split when a full-height gap exists, else peel
-  |                               the topmost spanning block, else horizontal cut
+  |                               the topmost spanning block, else horizontal cut; then each side label (a few
+  |                               words in a narrow column, level with the first line beside it) is read
+  |                               immediately before the block it heads
   |     pipeline._list_levels     then, in reading order: a list item set further in than the item above opens a
   |                               sub-list, read from where the markers start (D028's rule for a cell, in the body);
   |                               a list carrying on in the next column starts again there

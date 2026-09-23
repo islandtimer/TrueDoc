@@ -4,6 +4,77 @@ Working notes, newest entry at the top. Each entry: what was done, what was lear
 
 ---
 
+## 2026-09-23, 08:25-12:35 - A side label is read before the lines it heads; the item icon and the navigation button sized
+
+The owner asked for three reading faults to be sized before any code was written, then (after the sizes) for the
+first two to be fixed as general rules and the third kept as knowledge about the one design that shows it.
+
+**The side label.** A few words in a narrow column at the left - "Yes", "No", "Limits"; "We cover", "We don't
+cover"; a term beside its definition; "Step 1" beside the step - govern the lines beside and below them. The reading
+order got them wrong two ways. A label column this narrow is not split off as a column (the cut's guard against a
+gutter of line numbers), so the label was weighed against the wide line beside it by their centres; its box reaches
+about 0.2 pt lower, and it was written after the first line it governs, which then read as the last line of the group
+above. On one storm page "loss or damage caused by actions or movements of the sea or storm surge", an exclusion,
+stood under "We cover". A wider label column was split off and read whole: every label, then every text.
+
+*Sized* (`bench/probes/side_label_icon_census.py`: a screen of every page's text layer without the layout model, then
+the pages it flags converted with the product's options; `side_label_icon_designs.py` groups documents into designs).
+Benchmark, 1,122 digital pages converted: 33 with a label column (a label, its column holding labels, its first line
+level with a line beside it), 14 with a label after its line or apart from it (3 held out). Of the 4 tuned-on pages
+flagged "after" only one is the shape (a glossary; the others a caption, maths fragments, a stray word). Library
+(23,400 pages screened, the sealed 19 left out; for each shape up to three pages a document converted, 2,701 pages of
+964 documents, so every count is a floor): 118 documents with a label column, 70 with the fault (41 held out, counted only), 20 insurers; the
+commonest design is one group's "We cover / We don't cover / Limit" pages under four brands. The insurance set's 25
+pages: none. **Correction:** the size first reported to the owner (44 documents, 10 insurers) counted only a label
+written after its line; a label read apart from its line, with other labels between, is as common (197 of the 774
+labels in the sample against 228 after).
+
+*The rule* (`segment/order.py`, `_seat_side_labels`, after the cut): a label goes immediately before the block whose
+first line is level with its own first line (tops within 0.4 of the line height), across a gutter (0.8 body sizes to
+0.4 of the page), where that block is running text (four words or more, twice the label's width). A label is one to
+four words of letters (two letters at least), on at most four lines, no wider than 0.18 of the page. Four guards, each
+from a page the first version got wrong, each with its test: the label's column holds labels (three in four of what
+stands in it) and half of them head a block (a list set in two columns of short entries has only its first entry level
+with anything); a figure alone is not a label ("05" beside a stage's title, a row of numbered discs); a word a justified
+line's wide spaces cut loose has the paragraph's lines crossing it above and below; and nothing stands between a label
+and its block (in a row of cells, the next cell and not a later one).
+
+*Measured, code against code.* `bench/probes/order_screen.py` converts every page once and asks both code states for
+the order (the old file loaded under another name): benchmark 8 of 1,403 pages differ (2 held out) - scored both ways
+with `ab_pages.py`, 38 of 45 checks before and after, no page moved; read, the 6 tuned-on pages are 4 better (the
+glossary, both of its forms; a caption's number with its title; a masthead's volume with its date line; a college's
+name before its degree labels) and 2 neutral (a table heading and a scanned card, scrambled before and after). Key
+Facts Sheets 0 of 380 pages differ; the insurance set 0 of 25: both unchanged by construction. The library sample,
+reordered from the recorded blocks (the old code reproduces the recorded order on 95% of pages): labels read right
+246 -> 661, after their line 248 -> 15, apart 195 -> 13; 134 pages change (81 held out); every one of the 53 tuned-on
+pages, read before and after, is better. The first version, without the guards, also changed 25 more, eight of them for
+the worse (a list in two columns, twice; a row of numbered discs; a stage's "05", on five copies of one document); the
+guards came from reading those. Suite 848 (+7, `tests/test_side_labels.py`; each guard's test fails
+with that guard cut out).
+
+**The item icon, sized.** A small drawing at the head of every item - a tick, a cross, a dollar in a circle - or in a
+table's cells: the layout model calls each a picture and each became an empty `![](figure)`, a line of its own, stacked
+above the table or between an item's lead and its sub-list; where the mark reader had read the icon (a table's ticks),
+the cell held the tick and the placeholder was written as well. The icons are drawn as vector paths, not images, in the
+example documents. Library (same sample): 92 documents (53 held out), 24 insurers, 42 designs carry a repeated icon
+placeholder at line heads or in tables, 1,729 placeholders; commonest a table's ticks written twice. Benchmark: 44
+mark-sized placeholders on 1,122 pages, one page with a repeated one. The insurance set: 46 on 25 pages, repeated in 2
+documents - and it scores 229 of 229, because no check looks for a placeholder. D013 already says an unreadable shape
+beside running text is decoration and left out; the layout model's pictures never met that rule. Next: the fix.
+
+**The navigation button, sized and left.** Text an interactive PDF prints under its form buttons ("Table of contents",
+"Start of section"), repeated down a side margin on every page: in the whole library 2 documents (one insurer, not held
+out, 363 placements), one of which writes it into the body; on the benchmark one page has a button over printed text.
+One design: no rule. (Text repeated at one place in a side margin on three pages or more, outside the head and foot
+bands, is commoner - 69 documents - but much of it is a template's real side headings, "Limit:" and "Included for:",
+which a rule dropping repeated margin text would delete.)
+
+Noticed, not built: a circled tick read as "●" (a grey disc with a white tick; also a green ring), a summary table's
+event pictograms read as marks ("● Flood"), an applicability box ("Home ✓ / Contents ✗", the second struck through)
+written as a placeholder.
+
+---
+
 ## 2026-09-22, 07:50-08:55 - One repository or two: D041, layering
 
 The owner asked to discuss carrying on in this repository against porting a copy of TrueDoc to a new one tailored to
